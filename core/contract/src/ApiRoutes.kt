@@ -30,6 +30,18 @@ object ApiRoutes {
     const val GROUP_SANTA_QUESTIONS = "/groups/{id}/santa/questions"
     const val GROUP_SANTA_QUESTION_ANSWER = "/groups/{id}/santa/questions/{number}/answer"
 
+    const val GROUP_WISHLIST = "/groups/{id}/wishlist"
+    const val GROUP_WISHLIST_ITEMS = "/groups/{id}/wishlist/items"
+    const val GROUP_WISHLIST_ITEM = "/groups/{id}/wishlist/items/{itemId}"
+    const val GROUP_WISHLIST_ORDER = "/groups/{id}/wishlist/order"
+    const val GROUP_RECEIVER_WISHLIST = "/groups/{id}/receiver/wishlist"
+
+    fun groupWishlist(id: Long) = "$GROUPS/$id/wishlist"
+    fun groupWishlistItems(id: Long) = "$GROUPS/$id/wishlist/items"
+    fun groupWishlistItem(id: Long, itemId: Long) = "$GROUPS/$id/wishlist/items/$itemId"
+    fun groupWishlistOrder(id: Long) = "$GROUPS/$id/wishlist/order"
+    fun groupReceiverWishlist(id: Long) = "$GROUPS/$id/receiver/wishlist"
+
     fun groupReceiver(id: Long) = "$GROUPS/$id/receiver"
     fun groupSanta(id: Long) = "$GROUPS/$id/santa"
     fun groupReceiverQuestions(id: Long) = "$GROUPS/$id/receiver/questions"

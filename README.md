@@ -103,6 +103,21 @@ Questions are numbered from 1 within each Santa's own thread, so the numbers say
 
 A group needs at least 4 participants to be activated. With only 3, everyone could work out who their Santa is from who their receiver is; with 4 a participant's Santa is one of two people.
 
+### Wishlists
+
+Every participant keeps a separate wishlist **per group**, so someone in two groups has two lists. An item has a title (1-200 characters), an optional note (up to 1000) and an optional link (up to 2000, `http` or `https` only), and a list holds at most 50 items. Lists are available once a group has left Draft; they can be changed while the group is Pending or Active, so people can prepare before the draw, and are read-only once it is Archived.
+
+| Method and path                                  | Who       | Purpose                                                                     |
+|--------------------------------------------------|-----------|-----------------------------------------------------------------------------|
+| `GET /groups/{id}/wishlist`                      | you       | Your items for this group, in your order, with ids and times                |
+| `POST /groups/{id}/wishlist/items`               | you       | Add an item at the end (`{"title": ..., "note": ..., "url": ...}`)          |
+| `PUT /groups/{id}/wishlist/items/{itemId}`       | you       | Replace an item's title, note and link; it keeps its place                  |
+| `DELETE /groups/{id}/wishlist/items/{itemId}`    | you       | Remove an item (204)                                                        |
+| `PUT /groups/{id}/wishlist/order`                | you       | Reorder: send every item id of your list in the order you want (`{"itemIds": [...]}`) |
+| `GET /groups/{id}/receiver/wishlist`             | the Santa | Your receiver's list for this group (Active and Archived), without ids      |
+
+Reordering must name exactly your current items, each once; if another device added or removed an item since you last looked, the call answers `400` naming `itemIds` and nothing moves, so re-read the list and try again. Links that are not plain `http`/`https` addresses (for example `javascript:` or `file:`) are refused, and internationalized host names must be written in their `xn--` form. Reading a receiver's list is never recorded, so a receiver cannot learn who looked. Admins, including the group's owner, cannot read wishlists.
+
 ### Server address used by the apps
 
 Each app host passes the server's base URL to `initKoin` at launch:

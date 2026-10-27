@@ -37,6 +37,12 @@ import com.usuallycoding.opensecretsanta.domain.group.SetParticipants
 import com.usuallycoding.opensecretsanta.domain.group.Shuffler
 import com.usuallycoding.opensecretsanta.domain.group.UpdateGroupDetails
 import com.usuallycoding.opensecretsanta.domain.user.UpdateProfile
+import com.usuallycoding.opensecretsanta.domain.wishlist.AddWishlistItem
+import com.usuallycoding.opensecretsanta.domain.wishlist.DeleteWishlistItem
+import com.usuallycoding.opensecretsanta.domain.wishlist.GetMyWishlist
+import com.usuallycoding.opensecretsanta.domain.wishlist.GetReceiverWishlist
+import com.usuallycoding.opensecretsanta.domain.wishlist.ReorderWishlist
+import com.usuallycoding.opensecretsanta.domain.wishlist.UpdateWishlistItem
 import com.usuallycoding.opensecretsanta.server.presentation.ACCESS_AUTH
 import com.usuallycoding.opensecretsanta.server.presentation.HealthService
 import com.usuallycoding.opensecretsanta.server.presentation.PasswordChangeGate
@@ -47,6 +53,8 @@ import com.usuallycoding.opensecretsanta.server.presentation.giftVisibilityRoute
 import com.usuallycoding.opensecretsanta.server.presentation.groupLifecycleRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.memberGroupRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.questionRoutes
+import com.usuallycoding.opensecretsanta.server.presentation.receiverWishlistRoutes
+import com.usuallycoding.opensecretsanta.server.presentation.wishlistRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.profileRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.authRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.registerLoginLimit
@@ -128,6 +136,8 @@ fun Application.module(
             memberGroupRoutes(get<ListMyGroups>(), get<GetMyGroup>())
             giftVisibilityRoutes(get<GetMyReceiver>(), get<GetMySanta>())
             questionRoutes(get<AskQuestion>(), get<ListMyQuestions>(), get<ListQuestionsFromMySanta>(), get<AnswerQuestion>())
+            wishlistRoutes(get<GetMyWishlist>(), get<AddWishlistItem>(), get<UpdateWishlistItem>(), get<DeleteWishlistItem>(), get<ReorderWishlist>())
+            receiverWishlistRoutes(get<GetReceiverWishlist>())
         }
     }
 }

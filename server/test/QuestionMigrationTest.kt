@@ -29,8 +29,8 @@ class QuestionMigrationTest {
     }
 
     @Test
-    fun schemaVersionIsFive() {
-        assertEquals(5, database.schemaVersion())
+    fun schemaVersionIsLatest() {
+        assertEquals(6, database.schemaVersion())
     }
 
     @Test

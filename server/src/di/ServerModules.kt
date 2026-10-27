@@ -43,6 +43,13 @@ import com.usuallycoding.opensecretsanta.domain.group.SetParticipants
 import com.usuallycoding.opensecretsanta.domain.group.Shuffler
 import com.usuallycoding.opensecretsanta.domain.group.UpdateGroupDetails
 import com.usuallycoding.opensecretsanta.domain.user.UpdateProfile
+import com.usuallycoding.opensecretsanta.domain.wishlist.AddWishlistItem
+import com.usuallycoding.opensecretsanta.domain.wishlist.DeleteWishlistItem
+import com.usuallycoding.opensecretsanta.domain.wishlist.GetMyWishlist
+import com.usuallycoding.opensecretsanta.domain.wishlist.GetReceiverWishlist
+import com.usuallycoding.opensecretsanta.domain.wishlist.ReorderWishlist
+import com.usuallycoding.opensecretsanta.domain.wishlist.UpdateWishlistItem
+import com.usuallycoding.opensecretsanta.domain.wishlist.WishlistRepository
 import com.usuallycoding.opensecretsanta.domain.user.UserRepository
 import com.usuallycoding.opensecretsanta.server.config.ServerConfig
 import com.usuallycoding.opensecretsanta.server.data.auth.SqliteLoginAttemptTracker
@@ -53,6 +60,7 @@ import com.usuallycoding.opensecretsanta.server.data.db.MigrationRunner
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteGroupMembershipRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteGroupRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteQuestionRepository
+import com.usuallycoding.opensecretsanta.server.data.group.SqliteWishlistRepository
 import com.usuallycoding.opensecretsanta.server.data.user.SqliteUserRepository
 import com.usuallycoding.opensecretsanta.server.presentation.HealthService
 import com.usuallycoding.opensecretsanta.server.security.AesGcmSecretBox
@@ -93,6 +101,7 @@ val repositoryModule = module {
     single<LoginAttemptTracker> { SqliteLoginAttemptTracker(get()) }
     single<GroupRepository> { SqliteGroupRepository(get()) }
     single<QuestionRepository> { SqliteQuestionRepository(get()) }
+    single<WishlistRepository> { SqliteWishlistRepository(get()) }
 }
 
 val useCaseModule = module {
@@ -131,6 +140,13 @@ val useCaseModule = module {
     single { ListMyQuestions(get(), get()) }
     single { ListQuestionsFromMySanta(get(), get()) }
     single { AnswerQuestion(get(), get(), get()) }
+
+    single { GetMyWishlist(get(), get()) }
+    single { AddWishlistItem(get(), get(), get()) }
+    single { UpdateWishlistItem(get(), get(), get()) }
+    single { DeleteWishlistItem(get(), get()) }
+    single { ReorderWishlist(get(), get()) }
+    single { GetReceiverWishlist(get(), get(), get()) }
 }
 
 val presentationModule = module {

@@ -24,6 +24,13 @@ import com.usuallycoding.opensecretsanta.domain.group.ParticipantGroupLoader
 import com.usuallycoding.opensecretsanta.domain.group.SetParticipants
 import com.usuallycoding.opensecretsanta.domain.group.Shuffler
 import com.usuallycoding.opensecretsanta.domain.group.UpdateGroupDetails
+import com.usuallycoding.opensecretsanta.domain.wishlist.AddWishlistItem
+import com.usuallycoding.opensecretsanta.domain.wishlist.DeleteWishlistItem
+import com.usuallycoding.opensecretsanta.domain.wishlist.GetMyWishlist
+import com.usuallycoding.opensecretsanta.domain.wishlist.GetReceiverWishlist
+import com.usuallycoding.opensecretsanta.domain.wishlist.ReorderWishlist
+import com.usuallycoding.opensecretsanta.domain.wishlist.UpdateWishlistItem
+import com.usuallycoding.opensecretsanta.domain.wishlist.WishlistRepository
 import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
@@ -55,9 +62,12 @@ class ServerModulesTest {
                 koin.get<ParticipantGroupLoader>(), koin.get<QuestionRepository>(), koin.get<GetMyReceiver>(),
                 koin.get<GetMySanta>(), koin.get<AskQuestion>(), koin.get<ListMyQuestions>(),
                 koin.get<ListQuestionsFromMySanta>(), koin.get<AnswerQuestion>(),
+                koin.get<WishlistRepository>(), koin.get<GetMyWishlist>(), koin.get<AddWishlistItem>(),
+                koin.get<UpdateWishlistItem>(), koin.get<DeleteWishlistItem>(), koin.get<ReorderWishlist>(),
+                koin.get<GetReceiverWishlist>(),
             )
 
-            assertEquals(23, resolved.size)
+            assertEquals(30, resolved.size)
             assertTrue(resolved.all { it != null })
         } finally {
             app.close()
