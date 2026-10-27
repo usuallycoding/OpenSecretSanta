@@ -2,6 +2,8 @@ package com.usuallycoding.opensecretsanta
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
+import androidx.navigation.ExperimentalBrowserHistoryApi
+import androidx.navigation.bindToNavigation
 import com.usuallycoding.opensecretsanta.data.session.webTokenStore
 import com.usuallycoding.opensecretsanta.data.web.resolveBaseUrl
 import com.usuallycoding.opensecretsanta.di.initKoin
@@ -27,7 +29,7 @@ private suspend fun readConfigText(): String? = try {
     null
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalBrowserHistoryApi::class)
 fun main() {
     MainScope().launch {
         initKoin(
@@ -35,7 +37,8 @@ fun main() {
             platformModule = tokenStoreModule { webTokenStore() },
         )
         ComposeViewport {
-            App()
+            // The back button and the address bar follow the screens the participant moves between.
+            App(onNavigationReady = { navController -> window.bindToNavigation(navController) })
         }
     }
 }

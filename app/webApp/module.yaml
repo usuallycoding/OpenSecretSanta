@@ -3,6 +3,7 @@ product: wasm-js/app
 dependencies:
   - //app/shared
   - $libs.koin.core
+  - $libs.androidx.navigation.compose
   - $compose.ui
 
 settings:

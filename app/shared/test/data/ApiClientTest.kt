@@ -225,4 +225,98 @@ class ApiClientTest {
 
         assertEquals("https://api.example.org/me", requests.single().url.toString())
     }
+
+    private val groupJson = """{"id":7,"name":"Office party","description":"Bring cake","location":"Town Hall","date":"2026-12-24","time":"18:30","state":"active","participants":["alice","bob","carol","dave"]}"""
+
+    @Test
+    fun theGroupsAreListedWithTheBearerToken() = runTest {
+        val api = client(FakeAuth(token = "t1")) { json(HttpStatusCode.OK, "[$groupJson]") }
+
+        val result = api.groups()
+
+        assertTrue(result is ApiResult.Success)
+        val group = result.value.single()
+        assertEquals("Office party", group.name)
+        assertEquals("active", group.state)
+        assertEquals(listOf("alice", "bob", "carol", "dave"), group.participants)
+        assertEquals(HttpMethod.Get, requests.single().method)
+        assertEquals("https://api.example.org${ApiRoutes.GROUPS}", requests.single().url.toString())
+        assertEquals("Bearer t1", requests.single().headers[HttpHeaders.Authorization])
+    }
+
+    @Test
+    fun noGroupsIsAnEmptyList() = runTest {
+        val api = client(FakeAuth(token = "t1")) { json(HttpStatusCode.OK, "[]") }
+
+        assertEquals(ApiResult.Success(emptyList<com.usuallycoding.opensecretsanta.contract.MemberGroupDto>()), api.groups())
+    }
+
+    @Test
+    fun oneGroupIsReadByItsId() = runTest {
+        val api = client(FakeAuth(token = "t1")) { json(HttpStatusCode.OK, groupJson) }
+
+        val result = api.group(7)
+
+        assertTrue(result is ApiResult.Success)
+        assertEquals("Town Hall", result.value.location)
+        assertEquals("https://api.example.org/groups/7", requests.single().url.toString())
+    }
+
+    @Test
+    fun aGroupThatIsGoneIsNotFound() = runTest {
+        val api = client(FakeAuth(token = "t1")) { json(HttpStatusCode.NotFound, error("not_found", "Group not found.")) }
+
+        assertEquals(ApiResult.Failure(ApiError.Rejected(404, "not_found", "Group not found.")), api.group(7))
+    }
+
+    @Test
+    fun theProfileIsSavedWithAllFieldsAndTheUnchangedUsername() = runTest {
+        val auth = FakeAuth(token = "t1")
+        val api = client(auth) { json(HttpStatusCode.OK, """{"username":"alice","fullName":"Alice Archer","address":"1 Main St","isAdmin":false,"mustChangePassword":false}""") }
+        val request = com.usuallycoding.opensecretsanta.contract.ProfileUpdateRequest(
+            username = "alice", fullName = "Alice Archer", email = "alice@example.org", phone = null, address = "1 Main St", deliveryInfo = "Back door",
+        )
+
+        val result = api.updateProfile(request)
+
+        assertTrue(result is ApiResult.Success)
+        assertEquals("Alice Archer", result.value.fullName)
+        assertEquals(HttpMethod.Put, requests.single().method)
+        assertEquals("https://api.example.org/me", requests.single().url.toString())
+        assertEquals("Bearer t1", requests.single().headers[HttpHeaders.Authorization])
+        // a cleared field (null) is left out of the body, which the server reads as cleared
+        assertEquals(request, kotlinx.serialization.json.Json.decodeFromString<com.usuallycoding.opensecretsanta.contract.ProfileUpdateRequest>(bodies.single()))
+    }
+
+    @Test
+    fun aProfileValidationErrorKeepsItsField() = runTest {
+        val api = client(FakeAuth("t1")) { json(HttpStatusCode.BadRequest, error("validation_failed", "Email is not a valid address.", field = "email")) }
+
+        val result = api.updateProfile(com.usuallycoding.opensecretsanta.contract.ProfileUpdateRequest(username = "alice", email = "nope"))
+
+        assertEquals(ApiResult.Failure(ApiError.Validation("email", "Email is not a valid address.")), result)
+    }
+
+    @Test
+    fun noPasswordTravelsWithGroupsOrProfile() = runTest {
+        val api = client(FakeAuth("t1")) { json(HttpStatusCode.OK, "[]") }
+
+        api.groups()
+        api.group(1)
+        api.updateProfile(com.usuallycoding.opensecretsanta.contract.ProfileUpdateRequest(username = "alice"))
+
+        assertFalse(bodies.any { "password" in it.lowercase() })
+    }
+
+    /** A failed fetch in the browser is a JsException, which is a Throwable but not an Exception. */
+    private class NotAnException : Throwable("connection refused")
+
+    @Test
+    fun aFailureThatIsNotAnExceptionIsStillANetworkError() = runTest {
+        val api = client { throw NotAnException() }
+
+        assertEquals(ApiResult.Failure(ApiError.Network), api.login("alice", "x"))
+        assertEquals(ApiResult.Failure(ApiError.Network), api.groups())
+    }
 }
+

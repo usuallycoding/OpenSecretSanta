@@ -31,6 +31,30 @@ object Strings {
     const val CHANGING_PASSWORD = "Changing..."
     const val PASSWORDS_DO_NOT_MATCH = "The two passwords do not match."
 
+    const val STATE_PENDING = "Pending"
+    const val STATE_ACTIVE = "Active"
+    const val STATE_ARCHIVED = "Archived"
+    const val STATE_PENDING_NOTE = "The organiser has not drawn the names yet."
+    const val STATE_ACTIVE_NOTE = "The names have been drawn."
+    const val STATE_ARCHIVED_NOTE = "This exchange is over."
+
+    fun participantCount(count: Int) = if (count == 1) "1 participant" else "$count participants"
+
+    const val GROUPS_EMPTY_TITLE = "You are not in any group yet."
+    const val GROUPS_EMPTY_BODY = "An organiser adds people to a group by username. Once you are added, it shows up here."
+    const val GROUP_GONE = "This group is no longer available."
+    const val GROUP_PARTICIPANTS = "Participants"
+    const val YOU = "you"
+
+    const val PROFILE_WHY = "A Santa uses your name and address to post your gift."
+    const val PROFILE_INCOMPLETE = "Add your name and address so a gift can reach you."
+    const val SAVE = "Save"
+    const val SAVING = "Saving..."
+    const val SAVED = "Saved."
+
+    const val TRY_AGAIN = "Try again"
+    const val REFRESH = "Refresh"
+
     const val LOCAL_NETWORK_TITLE = "Allow access to your local network"
     const val LOCAL_NETWORK_WHY = "The server is on a private network (this computer or your home or office network). Android needs your permission before this app can connect to it."
     const val LOCAL_NETWORK_CONTINUE = "Continue"
@@ -38,6 +62,15 @@ object Strings {
     const val LOCAL_NETWORK_TRY_AGAIN = "Try again"
     const val LOCAL_NETWORK_SETTINGS_HINT = "Android will not ask again. Allow \"Nearby devices\" or local network access for this app in its settings."
     const val LOCAL_NETWORK_OPEN_SETTINGS = "Open settings"
+
+    const val TITLE_GROUPS = "Groups"
+    const val TITLE_GROUP = "Group"
+    const val TITLE_PROFILE = "Profile"
+    const val TITLE_ADMIN = "Admin"
+    const val BACK = "Back"
+    const val MENU = "Menu"
+    const val SWITCH_TO_ADMIN = "Switch to admin view"
+    const val SWITCH_TO_PARTICIPANT = "Switch to participant view"
 
     const val PARTICIPANT_VIEW = "Participant"
     const val ADMIN_VIEW = "Admin"

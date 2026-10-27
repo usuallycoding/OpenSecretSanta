@@ -12,6 +12,7 @@ import io.ktor.client.engine.mock.respond
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,6 +23,11 @@ class ScriptedServer {
         HttpStatusCode.OK to ("""{"token":"t1","mustChangePassword":false}""" to emptyMap())
     var passwordAnswer: Pair<HttpStatusCode, String> = HttpStatusCode.OK to """{"token":"t2"}"""
     var accountBody: (String?) -> String = { """{"username":"alice","isAdmin":false,"mustChangePassword":false}""" }
+    var groupsAnswer: Pair<HttpStatusCode, String> = HttpStatusCode.OK to "[]"
+    var groupAnswer: (Long) -> Pair<HttpStatusCode, String> =
+        { HttpStatusCode.NotFound to """{"code":"not_found","message":"Group not found."}""" }
+    var profileAnswer: Pair<HttpStatusCode, String> =
+        HttpStatusCode.OK to """{"username":"alice","isAdmin":false,"mustChangePassword":false}"""
     var unreachable = false
     val calls = mutableListOf<String>()
     val bodies = mutableListOf<String>()
@@ -40,10 +46,27 @@ class ScriptedServer {
         when (request.url.encodedPath) {
             ApiRoutes.LOGIN -> json(loginAnswer.first, loginAnswer.second.first, loginAnswer.second.second)
             ApiRoutes.ME_PASSWORD -> json(passwordAnswer.first, passwordAnswer.second)
-            ApiRoutes.ME -> json(HttpStatusCode.OK, accountBody(request.headers[HttpHeaders.Authorization]?.removePrefix("Bearer ")))
-            else -> respond("", HttpStatusCode.NotFound)
+            ApiRoutes.ME ->
+                if (request.method == HttpMethod.Put) {
+                    json(profileAnswer.first, profileAnswer.second)
+                } else {
+                    json(HttpStatusCode.OK, accountBody(request.headers[HttpHeaders.Authorization]?.removePrefix("Bearer ")))
+                }
+            ApiRoutes.GROUPS -> json(groupsAnswer.first, groupsAnswer.second)
+            else -> {
+                val id = request.url.encodedPath.removePrefix("${ApiRoutes.GROUPS}/").toLongOrNull()
+                if (request.url.encodedPath.startsWith("${ApiRoutes.GROUPS}/") && id != null) {
+                    groupAnswer(id).let { json(it.first, it.second) }
+                } else {
+                    respond("", HttpStatusCode.NotFound)
+                }
+            }
         }
     }
+
+    /** The client of the session built last, for view models that call the API directly. */
+    lateinit var api: ApiClient
+        private set
 
     fun session(): SessionManager {
         lateinit var created: SessionManager
@@ -51,6 +74,7 @@ class ScriptedServer {
             override val token get() = created.token
             override fun rejected(error: ApiError) = created.rejected(error)
         })
+        this.api = api
         created = SessionManager(lazyOf(api), MemoryTokenStore(), CoroutineScope(Dispatchers.Unconfined))
         return created
     }

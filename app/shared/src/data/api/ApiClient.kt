@@ -7,6 +7,8 @@ import com.usuallycoding.opensecretsanta.contract.ChangePasswordResponse
 import com.usuallycoding.opensecretsanta.contract.ErrorResponse
 import com.usuallycoding.opensecretsanta.contract.LoginRequest
 import com.usuallycoding.opensecretsanta.contract.LoginResponse
+import com.usuallycoding.opensecretsanta.contract.MemberGroupDto
+import com.usuallycoding.opensecretsanta.contract.ProfileUpdateRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.HttpClientEngine
@@ -67,6 +69,14 @@ class ApiClient(
 
     suspend fun account(): ApiResult<AccountDto> = call(HttpMethod.Get, ApiRoutes.ME)
 
+    suspend fun groups(): ApiResult<List<MemberGroupDto>> = call(HttpMethod.Get, ApiRoutes.GROUPS)
+
+    suspend fun group(id: Long): ApiResult<MemberGroupDto> = call(HttpMethod.Get, ApiRoutes.group(id))
+
+    /** Replaces all five profile fields; a field left out is cleared. */
+    suspend fun updateProfile(request: ProfileUpdateRequest): ApiResult<AccountDto> =
+        call(HttpMethod.Put, ApiRoutes.ME, body = request)
+
     suspend fun changePassword(currentPassword: String, newPassword: String): ApiResult<ChangePasswordResponse> =
         call(HttpMethod.Put, ApiRoutes.ME_PASSWORD, body = ChangePasswordRequest(currentPassword, newPassword))
 
@@ -87,7 +97,7 @@ class ApiClient(
             }
         } catch (e: CancellationException) {
             throw e
-        } catch (_: Exception) {
+        } catch (_: Throwable) { // not just Exception: on the web a failed fetch is a JsException, which only extends Throwable
             return ApiResult.Failure(ApiError.Network)
         }
         val result = if (response.status.isSuccess()) {

@@ -13,6 +13,8 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
+import androidx.navigation.NavController
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -35,30 +37,37 @@ import org.koin.core.parameter.parametersOf
  * and so the server only contacted, once the gate shows its content.
  */
 @Composable
-fun App(gate: @Composable (content: @Composable () -> Unit) -> Unit = { it() }) {
+fun App(
+    gate: @Composable (content: @Composable () -> Unit) -> Unit = { it() },
+    onNavigationReady: suspend (NavController) -> Unit = {},
+) {
     AppTheme {
-        gate { AppContent() }
+        gate { AppContent(onNavigationReady) }
     }
 }
 
 @Composable
-private fun AppContent() {
+private fun AppContent(onNavigationReady: suspend (NavController) -> Unit) {
     val session = koinInject<SessionManager>()
     val state by session.state.collectAsState()
     LaunchedEffect(session) { session.restore() }
 
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Box(
-            Modifier.fillMaxSize().safeContentPadding().verticalScroll(rememberScrollState()),
-            contentAlignment = Alignment.Center,
-        ) {
-            when (val current = state) {
-                SessionState.Loading -> CircularProgressIndicator()
-                is SessionState.SignedOut -> LoginScreen(koinViewModel(), sessionEnded = current.reason == SignedOutReason.SessionEnded)
-                is SessionState.PasswordChangeRequired -> ChangePasswordScreen(koinViewModel(), onSignOut = session::signOut)
-                is SessionState.SignedIn -> ShellScreen(
-                    koinViewModel<ShellViewModel>(key = current.account.username) { parametersOf(current.account) },
-                )
+        when (val current = state) {
+            // Signed in, the shell is its own screen with a bar at the top; a new person gets a fresh one.
+            is SessionState.SignedIn -> key(current.account.username) {
+                ShellScreen(koinViewModel<ShellViewModel>(key = current.account.username) { parametersOf(current.account) }, onNavigationReady)
+            }
+            else -> Box(
+                Modifier.fillMaxSize().safeContentPadding().verticalScroll(rememberScrollState()),
+                contentAlignment = Alignment.Center,
+            ) {
+                when (current) {
+                    SessionState.Loading -> CircularProgressIndicator()
+                    is SessionState.SignedOut -> LoginScreen(koinViewModel(), sessionEnded = current.reason == SignedOutReason.SessionEnded)
+                    is SessionState.PasswordChangeRequired -> ChangePasswordScreen(koinViewModel(), onSignOut = session::signOut)
+                    is SessionState.SignedIn -> Unit
+                }
             }
         }
     }

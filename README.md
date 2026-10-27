@@ -135,7 +135,14 @@ A Draft group has no wishlists yet and a Draft or Pending group has no threads; 
 
 ### The app
 
-One Compose Multiplatform UI (`app/shared`) runs on Android, iOS and the web. It signs in, makes a person replace a temporary password, keeps the session, and shows a participant view for everyone plus an admin view (with a switch) for administrators. Both views are placeholders until the participant and admin screens arrive in later changes.
+One Compose Multiplatform UI (`app/shared`) runs on Android, iOS and the web. It signs in, makes a person replace a temporary password, keeps the session, and shows a participant view for everyone plus an admin view for administrators, who switch between the two from the menu at the top right. The admin view is still a placeholder.
+
+The participant view has two tabs:
+
+- **Groups** lists the groups you are in (name, state, date and time, location, number of participants) in the order the server returns them. Tap one to see its details and who takes part; your own username is marked. A group shows as Pending until the organiser draws the names, then Active, then Archived. Nothing on these screens says who gives to whom. Draft groups are never shown. Use Refresh, or just come back to the app: the screens reload when the app returns to the foreground.
+- **Profile** shows your username and lets you edit your full name, email, phone, address and delivery information. A Santa uses your name and address to post your gift, so the screen asks for them while either is empty. Edits are kept when you switch tabs, and the email and the 500-character limit are checked before anything is sent.
+
+Back works the platform's way: the system back button or gesture on Android (from the Groups list it leaves the app; from Profile it goes back to Groups first), the edge swipe on iOS and the browser's back button on the web, where the address bar also follows the screens. After a page refresh the web app asks for the password again, and once you sign in it opens the screen named in the address.
 
 Run it with `./kotlin run -m androidApp`, `./kotlin run -m iosApp --platform=iosSimulatorArm64 -d <simulator id>` or `./kotlin run -m webApp` (the web dev server listens on `http://localhost:8080`).
 

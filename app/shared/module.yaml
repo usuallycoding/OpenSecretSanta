@@ -14,6 +14,8 @@ dependencies:
   - $compose.hotReload.runtimeApi
   - $libs.androidx.lifecycle.viewmodel.compose
   - $libs.androidx.lifecycle.runtime.compose
+  - $libs.androidx.navigation.compose
+  - $libs.compose.material.icons.core
   - $libs.koin.core
   - $libs.koin.compose
   - $libs.koin.compose.viewmodel
@@ -33,6 +35,8 @@ dependencies@wasmJs:
 
 settings:
   ktor: enabled
+  kotlin:
+    serialization: json
   compose:
     enabled: true
     resources:

@@ -7,8 +7,11 @@ import com.usuallycoding.opensecretsanta.data.api.createHttpClient
 import com.usuallycoding.opensecretsanta.data.session.MemoryTokenStore
 import com.usuallycoding.opensecretsanta.data.session.SessionManager
 import com.usuallycoding.opensecretsanta.data.session.TokenStore
+import com.usuallycoding.opensecretsanta.ui.groups.GroupDetailViewModel
+import com.usuallycoding.opensecretsanta.ui.groups.GroupsViewModel
 import com.usuallycoding.opensecretsanta.ui.login.LoginViewModel
 import com.usuallycoding.opensecretsanta.ui.password.ChangePasswordViewModel
+import com.usuallycoding.opensecretsanta.ui.profile.ProfileViewModel
 import com.usuallycoding.opensecretsanta.ui.shell.ShellViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +36,9 @@ fun appModules(baseUrl: String): List<Module> = listOf(
         viewModel { LoginViewModel(get(), viewModelScope()) }
         viewModel { ChangePasswordViewModel(get(), viewModelScope()) }
         viewModel { (account: com.usuallycoding.opensecretsanta.data.session.Account) -> ShellViewModel(account, get(), viewModelScope()) }
+        viewModel { GroupsViewModel(get(), viewModelScope()) }
+        viewModel { ProfileViewModel(get(), viewModelScope()) }
+        viewModel { (groupId: Long, me: String) -> GroupDetailViewModel(groupId, me, get(), viewModelScope()) }
     },
 )
 

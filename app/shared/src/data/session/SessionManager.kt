@@ -126,7 +126,7 @@ class SessionManager(
             block()
         } catch (e: CancellationException) {
             throw e
-        } catch (_: Exception) {
+        } catch (_: Throwable) { // a failing store must never end a session, whatever it throws
             null
         }
 }
