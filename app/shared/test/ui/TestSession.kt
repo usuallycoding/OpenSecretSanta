@@ -15,7 +15,12 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import com.usuallycoding.opensecretsanta.contract.AnswerRequest
+import com.usuallycoding.opensecretsanta.contract.AskQuestionRequest
+import com.usuallycoding.opensecretsanta.contract.QuestionDto
+import com.usuallycoding.opensecretsanta.contract.ReceiverDto
 import com.usuallycoding.opensecretsanta.contract.ReorderWishlistRequest
+import com.usuallycoding.opensecretsanta.contract.SantaRevealDto
 import com.usuallycoding.opensecretsanta.contract.SharedWishlistItemDto
 import com.usuallycoding.opensecretsanta.contract.WishlistItemDto
 import com.usuallycoding.opensecretsanta.contract.WishlistItemRequest
@@ -36,6 +41,9 @@ class ScriptedServer {
         HttpStatusCode.OK to """{"username":"alice","isAdmin":false,"mustChangePassword":false}"""
     /** The person's own wishlist as the server keeps it: it really adds, edits, deletes and reorders. */
     val wishlist = FakeWishlist()
+
+    /** The receiver, the two question threads and the reveal as the server keeps and answers them. */
+    val gift = FakeGift()
 
     /** What the person's receiver keeps, as the receiver's list endpoint returns it (no ids). */
     var receiverWishlist: List<SharedWishlistItemDto> = emptyList()
@@ -68,6 +76,7 @@ class ScriptedServer {
             ApiRoutes.GROUPS -> json(groupsAnswer.first, groupsAnswer.second)
             else -> {
                 val path = request.url.encodedPath
+                gift.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 val wishlistAnswer = wishlist.answer(request.method.value, path, bodies.last())
                 if (wishlistAnswer != null) return@MockEngine json(wishlistAnswer.first, wishlistAnswer.second)
                 if (path.endsWith("/receiver/wishlist")) {
@@ -186,6 +195,99 @@ class FakeWishlist {
                     rows += wanted.map { byId.getValue(it) }
                     HttpStatusCode.OK to Json.encodeToString(rows.map(::dto))
                 }
+            }
+            else -> null
+        }
+    }
+}
+
+/**
+ * The gift routes with the server's behavior: details and threads exist once the group is Active or
+ * Archived, the reveal only once it is Archived, a question is 1 to 1000 characters and at most 30,
+ * an answer 1 to 2000, and anything that writes needs an Active group. The Santa's questions carry
+ * no sign of who asked. A test can queue a failure that the next write answers with.
+ */
+class FakeGift {
+    /** `pending`, `active` or `archived`, as the group's state. */
+    var state = "active"
+    var receiver = ReceiverDto("bob", "Bob Builder", "1 Main Street", "555-0100", "Ring twice")
+    var santa = SantaRevealDto("carol", "Carol Santos")
+
+    private val asked = mutableListOf<QuestionDto>()
+    private val received = mutableListOf<QuestionDto>()
+    private val failures = ArrayDeque<Pair<HttpStatusCode, String>>()
+
+    /** The questions the person asked their receiver. */
+    val myQuestions: List<QuestionDto> get() = asked
+
+    /** The questions the person's Santa asked them. */
+    val santaQuestions: List<QuestionDto> get() = received
+
+    fun santaAsks(text: String) {
+        received += QuestionDto(received.size + 1, text, "2026-12-02T09:00:00Z")
+    }
+
+    fun receiverAnswers(number: Int, text: String) {
+        val index = asked.indexOfFirst { it.number == number }
+        asked[index] = asked[index].copy(answer = text, answeredAt = "2026-12-03T09:00:00Z", answerUpdatedAt = "2026-12-03T09:00:00Z")
+    }
+
+    fun askedBehindTheScenes(count: Int) {
+        repeat(count) { asked += QuestionDto(asked.size + 1, "Question ${asked.size + 1}", "2026-12-02T09:00:00Z") }
+    }
+
+    fun failNextWriteWith(status: HttpStatusCode, code: String, message: String = "refused", field: String? = null) {
+        val extra = if (field != null) ""","field":"$field"""" else ""
+        failures += status to """{"code":"$code","message":"$message"$extra}"""
+    }
+
+    private fun error(status: HttpStatusCode, code: String, message: String, field: String? = null) =
+        status to """{"code":"$code","message":"$message"${if (field != null) ""","field":"$field"""" else ""}}"""
+
+    private val started get() = state == "active" || state == "archived"
+
+    /** The answer to a request under `/groups/{id}` about the receiver, the Santa or the questions, or null for anything else. */
+    fun answer(method: String, path: String, body: String): Pair<HttpStatusCode, String>? {
+        val match = Regex("/groups/\\d+/(receiver|santa)(/questions(/(\\d+)/answer)?)?").matchEntire(path) ?: return null
+        val side = match.groupValues[1]
+        val questions = match.groupValues[2].isNotEmpty()
+        val number = match.groupValues[4].toIntOrNull()
+        val notStarted = error(HttpStatusCode.Conflict, "invalid_state", "Questions start once the group is active.")
+        if (method == "GET") {
+            return when {
+                !questions && side == "receiver" -> if (started) HttpStatusCode.OK to Json.encodeToString(receiver) else notStarted
+                !questions -> if (state == "archived") HttpStatusCode.OK to Json.encodeToString(santa) else error(HttpStatusCode.Conflict, "invalid_state", "Your Santa is revealed once the group is archived.")
+                !started -> notStarted
+                side == "receiver" -> HttpStatusCode.OK to Json.encodeToString(asked.toList())
+                else -> HttpStatusCode.OK to Json.encodeToString(received.toList())
+            }
+        }
+        // everything below writes
+        failures.removeFirstOrNull()?.let { return it }
+        if (state != "active") return error(HttpStatusCode.Conflict, "invalid_state", "Questions and answers can only be written while the group is active.")
+        val tooLong = { text: String, max: Int -> text.isBlank() || text.trim().length > max }
+        return when {
+            method == "POST" && side == "receiver" && questions -> {
+                val text = Json.decodeFromString<AskQuestionRequest>(body).text
+                when {
+                    tooLong(text, 1000) -> error(HttpStatusCode.BadRequest, "validation_failed", "Text must be 1 to 1000 characters long.", "text")
+                    asked.size >= 30 -> error(HttpStatusCode.Conflict, "invalid_state", "You have asked the most questions allowed.")
+                    else -> {
+                        val question = QuestionDto(asked.size + 1, text.trim(), "2026-12-02T10:00:00Z")
+                        asked += question
+                        HttpStatusCode.Created to Json.encodeToString(question)
+                    }
+                }
+            }
+            method == "PUT" && side == "santa" && number != null -> {
+                val index = received.indexOfFirst { it.number == number }
+                if (index < 0) return error(HttpStatusCode.NotFound, "not_found", "Question not found.")
+                val text = Json.decodeFromString<AnswerRequest>(body).text
+                if (tooLong(text, 2000)) return error(HttpStatusCode.BadRequest, "validation_failed", "Text must be 1 to 2000 characters long.", "text")
+                val old = received[index]
+                val updated = old.copy(answer = text.trim(), answeredAt = old.answeredAt ?: "2026-12-03T10:00:00Z", answerUpdatedAt = "2026-12-03T10:00:00Z")
+                received[index] = updated
+                HttpStatusCode.OK to Json.encodeToString(updated)
             }
             else -> null
         }

@@ -33,6 +33,7 @@ fun GroupDetailScreen(
     onBack: () -> Unit,
     onOpenWishlist: () -> Unit,
     onOpenReceiverWishlist: () -> Unit,
+    onOpenGift: (GiftEntry) -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
@@ -51,13 +52,13 @@ fun GroupDetailScreen(
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
                 TextButton(onClick = { viewModel.refresh() }) { Text(Strings.REFRESH) }
             }
-            LoadContent(state, onRetry = { viewModel.refresh() }) { detail -> Detail(detail, onOpenWishlist, onOpenReceiverWishlist) }
+            LoadContent(state, onRetry = { viewModel.refresh() }) { detail -> Detail(detail, onOpenWishlist, onOpenReceiverWishlist, onOpenGift) }
         }
     }
 }
 
 @Composable
-private fun Detail(group: GroupDetail, onOpenWishlist: () -> Unit, onOpenReceiverWishlist: () -> Unit) {
+private fun Detail(group: GroupDetail, onOpenWishlist: () -> Unit, onOpenReceiverWishlist: () -> Unit, onOpenGift: (GiftEntry) -> Unit) {
     Column(
         Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -77,6 +78,26 @@ private fun Detail(group: GroupDetail, onOpenWishlist: () -> Unit, onOpenReceive
             }
         }
         Wishlists(group.phase, onOpenWishlist, onOpenReceiverWishlist)
+        Gift(group.phase, onOpenGift)
+    }
+}
+
+/** The receiver, the Santa's questions and, once the group is archived, the Santa: nothing before the names are drawn. */
+@Composable
+private fun Gift(phase: GroupPhase, onOpen: (GiftEntry) -> Unit) {
+    val entries = giftEntries(phase)
+    if (entries.isEmpty()) return
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(Strings.YOUR_GIFT, style = MaterialTheme.typography.titleMedium)
+        for (entry in entries) {
+            WishlistEntry(
+                when (entry) {
+                    GiftEntry.Receiver -> Strings.YOUR_RECEIVER
+                    GiftEntry.SantaQuestions -> Strings.SANTA_QUESTIONS
+                    GiftEntry.Santa -> Strings.YOUR_SANTA
+                },
+            ) { onOpen(entry) }
+        }
     }
 }
 

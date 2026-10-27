@@ -1,7 +1,9 @@
 package com.usuallycoding.opensecretsanta.data.api
 
 import com.usuallycoding.opensecretsanta.contract.AccountDto
+import com.usuallycoding.opensecretsanta.contract.AnswerRequest
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
+import com.usuallycoding.opensecretsanta.contract.AskQuestionRequest
 import com.usuallycoding.opensecretsanta.contract.ChangePasswordRequest
 import com.usuallycoding.opensecretsanta.contract.ChangePasswordResponse
 import com.usuallycoding.opensecretsanta.contract.ErrorResponse
@@ -9,7 +11,10 @@ import com.usuallycoding.opensecretsanta.contract.LoginRequest
 import com.usuallycoding.opensecretsanta.contract.LoginResponse
 import com.usuallycoding.opensecretsanta.contract.MemberGroupDto
 import com.usuallycoding.opensecretsanta.contract.ProfileUpdateRequest
+import com.usuallycoding.opensecretsanta.contract.QuestionDto
+import com.usuallycoding.opensecretsanta.contract.ReceiverDto
 import com.usuallycoding.opensecretsanta.contract.ReorderWishlistRequest
+import com.usuallycoding.opensecretsanta.contract.SantaRevealDto
 import com.usuallycoding.opensecretsanta.contract.SharedWishlistItemDto
 import com.usuallycoding.opensecretsanta.contract.WishlistItemDto
 import com.usuallycoding.opensecretsanta.contract.WishlistItemRequest
@@ -99,6 +104,28 @@ class ApiClient(
 
     suspend fun receiverWishlist(groupId: Long): ApiResult<List<SharedWishlistItemDto>> =
         call(HttpMethod.Get, ApiRoutes.groupReceiverWishlist(groupId))
+
+    /** The person's receiver as the Santa sees them: just what is needed to post a gift. */
+    suspend fun receiver(groupId: Long): ApiResult<ReceiverDto> = call(HttpMethod.Get, ApiRoutes.groupReceiver(groupId))
+
+    /** The questions the person asked their receiver, in order. */
+    suspend fun receiverQuestions(groupId: Long): ApiResult<List<QuestionDto>> =
+        call(HttpMethod.Get, ApiRoutes.groupReceiverQuestions(groupId))
+
+    /** Asks the receiver a question; the answer is the stored question with its number. */
+    suspend fun askQuestion(groupId: Long, text: String): ApiResult<QuestionDto> =
+        call(HttpMethod.Post, ApiRoutes.groupReceiverQuestions(groupId), body = AskQuestionRequest(text))
+
+    /** The questions the person's Santa asked, in order, with nothing that names the Santa. */
+    suspend fun santaQuestions(groupId: Long): ApiResult<List<QuestionDto>> =
+        call(HttpMethod.Get, ApiRoutes.groupSantaQuestions(groupId))
+
+    /** Sets or replaces the person's answer to question [number]; the answer is the question as stored. */
+    suspend fun answerQuestion(groupId: Long, number: Int, text: String): ApiResult<QuestionDto> =
+        call(HttpMethod.Put, ApiRoutes.groupSantaQuestionAnswer(groupId, number), body = AnswerRequest(text))
+
+    /** Who the person's Santa was; the server only answers once the group is archived. */
+    suspend fun santa(groupId: Long): ApiResult<SantaRevealDto> = call(HttpMethod.Get, ApiRoutes.groupSanta(groupId))
 
     suspend fun changePassword(currentPassword: String, newPassword: String): ApiResult<ChangePasswordResponse> =
         call(HttpMethod.Put, ApiRoutes.ME_PASSWORD, body = ChangePasswordRequest(currentPassword, newPassword))

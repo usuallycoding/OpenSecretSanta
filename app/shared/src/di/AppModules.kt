@@ -12,6 +12,9 @@ import com.usuallycoding.opensecretsanta.ui.groups.GroupsViewModel
 import com.usuallycoding.opensecretsanta.ui.login.LoginViewModel
 import com.usuallycoding.opensecretsanta.ui.password.ChangePasswordViewModel
 import com.usuallycoding.opensecretsanta.ui.profile.ProfileViewModel
+import com.usuallycoding.opensecretsanta.ui.gift.ReceiverViewModel
+import com.usuallycoding.opensecretsanta.ui.gift.SantaQuestionsViewModel
+import com.usuallycoding.opensecretsanta.ui.gift.SantaRevealViewModel
 import com.usuallycoding.opensecretsanta.ui.wishlist.ReceiverWishlistViewModel
 import com.usuallycoding.opensecretsanta.ui.wishlist.WishlistViewModel
 import com.usuallycoding.opensecretsanta.ui.shell.ShellViewModel
@@ -41,6 +44,9 @@ fun appModules(baseUrl: String): List<Module> = listOf(
         viewModel { GroupsViewModel(get(), viewModelScope()) }
         viewModel { ProfileViewModel(get(), viewModelScope()) }
         viewModel { (groupId: Long) -> WishlistViewModel(groupId, get(), viewModelScope()) }
+        viewModel { (groupId: Long) -> ReceiverViewModel(groupId, get(), viewModelScope()) }
+        viewModel { (groupId: Long) -> SantaQuestionsViewModel(groupId, get(), viewModelScope()) }
+        viewModel { (groupId: Long) -> SantaRevealViewModel(groupId, get(), viewModelScope()) }
         viewModel { (groupId: Long) -> ReceiverWishlistViewModel(groupId, get(), viewModelScope()) }
         viewModel { (groupId: Long, me: String) -> GroupDetailViewModel(groupId, me, get(), viewModelScope()) }
     },

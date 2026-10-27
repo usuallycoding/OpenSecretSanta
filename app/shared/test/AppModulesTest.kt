@@ -2,6 +2,9 @@ package com.usuallycoding.opensecretsanta
 
 import com.usuallycoding.opensecretsanta.data.BackendConfig
 import com.usuallycoding.opensecretsanta.di.initKoin
+import com.usuallycoding.opensecretsanta.ui.gift.ReceiverViewModel
+import com.usuallycoding.opensecretsanta.ui.gift.SantaQuestionsViewModel
+import com.usuallycoding.opensecretsanta.ui.gift.SantaRevealViewModel
 import com.usuallycoding.opensecretsanta.ui.wishlist.ReceiverWishlistViewModel
 import com.usuallycoding.opensecretsanta.ui.wishlist.WishlistViewModel
 import org.koin.core.parameter.parametersOf
@@ -49,7 +52,7 @@ class AppModulesTest {
     // View models run on the main dispatcher, which a plain JVM test does not have.
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun wishlistViewModelsAreResolvableForAGroup() {
+    fun theGroupViewModelsAreResolvableForAGroup() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         try {
             initKoin(baseUrl = "http://example.test:8080")
@@ -57,6 +60,9 @@ class AppModulesTest {
 
             assertEquals(7L, koin.get<WishlistViewModel> { parametersOf(7L) }.groupId)
             assertEquals(7L, koin.get<ReceiverWishlistViewModel> { parametersOf(7L) }.groupId)
+            assertEquals(7L, koin.get<ReceiverViewModel> { parametersOf(7L) }.groupId)
+            assertEquals(7L, koin.get<SantaQuestionsViewModel> { parametersOf(7L) }.groupId)
+            assertEquals(7L, koin.get<SantaRevealViewModel> { parametersOf(7L) }.groupId)
         } finally {
             Dispatchers.resetMain()
         }
