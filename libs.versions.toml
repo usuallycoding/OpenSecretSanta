@@ -6,6 +6,8 @@ koin = "4.2.2"
 sqlite-jdbc = "3.53.4.0"
 bcrypt = "0.10.2"
 kotlinx-datetime = "0.8.0"
+kotlinx-coroutines = "1.11.0"
+ktor-client-js = "3.6.0"
 
 [libraries]
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
@@ -20,3 +22,5 @@ koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", ver
 sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
 bcrypt = { module = "at.favre.lib:bcrypt", version.ref = "bcrypt" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+ktor-client-js = { module = "io.ktor:ktor-client-js", version.ref = "ktor-client-js" }

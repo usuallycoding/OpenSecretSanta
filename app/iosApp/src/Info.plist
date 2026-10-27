@@ -37,5 +37,11 @@
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Plain http only to local development servers (localhost, .local names and IP addresses); everything else must use https. -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

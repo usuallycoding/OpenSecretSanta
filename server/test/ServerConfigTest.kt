@@ -88,4 +88,27 @@ class ServerConfigTest {
             assertEquals("PORT", failingVariable(envWith("PORT" to port)), port)
         }
     }
+
+    @Test
+    fun corsOriginsAreEmptyWhenUnsetOrBlank() {
+        assertEquals(emptyList(), ServerConfig.fromEnv(envWith()).corsAllowedOrigins)
+        assertEquals(emptyList(), ServerConfig.fromEnv(envWith("CORS_ALLOWED_ORIGINS" to "  ,  ")).corsAllowedOrigins)
+    }
+
+    @Test
+    fun corsOriginsAreSplitAndTrimmed() {
+        val config = ServerConfig.fromEnv(envWith("CORS_ALLOWED_ORIGINS" to " https://app.example.org , http://localhost:8081,https://other.example.org:8443 "))
+
+        assertEquals(
+            listOf("https://app.example.org", "http://localhost:8081", "https://other.example.org:8443"),
+            config.corsAllowedOrigins,
+        )
+    }
+
+    @Test
+    fun badCorsOriginsNameTheVariable() {
+        for (bad in listOf("*", "app.example.org", "https://", "https://app.example.org/", "https://app.example.org/path", "ftp://app.example.org", "https://*.example.org", "https://app.example.org:abc", "https://ok.example.org,*")) {
+            assertEquals("CORS_ALLOWED_ORIGINS", failingVariable(envWith("CORS_ALLOWED_ORIGINS" to bad)), bad)
+        }
+    }
 }

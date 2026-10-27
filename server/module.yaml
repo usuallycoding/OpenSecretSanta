@@ -6,6 +6,7 @@ dependencies:
   - $ktor.server.core
   - $ktor.server.netty
   - $ktor.server.contentNegotiation
+  - $ktor.server.cors
   - $ktor.server.statusPages
   - $ktor.server.auth
   - $ktor.server.auth.jwt

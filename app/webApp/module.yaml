@@ -2,6 +2,7 @@ product: wasm-js/app
 
 dependencies:
   - //app/shared
+  - $libs.koin.core
   - $compose.ui
 
 settings:

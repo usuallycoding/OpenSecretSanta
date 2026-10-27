@@ -17,6 +17,8 @@ data class ServerConfig(
     val adminUsername: String = DEFAULT_ADMIN_USERNAME,
     /** Only needed (and only used) when the database has no users yet. */
     val adminPassword: String? = null,
+    /** Web origins (`scheme://host[:port]`) allowed to call the API from a browser; empty means no CORS at all. */
+    val corsAllowedOrigins: List<String> = emptyList(),
     /** bcrypt work factor; not read from the environment, lowered only by tests. */
     val passwordHashCost: Int = BcryptPasswordHasher.DEFAULT_COST,
 ) {
@@ -36,7 +38,18 @@ data class ServerConfig(
             port = parsePort(env["PORT"]),
             adminUsername = parseAdminUsername(env["ADMIN_USERNAME"]),
             adminPassword = env["ADMIN_PASSWORD"]?.takeIf { it.isNotBlank() },
+            corsAllowedOrigins = parseCorsOrigins(env["CORS_ALLOWED_ORIGINS"]),
         )
+
+        private val ORIGIN = Regex("(https?)://([A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?)(:[0-9]{1,5})?")
+
+        private fun parseCorsOrigins(raw: String?): List<String> =
+            raw.orEmpty().split(',').map { it.trim() }.filter { it.isNotEmpty() }.map { origin ->
+                if (!ORIGIN.matches(origin)) {
+                    throw ConfigurationException("CORS_ALLOWED_ORIGINS", "'$origin' is not an origin like https://app.example.org (scheme, host and optional port, no path or wildcard)")
+                }
+                origin
+            }
 
         private fun parseEncryptionKey(raw: String?): String {
             if (raw.isNullOrBlank()) throw ConfigurationException("DATA_ENCRYPTION_KEY", "is required")

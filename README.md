@@ -31,6 +31,7 @@ The server reads its configuration from environment variables and refuses to sta
 | `PORT`                | no                        | `8080`               | Port the server listens on (1-65535)                                 |
 | `ADMIN_USERNAME`      | no                        | `admin`              | Username of the first administrator                                  |
 | `ADMIN_PASSWORD`      | only on an empty database | -                    | Initial password of the first administrator (at least 8 characters)  |
+| `CORS_ALLOWED_ORIGINS`| no                        | empty (no CORS)      | Comma-separated web origins allowed to call the API from a browser, for example `https://app.example.org,http://localhost:8081` |
 
 Generate the encryption key once and keep it with your other secrets. Losing it makes stored temporary passwords unreadable (an admin can simply reset them), and rotating it has the same effect:
 
@@ -47,6 +48,8 @@ ADMIN_PASSWORD=choose-a-password \
 ./kotlin run -m server
 curl localhost:8080/health   # {"status":"ok","schemaVersion":<n>}
 ```
+
+`CORS_ALLOWED_ORIGINS` is only needed when the web app is served from a different origin than the server. Each entry is `scheme://host[:port]` with no path, no trailing slash and no wildcard (`*` is refused at startup). When it is empty the server adds no cross-origin headers at all; when it is set, a browser request from an origin that is not listed is refused with `403`, while same-origin requests and native apps (which send no `Origin`) are unaffected.
 
 On an empty database the server creates the administrator from `ADMIN_USERNAME` / `ADMIN_PASSWORD`, who must change that password at first login. Once any user exists, `ADMIN_USERNAME` and `ADMIN_PASSWORD` are ignored, so later restarts do not need them (but still need `JWT_SECRET` and the same `DATA_ENCRYPTION_KEY`).
 
@@ -130,17 +133,35 @@ The owner of a group can read what is going on inside it, even when they also ta
 
 A Draft group has no wishlists yet and a Draft or Pending group has no threads; asking answers `409` with the code `invalid_state`. A username that is not a participant answers `404`. An owner who is also a participant sees their own Santa through these routes before the group is archived; the participant routes (for example `GET /groups/{id}/santa`) still refuse until then. The owner cannot change any wishlist, question or answer.
 
-### Server address used by the apps
+### The app
 
-Each app host passes the server's base URL to `initKoin` at launch:
+One Compose Multiplatform UI (`app/shared`) runs on Android, iOS and the web. It signs in, makes a person replace a temporary password, keeps the session, and shows a participant view for everyone plus an admin view (with a switch) for administrators. Both views are placeholders until the participant and admin screens arrive in later changes.
 
-| Platform          | Default base URL           | Why                                            |
-|-------------------|----------------------------|------------------------------------------------|
-| Android emulator  | `http://10.0.2.2:8080`     | The emulator's alias for the host's `localhost` |
-| iOS simulator     | `http://localhost:8080`    | The simulator shares the host's network        |
-| Web               | the page's own origin      | Expects the server (or a proxy) to serve the app |
+Run it with `./kotlin run -m androidApp`, `./kotlin run -m iosApp --platform=iosSimulatorArm64 -d <simulator id>` or `./kotlin run -m webApp` (the web dev server listens on `http://localhost:8080`).
 
-Change them in `OpenSecretSantaApplication.kt` (Android), `ViewController.kt` (iOS) and `main.kt` (web). A physical device needs your machine's LAN address instead.
+| Platform | Session is kept | Server address |
+|----------|-----------------|----------------|
+| Android  | Yes, encrypted with a key in the Android Keystore (excluded from backups) | `http://10.0.2.2:8080` (the emulator's alias for this machine), set in `OpenSecretSantaApplication.kt` |
+| iOS      | Yes, in the Keychain (this device only)                                   | `http://localhost:8080`, set in `ViewController.kt` |
+| Web      | No: the token lives in memory, so a refresh asks for the password again   | `baseUrl` in `config.json` next to the app, else the page's own origin |
+
+The web app reads `config.json` every time it starts, so one build works against any server. The sample in `app/webApp/resources/config.json` points at `http://localhost:8081`, because the web dev server already uses 8080. When the web app is served from a different origin than the server, list that origin in the server's `CORS_ALLOWED_ORIGINS`:
+
+```
+PORT=8081 CORS_ALLOWED_ORIGINS=http://localhost:8080 ... ./kotlin run -m server
+```
+
+Plain `http` is only allowed to development hosts: `10.0.2.2` and `localhost` on Android, and local networking on iOS. Any other server must use `https`.
+
+**Android 17 and later** requires the `ACCESS_LOCAL_NETWORK` permission before an app may reach a private-network address, which includes `10.0.2.2` and a server on your home or office network. When the server address is such an address, the app explains this before its first request and shows Android's own "nearby devices" request. If you say no it tells you the server cannot be reached and offers "Try again"; once Android will no longer ask it offers "Open settings" instead. A public `https` server, and any Android before 17, never see the prompt. During development you can skip it, or reset it to test the prompt:
+
+```
+adb shell pm grant com.usuallycoding.opensecretsanta android.permission.ACCESS_LOCAL_NETWORK
+adb shell pm revoke com.usuallycoding.opensecretsanta android.permission.ACCESS_LOCAL_NETWORK
+adb shell pm clear-permission-flags com.usuallycoding.opensecretsanta android.permission.ACCESS_LOCAL_NETWORK user-set user-fixed
+```
+
+A physical device needs your machine's LAN address instead of `10.0.2.2`.
 
 ### Testing
 

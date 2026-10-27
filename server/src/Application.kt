@@ -49,6 +49,7 @@ import com.usuallycoding.opensecretsanta.server.presentation.ACCESS_AUTH
 import com.usuallycoding.opensecretsanta.server.presentation.HealthService
 import com.usuallycoding.opensecretsanta.server.presentation.PasswordChangeGate
 import com.usuallycoding.opensecretsanta.server.presentation.accountRoutes
+import com.usuallycoding.opensecretsanta.server.presentation.allowConfiguredOrigins
 import com.usuallycoding.opensecretsanta.server.presentation.adminGroupRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.adminOversightRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.adminRoutes
@@ -73,6 +74,7 @@ import io.ktor.server.auth.Authentication
 import io.ktor.server.auth.authenticate
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.ratelimit.RateLimit
 import io.ktor.server.plugins.statuspages.StatusPages
@@ -105,6 +107,7 @@ fun Application.module(
         modules(serverModules(config, migrations, clock, shuffler))
     }
     install(ContentNegotiation) { json() }
+    if (config.corsAllowedOrigins.isNotEmpty()) install(CORS) { allowConfiguredOrigins(config.corsAllowedOrigins) }
     install(StatusPages) { installErrorHandling() }
     val users = get<UserRepository>()
     val tokens = get<TokenService>()

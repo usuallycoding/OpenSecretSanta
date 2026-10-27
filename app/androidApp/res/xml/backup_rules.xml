@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The session token is encrypted with a key that never leaves this device, so a restored copy could
+     not be read anyway: keep it out of backups. -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="session.xml" />
+</full-backup-content>
