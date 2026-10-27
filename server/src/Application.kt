@@ -22,6 +22,7 @@ import com.usuallycoding.opensecretsanta.domain.gift.AskQuestion
 import com.usuallycoding.opensecretsanta.domain.gift.GetMyReceiver
 import com.usuallycoding.opensecretsanta.domain.gift.GetMySanta
 import com.usuallycoding.opensecretsanta.domain.gift.ListMyQuestions
+import com.usuallycoding.opensecretsanta.domain.gift.ListQuestionThreads
 import com.usuallycoding.opensecretsanta.domain.gift.ListQuestionsFromMySanta
 import com.usuallycoding.opensecretsanta.domain.group.ActivateGroup
 import com.usuallycoding.opensecretsanta.domain.group.ArchiveGroup
@@ -40,6 +41,7 @@ import com.usuallycoding.opensecretsanta.domain.user.UpdateProfile
 import com.usuallycoding.opensecretsanta.domain.wishlist.AddWishlistItem
 import com.usuallycoding.opensecretsanta.domain.wishlist.DeleteWishlistItem
 import com.usuallycoding.opensecretsanta.domain.wishlist.GetMyWishlist
+import com.usuallycoding.opensecretsanta.domain.wishlist.GetParticipantWishlist
 import com.usuallycoding.opensecretsanta.domain.wishlist.GetReceiverWishlist
 import com.usuallycoding.opensecretsanta.domain.wishlist.ReorderWishlist
 import com.usuallycoding.opensecretsanta.domain.wishlist.UpdateWishlistItem
@@ -48,6 +50,7 @@ import com.usuallycoding.opensecretsanta.server.presentation.HealthService
 import com.usuallycoding.opensecretsanta.server.presentation.PasswordChangeGate
 import com.usuallycoding.opensecretsanta.server.presentation.accountRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.adminGroupRoutes
+import com.usuallycoding.opensecretsanta.server.presentation.adminOversightRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.adminRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.giftVisibilityRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.groupLifecycleRoutes
@@ -138,6 +141,7 @@ fun Application.module(
             questionRoutes(get<AskQuestion>(), get<ListMyQuestions>(), get<ListQuestionsFromMySanta>(), get<AnswerQuestion>())
             wishlistRoutes(get<GetMyWishlist>(), get<AddWishlistItem>(), get<UpdateWishlistItem>(), get<DeleteWishlistItem>(), get<ReorderWishlist>())
             receiverWishlistRoutes(get<GetReceiverWishlist>())
+            adminOversightRoutes(get<GetParticipantWishlist>(), get<ListQuestionThreads>())
         }
     }
 }

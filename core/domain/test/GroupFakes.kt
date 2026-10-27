@@ -101,6 +101,11 @@ class InMemoryGroups(private val users: InMemoryUsers) : GroupRepository {
         groups[group.id] = group
         return group
     }
+
+    /** Test helper: moves a seeded group to [state] without any of the lifecycle's side effects. */
+    fun setState(id: Long, state: GroupState) {
+        groups[id] = require(id).copy(state = state)
+    }
 }
 
 fun InMemoryUsers.userNamed(name: String): User = find(u(name))!!

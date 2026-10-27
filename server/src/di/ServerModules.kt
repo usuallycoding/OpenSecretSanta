@@ -22,6 +22,7 @@ import com.usuallycoding.opensecretsanta.domain.gift.AskQuestion
 import com.usuallycoding.opensecretsanta.domain.gift.GetMyReceiver
 import com.usuallycoding.opensecretsanta.domain.gift.GetMySanta
 import com.usuallycoding.opensecretsanta.domain.gift.ListMyQuestions
+import com.usuallycoding.opensecretsanta.domain.gift.ListQuestionThreads
 import com.usuallycoding.opensecretsanta.domain.gift.ListQuestionsFromMySanta
 import com.usuallycoding.opensecretsanta.domain.gift.QuestionRepository
 import com.usuallycoding.opensecretsanta.domain.group.ActivateGroup
@@ -46,6 +47,7 @@ import com.usuallycoding.opensecretsanta.domain.user.UpdateProfile
 import com.usuallycoding.opensecretsanta.domain.wishlist.AddWishlistItem
 import com.usuallycoding.opensecretsanta.domain.wishlist.DeleteWishlistItem
 import com.usuallycoding.opensecretsanta.domain.wishlist.GetMyWishlist
+import com.usuallycoding.opensecretsanta.domain.wishlist.GetParticipantWishlist
 import com.usuallycoding.opensecretsanta.domain.wishlist.GetReceiverWishlist
 import com.usuallycoding.opensecretsanta.domain.wishlist.ReorderWishlist
 import com.usuallycoding.opensecretsanta.domain.wishlist.UpdateWishlistItem
@@ -147,6 +149,9 @@ val useCaseModule = module {
     single { DeleteWishlistItem(get(), get()) }
     single { ReorderWishlist(get(), get()) }
     single { GetReceiverWishlist(get(), get(), get()) }
+
+    single { GetParticipantWishlist(get(), get()) }
+    single { ListQuestionThreads(get(), get(), get()) }
 }
 
 val presentationModule = module {

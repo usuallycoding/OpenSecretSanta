@@ -99,7 +99,7 @@ Once a group is Active every participant is both a Santa (for their receiver) an
 | `PUT /groups/{id}/santa/questions/{n}/answer`     | the receiver | Answer or change your answer to question `n` (`{"text": ...}`, 1-2000 characters, Active only) |
 | `GET /groups/{id}/santa`                          | the receiver | Your Santa's username and full name, only once the group is Archived          |
 
-Questions are numbered from 1 within each Santa's own thread, so the numbers say nothing about other threads. A question cannot be edited or deleted once asked, an answer can be changed as often as you like while the group is Active, and once the group is Archived both threads stay readable but nothing changes. Admins, including the group's owner, have no way to read the questions or answers. Asking in a group that is not Active, answering in one, or asking the 31st question answers `409` with the code `invalid_state`.
+Questions are numbered from 1 within each Santa's own thread, so the numbers say nothing about other threads. A question cannot be edited or deleted once asked, an answer can be changed as often as you like while the group is Active, and once the group is Archived both threads stay readable but nothing changes. Only the group's owner can read them, through the oversight routes below. Asking in a group that is not Active, answering in one, or asking the 31st question answers `409` with the code `invalid_state`.
 
 A group needs at least 4 participants to be activated. With only 3, everyone could work out who their Santa is from who their receiver is; with 4 a participant's Santa is one of two people.
 
@@ -116,7 +116,19 @@ Every participant keeps a separate wishlist **per group**, so someone in two gro
 | `PUT /groups/{id}/wishlist/order`                | you       | Reorder: send every item id of your list in the order you want (`{"itemIds": [...]}`) |
 | `GET /groups/{id}/receiver/wishlist`             | the Santa | Your receiver's list for this group (Active and Archived), without ids      |
 
-Reordering must name exactly your current items, each once; if another device added or removed an item since you last looked, the call answers `400` naming `itemIds` and nothing moves, so re-read the list and try again. Links that are not plain `http`/`https` addresses (for example `javascript:` or `file:`) are refused, and internationalized host names must be written in their `xn--` form. Reading a receiver's list is never recorded, so a receiver cannot learn who looked. Admins, including the group's owner, cannot read wishlists.
+Reordering must name exactly your current items, each once; if another device added or removed an item since you last looked, the call answers `400` naming `itemIds` and nothing moves, so re-read the list and try again. Links that are not plain `http`/`https` addresses (for example `javascript:` or `file:`) are refused, and internationalized host names must be written in their `xn--` form. Reading a receiver's list is never recorded, so a receiver cannot learn who looked. Only the group's owner can read wishlists, through the oversight routes below.
+
+### Owner oversight
+
+The owner of a group can read what is going on inside it, even when they also take part. The routes are read-only, answer `404` to any admin who does not own the group (and `403` to someone who is not an admin), and are never recorded: nothing a participant can see changes when the owner reads.
+
+| Method and path                                              | Who   | Purpose                                                                                      |
+|--------------------------------------------------------------|-------|----------------------------------------------------------------------------------------------|
+| `GET /admin/groups/{id}/participants/{username}/wishlist`    | owner | That participant's wishlist for the group (Pending, Active and Archived), without item ids   |
+| `GET /admin/groups/{id}/questions`                           | owner | Every thread (Active and Archived): the Santa, the receiver and all questions with answers and times |
+| `GET /admin/groups/{id}/assignments`                         | owner | Every Santa and receiver pair (Active and Archived)                                          |
+
+A Draft group has no wishlists yet and a Draft or Pending group has no threads; asking answers `409` with the code `invalid_state`. A username that is not a participant answers `404`. An owner who is also a participant sees their own Santa through these routes before the group is archived; the participant routes (for example `GET /groups/{id}/santa`) still refuse until then. The owner cannot change any wishlist, question or answer.
 
 ### Server address used by the apps
 

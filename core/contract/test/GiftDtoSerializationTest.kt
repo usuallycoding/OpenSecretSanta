@@ -31,6 +31,14 @@ class GiftDtoSerializationTest {
         roundTrip(QuestionDto(2, "Unanswered?", "2026-12-01T10:15:30Z"))
         roundTrip(AskQuestionRequest("Any allergies?"))
         roundTrip(AnswerRequest("None"))
+        roundTrip(AdminQuestionThreadDto("alice", "bob", listOf(question, QuestionDto(2, "Unanswered?", "2026-12-01T10:15:30Z"))))
+        roundTrip(AdminQuestionThreadDto("alice", "bob", emptyList()))
+    }
+
+    @Test
+    fun theOwnersThreadNamesBothPeopleAndEveryParticipantViewStillDoesNot() {
+        assertEquals(setOf("santa", "receiver", "questions"), keys(AdminQuestionThreadDto("alice", "bob", emptyList())))
+        assertFalse("santa" in keys(question))
     }
 
     @Test

@@ -33,6 +33,17 @@ data class QuestionDto(
     val answerUpdatedAt: String? = null,
 )
 
+/**
+ * One Santa's thread as the group owner sees it. Unlike the participant views, both people are named;
+ * this type is only ever returned by the owner's admin endpoint.
+ */
+@Serializable
+data class AdminQuestionThreadDto(
+    val santa: String,
+    val receiver: String,
+    val questions: List<QuestionDto>,
+)
+
 @Serializable
 data class AskQuestionRequest(
     val text: String,

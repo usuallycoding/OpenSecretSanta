@@ -137,14 +137,18 @@ A participant SHALL be able to read, change, delete and reorder only their own i
 - **THEN** the response is 404 and that item is unchanged
 
 ### Requirement: Wishlist is private
-A wishlist SHALL be readable only by its owner and by the participant who is the owner's Santa in that group once it is Active or Archived, in the way described by the gift-visibility capability. No admin endpoint SHALL return it.
+A wishlist SHALL be readable only by its owner, by the participant who is the owner's Santa in that group once it is Active or Archived, in the way described by the gift-visibility capability, and by the owner of the group through `GET /admin/groups/{id}/participants/{username}/wishlist` as described by the admin-oversight capability. No other admin endpoint SHALL return it, and no admin SHALL be able to change it.
 
 #### Scenario: Other participants
 - **WHEN** a participant who is not the owner's Santa tries to read the owner's wishlist through the group
 - **THEN** they can only read the wishlist of their own receiver
 
+#### Scenario: Group owner through oversight
+- **WHEN** the owner of the group uses the admin-oversight wishlist endpoint
+- **THEN** the response contains that participant's items, read-only
+
 #### Scenario: Admin endpoints
-- **WHEN** an admin uses any admin endpoint
+- **WHEN** an admin uses any admin endpoint other than the group owner's oversight endpoint
 - **THEN** no response contains wishlist items
 
 ### Requirement: Authenticated and after the password change
