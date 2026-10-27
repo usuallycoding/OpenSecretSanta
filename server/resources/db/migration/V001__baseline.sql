@@ -1,0 +1,2 @@
+-- Baseline: the schema_version bookkeeping table is created by the migration runner itself.
+-- Later slices add their tables in V002 and above.

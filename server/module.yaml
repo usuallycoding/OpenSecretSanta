@@ -1,0 +1,23 @@
+product: jvm/app
+
+dependencies:
+  - //core/domain
+  - //core/contract
+  - $ktor.server.core
+  - $ktor.server.netty
+  - $ktor.server.contentNegotiation
+  - $ktor.server.statusPages
+  - $ktor.serialization.kotlinx.json
+  - $libs.koin.core
+  - $libs.koin.ktor
+  - $libs.sqlite.jdbc
+  - $libs.logback.classic
+
+settings:
+  ktor: enabled
+  jvm:
+    mainClass: com.usuallycoding.opensecretsanta.server.ApplicationKt
+
+test-dependencies:
+  - $ktor.server.testHost
+  - $libs.koin.test
