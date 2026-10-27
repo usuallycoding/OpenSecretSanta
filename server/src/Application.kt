@@ -17,18 +17,35 @@ import com.usuallycoding.opensecretsanta.domain.admin.PromoteUser
 import com.usuallycoding.opensecretsanta.domain.admin.ResetPassword
 import com.usuallycoding.opensecretsanta.domain.auth.ChangePassword
 import com.usuallycoding.opensecretsanta.domain.auth.Login
+import com.usuallycoding.opensecretsanta.domain.group.ActivateGroup
+import com.usuallycoding.opensecretsanta.domain.group.ArchiveGroup
+import com.usuallycoding.opensecretsanta.domain.group.CreateGroup
+import com.usuallycoding.opensecretsanta.domain.group.DeleteDraftGroup
+import com.usuallycoding.opensecretsanta.domain.group.GetMyGroup
+import com.usuallycoding.opensecretsanta.domain.group.GetOwnedGroup
+import com.usuallycoding.opensecretsanta.domain.group.ListAssignments
+import com.usuallycoding.opensecretsanta.domain.group.ListMyGroups
+import com.usuallycoding.opensecretsanta.domain.group.ListOwnedGroups
+import com.usuallycoding.opensecretsanta.domain.group.MoveToPending
+import com.usuallycoding.opensecretsanta.domain.group.SetParticipants
+import com.usuallycoding.opensecretsanta.domain.group.Shuffler
+import com.usuallycoding.opensecretsanta.domain.group.UpdateGroupDetails
 import com.usuallycoding.opensecretsanta.domain.user.UpdateProfile
 import com.usuallycoding.opensecretsanta.server.presentation.ACCESS_AUTH
 import com.usuallycoding.opensecretsanta.server.presentation.HealthService
 import com.usuallycoding.opensecretsanta.server.presentation.PasswordChangeGate
 import com.usuallycoding.opensecretsanta.server.presentation.accountRoutes
+import com.usuallycoding.opensecretsanta.server.presentation.adminGroupRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.adminRoutes
+import com.usuallycoding.opensecretsanta.server.presentation.groupLifecycleRoutes
+import com.usuallycoding.opensecretsanta.server.presentation.memberGroupRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.profileRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.authRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.registerLoginLimit
 import com.usuallycoding.opensecretsanta.server.presentation.healthRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.installAccessTokens
 import com.usuallycoding.opensecretsanta.server.presentation.installErrorHandling
+import com.usuallycoding.opensecretsanta.server.security.SecureShuffler
 import com.usuallycoding.opensecretsanta.server.security.SystemClock
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -63,9 +80,10 @@ fun Application.module(
     config: ServerConfig,
     migrations: List<Migration> = ClasspathMigrations.load(),
     clock: Clock = SystemClock,
+    shuffler: Shuffler = SecureShuffler(),
 ) {
     install(Koin) {
-        modules(serverModules(config, migrations, clock))
+        modules(serverModules(config, migrations, clock, shuffler))
     }
     install(ContentNegotiation) { json() }
     install(StatusPages) { installErrorHandling() }
@@ -90,6 +108,16 @@ fun Application.module(
             accountRoutes(get<ChangePassword>())
             profileRoutes(get<UpdateProfile>())
             adminRoutes(get<ListManagedUsers>(), get<GetManagedUser>(), get<ResetPassword>(), get<PromoteUser>())
+            adminGroupRoutes(
+                get<CreateGroup>(),
+                get<ListOwnedGroups>(),
+                get<GetOwnedGroup>(),
+                get<UpdateGroupDetails>(),
+                get<SetParticipants>(),
+                get<DeleteDraftGroup>(),
+            )
+            groupLifecycleRoutes(get<MoveToPending>(), get<ActivateGroup>(), get<ArchiveGroup>(), get<ListAssignments>())
+            memberGroupRoutes(get<ListMyGroups>(), get<GetMyGroup>())
         }
     }
 }

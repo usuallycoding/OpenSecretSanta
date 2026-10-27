@@ -37,12 +37,14 @@ class SqliteRepositoriesTest {
 
     private fun sql(statement: String) = database.connection().use { c -> c.createStatement().use { it.execute(statement) } }
 
-    private fun addGroup(owner: String, vararg members: String): Int {
-        sql("INSERT INTO groups (owner_username) VALUES ('$owner')")
+    private fun addGroup(owner: String, vararg participants: String, state: String = "pending"): Int {
+        sql("INSERT INTO groups (owner_username, name, state) VALUES ('$owner', 'Group', '$state')")
         val id = database.connection().use { c ->
             c.createStatement().use { s -> s.executeQuery("SELECT MAX(id) FROM groups").use { it.next(); it.getInt(1) } }
         }
-        members.forEach { sql("INSERT INTO group_members (group_id, username) VALUES ($id, '$it')") }
+        participants.forEachIndexed { index, username ->
+            sql("INSERT INTO group_participants (group_id, username, position) VALUES ($id, '$username', $index)")
+        }
         return id
     }
 
@@ -161,21 +163,59 @@ class SqliteRepositoriesTest {
     }
 
     @Test
-    fun deletingAGroupRemovesItsMemberships() {
+    fun deletingAGroupRemovesItsParticipants() {
         users.insertAll(listOf("owner-a", "alice").map { newUser(it) })
         val groupId = addGroup("owner-a", "alice")
 
         sql("DELETE FROM groups WHERE id = $groupId")
 
         assertEquals(emptySet(), memberships.membersOfGroupsOwnedBy(u("owner-a")))
+        assertEquals(0, database.connection().use { c ->
+            c.createStatement().use { s -> s.executeQuery("SELECT COUNT(*) FROM group_participants").use { it.next(); it.getInt(1) } }
+        })
     }
 
     @Test
-    fun membershipRequiresExistingUsersAndGroups() {
-        assertFailsWith<SQLException> { sql("INSERT INTO groups (owner_username) VALUES ('ghost')") }
-        users.insertAll(listOf(newUser("owner-a")))
-        val groupId = addGroup("owner-a")
-        assertFailsWith<SQLException> { sql("INSERT INTO group_members (group_id, username) VALUES ($groupId, 'ghost')") }
+    fun participantsOfDraftGroupsAreOutOfScope() {
+        users.insertAll(listOf("owner-a", "alice", "bob").map { newUser(it) })
+        addGroup("owner-a", "alice", state = "draft")
+        addGroup("owner-a", "bob", state = "pending")
+
+        assertEquals(setOf(u("bob")), memberships.membersOfGroupsOwnedBy(u("owner-a")))
+    }
+
+    @Test
+    fun everyStateAfterDraftPlacesParticipantsInScope() {
+        users.insertAll(listOf("owner-a", "p-one", "p-two", "p-three").map { newUser(it) })
+        addGroup("owner-a", "p-one", state = "pending")
+        addGroup("owner-a", "p-two", state = "active")
+        addGroup("owner-a", "p-three", state = "archived")
+
+        assertEquals(setOf(u("p-one"), u("p-two"), u("p-three")), memberships.membersOfGroupsOwnedBy(u("owner-a")))
+    }
+
+    @Test
+    fun namesWithoutAnAccountAreNeverInScope() {
+        users.insertAll(listOf("owner-a", "alice").map { newUser(it) })
+        addGroup("owner-a", "alice", "not-registered-yet")
+
+        assertEquals(setOf(u("alice")), memberships.membersOfGroupsOwnedBy(u("owner-a")))
+    }
+
+    @Test
+    fun removingAParticipantEndsTheScope() {
+        users.insertAll(listOf("owner-a", "alice").map { newUser(it) })
+        val groupId = addGroup("owner-a", "alice")
+        assertEquals(setOf(u("alice")), memberships.membersOfGroupsOwnedBy(u("owner-a")))
+
+        sql("DELETE FROM group_participants WHERE group_id = $groupId AND username = 'alice'")
+
+        assertEquals(emptySet(), memberships.membersOfGroupsOwnedBy(u("owner-a")))
+    }
+
+    @Test
+    fun aGroupNeedsAnExistingOwner() {
+        assertFailsWith<SQLException> { sql("INSERT INTO groups (owner_username, name) VALUES ('ghost', 'x')") }
     }
 
     // --- login attempts ---

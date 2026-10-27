@@ -73,13 +73,15 @@ class TestFixtures(val config: ServerConfig = testConfig()) {
 
     fun sql(statement: String) = database.connection().use { c -> c.createStatement().use { it.execute(statement) } }
 
-    /** Creates a group owned by [owner] with the given members and returns its id. */
-    fun addGroup(owner: String, vararg members: String): Int {
-        sql("INSERT INTO groups (owner_username) VALUES ('$owner')")
+    /** Creates a group owned by [owner] in [state] with the given participants and returns its id. */
+    fun addGroup(owner: String, vararg participants: String, state: String = "pending", name: String = "Group"): Int {
+        sql("INSERT INTO groups (owner_username, name, state) VALUES ('$owner', '$name', '$state')")
         val id = database.connection().use { c ->
             c.createStatement().use { s -> s.executeQuery("SELECT MAX(id) FROM groups").use { it.next(); it.getInt(1) } }
         }
-        members.forEach { sql("INSERT INTO group_members (group_id, username) VALUES ($id, '$it')") }
+        participants.forEachIndexed { index, username ->
+            sql("INSERT INTO group_participants (group_id, username, position) VALUES ($id, '$username', $index)")
+        }
         return id
     }
 }

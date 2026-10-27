@@ -3,7 +3,6 @@ package com.usuallycoding.opensecretsanta.domain.admin
 import com.usuallycoding.opensecretsanta.domain.auth.PasswordHasher
 import com.usuallycoding.opensecretsanta.domain.auth.SecretBox
 import com.usuallycoding.opensecretsanta.domain.auth.TempPasswordGenerator
-import com.usuallycoding.opensecretsanta.domain.user.NewUser
 import com.usuallycoding.opensecretsanta.domain.user.UserRepository
 import com.usuallycoding.opensecretsanta.domain.user.Username
 
@@ -13,26 +12,20 @@ import com.usuallycoding.opensecretsanta.domain.user.Username
  */
 class CreateMissingUsers(
     private val users: UserRepository,
-    private val hasher: PasswordHasher,
-    private val secretBox: SecretBox,
-    private val generator: TempPasswordGenerator,
+    private val planner: NewAccountPlanner,
 ) {
+    constructor(
+        users: UserRepository,
+        hasher: PasswordHasher,
+        secretBox: SecretBox,
+        generator: TempPasswordGenerator,
+    ) : this(users, NewAccountPlanner(hasher, secretBox, generator))
+
     operator fun invoke(rawUsernames: List<String>): List<TemporaryCredentials> {
         val requested = rawUsernames.map { Username.parse(it, field = "usernames") }.distinct()
-        val existing = users.existing(requested)
+        val planned = planner.plan(requested, existing = users.existing(requested))
 
-        val created = requested.filter { it !in existing }.map { it to generator.generate() }
-        users.insertAll(
-            created.map { (username, temporaryPassword) ->
-                NewUser(
-                    username = username,
-                    passwordHash = hasher.hash(temporaryPassword),
-                    encryptedTempPassword = secretBox.encrypt(temporaryPassword),
-                    mustChangePassword = true,
-                    isAdmin = false,
-                )
-            },
-        )
-        return created.map { (username, temporaryPassword) -> TemporaryCredentials(username, temporaryPassword) }
+        users.insertAll(planned.map { it.newUser })
+        return planned.map { TemporaryCredentials(it.username, it.temporaryPassword) }
     }
 }

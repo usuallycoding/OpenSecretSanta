@@ -4,12 +4,18 @@ import com.usuallycoding.opensecretsanta.domain.admin.GroupMembershipRepository
 import com.usuallycoding.opensecretsanta.domain.user.Username
 import com.usuallycoding.opensecretsanta.server.data.db.Database
 
+/**
+ * The users an admin manages through groups: participants of the groups they own that have left
+ * Draft, and only those who already have an account.
+ */
 class SqliteGroupMembershipRepository(private val database: Database) : GroupMembershipRepository {
 
     override fun membersOfGroupsOwnedBy(owner: Username): Set<Username> = database.connection().use { c ->
         c.prepareStatement(
-            "SELECT DISTINCT m.username FROM group_members m " +
-                "JOIN groups g ON g.id = m.group_id WHERE g.owner_username = ?",
+            "SELECT DISTINCT u.username FROM group_participants p " +
+                "JOIN groups g ON g.id = p.group_id " +
+                "JOIN users u ON u.username = p.username " +
+                "WHERE g.owner_username = ? AND g.state <> 'draft'",
         ).use { s ->
             s.setString(1, owner.value)
             s.executeQuery().use { rows ->

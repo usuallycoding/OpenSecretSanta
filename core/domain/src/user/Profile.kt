@@ -10,6 +10,9 @@ data class Profile(
     val address: String? = null,
     val deliveryInfo: String? = null,
 ) {
+    /** Enough for a Santa to post a gift: a name and an address are both present. */
+    val isComplete: Boolean get() = fullName != null && address != null
+
     companion object {
         const val MAX_LENGTH = 500
         private val EMAIL = Regex("[^@\\s]+@[^@\\s]+\\.[^@\\s]+")

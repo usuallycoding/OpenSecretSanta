@@ -54,6 +54,38 @@ Login is limited to 20 requests per minute per client address, and a username is
 
 Pending database migrations are applied automatically at startup. They live in `server/resources/db/migration` and are listed, in order, in that folder's `index.txt`.
 
+### Groups and their lifecycle
+
+An admin owns the groups they create and nobody else can see or change them (other admins get 404). A group moves strictly forward, one step at a time:
+
+```
+Draft --> Pending --> Active --> Archived
+```
+
+| State    | What it means                                                                                         |
+|----------|-------------------------------------------------------------------------------------------------------|
+| Draft    | Being planned. Participants are just usernames and need not have accounts yet. Participants cannot see it. |
+| Pending  | Every participant has an account (new ones were created with a temporary password) and can see the group. People can still be added or removed. |
+| Active   | The roster is frozen and the Secret Santa assignments have been drawn (one random cycle, nobody draws themself). Needs at least 3 participants. |
+| Archived | Finished and read-only.                                                                               |
+
+| Method and path                        | Who   | Purpose                                                              |
+|----------------------------------------|-------|----------------------------------------------------------------------|
+| `POST /admin/groups`                   | admin | Create a Draft (name required; description, location, `date` as `2026-12-24`, `time` as `18:30`, participants optional) |
+| `GET /admin/groups`, `GET /admin/groups/{id}` | owner | List / view, with a per-participant `hasAccount` and `profileComplete` flag |
+| `PUT /admin/groups/{id}`               | owner | Edit details (any state but Archived)                                |
+| `PUT /admin/groups/{id}/participants`  | owner | Replace the participant list (Draft and Pending only)                |
+| `DELETE /admin/groups/{id}`            | owner | Delete a Draft                                                       |
+| `POST /admin/groups/{id}/pending`      | owner | Draft to Pending; creates missing accounts and returns their temporary passwords |
+| `POST /admin/groups/{id}/activate`     | owner | Pending to Active; draws the assignments                             |
+| `POST /admin/groups/{id}/archive`      | owner | Active to Archived                                                   |
+| `GET /admin/groups/{id}/assignments`   | owner | Every Santa and receiver pair (Active and Archived)                  |
+| `GET /groups`, `GET /groups/{id}`      | any user | The non-Draft groups you participate in: details and participant usernames only |
+
+`profileComplete` means the participant's account has both a full name and an address. It is only a flag: activation is never blocked by it. A move that the current state does not allow answers `409` with the code `invalid_state`; activating with fewer than 3 participants answers `400` naming `participants`.
+
+An admin can view and reset the accounts of people who participate in a non-Draft group they own, so naming someone in a Draft gives no access to their account.
+
 ### Server address used by the apps
 
 Each app host passes the server's base URL to `initKoin` at launch:

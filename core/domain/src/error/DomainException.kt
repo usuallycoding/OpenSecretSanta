@@ -7,6 +7,7 @@ sealed class DomainException(val code: String, message: String) : RuntimeExcepti
     class PasswordChangeRequired : DomainException("password_change_required", "The password must be changed before continuing.")
     class Forbidden(message: String = "You are not allowed to do that.") : DomainException("forbidden", message)
     class NotFound(message: String = "Not found.") : DomainException("not_found", message)
+    class InvalidState(message: String) : DomainException("invalid_state", message)
     class ValidationFailed(val field: String, message: String) : DomainException("validation_failed", message)
     class TooManyAttempts(val retryAfterSeconds: Long) :
         DomainException("too_many_attempts", "Too many attempts. Try again later.")

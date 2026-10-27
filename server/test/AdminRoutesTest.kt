@@ -159,6 +159,20 @@ class AdminRoutesTest {
         assertEquals("admin-a", client.view(fx.token("admin-a"), "admin-a").user.username)
     }
 
+    @Test
+    fun anExistingUserNamedOnlyInADraftIsOutOfScopeUntilTheGroupLeavesDraft() = testApplication {
+        startApp()
+        seedWorld()
+        fx.addGroup("admin-a", "outsider", state = "draft", name = "Planning")
+        val token = fx.token("admin-a")
+        assertEquals(HttpStatusCode.NotFound, client.getAs(ApiRoutes.adminUser("outsider"), token).status)
+        assertEquals(HttpStatusCode.NotFound, client.postAs(ApiRoutes.adminUserResetPassword("outsider"), token).status)
+
+        fx.sql("UPDATE groups SET state = 'pending' WHERE name = 'Planning'")
+
+        assertEquals(HttpStatusCode.OK, client.getAs(ApiRoutes.adminUser("outsider"), token).status)
+    }
+
     // --- reset ---
 
     @Test

@@ -5,6 +5,7 @@ import com.usuallycoding.opensecretsanta.domain.admin.CreateMissingUsers
 import com.usuallycoding.opensecretsanta.domain.admin.GetManagedUser
 import com.usuallycoding.opensecretsanta.domain.admin.GroupMembershipRepository
 import com.usuallycoding.opensecretsanta.domain.admin.ListManagedUsers
+import com.usuallycoding.opensecretsanta.domain.admin.NewAccountPlanner
 import com.usuallycoding.opensecretsanta.domain.admin.PromoteUser
 import com.usuallycoding.opensecretsanta.domain.admin.ResetPassword
 import com.usuallycoding.opensecretsanta.domain.admin.SeedDefaultAdmin
@@ -16,6 +17,23 @@ import com.usuallycoding.opensecretsanta.domain.auth.PasswordHasher
 import com.usuallycoding.opensecretsanta.domain.auth.SecretBox
 import com.usuallycoding.opensecretsanta.domain.auth.TempPasswordGenerator
 import com.usuallycoding.opensecretsanta.domain.auth.TokenService
+import com.usuallycoding.opensecretsanta.domain.group.ActivateGroup
+import com.usuallycoding.opensecretsanta.domain.group.ArchiveGroup
+import com.usuallycoding.opensecretsanta.domain.group.AssignmentPlanner
+import com.usuallycoding.opensecretsanta.domain.group.CreateGroup
+import com.usuallycoding.opensecretsanta.domain.group.DeleteDraftGroup
+import com.usuallycoding.opensecretsanta.domain.group.GetMyGroup
+import com.usuallycoding.opensecretsanta.domain.group.GetOwnedGroup
+import com.usuallycoding.opensecretsanta.domain.group.GroupRepository
+import com.usuallycoding.opensecretsanta.domain.group.GroupViewer
+import com.usuallycoding.opensecretsanta.domain.group.ListAssignments
+import com.usuallycoding.opensecretsanta.domain.group.ListMyGroups
+import com.usuallycoding.opensecretsanta.domain.group.ListOwnedGroups
+import com.usuallycoding.opensecretsanta.domain.group.MoveToPending
+import com.usuallycoding.opensecretsanta.domain.group.OwnedGroupLoader
+import com.usuallycoding.opensecretsanta.domain.group.SetParticipants
+import com.usuallycoding.opensecretsanta.domain.group.Shuffler
+import com.usuallycoding.opensecretsanta.domain.group.UpdateGroupDetails
 import com.usuallycoding.opensecretsanta.domain.user.UpdateProfile
 import com.usuallycoding.opensecretsanta.domain.user.UserRepository
 import com.usuallycoding.opensecretsanta.server.config.ServerConfig
@@ -25,11 +43,13 @@ import com.usuallycoding.opensecretsanta.server.data.db.Database
 import com.usuallycoding.opensecretsanta.server.data.db.Migration
 import com.usuallycoding.opensecretsanta.server.data.db.MigrationRunner
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteGroupMembershipRepository
+import com.usuallycoding.opensecretsanta.server.data.group.SqliteGroupRepository
 import com.usuallycoding.opensecretsanta.server.data.user.SqliteUserRepository
 import com.usuallycoding.opensecretsanta.server.presentation.HealthService
 import com.usuallycoding.opensecretsanta.server.security.AesGcmSecretBox
 import com.usuallycoding.opensecretsanta.server.security.BcryptPasswordHasher
 import com.usuallycoding.opensecretsanta.server.security.JwtTokenService
+import com.usuallycoding.opensecretsanta.server.security.SecureShuffler
 import com.usuallycoding.opensecretsanta.server.security.SecureTempPasswordGenerator
 import com.usuallycoding.opensecretsanta.server.security.SystemClock
 import org.koin.dsl.module
@@ -54,10 +74,15 @@ val securityModule = module {
     single<TempPasswordGenerator> { SecureTempPasswordGenerator() }
 }
 
+fun shufflerModule(shuffler: Shuffler = SecureShuffler()) = module {
+    single<Shuffler> { shuffler }
+}
+
 val repositoryModule = module {
     single<UserRepository> { SqliteUserRepository(get()) }
     single<GroupMembershipRepository> { SqliteGroupMembershipRepository(get()) }
     single<LoginAttemptTracker> { SqliteLoginAttemptTracker(get()) }
+    single<GroupRepository> { SqliteGroupRepository(get()) }
 }
 
 val useCaseModule = module {
@@ -69,8 +94,25 @@ val useCaseModule = module {
     single { GetManagedUser(get(), get(), get()) }
     single { ResetPassword(get(), get(), get(), get(), get(), get()) }
     single { PromoteUser(get()) }
-    single { CreateMissingUsers(get(), get(), get(), get()) }
+    single { NewAccountPlanner(get(), get(), get()) }
+    single { CreateMissingUsers(get(), get()) }
     single { SeedDefaultAdmin(get(), get()) }
+
+    single { OwnedGroupLoader(get()) }
+    single { GroupViewer(get()) }
+    single { AssignmentPlanner(get()) }
+    single { CreateGroup(get(), get()) }
+    single { UpdateGroupDetails(get(), get(), get()) }
+    single { DeleteDraftGroup(get(), get()) }
+    single { ListOwnedGroups(get(), get()) }
+    single { GetOwnedGroup(get(), get()) }
+    single { SetParticipants(get(), get(), get(), get(), get()) }
+    single { MoveToPending(get(), get(), get(), get(), get()) }
+    single { ActivateGroup(get(), get(), get(), get()) }
+    single { ArchiveGroup(get(), get(), get()) }
+    single { ListAssignments(get(), get()) }
+    single { ListMyGroups(get()) }
+    single { GetMyGroup(get()) }
 }
 
 val presentationModule = module {
@@ -81,11 +123,13 @@ fun serverModules(
     config: ServerConfig,
     migrations: List<Migration> = ClasspathMigrations.load(),
     clock: Clock = SystemClock,
+    shuffler: Shuffler = SecureShuffler(),
 ) = listOf(
     configModule(config),
     clockModule(clock),
     databaseModule(migrations),
     securityModule,
+    shufflerModule(shuffler),
     repositoryModule,
     useCaseModule,
     presentationModule,

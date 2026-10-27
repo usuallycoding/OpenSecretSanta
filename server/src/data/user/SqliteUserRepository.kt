@@ -51,28 +51,7 @@ class SqliteUserRepository(private val database: Database) : UserRepository {
 
     override fun insertAll(users: List<NewUser>) {
         if (users.isEmpty()) return
-        database.connection().use { c ->
-            c.autoCommit = false
-            try {
-                c.prepareStatement(
-                    "INSERT INTO users (username, password_hash, temp_password_enc, must_change_password, is_admin) " +
-                        "VALUES (?, ?, ?, ?, ?)",
-                ).use { s ->
-                    users.forEach { user ->
-                        s.setString(1, user.username.value)
-                        s.setString(2, user.passwordHash)
-                        s.setBytes(3, user.encryptedTempPassword)
-                        s.setInt(4, if (user.mustChangePassword) 1 else 0)
-                        s.setInt(5, if (user.isAdmin) 1 else 0)
-                        s.executeUpdate()
-                    }
-                }
-                c.commit()
-            } catch (e: Exception) {
-                c.rollback()
-                throw e
-            }
-        }
+        database.transaction { insertUsers(it, users) }
     }
 
     override fun updateProfile(username: Username, profile: Profile): User? = database.connection().use { c ->
@@ -142,5 +121,22 @@ class SqliteUserRepository(private val database: Database) : UserRepository {
     private companion object {
         const val USER_COLUMNS =
             "username, full_name, email, phone, address, delivery_info, must_change_password, is_admin, token_version"
+    }
+}
+
+/** Inserts users on an existing connection so that callers can do it inside their own transaction. */
+internal fun insertUsers(connection: Connection, users: List<NewUser>) {
+    connection.prepareStatement(
+        "INSERT INTO users (username, password_hash, temp_password_enc, must_change_password, is_admin) " +
+            "VALUES (?, ?, ?, ?, ?)",
+    ).use { s ->
+        users.forEach { user ->
+            s.setString(1, user.username.value)
+            s.setString(2, user.passwordHash)
+            s.setBytes(3, user.encryptedTempPassword)
+            s.setInt(4, if (user.mustChangePassword) 1 else 0)
+            s.setInt(5, if (user.isAdmin) 1 else 0)
+            s.executeUpdate()
+        }
     }
 }
