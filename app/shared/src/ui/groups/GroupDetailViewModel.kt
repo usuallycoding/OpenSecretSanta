@@ -17,6 +17,7 @@ data class ParticipantItem(val username: String, val isMe: Boolean)
 data class GroupDetail(
     val name: String,
     val state: GroupStateInfo,
+    val phase: GroupPhase,
     val description: String?,
     val whenText: String?,
     val location: String?,
@@ -26,6 +27,7 @@ data class GroupDetail(
 internal fun MemberGroupDto.toDetail(me: String) = GroupDetail(
     name = name,
     state = groupStateInfo(state),
+    phase = groupPhase(state),
     description = description?.takeIf { it.isNotBlank() },
     whenText = formatWhen(date, time),
     location = location?.takeIf { it.isNotBlank() },

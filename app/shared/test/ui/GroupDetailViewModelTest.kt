@@ -3,6 +3,7 @@ package com.usuallycoding.opensecretsanta.ui
 import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.ui.groups.GroupDetail
 import com.usuallycoding.opensecretsanta.ui.groups.GroupDetailViewModel
+import com.usuallycoding.opensecretsanta.ui.groups.GroupPhase
 import com.usuallycoding.opensecretsanta.ui.groups.GroupStateInfo
 import com.usuallycoding.opensecretsanta.ui.groups.ParticipantItem
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
@@ -32,6 +33,7 @@ class GroupDetailViewModelTest {
             GroupDetail(
                 name = "Office party",
                 state = GroupStateInfo("Active", "The names have been drawn."),
+                phase = GroupPhase.Active,
                 description = "Bring cake",
                 whenText = "24 Dec 2026, 18:30",
                 location = "Town Hall",
@@ -131,5 +133,14 @@ class GroupDetailViewModelTest {
         viewModel()
 
         assertTrue(server.calls.isNotEmpty() && server.calls.all { it == "GET /groups/7" }, server.calls.toString())
+    }
+
+    @Test
+    fun theGroupsPhaseFollowsItsState() = runTest {
+        for ((state, phase) in listOf("pending" to GroupPhase.Pending, "active" to GroupPhase.Active, "archived" to GroupPhase.Archived, "frozen" to GroupPhase.Other)) {
+            server.groupAnswer = { HttpStatusCode.OK to """{"id":7,"name":"Group","state":"$state","participants":["alice"]}""" }
+
+            assertEquals(phase, viewModel().state.value.value!!.phase, state)
+        }
     }
 }

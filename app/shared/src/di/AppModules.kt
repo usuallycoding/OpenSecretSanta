@@ -12,6 +12,8 @@ import com.usuallycoding.opensecretsanta.ui.groups.GroupsViewModel
 import com.usuallycoding.opensecretsanta.ui.login.LoginViewModel
 import com.usuallycoding.opensecretsanta.ui.password.ChangePasswordViewModel
 import com.usuallycoding.opensecretsanta.ui.profile.ProfileViewModel
+import com.usuallycoding.opensecretsanta.ui.wishlist.ReceiverWishlistViewModel
+import com.usuallycoding.opensecretsanta.ui.wishlist.WishlistViewModel
 import com.usuallycoding.opensecretsanta.ui.shell.ShellViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +40,8 @@ fun appModules(baseUrl: String): List<Module> = listOf(
         viewModel { (account: com.usuallycoding.opensecretsanta.data.session.Account) -> ShellViewModel(account, get(), viewModelScope()) }
         viewModel { GroupsViewModel(get(), viewModelScope()) }
         viewModel { ProfileViewModel(get(), viewModelScope()) }
+        viewModel { (groupId: Long) -> WishlistViewModel(groupId, get(), viewModelScope()) }
+        viewModel { (groupId: Long) -> ReceiverWishlistViewModel(groupId, get(), viewModelScope()) }
         viewModel { (groupId: Long, me: String) -> GroupDetailViewModel(groupId, me, get(), viewModelScope()) }
     },
 )

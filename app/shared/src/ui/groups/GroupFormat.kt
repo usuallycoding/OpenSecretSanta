@@ -38,5 +38,15 @@ fun groupStateInfo(state: String): GroupStateInfo = when (state.lowercase()) {
     else -> GroupStateInfo(state.replaceFirstChar { it.uppercase() }, note = null)
 }
 
+/** Where a group is in its life, for deciding what the person may do with it; [Other] is a state this app does not know. */
+enum class GroupPhase { Pending, Active, Archived, Other }
+
+fun groupPhase(state: String): GroupPhase = when (state.lowercase()) {
+    "pending" -> GroupPhase.Pending
+    "active" -> GroupPhase.Active
+    "archived" -> GroupPhase.Archived
+    else -> GroupPhase.Other
+}
+
 /** Usernames are case-insensitive, so "Alice" and "alice" are the same person. */
 fun isMe(username: String, me: String): Boolean = username.equals(me, ignoreCase = true)

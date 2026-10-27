@@ -1,7 +1,9 @@
 package com.usuallycoding.opensecretsanta.ui
 
+import com.usuallycoding.opensecretsanta.ui.groups.GroupPhase
 import com.usuallycoding.opensecretsanta.ui.groups.GroupStateInfo
 import com.usuallycoding.opensecretsanta.ui.groups.formatWhen
+import com.usuallycoding.opensecretsanta.ui.groups.groupPhase
 import com.usuallycoding.opensecretsanta.ui.groups.groupStateInfo
 import com.usuallycoding.opensecretsanta.ui.groups.isMe
 import kotlin.test.Test
@@ -86,5 +88,14 @@ class GroupFormatTest {
         assertEquals("1 participant", Strings.participantCount(1))
         assertEquals("4 participants", Strings.participantCount(4))
         assertEquals("0 participants", Strings.participantCount(0))
+    }
+
+    @Test
+    fun aStateStringIsReadAsAPhaseIgnoringCase() {
+        assertEquals(GroupPhase.Pending, groupPhase("pending"))
+        assertEquals(GroupPhase.Active, groupPhase("ACTIVE"))
+        assertEquals(GroupPhase.Archived, groupPhase("Archived"))
+        assertEquals(GroupPhase.Other, groupPhase("draft"))
+        assertEquals(GroupPhase.Other, groupPhase(""))
     }
 }

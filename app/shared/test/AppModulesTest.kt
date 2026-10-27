@@ -2,6 +2,14 @@ package com.usuallycoding.opensecretsanta
 
 import com.usuallycoding.opensecretsanta.data.BackendConfig
 import com.usuallycoding.opensecretsanta.di.initKoin
+import com.usuallycoding.opensecretsanta.ui.wishlist.ReceiverWishlistViewModel
+import com.usuallycoding.opensecretsanta.ui.wishlist.WishlistViewModel
+import org.koin.core.parameter.parametersOf
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
 import org.koin.core.context.stopKoin
 import org.koin.mp.KoinPlatform
 import kotlin.test.AfterTest
@@ -36,5 +44,21 @@ class AppModulesTest {
         assertNotNull(KoinPlatform.getKoinOrNull())
         assertSame(firstKoin, KoinPlatform.getKoin())
         assertEquals("http://first.test", firstKoin.get<BackendConfig>().baseUrl)
+    }
+
+    // View models run on the main dispatcher, which a plain JVM test does not have.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun wishlistViewModelsAreResolvableForAGroup() {
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+        try {
+            initKoin(baseUrl = "http://example.test:8080")
+            val koin = KoinPlatform.getKoin()
+
+            assertEquals(7L, koin.get<WishlistViewModel> { parametersOf(7L) }.groupId)
+            assertEquals(7L, koin.get<ReceiverWishlistViewModel> { parametersOf(7L) }.groupId)
+        } finally {
+            Dispatchers.resetMain()
+        }
     }
 }

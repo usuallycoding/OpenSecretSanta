@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -27,7 +28,12 @@ import com.usuallycoding.opensecretsanta.ui.load.LoadContent
 
 /** One group: its details, what its state means and who takes part. Nothing here says who gives to whom. */
 @Composable
-fun GroupDetailScreen(viewModel: GroupDetailViewModel, onBack: () -> Unit) {
+fun GroupDetailScreen(
+    viewModel: GroupDetailViewModel,
+    onBack: () -> Unit,
+    onOpenWishlist: () -> Unit,
+    onOpenReceiverWishlist: () -> Unit,
+) {
     val state by viewModel.state.collectAsState()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
 
@@ -45,13 +51,13 @@ fun GroupDetailScreen(viewModel: GroupDetailViewModel, onBack: () -> Unit) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
                 TextButton(onClick = { viewModel.refresh() }) { Text(Strings.REFRESH) }
             }
-            LoadContent(state, onRetry = { viewModel.refresh() }) { detail -> Detail(detail) }
+            LoadContent(state, onRetry = { viewModel.refresh() }) { detail -> Detail(detail, onOpenWishlist, onOpenReceiverWishlist) }
         }
     }
 }
 
 @Composable
-private fun Detail(group: GroupDetail) {
+private fun Detail(group: GroupDetail, onOpenWishlist: () -> Unit, onOpenReceiverWishlist: () -> Unit) {
     Column(
         Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -70,5 +76,27 @@ private fun Detail(group: GroupDetail) {
                 Text(if (participant.isMe) "${participant.username} (${Strings.YOU})" else participant.username)
             }
         }
+        Wishlists(group.phase, onOpenWishlist, onOpenReceiverWishlist)
+    }
+}
+
+/** Where the person's own wishlist and, once the names are drawn, their receiver's can be opened. */
+@Composable
+private fun Wishlists(phase: GroupPhase, onOpenWishlist: () -> Unit, onOpenReceiverWishlist: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(Strings.WISHLISTS, style = MaterialTheme.typography.titleMedium)
+        WishlistEntry(Strings.MY_WISHLIST, onOpenWishlist)
+        when (phase) {
+            GroupPhase.Active, GroupPhase.Archived -> WishlistEntry(Strings.RECEIVER_WISHLIST, onOpenReceiverWishlist)
+            GroupPhase.Pending -> Text(Strings.RECEIVER_WISHLIST_LATER, style = MaterialTheme.typography.bodyMedium)
+            GroupPhase.Other -> Unit
+        }
+    }
+}
+
+@Composable
+private fun WishlistEntry(label: String, onClick: () -> Unit) {
+    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        Text(label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(16.dp))
     }
 }

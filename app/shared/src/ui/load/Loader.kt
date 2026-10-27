@@ -43,6 +43,11 @@ class Loader<T : Any>(
         refresh()
     }
 
+    /** Shows [value] as the loaded one, for a change whose answer already says what the thing looks like now. */
+    fun replace(value: T) {
+        _state.value = LoadState(value, loading = false)
+    }
+
     /** Loads again, unless a load is already running, and returns the work that is (now) running. */
     fun refresh(): Job {
         running?.takeIf { it.isActive }?.let { return it }

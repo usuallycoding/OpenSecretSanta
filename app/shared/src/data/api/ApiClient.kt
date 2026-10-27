@@ -9,6 +9,10 @@ import com.usuallycoding.opensecretsanta.contract.LoginRequest
 import com.usuallycoding.opensecretsanta.contract.LoginResponse
 import com.usuallycoding.opensecretsanta.contract.MemberGroupDto
 import com.usuallycoding.opensecretsanta.contract.ProfileUpdateRequest
+import com.usuallycoding.opensecretsanta.contract.ReorderWishlistRequest
+import com.usuallycoding.opensecretsanta.contract.SharedWishlistItemDto
+import com.usuallycoding.opensecretsanta.contract.WishlistItemDto
+import com.usuallycoding.opensecretsanta.contract.WishlistItemRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.HttpClientEngine
@@ -76,6 +80,25 @@ class ApiClient(
     /** Replaces all five profile fields; a field left out is cleared. */
     suspend fun updateProfile(request: ProfileUpdateRequest): ApiResult<AccountDto> =
         call(HttpMethod.Put, ApiRoutes.ME, body = request)
+
+    suspend fun wishlist(groupId: Long): ApiResult<List<WishlistItemDto>> = call(HttpMethod.Get, ApiRoutes.groupWishlist(groupId))
+
+    suspend fun addWishlistItem(groupId: Long, request: WishlistItemRequest): ApiResult<WishlistItemDto> =
+        call(HttpMethod.Post, ApiRoutes.groupWishlistItems(groupId), body = request)
+
+    suspend fun updateWishlistItem(groupId: Long, itemId: Long, request: WishlistItemRequest): ApiResult<WishlistItemDto> =
+        call(HttpMethod.Put, ApiRoutes.groupWishlistItem(groupId, itemId), body = request)
+
+    /** The server answers 204 with no body. */
+    suspend fun deleteWishlistItem(groupId: Long, itemId: Long): ApiResult<Unit> =
+        call(HttpMethod.Delete, ApiRoutes.groupWishlistItem(groupId, itemId))
+
+    /** [itemIds] must be exactly the person's current items in the order they want; the answer is the list in that order. */
+    suspend fun reorderWishlist(groupId: Long, itemIds: List<Long>): ApiResult<List<WishlistItemDto>> =
+        call(HttpMethod.Put, ApiRoutes.groupWishlistOrder(groupId), body = ReorderWishlistRequest(itemIds))
+
+    suspend fun receiverWishlist(groupId: Long): ApiResult<List<SharedWishlistItemDto>> =
+        call(HttpMethod.Get, ApiRoutes.groupReceiverWishlist(groupId))
 
     suspend fun changePassword(currentPassword: String, newPassword: String): ApiResult<ChangePasswordResponse> =
         call(HttpMethod.Put, ApiRoutes.ME_PASSWORD, body = ChangePasswordRequest(currentPassword, newPassword))

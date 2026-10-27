@@ -50,7 +50,13 @@ import com.usuallycoding.opensecretsanta.ui.groups.GroupsScreen
 import com.usuallycoding.opensecretsanta.ui.navigation.GroupRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.GroupsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.ProfileRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.ReceiverWishlistRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.WishlistRoute
 import com.usuallycoding.opensecretsanta.ui.profile.ProfileScreen
+import com.usuallycoding.opensecretsanta.ui.wishlist.ReceiverWishlistScreen
+import com.usuallycoding.opensecretsanta.ui.wishlist.ReceiverWishlistViewModel
+import com.usuallycoding.opensecretsanta.ui.wishlist.WishlistScreen
+import com.usuallycoding.opensecretsanta.ui.wishlist.WishlistViewModel
 
 /**
  * The signed-in app under one top bar: the participant view (Groups and Profile tabs, and a group
@@ -65,7 +71,8 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
     LaunchedEffect(navController) { onNavigationReady(navController) }
     val destination = navController.currentBackStackEntryAsState().value?.destination
     val participant = view == AppView.Participant
-    val onGroup = participant && destination?.hasRoute<GroupRoute>() == true
+    // below a group (its detail or one of its wishlists) there is a way back
+    val onGroup = participant && destination?.belowGroups() == true
 
     Scaffold(
         topBar = {
@@ -95,6 +102,22 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                         GroupDetailScreen(
                             koinViewModel<GroupDetailViewModel>(key = "group-$groupId") { parametersOf(groupId, viewModel.account.username) },
                             onBack = { navController.popBackStack() },
+                            onOpenWishlist = { navController.navigate(WishlistRoute(groupId)) },
+                            onOpenReceiverWishlist = { navController.navigate(ReceiverWishlistRoute(groupId)) },
+                        )
+                    }
+                    composable<WishlistRoute> { entry ->
+                        val groupId = entry.toRoute<WishlistRoute>().groupId
+                        WishlistScreen(
+                            koinViewModel<WishlistViewModel>(key = "wishlist-$groupId") { parametersOf(groupId) },
+                            onBack = { navController.popBackStack() },
+                        )
+                    }
+                    composable<ReceiverWishlistRoute> { entry ->
+                        val groupId = entry.toRoute<ReceiverWishlistRoute>().groupId
+                        ReceiverWishlistScreen(
+                            koinViewModel<ReceiverWishlistViewModel>(key = "receiver-wishlist-$groupId") { parametersOf(groupId) },
+                            onBack = { navController.popBackStack() },
                         )
                     }
                     composable<ProfileRoute> { ProfileScreen(koinViewModel()) }
@@ -112,6 +135,8 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
 private fun titleOf(view: AppView, destination: NavDestination?): String = when {
     view == AppView.Admin -> Strings.TITLE_ADMIN
     destination?.hasRoute<GroupRoute>() == true -> Strings.TITLE_GROUP
+    destination?.hasRoute<WishlistRoute>() == true -> Strings.MY_WISHLIST
+    destination?.hasRoute<ReceiverWishlistRoute>() == true -> Strings.RECEIVER_WISHLIST
     destination?.hasRoute<ProfileRoute>() == true -> Strings.TITLE_PROFILE
     else -> Strings.TITLE_GROUPS
 }
@@ -142,7 +167,7 @@ private fun ShellMenu(viewModel: ShellViewModel, view: AppView) {
 /** Groups and Profile. Each tab keeps its own place: switching away and back restores it. */
 @Composable
 private fun TabBar(navController: NavController, destination: NavDestination?) {
-    val onGroups = destination?.hierarchy?.any { it.hasRoute<GroupsRoute>() || it.hasRoute<GroupRoute>() } == true
+    val onGroups = destination?.hierarchy?.any { it.hasRoute<GroupsRoute>() || it.belowGroups() } == true
     val onProfile = destination?.hierarchy?.any { it.hasRoute<ProfileRoute>() } == true
     NavigationBar {
         NavigationBarItem(
@@ -159,6 +184,9 @@ private fun TabBar(navController: NavController, destination: NavDestination?) {
         )
     }
 }
+
+private fun NavDestination.belowGroups(): Boolean =
+    hasRoute<GroupRoute>() || hasRoute<WishlistRoute>() || hasRoute<ReceiverWishlistRoute>()
 
 private fun NavController.openTab(route: Any) = navigate(route) {
     popUpTo(graph.findStartDestination().id) { saveState = true }

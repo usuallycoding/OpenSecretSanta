@@ -115,4 +115,32 @@ class LoaderTest {
         }
         assertNull(LoadState<String>().error)
     }
+
+    @Test
+    fun aReplacedValueShowsAsLoadedAndALaterRefreshStillWorks() = runTest {
+        val fetch = ScriptedFetch(ok("from the server"), ok("reloaded"))
+        val loader = Loader(immediateScope(), fetch::fetch)
+
+        loader.replace("changed locally")
+
+        assertEquals(LoadState("changed locally", loading = false, error = null), loader.state.value)
+
+        loader.refresh().join()
+
+        assertEquals("reloaded", loader.state.value.value)
+        assertEquals(2, fetch.calls)
+    }
+
+    @Test
+    fun replacingClearsAnErrorLeftByAFailedRefresh() = runTest {
+        val fetch = ScriptedFetch(ok("one"), failure(ApiError.Network))
+        val loader = Loader(immediateScope(), fetch::fetch)
+        loader.refresh().join()
+        assertEquals(ApiError.Network, loader.state.value.error)
+
+        loader.replace("two")
+
+        assertNull(loader.state.value.error)
+        assertEquals("two", loader.state.value.value)
+    }
 }
