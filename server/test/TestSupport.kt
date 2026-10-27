@@ -73,6 +73,11 @@ class TestFixtures(val config: ServerConfig = testConfig()) {
 
     fun sql(statement: String) = database.connection().use { c -> c.createStatement().use { it.execute(statement) } }
 
+    /** Stores Santa to receiver pairs for a group, as activation would have drawn them. */
+    fun assign(groupId: Int, vararg pairs: Pair<String, String>) {
+        pairs.forEach { (santa, receiver) -> sql("INSERT INTO assignments (group_id, santa, receiver) VALUES ($groupId, '$santa', '$receiver')") }
+    }
+
     /** Creates a group owned by [owner] in [state] with the given participants and returns its id. */
     fun addGroup(owner: String, vararg participants: String, state: String = "pending", name: String = "Group"): Int {
         sql("INSERT INTO groups (owner_username, name, state) VALUES ('$owner', '$name', '$state')")

@@ -17,6 +17,12 @@ import com.usuallycoding.opensecretsanta.domain.admin.PromoteUser
 import com.usuallycoding.opensecretsanta.domain.admin.ResetPassword
 import com.usuallycoding.opensecretsanta.domain.auth.ChangePassword
 import com.usuallycoding.opensecretsanta.domain.auth.Login
+import com.usuallycoding.opensecretsanta.domain.gift.AnswerQuestion
+import com.usuallycoding.opensecretsanta.domain.gift.AskQuestion
+import com.usuallycoding.opensecretsanta.domain.gift.GetMyReceiver
+import com.usuallycoding.opensecretsanta.domain.gift.GetMySanta
+import com.usuallycoding.opensecretsanta.domain.gift.ListMyQuestions
+import com.usuallycoding.opensecretsanta.domain.gift.ListQuestionsFromMySanta
 import com.usuallycoding.opensecretsanta.domain.group.ActivateGroup
 import com.usuallycoding.opensecretsanta.domain.group.ArchiveGroup
 import com.usuallycoding.opensecretsanta.domain.group.CreateGroup
@@ -37,8 +43,10 @@ import com.usuallycoding.opensecretsanta.server.presentation.PasswordChangeGate
 import com.usuallycoding.opensecretsanta.server.presentation.accountRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.adminGroupRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.adminRoutes
+import com.usuallycoding.opensecretsanta.server.presentation.giftVisibilityRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.groupLifecycleRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.memberGroupRoutes
+import com.usuallycoding.opensecretsanta.server.presentation.questionRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.profileRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.authRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.registerLoginLimit
@@ -118,6 +126,8 @@ fun Application.module(
             )
             groupLifecycleRoutes(get<MoveToPending>(), get<ActivateGroup>(), get<ArchiveGroup>(), get<ListAssignments>())
             memberGroupRoutes(get<ListMyGroups>(), get<GetMyGroup>())
+            giftVisibilityRoutes(get<GetMyReceiver>(), get<GetMySanta>())
+            questionRoutes(get<AskQuestion>(), get<ListMyQuestions>(), get<ListQuestionsFromMySanta>(), get<AnswerQuestion>())
         }
     }
 }

@@ -281,6 +281,40 @@ class SqliteGroupRepositoryTest {
         assertFailsWith<DomainException.InvalidState> { groups.archive(g.id) }
     }
 
+    // --- who gives to whom ---
+
+    @Test
+    fun receiverAndSantaLookupsFollowTheDraw() {
+        val g = draft("a-one", "b-two", "c-three", "d-four").also { groups.moveToPending(it.id, emptyList()) }
+        groups.activate(g.id, ring("c-three", "a-one", "d-four", "b-two"))
+
+        assertEquals(u("a-one"), groups.receiverOf(g.id, u("c-three")))
+        assertEquals(u("c-three"), groups.receiverOf(g.id, u("b-two")))
+        assertEquals(u("c-three"), groups.santaOf(g.id, u("a-one")))
+        assertEquals(u("b-two"), groups.santaOf(g.id, u("c-three")))
+    }
+
+    @Test
+    fun lookupsAreNullWithoutAnAssignment() {
+        val g = draft("a-one", "b-two", "c-three")
+
+        assertNull(groups.receiverOf(g.id, u("a-one")))
+        assertNull(groups.santaOf(g.id, u("a-one")))
+        assertNull(groups.receiverOf(404, u("a-one")))
+        assertNull(groups.santaOf(g.id, u("not-a-member")))
+    }
+
+    @Test
+    fun lookupsAreScopedToTheirGroup() {
+        val first = draft("a-one", "b-two", "c-three", "d-four", name = "First").also { groups.moveToPending(it.id, emptyList()) }
+        val second = draft("a-one", "b-two", "c-three", "d-four", name = "Second").also { groups.moveToPending(it.id, emptyList()) }
+        groups.activate(first.id, ring("a-one", "b-two", "c-three", "d-four"))
+        groups.activate(second.id, ring("d-four", "c-three", "b-two", "a-one"))
+
+        assertEquals(u("b-two"), groups.receiverOf(first.id, u("a-one")))
+        assertEquals(u("d-four"), groups.receiverOf(second.id, u("a-one")))
+    }
+
     // --- concurrency ---
 
     @Test

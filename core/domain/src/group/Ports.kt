@@ -42,4 +42,10 @@ interface GroupRepository {
     fun archive(id: Long): Group
 
     fun assignments(id: Long): List<Assignment>
+
+    /** Who [santa] gives to in this group, or null when there is no such assignment. */
+    fun receiverOf(groupId: Long, santa: Username): Username?
+
+    /** Who gives to [receiver] in this group, or null when there is no such assignment. */
+    fun santaOf(groupId: Long, receiver: Username): Username?
 }

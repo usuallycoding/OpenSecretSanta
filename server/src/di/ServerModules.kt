@@ -17,6 +17,13 @@ import com.usuallycoding.opensecretsanta.domain.auth.PasswordHasher
 import com.usuallycoding.opensecretsanta.domain.auth.SecretBox
 import com.usuallycoding.opensecretsanta.domain.auth.TempPasswordGenerator
 import com.usuallycoding.opensecretsanta.domain.auth.TokenService
+import com.usuallycoding.opensecretsanta.domain.gift.AnswerQuestion
+import com.usuallycoding.opensecretsanta.domain.gift.AskQuestion
+import com.usuallycoding.opensecretsanta.domain.gift.GetMyReceiver
+import com.usuallycoding.opensecretsanta.domain.gift.GetMySanta
+import com.usuallycoding.opensecretsanta.domain.gift.ListMyQuestions
+import com.usuallycoding.opensecretsanta.domain.gift.ListQuestionsFromMySanta
+import com.usuallycoding.opensecretsanta.domain.gift.QuestionRepository
 import com.usuallycoding.opensecretsanta.domain.group.ActivateGroup
 import com.usuallycoding.opensecretsanta.domain.group.ArchiveGroup
 import com.usuallycoding.opensecretsanta.domain.group.AssignmentPlanner
@@ -31,6 +38,7 @@ import com.usuallycoding.opensecretsanta.domain.group.ListMyGroups
 import com.usuallycoding.opensecretsanta.domain.group.ListOwnedGroups
 import com.usuallycoding.opensecretsanta.domain.group.MoveToPending
 import com.usuallycoding.opensecretsanta.domain.group.OwnedGroupLoader
+import com.usuallycoding.opensecretsanta.domain.group.ParticipantGroupLoader
 import com.usuallycoding.opensecretsanta.domain.group.SetParticipants
 import com.usuallycoding.opensecretsanta.domain.group.Shuffler
 import com.usuallycoding.opensecretsanta.domain.group.UpdateGroupDetails
@@ -44,6 +52,7 @@ import com.usuallycoding.opensecretsanta.server.data.db.Migration
 import com.usuallycoding.opensecretsanta.server.data.db.MigrationRunner
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteGroupMembershipRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteGroupRepository
+import com.usuallycoding.opensecretsanta.server.data.group.SqliteQuestionRepository
 import com.usuallycoding.opensecretsanta.server.data.user.SqliteUserRepository
 import com.usuallycoding.opensecretsanta.server.presentation.HealthService
 import com.usuallycoding.opensecretsanta.server.security.AesGcmSecretBox
@@ -83,6 +92,7 @@ val repositoryModule = module {
     single<GroupMembershipRepository> { SqliteGroupMembershipRepository(get()) }
     single<LoginAttemptTracker> { SqliteLoginAttemptTracker(get()) }
     single<GroupRepository> { SqliteGroupRepository(get()) }
+    single<QuestionRepository> { SqliteQuestionRepository(get()) }
 }
 
 val useCaseModule = module {
@@ -113,6 +123,14 @@ val useCaseModule = module {
     single { ListAssignments(get(), get()) }
     single { ListMyGroups(get()) }
     single { GetMyGroup(get()) }
+
+    single { ParticipantGroupLoader(get()) }
+    single { GetMyReceiver(get(), get(), get()) }
+    single { GetMySanta(get(), get(), get()) }
+    single { AskQuestion(get(), get(), get()) }
+    single { ListMyQuestions(get(), get()) }
+    single { ListQuestionsFromMySanta(get(), get()) }
+    single { AnswerQuestion(get(), get(), get()) }
 }
 
 val presentationModule = module {

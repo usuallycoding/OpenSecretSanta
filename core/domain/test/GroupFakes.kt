@@ -89,6 +89,12 @@ class InMemoryGroups(private val users: InMemoryUsers) : GroupRepository {
 
     override fun assignments(id: Long) = assignmentsByGroup[id].orEmpty()
 
+    override fun receiverOf(groupId: Long, santa: Username) =
+        assignments(groupId).firstOrNull { it.santa == santa }?.receiver
+
+    override fun santaOf(groupId: Long, receiver: Username) =
+        assignments(groupId).firstOrNull { it.receiver == receiver }?.santa
+
     /** Test helper: puts a group straight into a state with the given participants. */
     fun seed(owner: Username, state: GroupState, vararg participants: Username, name: String = "Group"): Group {
         val group = create(owner, GroupDetails(name), participants.toList()).copy(state = state)

@@ -31,8 +31,9 @@ class MoveToPending(
 }
 
 /**
- * Pending to Active: needs [MIN_PARTICIPANTS] participants and draws the assignments in the same
- * step. Incomplete profiles never stop it; they are only flagged in the returned view.
+ * Pending to Active: needs [MIN_PARTICIPANTS] participants (with fewer, a participant could work out
+ * who their Santa is) and draws the assignments in the same step. Incomplete profiles never stop it;
+ * they are only flagged in the returned view.
  */
 class ActivateGroup(
     private val loadOwned: OwnedGroupLoader,
@@ -53,7 +54,7 @@ class ActivateGroup(
     }
 
     companion object {
-        const val MIN_PARTICIPANTS = 3
+        const val MIN_PARTICIPANTS = 4
     }
 }
 
@@ -89,7 +90,8 @@ class ListMyGroups(private val groups: GroupRepository) {
     operator fun invoke(user: User): List<Group> = groups.findVisibleTo(user.username)
 }
 
-class GetMyGroup(private val groups: GroupRepository) {
+/** Loads a group for one of its participants; Drafts, strangers and missing groups all look the same. */
+class ParticipantGroupLoader(private val groups: GroupRepository) {
     operator fun invoke(user: User, id: Long): Group {
         val group = groups.find(id)
         if (group == null || group.state == GroupState.DRAFT || user.username !in group.participants) {
@@ -97,4 +99,10 @@ class GetMyGroup(private val groups: GroupRepository) {
         }
         return group
     }
+}
+
+class GetMyGroup(groups: GroupRepository) {
+    private val load = ParticipantGroupLoader(groups)
+
+    operator fun invoke(user: User, id: Long): Group = load(user, id)
 }

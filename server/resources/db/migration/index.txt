@@ -3,3 +3,4 @@ V001__baseline.sql
 V002__users.sql
 V003__groups_membership.sql
 V004__groups.sql
+V005__questions.sql

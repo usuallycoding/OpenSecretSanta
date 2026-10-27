@@ -66,7 +66,7 @@ Draft --> Pending --> Active --> Archived
 |----------|-------------------------------------------------------------------------------------------------------|
 | Draft    | Being planned. Participants are just usernames and need not have accounts yet. Participants cannot see it. |
 | Pending  | Every participant has an account (new ones were created with a temporary password) and can see the group. People can still be added or removed. |
-| Active   | The roster is frozen and the Secret Santa assignments have been drawn (one random cycle, nobody draws themself). Needs at least 3 participants. |
+| Active   | The roster is frozen and the Secret Santa assignments have been drawn (one random cycle, nobody draws themself). Needs at least 4 participants: with only 3, everyone could work out their own Santa. |
 | Archived | Finished and read-only.                                                                               |
 
 | Method and path                        | Who   | Purpose                                                              |
@@ -82,9 +82,26 @@ Draft --> Pending --> Active --> Archived
 | `GET /admin/groups/{id}/assignments`   | owner | Every Santa and receiver pair (Active and Archived)                  |
 | `GET /groups`, `GET /groups/{id}`      | any user | The non-Draft groups you participate in: details and participant usernames only |
 
-`profileComplete` means the participant's account has both a full name and an address. It is only a flag: activation is never blocked by it. A move that the current state does not allow answers `409` with the code `invalid_state`; activating with fewer than 3 participants answers `400` naming `participants`.
+`profileComplete` means the participant's account has both a full name and an address. It is only a flag: activation is never blocked by it. A move that the current state does not allow answers `409` with the code `invalid_state`; activating with fewer than 4 participants answers `400` naming `participants`.
 
 An admin can view and reset the accounts of people who participate in a non-Draft group they own, so naming someone in a Draft gives no access to their account.
+
+### Receiver, questions and the Santa reveal
+
+Once a group is Active every participant is both a Santa (for their receiver) and a receiver (of their Santa). The routes are named by relationship, never by username, so a receiver can never read who their Santa is before the group is archived.
+
+| Method and path                                   | Who      | Purpose                                                                       |
+|---------------------------------------------------|----------|-------------------------------------------------------------------------------|
+| `GET /groups/{id}/receiver`                       | the Santa | Your receiver's username, full name, address, phone and delivery information (Active and Archived) |
+| `GET /groups/{id}/receiver/questions`             | the Santa | The questions you asked and any answers                                       |
+| `POST /groups/{id}/receiver/questions`            | the Santa | Ask a question (`{"text": ...}`, 1-1000 characters, at most 30 per group, Active only) |
+| `GET /groups/{id}/santa/questions`                | the receiver | The questions your Santa asked, with your answers, without any sign of who asked |
+| `PUT /groups/{id}/santa/questions/{n}/answer`     | the receiver | Answer or change your answer to question `n` (`{"text": ...}`, 1-2000 characters, Active only) |
+| `GET /groups/{id}/santa`                          | the receiver | Your Santa's username and full name, only once the group is Archived          |
+
+Questions are numbered from 1 within each Santa's own thread, so the numbers say nothing about other threads. A question cannot be edited or deleted once asked, an answer can be changed as often as you like while the group is Active, and once the group is Archived both threads stay readable but nothing changes. Admins, including the group's owner, have no way to read the questions or answers. Asking in a group that is not Active, answering in one, or asking the 31st question answers `409` with the code `invalid_state`.
+
+A group needs at least 4 participants to be activated. With only 3, everyone could work out who their Santa is from who their receiver is; with 4 a participant's Santa is one of two people.
 
 ### Server address used by the apps
 

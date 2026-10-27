@@ -1,6 +1,13 @@
 package com.usuallycoding.opensecretsanta.server
 
 import com.usuallycoding.opensecretsanta.server.di.serverModules
+import com.usuallycoding.opensecretsanta.domain.gift.AnswerQuestion
+import com.usuallycoding.opensecretsanta.domain.gift.AskQuestion
+import com.usuallycoding.opensecretsanta.domain.gift.GetMyReceiver
+import com.usuallycoding.opensecretsanta.domain.gift.GetMySanta
+import com.usuallycoding.opensecretsanta.domain.gift.ListMyQuestions
+import com.usuallycoding.opensecretsanta.domain.gift.ListQuestionsFromMySanta
+import com.usuallycoding.opensecretsanta.domain.gift.QuestionRepository
 import com.usuallycoding.opensecretsanta.domain.group.ActivateGroup
 import com.usuallycoding.opensecretsanta.domain.group.ArchiveGroup
 import com.usuallycoding.opensecretsanta.domain.group.AssignmentPlanner
@@ -13,6 +20,7 @@ import com.usuallycoding.opensecretsanta.domain.group.ListAssignments
 import com.usuallycoding.opensecretsanta.domain.group.ListMyGroups
 import com.usuallycoding.opensecretsanta.domain.group.ListOwnedGroups
 import com.usuallycoding.opensecretsanta.domain.group.MoveToPending
+import com.usuallycoding.opensecretsanta.domain.group.ParticipantGroupLoader
 import com.usuallycoding.opensecretsanta.domain.group.SetParticipants
 import com.usuallycoding.opensecretsanta.domain.group.Shuffler
 import com.usuallycoding.opensecretsanta.domain.group.UpdateGroupDetails
@@ -44,9 +52,12 @@ class ServerModulesTest {
                 koin.get<ListOwnedGroups>(), koin.get<GetOwnedGroup>(), koin.get<SetParticipants>(),
                 koin.get<MoveToPending>(), koin.get<ActivateGroup>(), koin.get<ArchiveGroup>(),
                 koin.get<ListAssignments>(), koin.get<ListMyGroups>(), koin.get<GetMyGroup>(),
+                koin.get<ParticipantGroupLoader>(), koin.get<QuestionRepository>(), koin.get<GetMyReceiver>(),
+                koin.get<GetMySanta>(), koin.get<AskQuestion>(), koin.get<ListMyQuestions>(),
+                koin.get<ListQuestionsFromMySanta>(), koin.get<AnswerQuestion>(),
             )
 
-            assertEquals(15, resolved.size)
+            assertEquals(23, resolved.size)
             assertTrue(resolved.all { it != null })
         } finally {
             app.close()

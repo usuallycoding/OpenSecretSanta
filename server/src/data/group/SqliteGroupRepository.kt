@@ -126,6 +126,22 @@ class SqliteGroupRepository(private val database: Database) : GroupRepository {
         }
     }
 
+    override fun receiverOf(groupId: Long, santa: Username): Username? = database.connection().use { c ->
+        c.prepareStatement("SELECT receiver FROM assignments WHERE group_id = ? AND santa = ?").use { s ->
+            s.setLong(1, groupId)
+            s.setString(2, santa.value)
+            s.executeQuery().use { rows -> if (rows.next()) Username.parse(rows.getString(1)) else null }
+        }
+    }
+
+    override fun santaOf(groupId: Long, receiver: Username): Username? = database.connection().use { c ->
+        c.prepareStatement("SELECT santa FROM assignments WHERE group_id = ? AND receiver = ?").use { s ->
+            s.setLong(1, groupId)
+            s.setString(2, receiver.value)
+            s.executeQuery().use { rows -> if (rows.next()) Username.parse(rows.getString(1)) else null }
+        }
+    }
+
     // --- helpers ---
 
     /** Moves the group to [to] (or only checks the state when null) if it is currently in one of [from]. */

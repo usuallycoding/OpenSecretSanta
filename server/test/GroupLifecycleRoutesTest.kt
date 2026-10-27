@@ -84,8 +84,8 @@ class GroupLifecycleRoutesTest {
     fun aGroupWalksFromDraftToArchivedAndEachStepIsReflected() = testApplication {
         startApp()
         setup()
-        people("alice", "bob", "carol")
-        val group = client.draft("alice", "bob", "carol")
+        people("alice", "bob", "carol", "dave")
+        val group = client.draft("alice", "bob", "carol", "dave")
         assertEquals("draft", group.state)
 
         assertEquals("pending", client.change(ApiRoutes.adminGroupPending(group.id)).group.state)
@@ -101,9 +101,9 @@ class GroupLifecycleRoutesTest {
     fun skippingBackwardsAndRepeatingAreAllConflicts() = testApplication {
         startApp()
         setup()
-        people("alice", "bob", "carol")
+        people("alice", "bob", "carol", "dave")
         val token = fx.token("admin-a")
-        val group = client.draft("alice", "bob", "carol")
+        val group = client.draft("alice", "bob", "carol", "dave")
 
         for (path in listOf(ApiRoutes.adminGroupActivate(group.id), ApiRoutes.adminGroupArchive(group.id))) {
             val response = client.postAs(path, token)
@@ -116,15 +116,15 @@ class GroupLifecycleRoutesTest {
         assertEquals(HttpStatusCode.Conflict, client.postAs(ApiRoutes.adminGroupActivate(group.id), token).status)
         assertEquals(HttpStatusCode.Conflict, client.postAs(ApiRoutes.adminGroupPending(group.id), token).status)
         assertEquals("active", database("SELECT state FROM groups WHERE id = ${group.id}"))
-        assertEquals("3", database("SELECT COUNT(*) FROM assignments WHERE group_id = ${group.id}"))
+        assertEquals("4", database("SELECT COUNT(*) FROM assignments WHERE group_id = ${group.id}"))
     }
 
     @Test
     fun onlyTheOwnerMovesAGroupAndOthersGetNotFound() = testApplication {
         startApp()
         setup()
-        people("alice", "bob", "carol")
-        val group = client.draft("alice", "bob", "carol")
+        people("alice", "bob", "carol", "dave")
+        val group = client.draft("alice", "bob", "carol", "dave")
 
         for (path in listOf(ApiRoutes.adminGroupPending(group.id), ApiRoutes.adminGroupActivate(group.id), ApiRoutes.adminGroupArchive(group.id))) {
             assertEquals(HttpStatusCode.NotFound, client.postAs(path, fx.token("admin-b")).status, path)
@@ -206,11 +206,11 @@ class GroupLifecycleRoutesTest {
     // --- Pending to Active ---
 
     @Test
-    fun fewerThanThreeParticipantsCannotBeActivated() = testApplication {
+    fun fewerThanFourParticipantsCannotBeActivated() = testApplication {
         startApp()
         setup()
-        people("alice", "bob")
-        val group = client.draft("alice", "bob")
+        people("alice", "bob", "carol")
+        val group = client.draft("alice", "bob", "carol")
         client.change(ApiRoutes.adminGroupPending(group.id))
 
         val response = client.postAs(ApiRoutes.adminGroupActivate(group.id), fx.token("admin-a"))
@@ -227,7 +227,7 @@ class GroupLifecycleRoutesTest {
         setup()
         people("alice", "bob")
         fx.users.updateProfile(Username.parse("alice"), Profile(fullName = "Alice B", address = "1 Main St"))
-        val group = client.draft("alice", "bob", "carol-new")
+        val group = client.draft("alice", "bob", "carol-new", "dave-new")
         client.change(ApiRoutes.adminGroupPending(group.id))
 
         val change = client.change(ApiRoutes.adminGroupActivate(group.id))
@@ -235,7 +235,7 @@ class GroupLifecycleRoutesTest {
         assertEquals("active", change.group.state)
         assertEquals(emptyList(), change.createdAccounts)
         assertEquals(
-            mapOf("alice" to true, "bob" to false, "carol-new" to false),
+            mapOf("alice" to true, "bob" to false, "carol-new" to false, "dave-new" to false),
             change.group.participants.associate { it.username to it.profileComplete },
         )
     }
@@ -267,8 +267,8 @@ class GroupLifecycleRoutesTest {
     fun noAssignmentsBeforeActivation() = testApplication {
         startApp()
         setup()
-        people("alice", "bob", "carol")
-        val group = client.draft("alice", "bob", "carol")
+        people("alice", "bob", "carol", "dave")
+        val group = client.draft("alice", "bob", "carol", "dave")
         val token = fx.token("admin-a")
 
         for (step in 0..1) {
@@ -284,27 +284,27 @@ class GroupLifecycleRoutesTest {
     fun onlyTheOwnerCanListAssignments() = testApplication {
         startApp()
         setup()
-        people("alice", "bob", "carol")
-        val group = client.draft("alice", "bob", "carol")
+        people("alice", "bob", "carol", "dave")
+        val group = client.draft("alice", "bob", "carol", "dave")
         client.change(ApiRoutes.adminGroupPending(group.id))
         client.change(ApiRoutes.adminGroupActivate(group.id))
 
         assertEquals(HttpStatusCode.NotFound, client.getAs(ApiRoutes.adminGroupAssignments(group.id), fx.token("admin-b")).status)
         assertEquals(HttpStatusCode.Forbidden, client.getAs(ApiRoutes.adminGroupAssignments(group.id), fx.token("alice")).status)
         assertEquals(HttpStatusCode.Unauthorized, client.getAs(ApiRoutes.adminGroupAssignments(group.id), null).status)
-        assertEquals(3, client.assignments(group.id).size)
+        assertEquals(4, client.assignments(group.id).size)
     }
 
     @Test
     fun participantsNeverSeeAnythingAboutAssignments() = testApplication {
         startApp()
         setup()
-        people("alice", "bob", "carol")
-        val group = client.draft("alice", "bob", "carol")
+        people("alice", "bob", "carol", "dave")
+        val group = client.draft("alice", "bob", "carol", "dave")
         client.change(ApiRoutes.adminGroupPending(group.id))
         client.change(ApiRoutes.adminGroupActivate(group.id))
 
-        for (user in listOf("alice", "bob", "carol")) {
+        for (user in listOf("alice", "bob", "carol", "dave")) {
             for (path in listOf(ApiRoutes.GROUPS, ApiRoutes.group(group.id))) {
                 val body = client.getAs(path, fx.token(user)).bodyAsText()
                 for (forbidden in listOf("santa", "receiver", "assignment", "gives")) assertFalse(body.contains(forbidden, ignoreCase = true), "$user $path: $body")
@@ -312,7 +312,7 @@ class GroupLifecycleRoutesTest {
         }
         val view = Json.decodeFromString<MemberGroupDto>(client.getAs(ApiRoutes.group(group.id), fx.token("alice")).bodyAsText())
         assertEquals("active", view.state)
-        assertEquals(listOf("alice", "bob", "carol"), view.participants)
+        assertEquals(listOf("alice", "bob", "carol", "dave"), view.participants)
     }
 
     @Test
@@ -338,15 +338,15 @@ class GroupLifecycleRoutesTest {
     fun peopleAddedInPendingTakePartInTheDraw() = testApplication {
         startApp()
         setup()
-        people("alice", "bob")
-        val group = client.draft("alice", "bob")
+        people("alice", "bob", "carol")
+        val group = client.draft("alice", "bob", "carol")
         client.change(ApiRoutes.adminGroupPending(group.id))
-        val participants = client.send("PUT", ApiRoutes.adminGroupParticipants(group.id), fx.token("admin-a"), com.usuallycoding.opensecretsanta.contract.ParticipantsRequest(listOf("alice", "bob", "latecomer")))
+        val participants = client.send("PUT", ApiRoutes.adminGroupParticipants(group.id), fx.token("admin-a"), com.usuallycoding.opensecretsanta.contract.ParticipantsRequest(listOf("alice", "bob", "carol", "latecomer")))
         assertEquals(HttpStatusCode.OK, participants.status)
         assertNotNull(fx.users.find(Username.parse("latecomer")))
 
         client.change(ApiRoutes.adminGroupActivate(group.id))
 
-        assertEquals(setOf("alice", "bob", "latecomer"), client.assignments(group.id).map { it.santa }.toSet())
+        assertEquals(setOf("alice", "bob", "carol", "latecomer"), client.assignments(group.id).map { it.santa }.toSet())
     }
 }

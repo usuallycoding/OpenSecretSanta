@@ -69,7 +69,7 @@ class LifecycleTest {
 
     @Test
     fun onlyTheOwnerMovesAGroup() {
-        val group = group(GroupState.PENDING, "alice", "bob-b", "carol")
+        val group = group(GroupState.PENDING, "alice", "bob-b", "carol", "dave")
         assertFailsWith<DomainException.NotFound> { activate(adminB, group.id) }
         assertEquals(GroupState.PENDING, stateOf(group.id))
     }
@@ -122,8 +122,8 @@ class LifecycleTest {
     // --- Pending to Active ---
 
     @Test
-    fun fewerThanThreeParticipantsCannotBeActivated() {
-        for (names in listOf(emptyList(), listOf("alice"), listOf("alice", "bob-b"))) {
+    fun fewerThanFourParticipantsCannotBeActivated() {
+        for (names in listOf(emptyList(), listOf("alice"), listOf("alice", "bob-b"), listOf("alice", "bob-b", "carol"))) {
             val group = group(GroupState.PENDING, *names.toTypedArray())
             val error = assertFailsWith<DomainException.ValidationFailed> { activate(adminA, group.id) }
             assertEquals("participants", error.field)
@@ -133,15 +133,23 @@ class LifecycleTest {
     }
 
     @Test
+    fun exactlyFourParticipantsCanBeActivated() {
+        val group = group(GroupState.PENDING, "alice", "bob-b", "carol", "dave")
+
+        assertEquals(GroupState.ACTIVE, activate(adminA, group.id).group.state)
+        assertEquals(4, groups.assignments(group.id).size)
+    }
+
+    @Test
     fun incompleteProfilesDoNotPreventActivationButAreFlagged() {
         users.add("alice").also { users.updateProfile(it, Profile(fullName = "Alice", address = "1 Main St")) }
         users.add("bob-b")
-        val group = group(GroupState.PENDING, "alice", "bob-b", "carol")
+        val group = group(GroupState.PENDING, "alice", "bob-b", "carol", "dave")
 
         val view = activate(adminA, group.id)
 
         assertEquals(GroupState.ACTIVE, view.group.state)
-        assertEquals(listOf(true, false, false), view.participants.map { it.profileComplete })
+        assertEquals(listOf(true, false, false, false), view.participants.map { it.profileComplete })
     }
 
     @Test
@@ -168,7 +176,7 @@ class LifecycleTest {
 
     @Test
     fun aFailureWhileActivatingLeavesNoAssignmentsAndStaysPending() {
-        val group = group(GroupState.PENDING, "alice", "bob-b", "carol")
+        val group = group(GroupState.PENDING, "alice", "bob-b", "carol", "dave")
         groups.failNextWith = IllegalStateException("disk full")
 
         assertFailsWith<IllegalStateException> { activate(adminA, group.id) }
@@ -181,7 +189,7 @@ class LifecycleTest {
 
     @Test
     fun archivingKeepsParticipantsAndAssignments() {
-        val group = group(GroupState.PENDING, "alice", "bob-b", "carol")
+        val group = group(GroupState.PENDING, "alice", "bob-b", "carol", "dave")
         activate(adminA, group.id)
         val before = groups.assignments(group.id)
 
@@ -190,12 +198,12 @@ class LifecycleTest {
         assertEquals(GroupState.ARCHIVED, view.group.state)
         assertEquals(before, groups.assignments(group.id))
         assertEquals(before, listAssignments(adminA, group.id))
-        assertEquals(listOf("alice", "bob-b", "carol"), view.group.participants.map { it.value })
+        assertEquals(listOf("alice", "bob-b", "carol", "dave"), view.group.participants.map { it.value })
     }
 
     @Test
     fun editingDetailsNeverRedrawsTheAssignments() {
-        val group = group(GroupState.PENDING, "alice", "bob-b", "carol")
+        val group = group(GroupState.PENDING, "alice", "bob-b", "carol", "dave")
         activate(adminA, group.id)
         val before = groups.assignments(group.id)
 
@@ -216,7 +224,7 @@ class LifecycleTest {
 
     @Test
     fun otherAdminsGetNotFoundAndNormalUsersGetForbidden() {
-        val group = group(GroupState.PENDING, "alice", "bob-b", "carol")
+        val group = group(GroupState.PENDING, "alice", "bob-b", "carol", "dave")
         activate(adminA, group.id)
         users.add("alice")
 
