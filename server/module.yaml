@@ -7,10 +7,14 @@ dependencies:
   - $ktor.server.netty
   - $ktor.server.contentNegotiation
   - $ktor.server.statusPages
+  - $ktor.server.auth
+  - $ktor.server.auth.jwt
+  - $ktor.server.rateLimit
   - $ktor.serialization.kotlinx.json
   - $libs.koin.core
   - $libs.koin.ktor
   - $libs.sqlite.jdbc
+  - $libs.bcrypt
   - $libs.logback.classic
 
 settings:

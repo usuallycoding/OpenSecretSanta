@@ -1,2 +1,4 @@
 # Ordered list of migration scripts. Append only; never edit or reorder an applied migration.
 V001__baseline.sql
+V002__users.sql
+V003__groups_membership.sql

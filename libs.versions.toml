@@ -4,6 +4,7 @@ androidx-activity-compose = "1.13.0"
 androidx-lifecycle = "2.11.0"
 koin = "4.2.2"
 sqlite-jdbc = "3.53.4.0"
+bcrypt = "0.10.2"
 
 [libraries]
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
@@ -16,3 +17,4 @@ koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
 koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
 sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
+bcrypt = { module = "at.favre.lib:bcrypt", version.ref = "bcrypt" }

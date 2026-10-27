@@ -3,7 +3,6 @@ package com.usuallycoding.opensecretsanta.server
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.ErrorResponse
 import com.usuallycoding.opensecretsanta.contract.HealthResponse
-import com.usuallycoding.opensecretsanta.server.config.ServerConfig
 import com.usuallycoding.opensecretsanta.server.data.db.Migration
 import com.usuallycoding.opensecretsanta.server.data.db.MigrationException
 import io.ktor.client.request.get
@@ -23,9 +22,9 @@ import kotlin.test.assertNotNull
 
 class ApplicationTest {
 
-    private fun tempDbPath(): Path = Files.createTempDirectory("santa-app").resolve("app.db")
+    private fun tempDbPath(): Path = newTempDbPath()
 
-    private fun configFor(path: Path) = ServerConfig(jwtSecret = "test-secret", dbPath = path.toString(), port = 0)
+    private fun configFor(path: Path) = testConfig(path)
 
     @Test
     fun healthReportsOkWithSchemaVersion() = testApplication {
@@ -34,7 +33,7 @@ class ApplicationTest {
         val response = client.get(ApiRoutes.HEALTH)
 
         assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals(HealthResponse("ok", schemaVersion = 1), Json.decodeFromString(response.bodyAsText()))
+        assertEquals(HealthResponse("ok", schemaVersion = 3), Json.decodeFromString(response.bodyAsText()))
     }
 
     @Test

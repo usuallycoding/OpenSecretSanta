@@ -12,17 +12,17 @@ class ClasspathMigrationsTest {
     @Test
     fun bundledMigrationsAreOrderedAndStartWithBaseline() {
         val migrations = ClasspathMigrations.load()
-        assertEquals(listOf(1), migrations.map { it.version })
+        assertEquals(listOf(1, 2, 3), migrations.map { it.version })
         assertEquals("baseline", migrations.first().name)
     }
 
     @Test
-    fun schemaVersionReadsBackAsOneAfterBoot() {
+    fun schemaVersionReadsBackAsLatestAfterBoot() {
         val path = Files.createTempDirectory("santa-db").resolve("boot.db")
         val database = Database(path.toString())
 
         MigrationRunner(database, ClasspathMigrations.load()).migrate()
 
-        assertEquals(1, database.schemaVersion())
+        assertEquals(3, database.schemaVersion())
     }
 }

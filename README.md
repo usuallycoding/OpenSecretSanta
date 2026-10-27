@@ -23,16 +23,34 @@ Use the run configurations provided by the run widget in your IDE's toolbar. You
 
 The server reads its configuration from environment variables and refuses to start if one is invalid:
 
-| Variable     | Required | Default               | Meaning                                      |
-|--------------|----------|-----------------------|----------------------------------------------|
-| `JWT_SECRET` | yes      | -                     | Secret used to sign tokens                   |
-| `DB_PATH`    | no       | `opensecretsanta.db`  | SQLite database file (created if missing)    |
-| `PORT`       | no       | `8080`                | Port the server listens on (1-65535)         |
+| Variable              | Required                  | Default              | Meaning                                                              |
+|-----------------------|---------------------------|----------------------|----------------------------------------------------------------------|
+| `JWT_SECRET`          | yes                       | -                    | Secret used to sign access tokens                                    |
+| `DATA_ENCRYPTION_KEY` | yes                       | -                    | Base64 of a 32-byte key; encrypts temporary passwords stored for admins |
+| `DB_PATH`             | no                        | `opensecretsanta.db` | SQLite database file (created if missing)                            |
+| `PORT`                | no                        | `8080`               | Port the server listens on (1-65535)                                 |
+| `ADMIN_USERNAME`      | no                        | `admin`              | Username of the first administrator                                  |
+| `ADMIN_PASSWORD`      | only on an empty database | -                    | Initial password of the first administrator (at least 8 characters)  |
+
+Generate the encryption key once and keep it with your other secrets. Losing it makes stored temporary passwords unreadable (an admin can simply reset them), and rotating it has the same effect:
 
 ```
-JWT_SECRET=change-me ./kotlin run -m server
-curl localhost:8080/health   # {"status":"ok","schemaVersion":1}
+openssl rand -base64 32
 ```
+
+First boot:
+
+```
+JWT_SECRET=change-me \
+DATA_ENCRYPTION_KEY="$(openssl rand -base64 32)" \
+ADMIN_PASSWORD=choose-a-password \
+./kotlin run -m server
+curl localhost:8080/health   # {"status":"ok","schemaVersion":<n>}
+```
+
+On an empty database the server creates the administrator from `ADMIN_USERNAME` / `ADMIN_PASSWORD`, who must change that password at first login. Once any user exists, `ADMIN_USERNAME` and `ADMIN_PASSWORD` are ignored, so later restarts do not need them (but still need `JWT_SECRET` and the same `DATA_ENCRYPTION_KEY`).
+
+Login is limited to 20 requests per minute per client address, and a username is locked for 15 minutes after 5 consecutive failed logins. The limiter keys on the connection's remote address, so behind a reverse proxy every client would appear as the proxy; forwarding the real address (`X-Forwarded-For`) is not configured yet.
 
 Pending database migrations are applied automatically at startup. They live in `server/resources/db/migration` and are listed, in order, in that folder's `index.txt`.
 
