@@ -14,10 +14,10 @@ Every `/admin/...` endpoint SHALL be available only to admins; any other authent
 - **THEN** the response is 403
 
 ### Requirement: Managed-user scope
-An admin SHALL be able to view and reset only users who are members of a group that admin owns, plus themselves. Requests about any other user SHALL be answered as if the user did not exist.
+An admin SHALL be able to view and reset only users who participate in a group that admin owns and that is not in Draft, plus themselves. Requests about any other user SHALL be answered as if the user did not exist.
 
 #### Scenario: Member of own group
-- **WHEN** admin A owns a group containing `alice` and requests `alice`
+- **WHEN** admin A owns a Pending, Active or Archived group containing `alice` and requests `alice`
 - **THEN** the request is processed
 
 #### Scenario: Member of another admin's group only
@@ -25,12 +25,20 @@ An admin SHALL be able to view and reset only users who are members of a group t
 - **THEN** the response is 404
 
 #### Scenario: Shared user
-- **WHEN** `alice` is in groups owned by both admin A and admin B
+- **WHEN** `alice` is in non-Draft groups owned by both admin A and admin B
 - **THEN** both admins can view and reset `alice`
 
 #### Scenario: Self
 - **WHEN** an admin requests their own username
 - **THEN** the request is processed
+
+#### Scenario: Named only in a Draft
+- **WHEN** admin A names the existing user `carol` in a Draft group and requests `carol`
+- **THEN** the response is 404, until the group leaves Draft
+
+#### Scenario: Removed from a group
+- **WHEN** `alice` is removed from the only non-Draft group of admin A that contained her
+- **THEN** admin A can no longer view or reset her
 
 ### Requirement: List and view managed users
 The server SHALL expose `GET /admin/users` listing the admin's managed users and `GET /admin/users/{username}` returning one with all profile fields, admin flag, `mustChangePassword` and, only while the user's password is temporary, the current temporary password.
@@ -89,8 +97,12 @@ The system SHALL provide an all-or-nothing operation, for use by group managemen
 - **THEN** that user is created once
 
 ### Requirement: Group ownership and membership records
-The system SHALL record which admin owns each group and which users belong to it, so that managed-user scope can be determined. A user MAY belong to any number of groups.
+The system SHALL record which admin owns each group and which usernames participate in it, including usernames that have no account yet while the group is Draft, so that managed-user scope can be determined. A user MAY participate in any number of groups.
 
 #### Scenario: Multiple memberships
 - **WHEN** a user is added to two groups
-- **THEN** the user is a member of both and in scope for the owners of both
+- **THEN** the user is a participant of both and in scope for the owners of both once those groups are not Draft
+
+#### Scenario: Participant without an account
+- **WHEN** a Draft group names a username that has no account
+- **THEN** the name is kept in the group's participant list without creating any account
