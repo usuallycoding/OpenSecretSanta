@@ -26,7 +26,7 @@
 ## 5. Web and native hosts
 
 - [ ] 5.1 Add `resolveBaseUrl(configText, origin)` and have the web host fetch `config.json` before starting (missing file, invalid JSON or blank `baseUrl` fall back to the page origin), with a sample `config.json` in the web resources; verify common tests for every fallback and a manual run of the web app against a server on another origin with `CORS_ALLOWED_ORIGINS` set
-- [ ] 5.2 Allow cleartext traffic only to the development hosts (Android network security config for `10.0.2.2` and `localhost`, iOS `NSAllowsLocalNetworking`); verify the Android emulator and iOS simulator reach a local server over `http`, and that no other `http` host is allowed by the config
+- [x] 5.2 Allow cleartext traffic only to the development hosts (Android network security config for `10.0.2.2` and `localhost`, iOS `NSAllowsLocalNetworking`); verify the Android emulator and iOS simulator reach a local server over `http`, and that no other `http` host is allowed by the config
 
 ## 5b. Android local-network permission
 
@@ -37,3 +37,13 @@
 ## 6. Integration
 
 - [ ] 6.1 Extend the Koin graph test to resolve every new definition and document the client (running each platform, the web `config.json`, what is placeholder until the next changes) in the README; run `./kotlin build` and `./kotlin test` for the whole repo, then verify end to end with a real server: sign in as a normal user and as an admin on web and Android (and iOS if the simulator is available), change a temporary password, get signed out when a token is invalidated by a password reset from another session, and see lockout and unreachable-server messages, and on an Android 17 device see the local-network prompt appear before the first request
+
+## Not verified when this change was archived
+
+Archived with tasks 3.2, 5.1 and 6.1 open, by choice. Everything below is the web app, which could not be driven from the tooling used to build the change:
+- A real browser login from the web app (served on one origin) against a server on another origin with `CORS_ALLOWED_ORIGINS` set (5.1).
+- That a web page refresh drops the session and that nothing is written to `localStorage` or `sessionStorage` (3.2).
+- That the web app picks up a changed `baseUrl` in `config.json` on reload (5.1).
+- The final end-to-end run on the web (6.1).
+
+Verified on the Android emulator (login, persistence, sign-out, expiry, local-network prompt), on a real iPhone (login and persistence over `http`, by the user), on the iOS simulator and headless Chrome (app starts and shows sign-in), and by the unit and server tests.
