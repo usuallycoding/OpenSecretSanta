@@ -53,9 +53,17 @@ The server SHALL expose `GET /admin/groups/{id}/assignments`, usable only by the
 - **WHEN** another admin, or a participant who is not the owner, requests the assignments
 - **THEN** the response is 404 for another admin's group and 403 for a user who is not an admin
 
-### Requirement: Participants cannot see assignments yet
-In this stage no endpoint SHALL reveal to a participant who their receiver or their Santa is.
+### Requirement: Participants see only their own receiver
+No endpoint SHALL reveal to a participant any assignment other than their own receiver, and none SHALL reveal who their Santa is before the group is Archived. The participant view of a group SHALL contain no assignment data.
 
 #### Scenario: Participant view has no assignment data
 - **WHEN** a participant views an Active group they belong to
 - **THEN** the response contains no information about any assignment
+
+#### Scenario: Own receiver only
+- **WHEN** a participant asks for their receiver
+- **THEN** they learn who that one person is and nothing about any other pair
+
+#### Scenario: Santa hidden until archive
+- **WHEN** the group is Active
+- **THEN** no response to the receiver identifies their Santa
