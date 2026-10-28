@@ -62,27 +62,27 @@ While a group is Draft, Pending or Active the administrator SHALL be able to ope
 - **WHEN** the group is Archived
 - **THEN** there is no way to edit its details
 
-### Requirement: Admin group detail
-Choosing a group SHALL open its detail, loaded with `GET /admin/groups/{id}`, showing its details, its state with a sentence on what that state means for the owner, and its participants. Where the state allows, the detail SHALL also offer the owner's oversight: choosing a participant opens their wishlist (Pending, Active and Archived), and an Active or Archived group shows the draw and a way to the Questions screen.
+### Requirement: Group detail shows who takes part
+Choosing a group SHALL open its detail, loaded with `GET /admin/groups/{id}`, showing its details, its state with a sentence on what that state means for the owner, and who takes part. For a Draft or Pending group that is the participants list; for an Active or Archived group it is the pair list of `client-admin-oversight`, which replaces the participants list. In a Pending group each participant SHALL offer "Read wishlist".
 
 #### Scenario: Group not available
 - **WHEN** the server answers that the group does not exist for this administrator
 - **THEN** the screen says the group is no longer available and offers to go back
 
-#### Scenario: Participant wishlist offered
-- **WHEN** a Pending, Active or Archived group's detail is shown
-- **THEN** choosing a participant opens that person's wishlist
+#### Scenario: Pending group
+- **WHEN** a Pending group's detail is shown
+- **THEN** it lists the participants and each offers "Read wishlist"
 
 #### Scenario: Draft offers no oversight
 - **WHEN** the group is Draft
-- **THEN** choosing a participant does not open a wishlist and there is no draw or Questions entry
+- **THEN** it lists the participants with no "Read wishlist" and no pair list
 
-#### Scenario: Questions offered
+#### Scenario: Drawn group
 - **WHEN** the group is Active or Archived
-- **THEN** the detail offers the Questions screen
+- **THEN** the detail shows the pair list and no separate participants list, and no Questions button
 
 ### Requirement: Marks on participants
-In the detail a participant without an account SHALL be marked "no account yet" and a participant whose profile lacks a name or an address SHALL be marked "profile incomplete". The marks SHALL NOT block any action.
+In the participants list of a Draft or Pending group a participant without an account SHALL be marked "no account yet" and a participant whose profile lacks a name or an address SHALL be marked "profile incomplete". In the pair list of an Active or Archived group a username whose profile lacks a name or an address SHALL be followed by `*`, as described in `client-admin-oversight`. The marks SHALL NOT block any action.
 
 #### Scenario: Participants with marks
 - **WHEN** a Draft group has `alice` with a complete profile and `newcomer` without an account
@@ -91,6 +91,10 @@ In the detail a participant without an account SHALL be marked "no account yet" 
 #### Scenario: Incomplete profile
 - **WHEN** a participant's account has no address
 - **THEN** that participant is marked "profile incomplete"
+
+#### Scenario: Incomplete profile after the draw
+- **WHEN** an Active group has a participant whose account has no address
+- **THEN** that username is followed by `*` in the pair list
 
 ### Requirement: Editing participants
 While a group is Draft or Pending the administrator SHALL be able to edit the participants in a bottom sheet: add a username, remove a username, then save with `PUT /admin/groups/{id}/participants`, which replaces the whole list. A username is checked before sending as the server checks it (3 to 32 characters of letters, digits, `.`, `_` or `-`, case ignored) and a name already in the list is not added twice. Once the group is Active or Archived the participants SHALL be shown read-only.

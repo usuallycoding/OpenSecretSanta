@@ -26,7 +26,7 @@ The Users tab SHALL list the users the administrator manages, loaded with `GET /
 - **THEN** the list shows only the administrator
 
 ### Requirement: User detail
-Choosing a user SHALL open their detail, loaded with `GET /admin/users/{username}`, showing the username and each of full name, email, phone, address and delivery information that is set, leaving out the others. For a person who still has a temporary password the detail SHALL also show that password, selectable so it can be copied; for a person who has set their own password it SHALL show none.
+Choosing a user on the Users tab SHALL open their detail, and choosing a username in a group's pair list SHALL show the same detail in a bottom sheet. The detail is loaded with `GET /admin/users/{username}`, showing the username and each of full name, email, phone, address and delivery information that is set, leaving out the others. For a person who still has a temporary password the detail SHALL also show that password, selectable so it can be copied; for a person who has set their own password it SHALL show none.
 
 #### Scenario: Profile fields
 - **WHEN** a user has a full name and an address but no phone
@@ -42,7 +42,11 @@ Choosing a user SHALL open their detail, loaded with `GET /admin/users/{username
 
 #### Scenario: User out of scope
 - **WHEN** the server answers that the user does not exist for this administrator
-- **THEN** the screen says the user is no longer available and offers to go back
+- **THEN** the screen or sheet says the user is no longer available and offers to go back or close
+
+#### Scenario: Same detail in a sheet
+- **WHEN** the owner chooses a username in a group's pair list
+- **THEN** a sheet shows the same fields and temporary password rule as the Users tab detail
 
 ### Requirement: Resetting a password
 The detail of a managed user SHALL offer "Reset password", which after a confirmation that says the old password and the person's sessions stop working sends `POST /admin/users/{username}/reset-password` and shows the new temporary password once in a dialog, selectable so it can be copied, with the sentence that the person must change it when they next sign in.

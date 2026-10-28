@@ -215,13 +215,21 @@ Top-level tabs SHALL keep their own place: switching tabs and returning SHALL sh
 - **WHEN** the person signs out and another person signs in
 - **THEN** the new person starts on the first screen of their view, not where the previous person was
 
-### Requirement: Oversight routes in the admin view
-The admin view SHALL have typed routes for a participant's wishlist and for a group's questions, reached from the group detail and kept under the Groups tab. Back SHALL return to the group detail, and on the web the address bar SHALL follow them.
+### Requirement: Back closes an open sheet
+Going back with the system back button on Android while a bottom sheet is open SHALL close the sheet and stay on the screen behind it. On the web the browser's back button belongs to the screens' history, which a sheet is not part of, so it SHALL leave the screen as it does without a sheet; the Escape key SHALL close an open sheet there.
 
-#### Scenario: Back from a wishlist
-- **WHEN** the owner opens a participant's wishlist and goes back
-- **THEN** the group detail is shown
+#### Scenario: Back from a sheet on Android
+- **WHEN** a user or pair sheet is open on a group and the person uses the system back button on Android
+- **THEN** the sheet closes and the group detail is still shown
 
-#### Scenario: Groups tab stays selected
-- **WHEN** the questions screen is open
-- **THEN** the Groups tab is the selected tab
+#### Scenario: Back again on Android
+- **WHEN** the person goes back once more
+- **THEN** the groups list is shown
+
+#### Scenario: Browser back on the web
+- **WHEN** a sheet is open on a group in the web app and the person presses the browser's back button
+- **THEN** the groups list is shown, the page is not reloaded and the session is kept
+
+#### Scenario: Escape on the web
+- **WHEN** a sheet is open on a group in the web app and the person presses Escape
+- **THEN** the sheet closes and the group detail is still shown
