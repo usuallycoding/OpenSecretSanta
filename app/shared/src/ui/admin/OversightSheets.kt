@@ -39,6 +39,7 @@ import com.usuallycoding.opensecretsanta.ui.load.loadMessage
 import com.usuallycoding.opensecretsanta.ui.wishlist.ItemText
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
 
 /** A username as the owner reads it in the list: `alice`, `alice (you)`, `alice *` or `alice (you) *`. */
 internal fun usernameLabel(name: String, isMe: Boolean, incomplete: Boolean): String =
@@ -241,10 +242,10 @@ private fun ThreadQuestions(thread: PairThread) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         for (question in thread.questions) {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("${question.number}. ${question.text}", style = MaterialTheme.typography.titleSmall)
+                ReadOnlyText("${question.number}. ${question.text}", style = MaterialTheme.typography.titleSmall, label = Strings.QUESTION_LABEL)
                 Text(Strings.adminAsked(question.asked), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (question.answer != null) {
-                    Text(question.answer, style = MaterialTheme.typography.bodyMedium)
+                    ReadOnlyText(question.answer, style = MaterialTheme.typography.bodyMedium, label = Strings.ANSWER)
                     question.answered?.let {
                         Text(Strings.adminAnswered(it), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }

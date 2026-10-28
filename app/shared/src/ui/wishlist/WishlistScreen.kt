@@ -1,6 +1,5 @@
 package com.usuallycoding.opensecretsanta.ui.wishlist
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,8 +26,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -37,6 +34,8 @@ import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.load.LoadContent
 import com.usuallycoding.opensecretsanta.ui.load.ScrollableMessage
+import com.usuallycoding.opensecretsanta.ui.form.LinkText
+import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
 
 /** The person's own wishlist for one group: their items in their order, and while the group allows it, ways to change them. */
 @Composable
@@ -142,23 +141,13 @@ private fun ItemRow(
     if (editable) Card(onClick = onEdit, modifier = rowModifier) { content() } else Card(modifier = rowModifier) { content() }
 }
 
-/** An item's title, note and link, as the person and their Santa both read it. A link opens in the platform's browser. */
+/** An item's title, note and link, as the person and their Santa both read it. A link opens a dialog first. */
 @Composable
 internal fun ItemText(title: String, note: String?, url: String?, modifier: Modifier = Modifier) {
-    val uriHandler = LocalUriHandler.current
     Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(title, style = MaterialTheme.typography.titleMedium)
-        note?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
-        url?.let { link ->
-            Text(
-                link,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.clickable { runCatching { uriHandler.openUri(link) } },
-            )
-        }
+        ReadOnlyText(title, style = MaterialTheme.typography.titleMedium, label = Strings.FIELD_TITLE)
+        note?.let { ReadOnlyText(it, style = MaterialTheme.typography.bodyMedium, label = Strings.NOTE_LABEL) }
+        url?.let { LinkText(it) }
     }
 }
 

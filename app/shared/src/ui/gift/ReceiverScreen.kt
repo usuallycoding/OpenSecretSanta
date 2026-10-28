@@ -29,6 +29,7 @@ import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.groups.GroupPhase
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.load.LoadContent
+import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
 
 /** The person's receiver, where to post the gift, and the questions the person asked them. */
 @Composable
@@ -83,7 +84,7 @@ private fun Notice(notice: GiftNotice, onDismiss: () -> Unit) {
 private fun Details(receiver: ReceiverInfo) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(receiver.username, style = MaterialTheme.typography.titleMedium)
+            ReadOnlyText(receiver.username, style = MaterialTheme.typography.titleMedium, label = Strings.USERNAME)
             if (!receiver.hasPostalDetails) {
                 Text(Strings.NO_POSTAL_DETAILS, style = MaterialTheme.typography.bodyMedium)
             }
@@ -100,7 +101,7 @@ private fun Field(label: String, value: String?) {
     if (value == null) return
     Column {
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.bodyLarge)
+        ReadOnlyText(value, style = MaterialTheme.typography.bodyLarge, label = label)
     }
 }
 
@@ -120,9 +121,9 @@ private fun QuestionsHeader(data: ReceiverData, viewModel: ReceiverViewModel) {
 internal fun QuestionCard(question: Question, action: (@Composable () -> Unit)? = null) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("${question.number}. ${question.text}", style = MaterialTheme.typography.titleSmall)
+            ReadOnlyText("${question.number}. ${question.text}", style = MaterialTheme.typography.titleSmall, label = Strings.QUESTION_LABEL)
             if (question.answer != null) {
-                Text(question.answer, style = MaterialTheme.typography.bodyMedium)
+                ReadOnlyText(question.answer, style = MaterialTheme.typography.bodyMedium, label = Strings.ANSWER)
             } else {
                 Text(Strings.NOT_ANSWERED, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }

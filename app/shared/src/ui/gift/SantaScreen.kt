@@ -26,6 +26,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.load.LoadContent
+import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
 
 /** Who the person's Santa was, once the group is archived. */
 @Composable
@@ -67,6 +68,6 @@ fun SantaScreen(viewModel: SantaRevealViewModel, onBack: () -> Unit) {
 private fun Detail(label: String, value: String) {
     Column {
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.titleMedium)
+        ReadOnlyText(value, style = MaterialTheme.typography.titleMedium, label = label)
     }
 }

@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -29,6 +28,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.load.LoadContent
+import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
 
 /** One managed user: their profile, their temporary password while it is still temporary, and a way to reset it. */
 @Composable
@@ -96,7 +96,7 @@ internal fun UserDetail(user: ManagedUser, viewModel: AdminUserViewModel, busy: 
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(user.username, style = MaterialTheme.typography.headlineSmall)
+        ReadOnlyText(user.username, style = MaterialTheme.typography.headlineSmall, label = Strings.USERNAME)
         if (listOf(user.fullName, user.email, user.phone, user.address, user.deliveryInfo).any { it != null }) {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -113,7 +113,7 @@ internal fun UserDetail(user: ManagedUser, viewModel: AdminUserViewModel, busy: 
         user.temporaryPassword?.let { password ->
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(Strings.USER_TEMPORARY_PASSWORD, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                SelectionContainer { Text(password, style = MaterialTheme.typography.titleMedium) }
+                ReadOnlyText(password, style = MaterialTheme.typography.titleMedium, label = Strings.USER_TEMPORARY_PASSWORD)
                 Text(Strings.USER_MUST_CHANGE_NOTE, style = MaterialTheme.typography.bodyMedium)
             }
         }
@@ -128,6 +128,6 @@ private fun Field(label: String, value: String?) {
     if (value == null) return
     Column {
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.bodyLarge)
+        ReadOnlyText(value, style = MaterialTheme.typography.bodyLarge, label = label)
     }
 }

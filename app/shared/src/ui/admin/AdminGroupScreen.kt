@@ -39,6 +39,7 @@ import com.usuallycoding.opensecretsanta.ui.form.FormColumn
 import com.usuallycoding.opensecretsanta.ui.form.SheetTextField
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.load.LoadContent
+import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
 
 /** One of the administrator's groups: its details and people, and what can be done with it in its state. */
 @OptIn(ExperimentalComposeUiApi::class)
@@ -121,7 +122,7 @@ private fun Detail(
             Text(group.state.label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             group.phase.note()?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
         }
-        group.description?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
+        group.description?.let { ReadOnlyText(it, style = MaterialTheme.typography.bodyLarge, label = Strings.DESCRIPTION_LABEL) }
         group.whenText?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
         group.location?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
         if (viewModel.canEditDetails) {
