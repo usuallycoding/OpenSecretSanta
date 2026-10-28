@@ -6,7 +6,7 @@ TBD - created by archiving change group-pair-pages. Update Purpose after archive
 ## Requirements
 
 ### Requirement: Pair rows
-Below the group's details the group page SHALL show, while the group is Pending, one row with the person's own username and a gift icon that opens the Receiver page; and, once the group is Active or Archived, two rows: `my username -> receiver's username`, whose arrow opens the Gifter page, and `Secret Santa -> my username`, whose arrow opens the Receiver page. The receiver's username SHALL come from `GET /groups/{id}/receiver`; while it loads the row SHALL show that, and when it fails the row SHALL say so with "Try again" and the rest of the page SHALL stay. A Draft group SHALL show no rows.
+Below the group's details the group page SHALL show, while the group is Pending, one row with the person's own username and a gift icon that opens the Receiver page; and, once the group is Active or Archived, two rows: `my username -> receiver's username`, whose arrow opens the Gifter page, and `Secret Santa -> my username`, whose arrow opens the Receiver page. In each of those rows the name before the arrow SHALL start at the start of the row and the name after the arrow SHALL end at the end of the row. The receiver's username SHALL come from `GET /groups/{id}/receiver`; while it loads the row SHALL show that, and when it fails the row SHALL say so with "Try again" and the rest of the page SHALL stay. A Draft group SHALL show no rows.
 
 #### Scenario: Pending
 - **WHEN** the group is Pending
@@ -23,6 +23,10 @@ Below the group's details the group page SHALL show, while the group is Pending,
 #### Scenario: The arrows
 - **WHEN** the person chooses the arrow of the first row, and then of the second
 - **THEN** the Gifter page opens, and the Receiver page opens
+
+#### Scenario: Alignment
+- **WHEN** the group is Active
+- **THEN** in both rows the name before the arrow is at the start of the row and the name after the arrow is at the end of the row
 
 ### Requirement: User details sheets
 Choosing the person's own username SHALL open a bottom sheet with their own details (username and the profile fields they have set), and choosing the receiver's username SHALL open a bottom sheet loaded with `GET /groups/{id}/receiver` showing the receiver's username and, for each of full name, address, phone and delivery information that they have set, its value, leaving out what is not set and saying that the receiver has not added postal details yet when none is. "Secret Santa" SHALL NOT be tappable while the group is Pending or Active and nothing on the page SHALL identify the Santa then; once the group is Archived, choosing it SHALL open a bottom sheet loaded with `GET /groups/{id}/santa` showing the Santa's username and full name when it has one. The sheets are part of the group page, not screens, so the web address stays on the page while one is open.

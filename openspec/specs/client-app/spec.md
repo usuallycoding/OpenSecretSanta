@@ -368,7 +368,7 @@ In the web app, opening or refreshing an address, or typing one into the address
 - **THEN** the first screen is shown
 
 ### Requirement: Long read-only text is cut and opens in full
-Read-only text that people wrote (a wishlist title, note and link, a question and its answer, a group's description, and a user's or receiver's profile fields) SHALL show at most three lines, with an ellipsis when there is more. Choosing text that was cut SHALL open a dialog with its full text, which scrolls when it is long and can be closed. Text that is not cut SHALL do nothing when chosen.
+Read-only text that people wrote (a wishlist note and link, a question and its answer, a group's description, and a user's or receiver's profile fields) SHALL show at most three lines, with an ellipsis when there is more; a wishlist item's title SHALL show on one row, with an ellipsis when it is longer, wherever the item is shown. Choosing text that was cut SHALL open a dialog with its full text, which scrolls when it is long and can be closed. Text that is not cut SHALL do nothing when chosen.
 
 #### Scenario: A long note is cut
 - **WHEN** a wishlist item has a note of more than three lines
@@ -384,7 +384,11 @@ Read-only text that people wrote (a wishlist title, note and link, a question an
 
 #### Scenario: Own list
 - **WHEN** the person chooses a cut note on their own wishlist
-- **THEN** the full text opens in a dialog, and choosing the rest of the item still opens it for editing
+- **THEN** the full text opens in a dialog, and nothing else on the item opens it for editing except its edit button
+
+#### Scenario: A long title
+- **WHEN** a wishlist item has a title longer than one row
+- **THEN** it shows on one row with an ellipsis, and choosing it opens a dialog with the whole title
 
 ### Requirement: Read-only text can be copied
 Every read-only value of the kinds named in the previous requirement, and the username headings, a user's temporary password and the Santa reveal, SHALL end with a copy icon that puts the whole text, not only the part shown, on the clipboard. The icon SHALL change to a check mark for about a second afterwards, and SHALL show that the copy failed when the platform refuses it. Labels, screen titles, status words and buttons SHALL NOT have one.

@@ -79,11 +79,11 @@ While a groups screen loads, the app SHALL show a progress indicator. When the s
 - **THEN** the app handles it as for any request: the sign-in screen is shown with the note that the person was signed out
 
 ### Requirement: Group page
-Choosing a group SHALL open its page, loaded with `GET /groups/{id}`, showing its name on one row with an ellipsis when it is longer, then its state and state note, description, date, time and location, then the pair rows of `client-group-pages`, and at the end the list of every participant's username with the person's own marked. Choosing a name that was cut SHALL open a dialog with the whole name and the copy icon. The participants list SHALL be a box that scrolls inside itself and fills all the height left below the details and the pair rows, with a minimum height; when the details leave less room than that, they SHALL scroll above it. Parts the group does not have SHALL be left out.
+Choosing a group SHALL open its page, loaded with `GET /groups/{id}`, showing its name on one row with an ellipsis when it is longer, then its state and state note, description, date, time and location, then the pair rows of `client-group-pages`, and at the end every participant's username as a chip, with the person's own chip highlighted. Choosing a name that was cut SHALL open a dialog with the whole name and the copy icon. The chips SHALL be part of the page itself, not in a box of their own: they wrap onto as many lines as needed, and the whole page (details, pair rows and chips) scrolls together and is refreshed by pulling it where the platform has the gesture. The chips SHALL NOT be tappable. Parts the group does not have SHALL be left out.
 
 #### Scenario: Opening a group
 - **WHEN** the person chooses a group in the list
-- **THEN** the page shows its details, the pair rows and, at the end, every participant's username with their own marked "you"
+- **THEN** the page shows its details, the pair rows and, at the end, a chip for every participant's username with their own highlighted
 
 #### Scenario: Back to the list
 - **WHEN** the person goes back from the group page
@@ -94,13 +94,17 @@ Choosing a group SHALL open its page, loaded with `GET /groups/{id}`, showing it
 - **THEN** the page says the group is no longer available and offers to go back
 
 #### Scenario: Many participants
-- **WHEN** the group has more participants than fit in the list
-- **THEN** the list fills the rest of the page and scrolls inside itself, and the rest of the page does not grow
+- **WHEN** the group has more participants than fit on the screen
+- **THEN** the chips wrap onto as many lines as needed, the page grows and scrolls as one, and no area scrolls inside the page
 
 #### Scenario: Few participants
 - **WHEN** the group has four participants on a tall screen
-- **THEN** the box still fills the rest of the page, with the names at its top
+- **THEN** the chips follow the pair rows directly, with no empty box below them
 
 #### Scenario: A long name
 - **WHEN** the group's name is longer than one row and the person chooses it
 - **THEN** a dialog shows the whole name and can be closed
+
+#### Scenario: Own chip
+- **WHEN** the person `alice` is a participant
+- **THEN** her chip is highlighted and has no "you" text, and the other chips are not highlighted
