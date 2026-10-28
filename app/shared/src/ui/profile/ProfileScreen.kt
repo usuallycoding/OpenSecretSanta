@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -38,7 +37,7 @@ fun ProfileScreen(viewModel: ProfileViewModel) {
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        LoadContent(load, onRetry = { viewModel.refresh() }, modifier = Modifier.widthIn(max = 640.dp).fillMaxSize()) {
+        LoadContent(load, onRetry = { viewModel.refresh() }, modifier = Modifier.fillMaxSize()) {
             ProfileForm(ui, viewModel)
         }
     }

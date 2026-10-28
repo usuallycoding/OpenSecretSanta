@@ -3,7 +3,6 @@ package com.usuallycoding.opensecretsanta.ui.groups
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,10 +21,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.form.ParticipantChip
+import com.usuallycoding.opensecretsanta.ui.form.ParticipantChips
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
 import com.usuallycoding.opensecretsanta.ui.load.LoadSection
-import com.usuallycoding.opensecretsanta.ui.load.HeaderWithFooter
-import com.usuallycoding.opensecretsanta.ui.load.ScrollingBox
+import com.usuallycoding.opensecretsanta.ui.load.PullPage
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -58,19 +58,15 @@ fun GroupPage(
     val receiver = pair?.receiver?.collectAsState()?.value
     var sheet by remember { mutableStateOf<PairSheet?>(null) }
 
-    HeaderWithFooter(
-        loading = state.loading || receiver?.loading == true,
-        onRefresh = { viewModel.refresh(); pair?.refresh() },
-        header = {
-            LoadSection(state, onRetry = { viewModel.refresh() }) { detail ->
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Header(detail)
-                    PairRows(detail.phase, me, receiver, onRetry = { pair?.refresh() }, onOpenGifter, onOpenReceiver, onSheet = { sheet = it })
-                }
+    PullPage(loading = state.loading || receiver?.loading == true, onRefresh = { viewModel.refresh(); pair?.refresh() }) {
+        LoadSection(state, onRetry = { viewModel.refresh() }) { detail ->
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Header(detail)
+                PairRows(detail.phase, me, receiver, onRetry = { pair?.refresh() }, onOpenGifter, onOpenReceiver, onSheet = { sheet = it })
+                Participants(detail.participants)
             }
-        },
-        footer = { state.value?.let { Participants(it.participants) } },
-    )
+        }
+    }
     sheet?.let { PairSheets(it, viewModel.groupId, pair, onDismiss = { sheet = null }) }
 }
 
@@ -99,13 +95,14 @@ private fun Header(group: GroupDetail) {
     }
 }
 
-/** Everyone in the group, in a box that fills the rest of the page and scrolls inside itself when there are more names than fit. */
+/** Everyone in the group, as chips that are part of the page: it grows and scrolls as one when there are many names. */
 @Composable
-private fun ColumnScope.Participants(participants: List<ParticipantItem>) {
-    Text("${Strings.GROUP_PARTICIPANTS} (${participants.size})", style = MaterialTheme.typography.titleMedium)
-    ScrollingBox {
-        for (participant in participants) {
-            Text(if (participant.isMe) "${participant.username} (${Strings.YOU})" else participant.username)
-        }
+private fun Participants(participants: List<ParticipantItem>) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("${Strings.GROUP_PARTICIPANTS} (${participants.size})", style = MaterialTheme.typography.titleMedium)
+        ParticipantChips(
+            participants.map { ParticipantChip(it.username, highlighted = it.isMe, spoken = if (it.isMe) "${it.username}, ${Strings.YOU}" else null) },
+            boxed = false,
+        )
     }
 }

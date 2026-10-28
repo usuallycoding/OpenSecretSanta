@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.OutlinedCard
@@ -39,7 +38,7 @@ fun HeaderWithFooter(
         CompositionLocalProvider(LocalPullActive provides pulled) {
             BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                 val headerMax = (maxHeight - MIN_FOOTER_HEIGHT - PAGE_PADDING * 2).coerceAtLeast(0.dp)
-                Column(Modifier.widthIn(max = 640.dp).fillMaxSize().padding(horizontal = 16.dp, vertical = PAGE_PADDING)) {
+                Column(Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = PAGE_PADDING)) {
                     Column(
                         Modifier.fillMaxWidth().heightIn(max = headerMax).verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(12.dp),

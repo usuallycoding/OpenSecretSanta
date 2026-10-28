@@ -59,8 +59,9 @@ class AdminGroupViewModel(
     /** The wishlist link of a Pending group's participants; once the names are drawn the pair sheet shows the receiver's list. */
     val canReadPendingWishlists: Boolean get() = current?.phase == AdminPhase.Pending
 
+    /** A person's details can be opened from the pair list of a drawn group and from the participants of a Pending one. */
     fun openUserSheet(username: String) {
-        if (canReadDraw) _ui.update { it.copy(sheet = GroupSheet.User(username)) }
+        if (canReadDraw || canReadPendingWishlists) _ui.update { it.copy(sheet = GroupSheet.User(username)) }
     }
 
     fun openPairSheet(santa: String, receiver: String) {

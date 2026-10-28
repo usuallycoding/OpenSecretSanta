@@ -9,11 +9,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
@@ -140,9 +139,9 @@ private fun ItemRow(
         }
     }
 }
+
 /** The side of the edit and move buttons: three of them make a column that keeps the cards compact. */
 private val ITEM_BUTTON = 40.dp
-
 
 /** An item's title, note and link, as the person and their Santa both read it. A link opens a dialog first. */
 @Composable

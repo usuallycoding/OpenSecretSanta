@@ -143,12 +143,14 @@ class AdminOversightViewModelTest {
     }
 
     @Test
-    fun aPendingGroupOpensOnlyTheWishlistSheet() = runTest {
+    fun aPendingGroupOpensTheUserSheetAndTheWishlistSheetButNoPairSheet() = runTest {
         val model = group(groups.add("Soon", "pending", listOf("alice", "bob")))
 
-        model.openUserSheet("alice")
         model.openPairSheet("alice", "bob")
         assertNull(model.ui.value.sheet)
+
+        model.openUserSheet("alice")
+        assertEquals(GroupSheet.User("alice"), model.ui.value.sheet)
 
         model.openWishlistSheet("bob")
         assertEquals(GroupSheet.Wishlist("bob"), model.ui.value.sheet)

@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -47,7 +46,7 @@ fun AdminUserScreen(viewModel: AdminUserViewModel, onBack: () -> Unit) {
         return
     }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
+        Column(Modifier.fillMaxSize()) {
             UserNoticeRow(ui, viewModel)
             LoadContent(state, onRetry = { viewModel.refresh() }, onRefresh = { viewModel.refresh() }) { user ->
                 // the detail does not scroll by itself: the sheet that shows it scrolls as a whole

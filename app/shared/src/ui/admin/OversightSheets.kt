@@ -76,7 +76,7 @@ internal fun ColumnScope.PairList(draw: DrawState, onRetry: () -> Unit, onUser: 
                             Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = Strings.adminPair(pair.santa, pair.receiver))
                         }
                         TextButton(onClick = { onUser(pair.receiver) }, modifier = Modifier.weight(1f)) {
-                            Text(usernameLabel(pair.receiver, pair.receiverIsMe, pair.receiverIncomplete), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+                            Text(usernameLabel(pair.receiver, pair.receiverIsMe, pair.receiverIncomplete), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.End)
                         }
                     }
                 }

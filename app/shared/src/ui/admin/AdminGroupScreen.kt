@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -44,7 +43,13 @@ import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.load.HeaderWithFooter
 import com.usuallycoding.opensecretsanta.ui.load.LoadSection
 import com.usuallycoding.opensecretsanta.ui.load.ScrollingBox
+import com.usuallycoding.opensecretsanta.ui.form.GiftIcon
+import com.usuallycoding.opensecretsanta.ui.form.ParticipantChip
+import com.usuallycoding.opensecretsanta.ui.form.ParticipantChips
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.text.style.TextAlign
 
 /** One of the administrator's groups: its details and people, and what can be done with it in its state. */
 @OptIn(ExperimentalComposeUiApi::class)
@@ -73,7 +78,7 @@ fun AdminGroupScreen(
         return
     }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
+        Column(Modifier.fillMaxSize()) {
             ui.notice?.let { notice ->
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(notice.text(), modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
@@ -168,28 +173,38 @@ private fun ColumnScope.People(group: AdminGroup, viewModel: AdminGroupViewModel
             TextButton(onClick = viewModel::openParticipants) { Text(Strings.ADMIN_EDIT_PARTICIPANTS) }
         }
     }
-    ScrollingBox {
-        if (group.participants.isEmpty()) {
-            Text(Strings.ADMIN_NO_PARTICIPANTS, style = MaterialTheme.typography.bodyMedium)
-        }
-        for (participant in group.participants) {
-            val marks = listOfNotNull(
-                Strings.ADMIN_NO_ACCOUNT.takeIf { !participant.hasAccount },
-                Strings.ADMIN_PROFILE_INCOMPLETE.takeIf { participant.hasAccount && !participant.profileComplete },
-            )
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    if (marks.isEmpty()) participant.username else "${participant.username} (${marks.joinToString(", ")})",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.weight(1f),
-                )
-                if (viewModel.canReadPendingWishlists) {
-                    TextButton(onClick = { viewModel.openWishlistSheet(participant.username) }) { Text(Strings.ADMIN_OPEN_WISHLIST) }
+    if (group.participants.isEmpty()) {
+        ScrollingBox { Text(Strings.ADMIN_NO_PARTICIPANTS, style = MaterialTheme.typography.bodyMedium) }
+        return
+    }
+    val legend = Strings.ADMIN_MARK_LEGEND.takeIf { group.participants.any { it.marked() } }
+    if (viewModel.canReadPendingWishlists) {
+        ScrollingBox {
+            for (participant in group.participants) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(
+                        onClick = { viewModel.openUserSheet(participant.username) },
+                        enabled = participant.hasAccount,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(participant.label(), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+                    }
+                    IconButton(onClick = { viewModel.openWishlistSheet(participant.username) }, enabled = participant.hasAccount) {
+                        Icon(GiftIcon, contentDescription = Strings.ADMIN_OPEN_WISHLIST)
+                    }
                 }
             }
+            if (legend != null) Text(legend, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+    } else {
+        ParticipantChips(group.participants.map { ParticipantChip(it.label()) }, legend)
     }
 }
+
+/** A participant without an account, or whose profile lacks a name or an address, is followed by one `*`. */
+private fun AdminParticipant.marked() = !hasAccount || !profileComplete
+
+private fun AdminParticipant.label() = if (marked()) "$username *" else username
 
 @Composable
 private fun StepDialog(step: AdminStep, groupName: String, viewModel: AdminGroupViewModel) {

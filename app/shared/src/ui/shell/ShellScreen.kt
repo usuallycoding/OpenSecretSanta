@@ -1,6 +1,8 @@
 package com.usuallycoding.opensecretsanta.ui.shell
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -111,109 +113,116 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
     }
 
     val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(titleOf(view, destination)) },
-                navigationIcon = {
-                    if (onGroup) {
-                        IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = Strings.BACK)
+    // One standard width for the bars, content and buttons; on a wider window the rest is plain background
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.TopCenter) {
+        Scaffold(
+            modifier = Modifier.widthIn(max = MAX_CONTENT_WIDTH).fillMaxSize(),
+            topBar = {
+                TopAppBar(
+                    title = { Text(titleOf(view, destination)) },
+                    navigationIcon = {
+                        if (onGroup) {
+                            IconButton(onClick = { navController.popBackStack() }) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = Strings.BACK)
+                            }
                         }
-                    }
-                },
-                actions = { ShellMenu(viewModel, view) },
-            )
-        },
-        // The tabs stay while a group is open, so switching tabs and coming back finds the group as it was left.
-        // While the keyboard is open the bar is hidden behind it anyway; leaving it out keeps a form's own keyboard padding exact.
-        bottomBar = {
-            if (!imeVisible) {
-                if (participant) TabBar(navController, destination) else AdminTabBar(navController, destination)
-            }
-        },
-    ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
-            run {
-                NavHost(navController, startDestination = startRoute) {
-                    composable<GroupsRoute> {
-                        GroupsScreen(koinViewModel(), onOpen = { navController.navigate(GroupRoute(it)) })
-                    }
-                    composable<GroupRoute> { entry ->
-                        val groupId = entry.toRoute<GroupRoute>().id
-                        GroupPage(
-                            koinViewModel<GroupDetailViewModel>(key = "group-$groupId") { parametersOf(groupId, viewModel.account.username) },
-                            me = viewModel.account.username,
-                            onBack = { navController.popBackStack() },
-                            onOpenGifter = { navController.navigate(GifterRoute(groupId)) },
-                            onOpenReceiver = { navController.navigate(ReceiverRoute(groupId)) },
-                        )
-                    }
-                    composable<GifterRoute> { entry ->
-                        val groupId = entry.toRoute<GifterRoute>().groupId
-                        GifterPage(
-                            koinViewModel<ReceiverWishlistViewModel>(key = "receiver-wishlist-$groupId") { parametersOf(groupId) },
-                            koinViewModel<ReceiverViewModel>(key = "receiver-$groupId") { parametersOf(groupId) },
-                            onBack = { navController.popBackStack() },
-                        )
-                    }
-                    composable<ReceiverRoute> { entry ->
-                        val groupId = entry.toRoute<ReceiverRoute>().groupId
-                        ReceiverPage(
-                            groupId,
-                            koinViewModel<WishlistViewModel>(key = "wishlist-$groupId") { parametersOf(groupId) },
-                            onBack = { navController.popBackStack() },
-                        )
-                    }
-                    composable<ProfileRoute> { ProfileScreen(koinViewModel()) }
-                    // stand-ins until the admin screens arrive
-                    composable<AdminGroupsRoute> {
-                        AdminGroupsScreen(
-                            koinViewModel(),
-                            onOpen = { navController.navigate(AdminGroupRoute(it)) },
-                            onNew = { navController.navigate(AdminGroupNewRoute) },
-                        )
-                    }
-                    composable<AdminUsersRoute> {
-                        AdminUsersScreen(koinViewModel(), onOpen = { navController.navigate(AdminUserRoute(it)) })
-                    }
-                    composable<AdminUserRoute> { entry ->
-                        val username = entry.toRoute<AdminUserRoute>().username
-                        AdminUserScreen(
-                            koinViewModel<AdminUserViewModel>(key = "admin-user-$username") { parametersOf(username, viewModel.account.username) },
-                            onBack = { navController.popBackStack() },
-                        )
-                    }
-                    composable<AdminGroupNewRoute> {
-                        AdminGroupFormScreen(
-                            koinViewModel<AdminGroupFormViewModel>(key = "admin-group-new") { parametersOf(AdminGroupFormViewModel.NEW_GROUP) },
-                            // the new group takes the form's place, so back from it returns to the list
-                            onSaved = { id -> navController.navigate(AdminGroupRoute(id)) { popUpTo<AdminGroupNewRoute> { inclusive = true } } },
-                            onBack = { navController.popBackStack() },
-                        )
-                    }
-                    composable<AdminGroupRoute> { entry ->
-                        val groupId = entry.toRoute<AdminGroupRoute>().id
-                        AdminGroupScreen(
-                            koinViewModel<AdminGroupViewModel>(key = "admin-group-$groupId") { parametersOf(groupId, viewModel.account.username) },
-                            onBack = { navController.popBackStack() },
-                            onEdit = { navController.navigate(AdminGroupEditRoute(groupId)) },
-                            onDeleted = { navController.popBackStack() },
-                        )
-                    }
-                    composable<AdminGroupEditRoute> { entry ->
-                        val groupId = entry.toRoute<AdminGroupEditRoute>().id
-                        AdminGroupFormScreen(
-                            koinViewModel<AdminGroupFormViewModel>(key = "admin-group-edit-$groupId") { parametersOf(groupId) },
-                            onSaved = { navController.popBackStack() },
-                            onBack = { navController.popBackStack() },
-                        )
+                    },
+                    actions = { ShellMenu(viewModel, view) },
+                )
+            },
+            // The tabs stay while a group is open, so switching tabs and coming back finds the group as it was left.
+            // While the keyboard is open the bar is hidden behind it anyway; leaving it out keeps a form's own keyboard padding exact.
+            bottomBar = {
+                if (!imeVisible) {
+                    if (participant) TabBar(navController, destination) else AdminTabBar(navController, destination)
+                }
+            },
+        ) { padding ->
+            Box(Modifier.fillMaxSize().padding(padding)) {
+                run {
+                    NavHost(navController, startDestination = startRoute) {
+                        composable<GroupsRoute> {
+                            GroupsScreen(koinViewModel(), onOpen = { navController.navigate(GroupRoute(it)) })
+                        }
+                        composable<GroupRoute> { entry ->
+                            val groupId = entry.toRoute<GroupRoute>().id
+                            GroupPage(
+                                koinViewModel<GroupDetailViewModel>(key = "group-$groupId") { parametersOf(groupId, viewModel.account.username) },
+                                me = viewModel.account.username,
+                                onBack = { navController.popBackStack() },
+                                onOpenGifter = { navController.navigate(GifterRoute(groupId)) },
+                                onOpenReceiver = { navController.navigate(ReceiverRoute(groupId)) },
+                            )
+                        }
+                        composable<GifterRoute> { entry ->
+                            val groupId = entry.toRoute<GifterRoute>().groupId
+                            GifterPage(
+                                koinViewModel<ReceiverWishlistViewModel>(key = "receiver-wishlist-$groupId") { parametersOf(groupId) },
+                                koinViewModel<ReceiverViewModel>(key = "receiver-$groupId") { parametersOf(groupId) },
+                                onBack = { navController.popBackStack() },
+                            )
+                        }
+                        composable<ReceiverRoute> { entry ->
+                            val groupId = entry.toRoute<ReceiverRoute>().groupId
+                            ReceiverPage(
+                                groupId,
+                                koinViewModel<WishlistViewModel>(key = "wishlist-$groupId") { parametersOf(groupId) },
+                                onBack = { navController.popBackStack() },
+                            )
+                        }
+                        composable<ProfileRoute> { ProfileScreen(koinViewModel()) }
+                        // stand-ins until the admin screens arrive
+                        composable<AdminGroupsRoute> {
+                            AdminGroupsScreen(
+                                koinViewModel(),
+                                onOpen = { navController.navigate(AdminGroupRoute(it)) },
+                                onNew = { navController.navigate(AdminGroupNewRoute) },
+                            )
+                        }
+                        composable<AdminUsersRoute> {
+                            AdminUsersScreen(koinViewModel(), onOpen = { navController.navigate(AdminUserRoute(it)) })
+                        }
+                        composable<AdminUserRoute> { entry ->
+                            val username = entry.toRoute<AdminUserRoute>().username
+                            AdminUserScreen(
+                                koinViewModel<AdminUserViewModel>(key = "admin-user-$username") { parametersOf(username, viewModel.account.username) },
+                                onBack = { navController.popBackStack() },
+                            )
+                        }
+                        composable<AdminGroupNewRoute> {
+                            AdminGroupFormScreen(
+                                koinViewModel<AdminGroupFormViewModel>(key = "admin-group-new") { parametersOf(AdminGroupFormViewModel.NEW_GROUP) },
+                                // the new group takes the form's place, so back from it returns to the list
+                                onSaved = { id -> navController.navigate(AdminGroupRoute(id)) { popUpTo<AdminGroupNewRoute> { inclusive = true } } },
+                                onBack = { navController.popBackStack() },
+                            )
+                        }
+                        composable<AdminGroupRoute> { entry ->
+                            val groupId = entry.toRoute<AdminGroupRoute>().id
+                            AdminGroupScreen(
+                                koinViewModel<AdminGroupViewModel>(key = "admin-group-$groupId") { parametersOf(groupId, viewModel.account.username) },
+                                onBack = { navController.popBackStack() },
+                                onEdit = { navController.navigate(AdminGroupEditRoute(groupId)) },
+                                onDeleted = { navController.popBackStack() },
+                            )
+                        }
+                        composable<AdminGroupEditRoute> { entry ->
+                            val groupId = entry.toRoute<AdminGroupEditRoute>().id
+                            AdminGroupFormScreen(
+                                koinViewModel<AdminGroupFormViewModel>(key = "admin-group-edit-$groupId") { parametersOf(groupId) },
+                                onSaved = { navController.popBackStack() },
+                                onBack = { navController.popBackStack() },
+                            )
+                        }
                     }
                 }
             }
         }
     }
 }
+
+/** The widest the signed-in app gets: the bars, the content and the floating buttons share it. */
+private val MAX_CONTENT_WIDTH = 640.dp
 
 private fun titleOf(view: AppView, destination: NavDestination?): String = when {
     destination?.hasRoute<AdminUserRoute>() == true -> Strings.ADMIN_USER

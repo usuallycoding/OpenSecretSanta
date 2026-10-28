@@ -52,7 +52,7 @@ internal fun PairRows(
                 UserButton(me, onClick = { onSheet(PairSheet.Me) }, modifier = Modifier.weight(1f))
                 IconButton(onClick = onOpenGifter) { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = Strings.TITLE_GIFTER) }
                 val name = receiver?.value?.username
-                UserButton(name ?: "...", onClick = { onSheet(PairSheet.Receiver) }, modifier = Modifier.weight(1f), enabled = name != null)
+                UserButton(name ?: "...", onClick = { onSheet(PairSheet.Receiver) }, modifier = Modifier.weight(1f), enabled = name != null, align = TextAlign.End)
             }
             if (receiver?.value == null && receiver?.error != null) {
                 Text(receiver.error.loadMessage(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
@@ -66,7 +66,7 @@ internal fun PairRows(
                     enabled = phase == GroupPhase.Archived,
                 )
                 IconButton(onClick = onOpenReceiver) { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = Strings.TITLE_RECEIVER) }
-                UserButton(me, onClick = { onSheet(PairSheet.Me) }, modifier = Modifier.weight(1f))
+                UserButton(me, onClick = { onSheet(PairSheet.Me) }, modifier = Modifier.weight(1f), align = TextAlign.End)
             }
         }
         GroupPhase.Other -> Unit
@@ -74,8 +74,8 @@ internal fun PairRows(
 }
 
 @Composable
-private fun UserButton(label: String, onClick: () -> Unit, modifier: Modifier, enabled: Boolean = true) {
+private fun UserButton(label: String, onClick: () -> Unit, modifier: Modifier, enabled: Boolean = true, align: TextAlign = TextAlign.Start) {
     TextButton(onClick = onClick, modifier = modifier, enabled = enabled) {
-        Text(label, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+        Text(label, modifier = Modifier.fillMaxWidth(), textAlign = align)
     }
 }
