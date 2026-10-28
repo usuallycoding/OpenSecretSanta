@@ -1,6 +1,8 @@
 package com.usuallycoding.opensecretsanta.ui
 
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
+import com.usuallycoding.opensecretsanta.contract.ErrorResponse
+import com.usuallycoding.opensecretsanta.contract.DeletionImpactDto
 import com.usuallycoding.opensecretsanta.data.api.ApiClient
 import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.data.api.AuthContext
@@ -99,6 +101,7 @@ class ScriptedServer {
                 val path = request.url.encodedPath
                 adminUsers.answer(request.method.value, path)?.let { return@MockEngine json(it.first, it.second) }
                 oversight.answer(request.method.value, path)?.let { return@MockEngine json(it.first, it.second) }
+                adminGroups.confirmed = request.url.parameters["confirm"] == "true"
                 adminGroups.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 gift.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 val wishlistAnswer = wishlist.answer(request.method.value, path, bodies.last())
@@ -346,6 +349,22 @@ class FakeAdminGroups {
     val completeProfiles = mutableSetOf("alice")
 
     val ids: List<Long> get() = groups.map { it.id }
+
+    /** Whether each `DELETE` of a group carried `confirm=true`, in the order they came. */
+    val deleteRequests = mutableListOf<Boolean>()
+
+    /** Set by the engine from the request's query before [answer] is called. */
+    var confirmed = false
+
+    /** What deleting a group takes with it, when a test says so; a drawn group always has at least its draw. */
+    val impacts = mutableMapOf<Long, DeletionImpactDto>()
+
+    private fun impactOf(group: Group): DeletionImpactDto {
+        val set = impacts[group.id] ?: DeletionImpactDto(0, 0, 0, draw = false)
+        return set.copy(draw = set.draw || group.state == "active" || group.state == "archived")
+    }
+
+    private fun DeletionImpactDto.isEmpty() = wishlistItems == 0 && questions == 0 && answers == 0 && !draw
     fun group(id: Long): Group = groups.first { it.id == id }
 
     /** The group as this administrator may see it: null when it does not exist or belongs to someone else. */
@@ -436,11 +455,17 @@ class FakeAdminGroups {
                 group.participants = names.map { it.lowercase() }.distinct()
                 response(group, if (group.state == "pending") createMissingAccounts(group) else emptyList())
             }
-            method == "DELETE" && action.isEmpty() -> if (group.state == "draft") {
-                groups.remove(group)
-                HttpStatusCode.NoContent to ""
-            } else {
-                notNow
+            method == "DELETE" && action.isEmpty() -> {
+                deleteRequests += confirmed
+                val impact = impactOf(group)
+                if (!confirmed && !impact.isEmpty()) {
+                    HttpStatusCode.Conflict to Json.encodeToString(
+                        ErrorResponse("confirmation_required", "Deleting this group also deletes data. Confirm to go on.", impact = impact),
+                    )
+                } else {
+                    groups.remove(group)
+                    HttpStatusCode.NoContent to ""
+                }
             }
             method == "POST" && action == "pending" -> if (group.state == "draft") {
                 group.state = "pending"

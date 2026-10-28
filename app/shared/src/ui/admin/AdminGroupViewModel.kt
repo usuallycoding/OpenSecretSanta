@@ -94,7 +94,8 @@ class AdminGroupViewModel(
     val canEditParticipants: Boolean
         get() = current?.phase.let { it == AdminPhase.Draft || it == AdminPhase.Pending }
 
-    val canDelete: Boolean get() = current?.phase == AdminPhase.Draft
+    /** Any group can be deleted; one with data of its own asks for a second confirmation first. */
+    val canDelete: Boolean get() = current != null
 
     /** The next step for the state, or null when there is none (an Archived group). */
     val nextStep: AdminStep?
@@ -166,6 +167,20 @@ class AdminGroupViewModel(
 
     fun cancelStep() = _ui.update { it.copy(confirming = null) }
 
+    fun cancelDelete() = _ui.update { it.copy(confirmingDelete = null) }
+
+    /** The second confirmation of a deletion: sends it again with `confirm=true`. */
+    fun confirmDelete(): Job? {
+        if (_ui.value.confirmingDelete == null || _ui.value.busy) return null
+        _ui.update { it.copy(confirmingDelete = null, busy = true) }
+        return scope.launch {
+            when (val result = api.deleteGroup(groupId, confirm = true)) {
+                is ApiResult.Success -> _ui.update { it.copy(busy = false, deleted = true) }
+                is ApiResult.Failure -> stepFailed(result.error)
+            }
+        }
+    }
+
     fun confirmStep(): Job? {
         val step = _ui.value.confirming ?: return null
         if (_ui.value.busy) return null
@@ -174,7 +189,12 @@ class AdminGroupViewModel(
             if (step == AdminStep.Delete) {
                 when (val result = api.deleteGroup(groupId)) {
                     is ApiResult.Success -> _ui.update { it.copy(busy = false, deleted = true) }
-                    is ApiResult.Failure -> stepFailed(result.error)
+                    is ApiResult.Failure -> {
+                        val error = result.error
+                        // the group has data that would go with it: say what, and delete only when that is confirmed too
+                        if (error is ApiError.ConfirmationRequired) _ui.update { it.copy(busy = false, confirmingDelete = error.impact) }
+                        else stepFailed(error)
+                    }
                 }
                 return@launch
             }
@@ -231,7 +251,7 @@ class AdminGroupViewModel(
 
     /** The sheet and the confirmation are over, the group is read again, and [notice] is said once the new group is there. */
     private suspend fun reloadWith(notice: AdminNotice?) {
-        _ui.update { it.copy(participants = null, confirming = null, busy = false) }
+        _ui.update { it.copy(participants = null, confirming = null, confirmingDelete = null, busy = false) }
         loader.refresh().join()
         _ui.update { it.copy(notice = if (loader.state.value.error == null) notice else null) }
     }

@@ -155,8 +155,12 @@ class ApiClient(
     suspend fun setParticipants(id: Long, usernames: List<String>): ApiResult<GroupChangeResponse> =
         call(HttpMethod.Put, ApiRoutes.adminGroupParticipants(id), body = ParticipantsRequest(usernames))
 
-    /** The server answers 204 with no body; only a Draft can be deleted. */
-    suspend fun deleteGroup(id: Long): ApiResult<Unit> = call(HttpMethod.Delete, ApiRoutes.adminGroup(id))
+    /**
+     * The server answers 204 with no body. A group with a draw, wishlist items, questions or answers is only deleted with
+     * [confirm]; without it the server answers `confirmation_required` and says what would go ([ApiError.ConfirmationRequired]).
+     */
+    suspend fun deleteGroup(id: Long, confirm: Boolean = false): ApiResult<Unit> =
+        call(HttpMethod.Delete, ApiRoutes.adminGroup(id) + if (confirm) "?${ApiRoutes.CONFIRM}=true" else "")
 
     /** Draft to Pending; the answer lists the accounts it created, with their temporary passwords. */
     suspend fun makePending(id: Long): ApiResult<GroupChangeResponse> =
@@ -251,11 +255,13 @@ class ApiClient(
         return when {
             code == 403 && error.code == PASSWORD_CHANGE_REQUIRED -> ApiError.PasswordChangeRequired
             code == 400 -> ApiError.Validation(error.field, error.message)
+            code == 409 && error.code == CONFIRMATION_REQUIRED && error.impact != null -> ApiError.ConfirmationRequired(error.impact!!)
             else -> ApiError.Rejected(code, error.code, error.message)
         }
     }
 
     private companion object {
         const val PASSWORD_CHANGE_REQUIRED = "password_change_required"
+        const val CONFIRMATION_REQUIRED = "confirmation_required"
     }
 }

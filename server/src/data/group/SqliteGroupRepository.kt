@@ -2,6 +2,7 @@ package com.usuallycoding.opensecretsanta.server.data.group
 
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 import com.usuallycoding.opensecretsanta.domain.group.Assignment
+import com.usuallycoding.opensecretsanta.domain.group.DeletionImpact
 import com.usuallycoding.opensecretsanta.domain.group.Group
 import com.usuallycoding.opensecretsanta.domain.group.GroupDetails
 import com.usuallycoding.opensecretsanta.domain.group.GroupRepository
@@ -66,14 +67,30 @@ class SqliteGroupRepository(private val database: Database) : GroupRepository {
         load(c, id)!!
     }
 
-    override fun deleteDraft(id: Long) {
+    /** The participants, draw, wishlist items, questions and answers go with the group through their `ON DELETE CASCADE`. */
+    override fun delete(id: Long) {
         database.transaction { c ->
-            val changed = c.prepareStatement("DELETE FROM groups WHERE id = ? AND state = 'draft'").use { s ->
+            val changed = c.prepareStatement("DELETE FROM groups WHERE id = ?").use { s ->
                 s.setLong(1, id)
                 s.executeUpdate()
             }
-            if (changed == 0) throw missingOrWrongState(c, id, "Only a group in Draft can be deleted.")
+            if (changed == 0) throw DomainException.NotFound("Group not found.")
         }
+    }
+
+    override fun impact(id: Long): DeletionImpact = database.connection().use { c ->
+        fun count(sql: String): Int = c.prepareStatement(sql).use { s ->
+            s.setLong(1, id)
+            s.executeQuery().use { rows -> rows.next(); rows.getInt(1) }
+        }
+        val exists = count("SELECT COUNT(*) FROM groups WHERE id = ?") > 0
+        if (!exists) throw DomainException.NotFound("Group not found.")
+        DeletionImpact(
+            wishlistItems = count("SELECT COUNT(*) FROM wishlist_items WHERE group_id = ?"),
+            questions = count("SELECT COUNT(*) FROM questions WHERE group_id = ?"),
+            answers = count("SELECT COUNT(*) FROM questions WHERE group_id = ? AND answer IS NOT NULL"),
+            draw = count("SELECT COUNT(*) FROM assignments WHERE group_id = ?") > 0,
+        )
     }
 
     override fun replaceParticipants(id: Long, participants: List<Username>, newUsers: List<NewUser>): Group =

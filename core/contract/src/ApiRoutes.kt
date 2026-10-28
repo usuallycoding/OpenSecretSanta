@@ -1,6 +1,9 @@
 package com.usuallycoding.opensecretsanta.contract
 
 object ApiRoutes {
+    /** The query parameter that confirms a deletion that would destroy data. */
+    const val CONFIRM = "confirm"
+
     const val HEALTH = "/health"
 
     const val LOGIN = "/auth/login"

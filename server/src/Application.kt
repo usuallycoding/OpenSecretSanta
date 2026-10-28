@@ -26,7 +26,7 @@ import com.usuallycoding.opensecretsanta.domain.gift.ListQuestionsFromMySanta
 import com.usuallycoding.opensecretsanta.domain.group.ActivateGroup
 import com.usuallycoding.opensecretsanta.domain.group.ArchiveGroup
 import com.usuallycoding.opensecretsanta.domain.group.CreateGroup
-import com.usuallycoding.opensecretsanta.domain.group.DeleteDraftGroup
+import com.usuallycoding.opensecretsanta.domain.group.DeleteGroup
 import com.usuallycoding.opensecretsanta.domain.group.GetMyGroup
 import com.usuallycoding.opensecretsanta.domain.group.GetOwnedGroup
 import com.usuallycoding.opensecretsanta.domain.group.ListAssignments
@@ -135,7 +135,7 @@ fun Application.module(
                 get<GetOwnedGroup>(),
                 get<UpdateGroupDetails>(),
                 get<SetParticipants>(),
-                get<DeleteDraftGroup>(),
+                get<DeleteGroup>(),
             )
             groupLifecycleRoutes(get<MoveToPending>(), get<ActivateGroup>(), get<ArchiveGroup>(), get<ListAssignments>())
             memberGroupRoutes(get<ListMyGroups>(), get<GetMyGroup>())

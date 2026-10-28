@@ -28,16 +28,21 @@ class UpdateGroupDetails(
     }
 }
 
-class DeleteDraftGroup(
+/**
+ * Deletes a group in any state. A group that has a draw, wishlist items, questions or answers is only deleted when the
+ * caller has [confirmed] it, after being told (through [DomainException.ConfirmationRequired]) what would go.
+ */
+class DeleteGroup(
     private val loadOwned: OwnedGroupLoader,
     private val groups: GroupRepository,
 ) {
-    operator fun invoke(actor: User, id: Long) {
+    operator fun invoke(actor: User, id: Long, confirmed: Boolean = false) {
         val group = loadOwned(actor, id)
-        if (group.state != GroupState.DRAFT) {
-            throw DomainException.InvalidState("Only a group in Draft can be deleted.")
+        if (!confirmed) {
+            val impact = groups.impact(group.id)
+            if (!impact.isEmpty) throw DomainException.ConfirmationRequired(impact)
         }
-        groups.deleteDraft(group.id)
+        groups.delete(group.id)
     }
 }
 

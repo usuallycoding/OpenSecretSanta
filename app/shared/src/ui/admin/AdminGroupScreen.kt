@@ -1,6 +1,7 @@
 package com.usuallycoding.opensecretsanta.ui.admin
 
 import androidx.compose.foundation.layout.Arrangement
+import com.usuallycoding.opensecretsanta.contract.DeletionImpactDto
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -97,6 +98,7 @@ fun AdminGroupScreen(
     ui.participants?.let { ParticipantsSheet(it, viewModel) }
     ui.sheet?.let { GroupSheetHost(it, viewModel.groupId, viewModel.me, draw, viewModel::dismissSheet) }
     ui.confirming?.let { step -> StepDialog(step, state.value?.name.orEmpty(), viewModel) }
+    ui.confirmingDelete?.let { impact -> DeleteImpactDialog(impact, viewModel) }
     ui.passwords?.let { PasswordsDialog(Strings.PASSWORDS_TITLE, Strings.PASSWORDS_BODY, it, viewModel::dismissPasswords) }
 }
 
@@ -205,6 +207,25 @@ private fun ColumnScope.People(group: AdminGroup, viewModel: AdminGroupViewModel
 private fun AdminParticipant.marked() = !hasAccount || !profileComplete
 
 private fun AdminParticipant.label() = if (marked()) "$username *" else username
+
+/** The second confirmation of a deletion, once the server has said what else would go: the data of the group, for good. */
+@Composable
+private fun DeleteImpactDialog(impact: DeletionImpactDto, viewModel: AdminGroupViewModel) {
+    AlertDialog(
+        onDismissRequest = viewModel::cancelDelete,
+        title = { Text(Strings.DELETE_IMPACT_TITLE) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(Strings.deleteImpactBody(impact.wishlistItems, impact.questions, impact.answers, impact.draw))
+                Text(Strings.DELETE_IMPACT_FOREVER, style = MaterialTheme.typography.titleSmall)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { viewModel.confirmDelete() }) { Text(Strings.DELETE_EVERYTHING, color = MaterialTheme.colorScheme.error) }
+        },
+        dismissButton = { TextButton(onClick = viewModel::cancelDelete) { Text(Strings.CANCEL) } },
+    )
+}
 
 @Composable
 private fun StepDialog(step: AdminStep, groupName: String, viewModel: AdminGroupViewModel) {

@@ -1,5 +1,7 @@
 package com.usuallycoding.opensecretsanta.data.api
 
+import com.usuallycoding.opensecretsanta.contract.DeletionImpactDto
+
 /** Why a call to the server did not give the answer the screen asked for. */
 sealed interface ApiError {
     /** HTTP 401: wrong credentials on sign-in, or a token the server no longer accepts. */
@@ -13,6 +15,9 @@ sealed interface ApiError {
 
     /** HTTP 429: sign-in is paused; [retryAfterSeconds] comes from `Retry-After` when the server sent one. */
     data class RateLimited(val retryAfterSeconds: Int?) : ApiError
+
+    /** HTTP 409 `confirmation_required`: deleting the group would also delete the data in [impact], so the owner must confirm. */
+    data class ConfirmationRequired(val impact: DeletionImpactDto) : ApiError
 
     /** Any other error the server explained with an error body (404, 409, ...). */
     data class Rejected(val status: Int, val code: String, val message: String) : ApiError

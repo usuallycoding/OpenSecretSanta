@@ -26,8 +26,11 @@ interface GroupRepository {
     /** Allowed in every state but Archived. */
     fun updateDetails(id: Long, details: GroupDetails): Group
 
-    /** Allowed only in Draft. */
-    fun deleteDraft(id: Long)
+    /** Allowed in every state: the group goes with its participants, draw, wishlist items, questions and answers. */
+    fun delete(id: Long)
+
+    /** What [delete] would take besides the details and participants; `NotFound` when there is no such group. */
+    fun impact(id: Long): DeletionImpact
 
     /** Allowed in Draft and Pending; inserts [newUsers] in the same transaction. */
     fun replaceParticipants(id: Long, participants: List<Username>, newUsers: List<NewUser>): Group

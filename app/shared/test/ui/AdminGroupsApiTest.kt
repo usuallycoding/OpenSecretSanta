@@ -3,6 +3,7 @@ package com.usuallycoding.opensecretsanta.ui
 import com.usuallycoding.opensecretsanta.contract.CreateGroupRequest
 import com.usuallycoding.opensecretsanta.contract.GroupDetailsRequest
 import com.usuallycoding.opensecretsanta.contract.ParticipantsRequest
+import com.usuallycoding.opensecretsanta.contract.DeletionImpactDto
 import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.data.api.ApiResult
 import io.ktor.http.HttpStatusCode
@@ -152,14 +153,38 @@ class AdminGroupsApiTest {
     }
 
     @Test
-    fun onlyADraftIsDeletedAndTheAnswerHasNoBody() = runTest {
+    fun aGroupWithNothingLinkedIsDeletedAndTheAnswerHasNoBody() = runTest {
         val draft = fake.add("Draft")
-        val pending = fake.add("Pending", state = "pending")
 
         assertEquals(ApiResult.Success(Unit), api.deleteGroup(draft))
+
         assertEquals("DELETE /admin/groups/$draft", server.calls.last())
-        assertEquals(409, (failure(api.deleteGroup(pending)) as ApiError.Rejected).status)
-        assertEquals(listOf(pending), fake.ids)
+        assertEquals(listOf(false), fake.deleteRequests)
+        assertEquals(emptyList(), fake.ids)
+    }
+
+    @Test
+    fun aGroupWithLinkedDataIsRefusedWithTheCountsUntilItIsConfirmed() = runTest {
+        val id = fake.add("Pending", state = "pending")
+        fake.impacts[id] = DeletionImpactDto(wishlistItems = 2, questions = 0, answers = 0, draw = false)
+
+        val refused = failure(api.deleteGroup(id)) as ApiError.ConfirmationRequired
+
+        assertEquals(DeletionImpactDto(2, 0, 0, draw = false), refused.impact)
+        assertEquals(listOf(id), fake.ids)
+
+        assertEquals(ApiResult.Success(Unit), api.deleteGroup(id, confirm = true))
+        assertEquals(listOf(false, true), fake.deleteRequests)
+        assertEquals(emptyList(), fake.ids)
+    }
+
+    @Test
+    fun aDrawnGroupIsRefusedWithoutConfirmationEvenWithNothingElse() = runTest {
+        val id = fake.add("Active", state = "active")
+
+        val refused = failure(api.deleteGroup(id)) as ApiError.ConfirmationRequired
+
+        assertEquals(DeletionImpactDto(0, 0, 0, draw = true), refused.impact)
     }
 
     @Test

@@ -11,7 +11,7 @@ import com.usuallycoding.opensecretsanta.contract.ParticipantDto
 import com.usuallycoding.opensecretsanta.contract.ParticipantsRequest
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 import com.usuallycoding.opensecretsanta.domain.group.CreateGroup
-import com.usuallycoding.opensecretsanta.domain.group.DeleteDraftGroup
+import com.usuallycoding.opensecretsanta.domain.group.DeleteGroup
 import com.usuallycoding.opensecretsanta.domain.group.GetOwnedGroup
 import com.usuallycoding.opensecretsanta.domain.group.Group
 import com.usuallycoding.opensecretsanta.domain.group.GroupChange
@@ -72,7 +72,7 @@ fun Route.adminGroupRoutes(
     getOwned: GetOwnedGroup,
     updateDetails: UpdateGroupDetails,
     setParticipants: SetParticipants,
-    deleteDraft: DeleteDraftGroup,
+    deleteGroup: DeleteGroup,
 ) {
     post(ApiRoutes.ADMIN_GROUPS) {
         val actor = call.currentUser()
@@ -102,7 +102,8 @@ fun Route.adminGroupRoutes(
     }
     delete(ApiRoutes.ADMIN_GROUP) {
         val actor = call.currentUser()
-        blocking { deleteDraft(actor, call.groupId()) }
+        val confirmed = call.request.queryParameters[ApiRoutes.CONFIRM] == "true"
+        blocking { deleteGroup(actor, call.groupId(), confirmed) }
         call.respond(HttpStatusCode.NoContent)
     }
 }

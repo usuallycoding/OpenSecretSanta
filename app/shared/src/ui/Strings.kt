@@ -165,6 +165,25 @@ object Strings {
     const val DUPLICATING = "Duplicating..."
     fun duplicateBody(copyName: String) = "A new Draft called \"$copyName\" is created with the same details and participants."
     const val STEP_DELETE_TITLE = "Delete this group?"
+    const val DELETE_IMPACT_TITLE = "Delete this group and everything in it?"
+    const val DELETE_IMPACT_FOREVER = "This cannot be undone."
+    const val DELETE_EVERYTHING = "Delete everything"
+
+    /** "12 wishlist items, 7 questions, 5 answers and the draw": only what there is, with the right plural. */
+    fun deleteImpactBody(wishlistItems: Int, questions: Int, answers: Int, draw: Boolean): String {
+        val parts = buildList {
+            if (wishlistItems > 0) add(if (wishlistItems == 1) "1 wishlist item" else "$wishlistItems wishlist items")
+            if (questions > 0) add(if (questions == 1) "1 question" else "$questions questions")
+            if (answers > 0) add(if (answers == 1) "1 answer" else "$answers answers")
+            if (draw) add("the draw")
+        }
+        val list = when (parts.size) {
+            0 -> "everything in it"
+            1 -> parts.single()
+            else -> parts.dropLast(1).joinToString(", ") + " and " + parts.last()
+        }
+        return "This also deletes $list."
+    }
     fun stepDeleteBody(name: String) = "\"$name\" will be removed. This cannot be undone."
     fun stepTitle(label: String) = "$label?"
     fun drawNeedsPeople(min: Int) = "At least $min participants are needed to draw the names."

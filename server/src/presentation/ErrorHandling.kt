@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.server.presentation
 
+import com.usuallycoding.opensecretsanta.contract.DeletionImpactDto
 import com.usuallycoding.opensecretsanta.contract.ErrorResponse
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 import io.ktor.http.HttpHeaders
@@ -15,7 +16,7 @@ fun DomainException.httpStatus(): HttpStatusCode = when (this) {
     is DomainException.InvalidCredentials, is DomainException.Unauthorized -> HttpStatusCode.Unauthorized
     is DomainException.PasswordChangeRequired, is DomainException.Forbidden -> HttpStatusCode.Forbidden
     is DomainException.NotFound -> HttpStatusCode.NotFound
-    is DomainException.InvalidState -> HttpStatusCode.Conflict
+    is DomainException.InvalidState, is DomainException.ConfirmationRequired -> HttpStatusCode.Conflict
     is DomainException.ValidationFailed -> HttpStatusCode.BadRequest
     is DomainException.TooManyAttempts -> HttpStatusCode.TooManyRequests
 }
@@ -27,7 +28,10 @@ fun StatusPagesConfig.installErrorHandling() {
             call.response.header(HttpHeaders.RetryAfter, cause.retryAfterSeconds.toString())
         }
         val field = (cause as? DomainException.ValidationFailed)?.field
-        call.respond(cause.httpStatus(), ErrorResponse(cause.code, cause.message.orEmpty(), field))
+        val impact = (cause as? DomainException.ConfirmationRequired)?.impact?.let {
+            DeletionImpactDto(it.wishlistItems, it.questions, it.answers, it.draw)
+        }
+        call.respond(cause.httpStatus(), ErrorResponse(cause.code, cause.message.orEmpty(), field, impact))
     }
     exception<BadRequestException> { call, _ ->
         call.respond(HttpStatusCode.BadRequest, ErrorResponse("validation_failed", "The request could not be understood."))

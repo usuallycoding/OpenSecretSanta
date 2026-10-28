@@ -1,8 +1,10 @@
 package com.usuallycoding.opensecretsanta.domain
 
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
+import com.usuallycoding.opensecretsanta.domain.group.Assignment
 import com.usuallycoding.opensecretsanta.domain.group.CreateGroup
-import com.usuallycoding.opensecretsanta.domain.group.DeleteDraftGroup
+import com.usuallycoding.opensecretsanta.domain.group.DeletionImpact
+import com.usuallycoding.opensecretsanta.domain.group.DeleteGroup
 import com.usuallycoding.opensecretsanta.domain.group.GetOwnedGroup
 import com.usuallycoding.opensecretsanta.domain.group.GroupDetails
 import com.usuallycoding.opensecretsanta.domain.group.GroupState
@@ -11,6 +13,7 @@ import com.usuallycoding.opensecretsanta.domain.group.ListOwnedGroups
 import com.usuallycoding.opensecretsanta.domain.group.OwnedGroupLoader
 import com.usuallycoding.opensecretsanta.domain.group.UpdateGroupDetails
 import com.usuallycoding.opensecretsanta.domain.user.Profile
+import com.usuallycoding.opensecretsanta.domain.user.Username
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -30,7 +33,7 @@ class GroupManagementTest {
 
     private val create = CreateGroup(groups, viewer)
     private val update = UpdateGroupDetails(loader, groups, viewer)
-    private val delete = DeleteDraftGroup(loader, groups)
+    private val delete = DeleteGroup(loader, groups)
     private val list = ListOwnedGroups(groups, viewer)
     private val get = GetOwnedGroup(loader, viewer)
 
@@ -156,11 +159,58 @@ class GroupManagementTest {
     }
 
     @Test
-    fun nonDraftGroupsCannotBeDeleted() {
+    fun aPendingGroupWithNothingLinkedIsDeletedAtOnce() {
+        val group = groups.seed(adminA.username, GroupState.PENDING)
+
+        delete(adminA, group.id)
+
+        assertNull(groups.find(group.id))
+    }
+
+    @Test
+    fun aGroupWithLinkedDataNeedsConfirmationAndIsKeptUntilThen() {
+        val impact = DeletionImpact(wishlistItems = 3, questions = 2, answers = 1, draw = true)
         for (state in listOf(GroupState.PENDING, GroupState.ACTIVE, GroupState.ARCHIVED)) {
             val group = groups.seed(adminA.username, state)
-            assertFailsWith<DomainException.InvalidState>(state.toString()) { delete(adminA, group.id) }
+            groups.impacts[group.id] = impact
+
+            val refused = assertFailsWith<DomainException.ConfirmationRequired>(state.toString()) { delete(adminA, group.id) }
+
+            assertEquals(impact, refused.impact)
+            assertEquals("confirmation_required", refused.code)
             assertEquals(group, groups.find(group.id))
         }
+    }
+
+    @Test
+    fun aDrawnGroupAlwaysNeedsConfirmation() {
+        val group = groups.seed(adminA.username, GroupState.ACTIVE)
+        groups.assign(group.id, listOf(Assignment(Username.parse("alice"), Username.parse("bob"))))
+
+        val refused = assertFailsWith<DomainException.ConfirmationRequired> { delete(adminA, group.id) }
+
+        assertEquals(DeletionImpact(0, 0, 0, draw = true), refused.impact)
+    }
+
+    @Test
+    fun aConfirmedDeletionRemovesAGroupWithLinkedDataInAnyState() {
+        for (state in listOf(GroupState.PENDING, GroupState.ACTIVE, GroupState.ARCHIVED)) {
+            val group = groups.seed(adminA.username, state)
+            groups.impacts[group.id] = DeletionImpact(5, 5, 5, draw = true)
+
+            delete(adminA, group.id, confirmed = true)
+
+            assertNull(groups.find(group.id), state.toString())
+        }
+    }
+
+    @Test
+    fun aStrangerOrAMissingGroupIsNotFoundWhetherOrNotConfirmed() {
+        val group = groups.seed(adminA.username, GroupState.ACTIVE)
+        groups.impacts[group.id] = DeletionImpact(1, 1, 1, draw = true)
+
+        assertFailsWith<DomainException.NotFound> { delete(adminB, group.id, confirmed = true) }
+        assertFailsWith<DomainException.NotFound> { delete(adminA, 404, confirmed = true) }
+        assertEquals(group, groups.find(group.id))
     }
 }

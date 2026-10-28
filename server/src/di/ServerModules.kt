@@ -28,7 +28,7 @@ import com.usuallycoding.opensecretsanta.domain.group.ActivateGroup
 import com.usuallycoding.opensecretsanta.domain.group.ArchiveGroup
 import com.usuallycoding.opensecretsanta.domain.group.AssignmentPlanner
 import com.usuallycoding.opensecretsanta.domain.group.CreateGroup
-import com.usuallycoding.opensecretsanta.domain.group.DeleteDraftGroup
+import com.usuallycoding.opensecretsanta.domain.group.DeleteGroup
 import com.usuallycoding.opensecretsanta.domain.group.GetMyGroup
 import com.usuallycoding.opensecretsanta.domain.group.GetOwnedGroup
 import com.usuallycoding.opensecretsanta.domain.group.GroupRepository
@@ -122,7 +122,7 @@ val useCaseModule = module {
     single { AssignmentPlanner(get()) }
     single { CreateGroup(get(), get()) }
     single { UpdateGroupDetails(get(), get(), get()) }
-    single { DeleteDraftGroup(get(), get()) }
+    single { DeleteGroup(get(), get()) }
     single { ListOwnedGroups(get(), get()) }
     single { GetOwnedGroup(get(), get()) }
     single { SetParticipants(get(), get(), get(), get(), get()) }

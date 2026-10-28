@@ -12,7 +12,7 @@ import com.usuallycoding.opensecretsanta.domain.group.ActivateGroup
 import com.usuallycoding.opensecretsanta.domain.group.ArchiveGroup
 import com.usuallycoding.opensecretsanta.domain.group.AssignmentPlanner
 import com.usuallycoding.opensecretsanta.domain.group.CreateGroup
-import com.usuallycoding.opensecretsanta.domain.group.DeleteDraftGroup
+import com.usuallycoding.opensecretsanta.domain.group.DeleteGroup
 import com.usuallycoding.opensecretsanta.domain.group.GetMyGroup
 import com.usuallycoding.opensecretsanta.domain.group.GetOwnedGroup
 import com.usuallycoding.opensecretsanta.domain.group.GroupRepository
@@ -55,7 +55,7 @@ class ServerModulesTest {
             val koin = app.koin
             val resolved = listOf(
                 koin.get<GroupRepository>(), koin.get<Shuffler>(), koin.get<AssignmentPlanner>(),
-                koin.get<CreateGroup>(), koin.get<UpdateGroupDetails>(), koin.get<DeleteDraftGroup>(),
+                koin.get<CreateGroup>(), koin.get<UpdateGroupDetails>(), koin.get<DeleteGroup>(),
                 koin.get<ListOwnedGroups>(), koin.get<GetOwnedGroup>(), koin.get<SetParticipants>(),
                 koin.get<MoveToPending>(), koin.get<ActivateGroup>(), koin.get<ArchiveGroup>(),
                 koin.get<ListAssignments>(), koin.get<ListMyGroups>(), koin.get<GetMyGroup>(),

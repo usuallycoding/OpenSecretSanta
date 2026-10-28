@@ -3,6 +3,7 @@ package com.usuallycoding.opensecretsanta.server
 import com.usuallycoding.opensecretsanta.contract.AdminGroupDto
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.CreateGroupRequest
+import com.usuallycoding.opensecretsanta.contract.DeletionImpactDto
 import com.usuallycoding.opensecretsanta.contract.ErrorResponse
 import com.usuallycoding.opensecretsanta.contract.GroupChangeResponse
 import com.usuallycoding.opensecretsanta.contract.GroupDetailsRequest
@@ -354,18 +355,120 @@ class GroupRoutesTest {
         assertEquals("0", database("SELECT COUNT(*) FROM group_participants"))
     }
 
+    /** A drawn group of alice and bob (users are created here) with wishlist items, questions and an answer. */
+    private fun fillGroup(id: Int) {
+        for (name in listOf("alice", "bob")) {
+            if (database("SELECT COUNT(*) FROM users WHERE username = '$name'") == "0") fx.addUser(name)
+        }
+        fx.assign(id, "alice" to "bob", "bob" to "alice")
+        fx.sql("INSERT INTO wishlist_items (group_id, username, position, title, created_at, updated_at) VALUES ($id, 'alice', 0, 'Socks', 1, 1)")
+        fx.sql("INSERT INTO wishlist_items (group_id, username, position, title, created_at, updated_at) VALUES ($id, 'alice', 1, 'Tea', 1, 1)")
+        fx.sql("INSERT INTO wishlist_items (group_id, username, position, title, created_at, updated_at) VALUES ($id, 'bob', 0, 'Mug', 1, 1)")
+        fx.sql("INSERT INTO questions (group_id, santa, number, text, asked_at) VALUES ($id, 'alice', 1, 'Colour?', 1)")
+        fx.sql("INSERT INTO questions (group_id, santa, number, text, asked_at) VALUES ($id, 'bob', 1, 'Size?', 1)")
+        fx.sql("UPDATE questions SET answer = 'Green', answered_at = 2, answer_updated_at = 2 WHERE group_id = $id AND santa = 'alice'")
+    }
+
+    private fun rows(table: String, id: Int) = database("SELECT COUNT(*) FROM $table WHERE group_id = $id").toInt()
+
     @Test
-    fun groupsOutsideDraftCannotBeDeleted() = testApplication {
+    fun aPendingGroupWithNothingLinkedIsDeletedAtOnce() = testApplication {
         startApp()
         admins()
-        for (state in listOf("pending", "active", "archived")) {
-            val id = fx.addGroup("admin-a", state = state)
+        val id = fx.addGroup("admin-a", "alice", state = "pending")
+
+        assertEquals(HttpStatusCode.NoContent, client.deleteAs(ApiRoutes.adminGroup(id.toLong()), fx.token("admin-a")).status)
+
+        assertEquals(HttpStatusCode.NotFound, client.getAs(ApiRoutes.adminGroup(id.toLong()), fx.token("admin-a")).status)
+    }
+
+    @Test
+    fun aPendingGroupWithWishlistItemsNeedsConfirmation() = testApplication {
+        startApp()
+        admins()
+        fx.addUser("alice")
+        val id = fx.addGroup("admin-a", "alice", state = "pending")
+        fx.sql("INSERT INTO wishlist_items (group_id, username, position, title, created_at, updated_at) VALUES ($id, 'alice', 0, 'Socks', 1, 1)")
+
+        val response = client.deleteAs(ApiRoutes.adminGroup(id.toLong()), fx.token("admin-a"))
+
+        assertEquals(HttpStatusCode.Conflict, response.status)
+        val body = error(response.bodyAsText())
+        assertEquals("confirmation_required", body.code)
+        assertEquals(DeletionImpactDto(wishlistItems = 1, questions = 0, answers = 0, draw = false), body.impact)
+        assertEquals("pending", groupState(id.toLong()))
+    }
+
+    @Test
+    fun aDrawnGroupAsksForConfirmationWithTheCountsAndKeepsEverything() = testApplication {
+        startApp()
+        admins()
+        for (state in listOf("active", "archived")) {
+            val id = fx.addGroup("admin-a", "alice", "bob", state = state)
+            fillGroup(id)
 
             val response = client.deleteAs(ApiRoutes.adminGroup(id.toLong()), fx.token("admin-a"))
 
             assertEquals(HttpStatusCode.Conflict, response.status, state)
-            assertEquals("invalid_state", error(response.bodyAsText()).code)
+            val body = error(response.bodyAsText())
+            assertEquals("confirmation_required", body.code)
+            assertEquals(DeletionImpactDto(wishlistItems = 3, questions = 2, answers = 1, draw = true), body.impact)
             assertEquals(state, groupState(id.toLong()))
+            assertEquals(3, rows("wishlist_items", id))
+            assertEquals(2, rows("questions", id))
         }
+    }
+
+    @Test
+    fun aConfirmedDeletionRemovesTheGroupAndAllItsData() = testApplication {
+        startApp()
+        admins()
+        for (state in listOf("pending", "active", "archived")) {
+            val id = fx.addGroup("admin-a", "alice", "bob", state = state)
+            fillGroup(id)
+
+            val response = client.deleteAs(ApiRoutes.adminGroup(id.toLong()) + "?confirm=true", fx.token("admin-a"))
+
+            assertEquals(HttpStatusCode.NoContent, response.status, state)
+            for (table in listOf("groups", "group_participants", "assignments", "wishlist_items", "questions")) {
+                val where = if (table == "groups") "id" else "group_id"
+                assertEquals("0", database("SELECT COUNT(*) FROM $table WHERE $where = $id"), "$state $table")
+            }
+        }
+    }
+
+    @Test
+    fun aDeletionConfirmedWithAnythingButTrueStillAsks() = testApplication {
+        startApp()
+        admins()
+        val id = fx.addGroup("admin-a", "alice", "bob", state = "active")
+        fillGroup(id)
+
+        val response = client.deleteAs(ApiRoutes.adminGroup(id.toLong()) + "?confirm=yes", fx.token("admin-a"))
+
+        assertEquals(HttpStatusCode.Conflict, response.status)
+        assertEquals("active", groupState(id.toLong()))
+    }
+
+    @Test
+    fun anotherAdministratorGetsNotFoundWhetherOrNotConfirmed() = testApplication {
+        startApp()
+        admins()
+        val id = fx.addGroup("admin-a", "alice", "bob", state = "active")
+        fillGroup(id)
+
+        for (suffix in listOf("", "?confirm=true")) {
+            val response = client.deleteAs(ApiRoutes.adminGroup(id.toLong()) + suffix, fx.token("admin-b"))
+            assertEquals(HttpStatusCode.NotFound, response.status, suffix)
+        }
+        assertEquals("active", groupState(id.toLong()))
+    }
+
+    @Test
+    fun aMissingGroupIsNotFound() = testApplication {
+        startApp()
+        admins()
+
+        assertEquals(HttpStatusCode.NotFound, client.deleteAs(ApiRoutes.adminGroup(404) + "?confirm=true", fx.token("admin-a")).status)
     }
 }

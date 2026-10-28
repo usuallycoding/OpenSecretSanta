@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.ui
 
+import com.usuallycoding.opensecretsanta.contract.DeletionImpactDto
 import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminNotice
@@ -52,12 +53,12 @@ class AdminGroupViewModelTest {
     }
 
     @Test
-    fun aPendingGroupCanBeDrawnButNotDeleted() = runTest {
+    fun aPendingGroupCanBeDrawnAndDeleted() = runTest {
         val model = viewModel(fake.add("Pending", state = "pending", participants = four))
 
         assertTrue(model.canEditDetails)
         assertTrue(model.canEditParticipants)
-        assertFalse(model.canDelete)
+        assertTrue(model.canDelete)
         assertEquals(AdminStep.DrawNames, model.nextStep)
         assertFalse(model.drawNeedsMorePeople)
     }
@@ -68,17 +69,17 @@ class AdminGroupViewModelTest {
 
         assertTrue(model.canEditDetails)
         assertFalse(model.canEditParticipants)
-        assertFalse(model.canDelete)
+        assertTrue(model.canDelete)
         assertEquals(AdminStep.Archive, model.nextStep)
     }
 
     @Test
-    fun anArchivedGroupAllowsNothing() = runTest {
+    fun anArchivedGroupAllowsNothingButDeleting() = runTest {
         val model = viewModel(fake.add("Old", state = "archived", participants = four))
 
         assertFalse(model.canEditDetails)
         assertFalse(model.canEditParticipants)
-        assertFalse(model.canDelete)
+        assertTrue(model.canDelete)
         assertNull(model.nextStep)
         model.openParticipants()
         model.ask(AdminStep.Archive)
@@ -328,6 +329,85 @@ class AdminGroupViewModelTest {
 
         assertTrue(model.ui.value.deleted)
         assertEquals(emptyList(), fake.ids)
+    }
+
+    @Test
+    fun aDraftOrAPendingGroupWithNothingLinkedIsDeletedWithOneConfirmation() = runTest {
+        for (state in listOf("draft", "pending")) {
+            val model = viewModel(fake.add("Group", state = state, participants = four))
+
+            model.ask(AdminStep.Delete)
+            model.confirmStep()?.join()
+
+            assertTrue(model.ui.value.deleted, state)
+            assertNull(model.ui.value.confirmingDelete, state)
+        }
+        assertEquals(emptyList(), fake.ids)
+        assertEquals(listOf(false, false), fake.deleteRequests)
+    }
+
+    @Test
+    fun aGroupWithLinkedDataAsksAgainWithTheCountsAndIsKeptUntilTheSecondConfirmation() = runTest {
+        val id = fake.add("Active", state = "active", participants = four)
+        fake.impacts[id] = DeletionImpactDto(wishlistItems = 12, questions = 7, answers = 5, draw = true)
+        val model = viewModel(id)
+
+        model.ask(AdminStep.Delete)
+        model.confirmStep()?.join()
+
+        assertEquals(DeletionImpactDto(12, 7, 5, draw = true), model.ui.value.confirmingDelete)
+        assertFalse(model.ui.value.deleted)
+        assertFalse(model.ui.value.busy)
+        assertEquals(listOf(id), fake.ids)
+
+        model.confirmDelete()?.join()
+
+        assertTrue(model.ui.value.deleted)
+        assertNull(model.ui.value.confirmingDelete)
+        assertEquals(emptyList(), fake.ids)
+        assertEquals(listOf(false, true), fake.deleteRequests)
+    }
+
+    @Test
+    fun aDrawnGroupAlwaysAsksTwice() = runTest {
+        for (state in listOf("active", "archived")) {
+            val model = viewModel(fake.add("Group", state = state, participants = four))
+
+            model.ask(AdminStep.Delete)
+            model.confirmStep()?.join()
+
+            assertNotNull(model.ui.value.confirmingDelete, state)
+        }
+    }
+
+    @Test
+    fun cancellingTheSecondConfirmationDeletesNothing() = runTest {
+        val id = fake.add("Active", state = "active", participants = four)
+        val model = viewModel(id)
+        model.ask(AdminStep.Delete)
+        model.confirmStep()?.join()
+
+        model.cancelDelete()
+
+        assertNull(model.ui.value.confirmingDelete)
+        assertFalse(model.ui.value.deleted)
+        assertEquals(listOf(id), fake.ids)
+        assertEquals(listOf(false), fake.deleteRequests)
+        assertNull(model.confirmDelete())
+    }
+
+    @Test
+    fun aGroupThatWentAwayMeanwhileIsReportedAsGoneAtTheSecondConfirmation() = runTest {
+        val id = fake.add("Active", state = "active", participants = four)
+        val model = viewModel(id)
+        model.ask(AdminStep.Delete)
+        model.confirmStep()?.join()
+        fake.removeBehindTheScenes(id)
+
+        model.confirmDelete()?.join()
+
+        assertTrue(model.data.value.isGone())
+        assertFalse(model.ui.value.deleted)
     }
 
     @Test

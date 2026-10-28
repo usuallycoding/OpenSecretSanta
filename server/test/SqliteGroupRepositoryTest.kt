@@ -2,14 +2,18 @@ package com.usuallycoding.opensecretsanta.server
 
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 import com.usuallycoding.opensecretsanta.domain.group.Assignment
+import com.usuallycoding.opensecretsanta.domain.group.DeletionImpact
 import com.usuallycoding.opensecretsanta.domain.group.GroupDetails
 import com.usuallycoding.opensecretsanta.domain.group.GroupState
 import com.usuallycoding.opensecretsanta.domain.user.NewUser
 import com.usuallycoding.opensecretsanta.domain.user.Username
+import com.usuallycoding.opensecretsanta.domain.wishlist.WishlistEntry
 import com.usuallycoding.opensecretsanta.server.data.db.ClasspathMigrations
 import com.usuallycoding.opensecretsanta.server.data.db.Database
 import com.usuallycoding.opensecretsanta.server.data.db.MigrationRunner
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteGroupRepository
+import com.usuallycoding.opensecretsanta.server.data.group.SqliteQuestionRepository
+import com.usuallycoding.opensecretsanta.server.data.group.SqliteWishlistRepository
 import com.usuallycoding.opensecretsanta.server.data.user.SqliteUserRepository
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -28,6 +32,8 @@ class SqliteGroupRepositoryTest {
     private val database = Database(newTempDbPath().toString()).also { MigrationRunner(it, ClasspathMigrations.load()).migrate() }
     private val users = SqliteUserRepository(database)
     private val groups = SqliteGroupRepository(database)
+    private val wishlists = SqliteWishlistRepository(database)
+    private val questions = SqliteQuestionRepository(database)
 
     private fun u(name: String) = Username.parse(name)
 
@@ -37,6 +43,16 @@ class SqliteGroupRepositoryTest {
 
     private fun draft(vararg participants: String, name: String = "Party") =
         groups.create(owner, GroupDetails(name), participants.map(::u))
+
+    /** An Active group of alice, bob, carol and dave drawn in that order (alice gives to bob, and so on). */
+    private fun activeGroup(): Long {
+        val names = listOf("alice", "bob", "carol", "dave")
+        names.filter { users.find(u(it)) == null }.forEach { users.insertAll(listOf(newUser(it))) }
+        val g = groups.create(owner, GroupDetails("Party"), names.map(::u))
+        groups.moveToPending(g.id, emptyList())
+        groups.activate(g.id, ring(*names.toTypedArray()))
+        return g.id
+    }
 
     private fun ring(vararg names: String): List<Assignment> =
         names.indices.map { Assignment(u(names[it]), u(names[(it + 1) % names.size])) }
@@ -130,16 +146,80 @@ class SqliteGroupRepositoryTest {
     }
 
     @Test
-    fun onlyADraftCanBeDeletedAndItsParticipantsGoWithIt() {
+    fun aDraftIsDeletedWithItsParticipants() {
         val g = draft("alice", "bob-b")
-        groups.deleteDraft(g.id)
+        groups.delete(g.id)
         assertNull(groups.find(g.id))
         assertEquals(0, count("group_participants", "group_id = ${g.id}"))
+        assertFailsWith<DomainException.NotFound> { groups.delete(g.id) }
+        assertFailsWith<DomainException.NotFound> { groups.delete(404) }
+    }
 
-        val pending = draft().also { groups.moveToPending(it.id, emptyList()) }
-        assertFailsWith<DomainException.InvalidState> { groups.deleteDraft(pending.id) }
-        assertNotNull(groups.find(pending.id))
-        assertFailsWith<DomainException.NotFound> { groups.deleteDraft(404) }
+    @Test
+    fun aGroupInAnyStateCanBeDeleted() {
+        val pending = draft("alice").also { groups.moveToPending(it.id, emptyList()) }
+        groups.delete(pending.id)
+        assertNull(groups.find(pending.id))
+
+        for (archive in listOf(false, true)) {
+            val id = activeGroup()
+            if (archive) groups.archive(id)
+            groups.delete(id)
+            assertNull(groups.find(id))
+        }
+    }
+
+    @Test
+    fun impactCountsTheDrawWishlistItemsQuestionsAndAnswers() {
+        val draft = draft("alice")
+        assertEquals(DeletionImpact(0, 0, 0, draw = false), groups.impact(draft.id))
+        assertTrue(groups.impact(draft.id).isEmpty)
+
+        val id = activeGroup()
+        assertEquals(DeletionImpact(0, 0, 0, draw = true), groups.impact(id))
+        assertEquals(false, groups.impact(id).isEmpty)
+
+        wishlists.add(id, u("alice"), WishlistEntry.of("Socks", null, null), 1, 50)
+        wishlists.add(id, u("alice"), WishlistEntry.of("Tea", null, null), 2, 50)
+        wishlists.add(id, u("bob"), WishlistEntry.of("Mug", null, null), 3, 50)
+        questions.ask(id, u("alice"), "Colour?", 4, 30)
+        questions.ask(id, u("alice"), "Size?", 5, 30)
+        questions.ask(id, u("bob"), "Allergies?", 6, 30)
+        questions.answer(id, u("bob"), 1, "Green", 7)
+
+        assertEquals(DeletionImpact(wishlistItems = 3, questions = 3, answers = 1, draw = true), groups.impact(id))
+        assertFailsWith<DomainException.NotFound> { groups.impact(404) }
+    }
+
+    @Test
+    fun aPendingGroupWithOnlyWishlistItemsHasAnImpact() {
+        users.insertAll(listOf(newUser("alice")))
+        val id = groups.create(owner, GroupDetails("Party"), listOf(u("alice"))).id
+        groups.moveToPending(id, emptyList())
+        assertTrue(groups.impact(id).isEmpty)
+
+        wishlists.add(id, u("alice"), WishlistEntry.of("Socks", null, null), 1, 50)
+
+        assertEquals(DeletionImpact(1, 0, 0, draw = false), groups.impact(id))
+    }
+
+    @Test
+    fun deletingAGroupRemovesItsDrawWishlistItemsQuestionsAndAnswersAndNoOthers() {
+        val doomed = activeGroup()
+        val kept = activeGroup()
+        for (id in listOf(doomed, kept)) {
+            wishlists.add(id, u("alice"), WishlistEntry.of("Socks", null, null), 1, 50)
+            questions.ask(id, u("alice"), "Colour?", 2, 30)
+            questions.answer(id, u("bob"), 1, "Green", 3)
+        }
+
+        groups.delete(doomed)
+
+        for (table in listOf("group_participants", "assignments", "wishlist_items", "questions")) {
+            assertEquals(0, count(table, "group_id = $doomed"), table)
+            assertTrue(count(table, "group_id = $kept") > 0, "$table of the other group")
+        }
+        assertEquals(1, count("questions", "group_id = $kept AND answer IS NOT NULL"))
     }
 
     // --- participants ---

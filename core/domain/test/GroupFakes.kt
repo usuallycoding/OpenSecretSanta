@@ -2,6 +2,7 @@ package com.usuallycoding.opensecretsanta.domain
 
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 import com.usuallycoding.opensecretsanta.domain.group.Assignment
+import com.usuallycoding.opensecretsanta.domain.group.DeletionImpact
 import com.usuallycoding.opensecretsanta.domain.group.Group
 import com.usuallycoding.opensecretsanta.domain.group.GroupDetails
 import com.usuallycoding.opensecretsanta.domain.group.GroupRepository
@@ -47,10 +48,20 @@ class InMemoryGroups(private val users: InMemoryUsers) : GroupRepository {
         return group.copy(details = details).also { groups[id] = it }
     }
 
-    override fun deleteDraft(id: Long) {
+    /** What [impact] answers for a group, to let a test say it has wishlist items, questions or answers. */
+    val impacts = mutableMapOf<Long, DeletionImpact>()
+
+    override fun delete(id: Long) {
         fail()
-        expect(require(id), GroupState.DRAFT)
+        require(id)
         groups.remove(id)
+        assignmentsByGroup.remove(id)
+        impacts.remove(id)
+    }
+
+    override fun impact(id: Long): DeletionImpact {
+        require(id)
+        return impacts[id] ?: DeletionImpact(0, 0, 0, draw = assignmentsByGroup[id].orEmpty().isNotEmpty())
     }
 
     override fun replaceParticipants(id: Long, participants: List<Username>, newUsers: List<NewUser>): Group {
@@ -100,6 +111,11 @@ class InMemoryGroups(private val users: InMemoryUsers) : GroupRepository {
         val group = create(owner, GroupDetails(name), participants.toList()).copy(state = state)
         groups[group.id] = group
         return group
+    }
+
+    /** Test helper: stores [list] as the draw of a seeded group. */
+    fun assign(id: Long, list: List<Assignment>) {
+        assignmentsByGroup[id] = list
     }
 
     /** Test helper: moves a seeded group to [state] without any of the lifecycle's side effects. */
