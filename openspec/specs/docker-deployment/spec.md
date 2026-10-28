@@ -17,7 +17,7 @@ The repository SHALL contain a Docker Compose setup that, with `docker compose u
 - **THEN** the web service is started only once the server's healthcheck passes
 
 ### Requirement: Settings come from an uncommitted .env
-Every setting of the compose file (the ports, the two public addresses, `JWT_SECRET`, `DATA_ENCRYPTION_KEY`, `ADMIN_USERNAME` and `ADMIN_PASSWORD`) SHALL be read from variables in a `.env` file, which SHALL NOT be committed. A committed `.env.example` SHALL list every variable with a placeholder and no real secret. Only the variables the services need SHALL reach the containers.
+Every setting of the compose file (the ports, the two public addresses, `JWT_SECRET`, `DATA_ENCRYPTION_KEY`, `ADMIN_USERNAME`, `ADMIN_PASSWORD` and the optional `RESEND_API_KEY`, `EMAIL_FROM` and `APP_URL`) SHALL be read from variables in a `.env` file, which SHALL NOT be committed. A committed `.env.example` SHALL list every variable with a placeholder and no real secret. Only the variables the services need SHALL reach the containers.
 
 #### Scenario: .env is not committed
 - **WHEN** a `.env` file exists in the checkout
@@ -30,6 +30,14 @@ Every setting of the compose file (the ports, the two public addresses, `JWT_SEC
 #### Scenario: Defaults
 - **WHEN** the ports are not set in `.env`
 - **THEN** documented default ports are used
+
+#### Scenario: Email is optional
+- **WHEN** the email variables are not set in `.env`
+- **THEN** compose starts as before and the server runs with email off
+
+#### Scenario: Email variables reach only the server
+- **WHEN** the email variables are set
+- **THEN** the server container receives them and the web container does not
 
 ### Requirement: The web app is pointed at the server when it starts
 The web container SHALL write the web app's `config.json` from `PUBLIC_SERVER_URL` each time it starts, and the server SHALL be given `PUBLIC_WEB_ORIGIN` as its only allowed web origin, so that the same built image works for any address without a rebuild.

@@ -60,7 +60,7 @@ Before sending, the app SHALL check what the server checks: an email, when given
 - **THEN** the form says so, keeps the edits and lets the person try again
 
 ### Requirement: Why name and address matter
-The Profile tab SHALL say that a Santa uses the person's name and address to post their gift. While the name or the address is empty it SHALL say so more directly. It SHALL NOT say or imply who the person's Santa or receiver is, or whether groups have been drawn.
+The Profile tab SHALL say that a Santa uses the person's name and address to post their gift, and that the person's email address is used to send them their draw when a group they are in is drawn. While the name or the address is empty it SHALL say so more directly. It SHALL NOT say or imply who the person's Santa or receiver is, or whether groups have been drawn.
 
 #### Scenario: Incomplete profile
 - **WHEN** the name or the address is empty
@@ -69,6 +69,10 @@ The Profile tab SHALL say that a Santa uses the person's name and address to pos
 #### Scenario: Complete profile
 - **WHEN** both the name and the address are filled in
 - **THEN** only the general note is shown
+
+#### Scenario: What the email is for
+- **WHEN** the Profile tab is shown
+- **THEN** its general note says the email is used to send the person their draw
 
 ### Requirement: Profile loading and errors
 While the profile loads the tab SHALL show a progress indicator. When it cannot be loaded the tab SHALL say so without technical details and offer to try again.
