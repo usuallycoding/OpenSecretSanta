@@ -53,15 +53,10 @@ object Strings {
     const val SAVING = "Saving..."
     const val SAVED = "Saved."
 
-    const val WISHLISTS = "Wishlists"
     const val MY_WISHLIST = "My wishlist"
     const val RECEIVER_WISHLIST = "Your receiver's wishlist"
-    const val RECEIVER_WISHLIST_LATER = "Your receiver's wishlist appears here after the names are drawn."
 
-    const val YOUR_GIFT = "Your gift"
-    const val YOUR_RECEIVER = "Your receiver"
     const val SANTA_QUESTIONS = "Questions from your Santa"
-    const val YOUR_SANTA = "Your Santa"
 
     const val RECEIVER_NAME = "Name"
     const val RECEIVER_ADDRESS = "Address"
@@ -94,6 +89,9 @@ object Strings {
     const val NOTE_LABEL = "Note"
     const val QUESTION_LABEL = "Question"
     const val DESCRIPTION_LABEL = "Description"
+    const val TITLE_GIFTER = "Gifter"
+    const val TITLE_RECEIVER = "Receiver"
+    const val SECRET_SANTA = "Secret Santa"
     const val COPY = "Copy"
     const val COPIED = "Copied"
     const val COPY_FAILED = "Could not copy"

@@ -16,11 +16,8 @@ object WebAddresses {
     fun addressOf(route: Any): String? = when (route) {
         GroupsRoute -> "#/groups"
         is GroupRoute -> "#/groups/${route.id}"
-        is WishlistRoute -> "#/groups/${route.groupId}/wishlist"
-        is ReceiverWishlistRoute -> "#/groups/${route.groupId}/receiver/wishlist"
+        is GifterRoute -> "#/groups/${route.groupId}/gifter"
         is ReceiverRoute -> "#/groups/${route.groupId}/receiver"
-        is SantaQuestionsRoute -> "#/groups/${route.groupId}/questions"
-        is SantaRoute -> "#/groups/${route.groupId}/santa"
         ProfileRoute -> "#/profile"
         AdminGroupsRoute -> "#/admin/groups"
         AdminGroupNewRoute -> "#/admin/groups/new"
@@ -50,11 +47,8 @@ object WebAddresses {
         val id = parts[0].toLongOrNull() ?: return null
         return when (parts.drop(1)) {
             emptyList<String>() -> GroupRoute(id)
-            listOf("wishlist") -> WishlistRoute(id)
+            listOf("gifter") -> GifterRoute(id)
             listOf("receiver") -> ReceiverRoute(id)
-            listOf("receiver", "wishlist") -> ReceiverWishlistRoute(id)
-            listOf("questions") -> SantaQuestionsRoute(id)
-            listOf("santa") -> SantaRoute(id)
             else -> null
         }
     }
@@ -87,11 +81,8 @@ object WebAddresses {
         val route: Any = when {
             d.hasRoute<GroupsRoute>() -> GroupsRoute
             d.hasRoute<GroupRoute>() -> entry.toRoute<GroupRoute>()
-            d.hasRoute<WishlistRoute>() -> entry.toRoute<WishlistRoute>()
-            d.hasRoute<ReceiverWishlistRoute>() -> entry.toRoute<ReceiverWishlistRoute>()
+            d.hasRoute<GifterRoute>() -> entry.toRoute<GifterRoute>()
             d.hasRoute<ReceiverRoute>() -> entry.toRoute<ReceiverRoute>()
-            d.hasRoute<SantaQuestionsRoute>() -> entry.toRoute<SantaQuestionsRoute>()
-            d.hasRoute<SantaRoute>() -> entry.toRoute<SantaRoute>()
             d.hasRoute<ProfileRoute>() -> ProfileRoute
             d.hasRoute<AdminGroupsRoute>() -> AdminGroupsRoute
             d.hasRoute<AdminGroupNewRoute>() -> AdminGroupNewRoute

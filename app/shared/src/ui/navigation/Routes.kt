@@ -12,25 +12,13 @@ data class GroupRoute(val id: Long)
 @Serializable
 data object ProfileRoute
 
-/** The person's own wishlist for one group. */
+/** The page for the relationship in which the person gives: the receiver's list and the person's questions to them. */
 @Serializable
-data class WishlistRoute(val groupId: Long)
+data class GifterRoute(val groupId: Long)
 
-/** Who the person gives to, and the questions they asked them. */
+/** The page for the relationship in which the person receives: their own list and the questions from their Santa. */
 @Serializable
 data class ReceiverRoute(val groupId: Long)
-
-/** The questions the person's Santa asked, and the person's answers. */
-@Serializable
-data class SantaQuestionsRoute(val groupId: Long)
-
-/** Who the person's Santa was, once the group is archived. */
-@Serializable
-data class SantaRoute(val groupId: Long)
-
-/** What the person's receiver keeps for one group, read-only. */
-@Serializable
-data class ReceiverWishlistRoute(val groupId: Long)
 
 /** The administrator's own groups: the first screen of the admin view. */
 @Serializable

@@ -54,14 +54,10 @@ import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupsScreen
 import com.usuallycoding.opensecretsanta.ui.admin.AdminUserScreen
 import com.usuallycoding.opensecretsanta.ui.admin.AdminUserViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminUsersScreen
-import com.usuallycoding.opensecretsanta.ui.gift.ReceiverScreen
 import com.usuallycoding.opensecretsanta.ui.gift.ReceiverViewModel
-import com.usuallycoding.opensecretsanta.ui.gift.SantaQuestionsScreen
-import com.usuallycoding.opensecretsanta.ui.gift.SantaRevealViewModel
-import com.usuallycoding.opensecretsanta.ui.gift.SantaScreen
-import com.usuallycoding.opensecretsanta.ui.gift.SantaQuestionsViewModel
-import com.usuallycoding.opensecretsanta.ui.groups.GiftEntry
-import com.usuallycoding.opensecretsanta.ui.groups.GroupDetailScreen
+import com.usuallycoding.opensecretsanta.ui.groups.GifterPage
+import com.usuallycoding.opensecretsanta.ui.groups.GroupPage
+import com.usuallycoding.opensecretsanta.ui.groups.ReceiverPage
 import com.usuallycoding.opensecretsanta.ui.groups.GroupDetailViewModel
 import com.usuallycoding.opensecretsanta.ui.groups.GroupsScreen
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupEditRoute
@@ -70,19 +66,14 @@ import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminUserRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminUsersRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.GifterRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.GroupRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.GroupsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.ProfileRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.ReceiverRoute
-import com.usuallycoding.opensecretsanta.ui.navigation.ReceiverWishlistRoute
-import com.usuallycoding.opensecretsanta.ui.navigation.SantaQuestionsRoute
-import com.usuallycoding.opensecretsanta.ui.navigation.SantaRoute
-import com.usuallycoding.opensecretsanta.ui.navigation.WishlistRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.isAdminScreen
 import com.usuallycoding.opensecretsanta.ui.profile.ProfileScreen
-import com.usuallycoding.opensecretsanta.ui.wishlist.ReceiverWishlistScreen
 import com.usuallycoding.opensecretsanta.ui.wishlist.ReceiverWishlistViewModel
-import com.usuallycoding.opensecretsanta.ui.wishlist.WishlistScreen
 import com.usuallycoding.opensecretsanta.ui.wishlist.WishlistViewModel
 
 /**
@@ -150,54 +141,27 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                     }
                     composable<GroupRoute> { entry ->
                         val groupId = entry.toRoute<GroupRoute>().id
-                        GroupDetailScreen(
+                        GroupPage(
                             koinViewModel<GroupDetailViewModel>(key = "group-$groupId") { parametersOf(groupId, viewModel.account.username) },
+                            me = viewModel.account.username,
                             onBack = { navController.popBackStack() },
-                            onOpenWishlist = { navController.navigate(WishlistRoute(groupId)) },
-                            onOpenReceiverWishlist = { navController.navigate(ReceiverWishlistRoute(groupId)) },
-                            onOpenGift = { entry ->
-                                navController.navigate(
-                                    when (entry) {
-                                        GiftEntry.Receiver -> ReceiverRoute(groupId)
-                                        GiftEntry.SantaQuestions -> SantaQuestionsRoute(groupId)
-                                        GiftEntry.Santa -> SantaRoute(groupId)
-                                    },
-                                )
-                            },
+                            onOpenGifter = { navController.navigate(GifterRoute(groupId)) },
+                            onOpenReceiver = { navController.navigate(ReceiverRoute(groupId)) },
                         )
                     }
-                    composable<WishlistRoute> { entry ->
-                        val groupId = entry.toRoute<WishlistRoute>().groupId
-                        WishlistScreen(
-                            koinViewModel<WishlistViewModel>(key = "wishlist-$groupId") { parametersOf(groupId) },
-                            onBack = { navController.popBackStack() },
-                        )
-                    }
-                    composable<ReceiverWishlistRoute> { entry ->
-                        val groupId = entry.toRoute<ReceiverWishlistRoute>().groupId
-                        ReceiverWishlistScreen(
+                    composable<GifterRoute> { entry ->
+                        val groupId = entry.toRoute<GifterRoute>().groupId
+                        GifterPage(
                             koinViewModel<ReceiverWishlistViewModel>(key = "receiver-wishlist-$groupId") { parametersOf(groupId) },
+                            koinViewModel<ReceiverViewModel>(key = "receiver-$groupId") { parametersOf(groupId) },
                             onBack = { navController.popBackStack() },
                         )
                     }
                     composable<ReceiverRoute> { entry ->
                         val groupId = entry.toRoute<ReceiverRoute>().groupId
-                        ReceiverScreen(
-                            koinViewModel<ReceiverViewModel>(key = "receiver-$groupId") { parametersOf(groupId) },
-                            onBack = { navController.popBackStack() },
-                        )
-                    }
-                    composable<SantaQuestionsRoute> { entry ->
-                        val groupId = entry.toRoute<SantaQuestionsRoute>().groupId
-                        SantaQuestionsScreen(
-                            koinViewModel<SantaQuestionsViewModel>(key = "santa-questions-$groupId") { parametersOf(groupId) },
-                            onBack = { navController.popBackStack() },
-                        )
-                    }
-                    composable<SantaRoute> { entry ->
-                        val groupId = entry.toRoute<SantaRoute>().groupId
-                        SantaScreen(
-                            koinViewModel<SantaRevealViewModel>(key = "santa-$groupId") { parametersOf(groupId) },
+                        ReceiverPage(
+                            groupId,
+                            koinViewModel<WishlistViewModel>(key = "wishlist-$groupId") { parametersOf(groupId) },
                             onBack = { navController.popBackStack() },
                         )
                     }
@@ -259,11 +223,8 @@ private fun titleOf(view: AppView, destination: NavDestination?): String = when 
     destination?.hasRoute<AdminGroupRoute>() == true -> Strings.ADMIN_GROUP
     view == AppView.Admin -> Strings.ADMIN_GROUPS
     destination?.hasRoute<GroupRoute>() == true -> Strings.TITLE_GROUP
-    destination?.hasRoute<WishlistRoute>() == true -> Strings.MY_WISHLIST
-    destination?.hasRoute<ReceiverWishlistRoute>() == true -> Strings.RECEIVER_WISHLIST
-    destination?.hasRoute<ReceiverRoute>() == true -> Strings.YOUR_RECEIVER
-    destination?.hasRoute<SantaQuestionsRoute>() == true -> Strings.SANTA_QUESTIONS
-    destination?.hasRoute<SantaRoute>() == true -> Strings.YOUR_SANTA
+    destination?.hasRoute<GifterRoute>() == true -> Strings.TITLE_GIFTER
+    destination?.hasRoute<ReceiverRoute>() == true -> Strings.TITLE_RECEIVER
     destination?.hasRoute<ProfileRoute>() == true -> Strings.TITLE_PROFILE
     else -> Strings.TITLE_GROUPS
 }
@@ -313,8 +274,7 @@ private fun TabBar(navController: NavController, destination: NavDestination?) {
 }
 
 private fun NavDestination.belowGroups(): Boolean =
-    hasRoute<GroupRoute>() || hasRoute<WishlistRoute>() || hasRoute<ReceiverWishlistRoute>() ||
-        hasRoute<ReceiverRoute>() || hasRoute<SantaQuestionsRoute>() || hasRoute<SantaRoute>()
+    hasRoute<GroupRoute>() || hasRoute<GifterRoute>() || hasRoute<ReceiverRoute>()
 
 private fun NavDestination.belowAdminGroups(): Boolean =
     hasRoute<AdminGroupNewRoute>() || hasRoute<AdminGroupRoute>() || hasRoute<AdminGroupEditRoute>() || hasRoute<AdminUserRoute>()

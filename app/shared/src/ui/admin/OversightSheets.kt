@@ -40,6 +40,7 @@ import com.usuallycoding.opensecretsanta.ui.wishlist.ItemText
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
+import com.usuallycoding.opensecretsanta.ui.form.SheetFrame
 
 /** A username as the owner reads it in the list: `alice`, `alice (you)`, `alice *` or `alice (you) *`. */
 internal fun usernameLabel(name: String, isMe: Boolean, incomplete: Boolean): String =
@@ -97,19 +98,6 @@ internal fun GroupSheetHost(sheet: GroupSheet, groupId: Long, me: String, draw: 
             PairSheet(groupId, sheet.santa, sheet.receiver, title, onDismiss)
         }
         is GroupSheet.Wishlist -> WishlistSheet(groupId, sheet.username, onDismiss)
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SheetFrame(onDismiss: () -> Unit, content: @Composable () -> Unit) {
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            content()
-        }
     }
 }
 

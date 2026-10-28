@@ -24,6 +24,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -31,42 +32,28 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.domain.wishlist.WishlistLimits
 import com.usuallycoding.opensecretsanta.ui.Strings
-import com.usuallycoding.opensecretsanta.ui.groups.isGone
-import com.usuallycoding.opensecretsanta.ui.load.LoadContent
-import com.usuallycoding.opensecretsanta.ui.load.ScrollableMessage
+import com.usuallycoding.opensecretsanta.ui.load.LoadSection
 import com.usuallycoding.opensecretsanta.ui.form.LinkText
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
 
-/** The person's own wishlist for one group: their items in their order, and while the group allows it, ways to change them. */
+/** The person's own wishlist for one group, as a section of the Receiver page: their items in their order, and while the group allows it, ways to change them. */
 @Composable
-fun WishlistScreen(viewModel: WishlistViewModel, onBack: () -> Unit) {
+fun WishlistSection(viewModel: WishlistViewModel) {
     val state by viewModel.data.collectAsState()
     val ui by viewModel.ui.collectAsState()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
 
-    if (state.isGone()) {
-        Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(Strings.GROUP_GONE, style = MaterialTheme.typography.titleMedium)
-                Button(onClick = onBack) { Text(Strings.BACK) }
-            }
-        }
-        return
-    }
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
-            Toolbar(viewModel)
-            ui.notice?.let { Notice(it, onDismiss = viewModel::dismissNotice) }
-            LoadContent(state, onRetry = { viewModel.refresh() }, onRefresh = { viewModel.refresh() }) { data ->
-                if (data.items.isEmpty()) {
-                    ScrollableMessage(Strings.WISHLIST_EMPTY)
-                } else {
-                    LazyColumn(
-                        Modifier.fillMaxWidth(),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        itemsIndexed(data.items, key = { _, item -> item.id }) { index, item ->
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(Strings.MY_WISHLIST, style = MaterialTheme.typography.titleMedium)
+        Toolbar(viewModel)
+        ui.notice?.let { Notice(it, onDismiss = viewModel::dismissNotice) }
+        LoadSection(state, onRetry = { viewModel.refresh() }) { data ->
+            if (data.items.isEmpty()) {
+                Text(Strings.WISHLIST_EMPTY, style = MaterialTheme.typography.bodyLarge)
+            } else {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    data.items.forEachIndexed { index, item ->
+                        key(item.id) {
                             ItemRow(
                                 item = item,
                                 editable = data.editable,
@@ -89,7 +76,7 @@ fun WishlistScreen(viewModel: WishlistViewModel, onBack: () -> Unit) {
 private fun Toolbar(viewModel: WishlistViewModel) {
     val state by viewModel.data.collectAsState()
     val data = state.value
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             when {
                 data == null -> Unit
@@ -110,7 +97,7 @@ private fun Notice(notice: WishlistNotice, onDismiss: () -> Unit) {
         WishlistNotice.ListFull -> Strings.NOTICE_LIST_FULL
         WishlistNotice.Unreachable -> Strings.SERVER_UNREACHABLE
     }
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(text, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
         TextButton(onClick = onDismiss) { Text(Strings.OK) }
     }

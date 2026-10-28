@@ -9,11 +9,8 @@ class WebAddressesTest {
     private val addresses = listOf(
         GroupsRoute to "#/groups",
         GroupRoute(2) to "#/groups/2",
-        WishlistRoute(2) to "#/groups/2/wishlist",
-        ReceiverWishlistRoute(2) to "#/groups/2/receiver/wishlist",
+        GifterRoute(2) to "#/groups/2/gifter",
         ReceiverRoute(2) to "#/groups/2/receiver",
-        SantaQuestionsRoute(2) to "#/groups/2/questions",
-        SantaRoute(2) to "#/groups/2/santa",
         ProfileRoute to "#/profile",
         AdminGroupsRoute to "#/admin/groups",
         AdminGroupNewRoute to "#/admin/groups/new",
@@ -39,7 +36,7 @@ class WebAddressesTest {
 
     @Test
     fun unknownAndOldFormAddressesNameNothing() {
-        for (a in listOf("", "#", "#/", "#/nope", "#/groups/x", "#/groups/2/other", "#/profile/x", "#/admin", "#/admin/users/Al ice",
+        for (a in listOf("", "#", "#/", "#/nope", "#/groups/x", "#/groups/2/other", "#/groups/2/wishlist", "#/groups/2/receiver/wishlist", "#/groups/2/questions", "#/groups/2/santa", "#/profile/x", "#/admin", "#/admin/users/Al ice",
             "#com.usuallycoding.opensecretsanta.ui.navigation.GroupRoute/2")) {
             assertNull(WebAddresses.routeOf(a, true), a)
         }

@@ -25,40 +25,24 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.ui.Strings
-import com.usuallycoding.opensecretsanta.ui.groups.isGone
-import com.usuallycoding.opensecretsanta.ui.load.LoadContent
-import com.usuallycoding.opensecretsanta.ui.load.ScrollableMessage
+import com.usuallycoding.opensecretsanta.ui.load.LoadSection
 
-/** What the person's receiver wants, in the receiver's order. Nothing here can be changed. */
+/** What the person's receiver wants, in the receiver's order, as a section of the Gifter page. Nothing here can be changed. */
 @Composable
-fun ReceiverWishlistScreen(viewModel: ReceiverWishlistViewModel, onBack: () -> Unit) {
+fun ReceiverWishlistSection(viewModel: ReceiverWishlistViewModel) {
     val state by viewModel.state.collectAsState()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
 
-    if (state.isGone()) {
-        Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(Strings.GROUP_GONE, style = MaterialTheme.typography.titleMedium)
-                Button(onClick = onBack) { Text(Strings.BACK) }
-            }
-        }
-        return
-    }
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
-            LoadContent(state, onRetry = { viewModel.refresh() }, onRefresh = { viewModel.refresh() }) { items ->
-                if (items.isEmpty()) {
-                    ScrollableMessage(Strings.RECEIVER_WISHLIST_EMPTY)
-                } else {
-                    LazyColumn(
-                        Modifier.fillMaxWidth(),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        items(items) { item ->
-                            Card(Modifier.fillMaxWidth()) {
-                                ItemText(item.title, item.note, item.url, Modifier.padding(16.dp))
-                            }
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(Strings.RECEIVER_WISHLIST, style = MaterialTheme.typography.titleMedium)
+        LoadSection(state, onRetry = { viewModel.refresh() }) { items ->
+            if (items.isEmpty()) {
+                Text(Strings.RECEIVER_WISHLIST_EMPTY, style = MaterialTheme.typography.bodyLarge)
+            } else {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    for (item in items) {
+                        Card(Modifier.fillMaxWidth()) {
+                            ItemText(item.title, item.note, item.url, Modifier.padding(16.dp))
                         }
                     }
                 }

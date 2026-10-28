@@ -1,8 +1,6 @@
 package com.usuallycoding.opensecretsanta.ui
 
-import com.usuallycoding.opensecretsanta.ui.groups.GiftEntry
 import com.usuallycoding.opensecretsanta.ui.groups.GroupPhase
-import com.usuallycoding.opensecretsanta.ui.groups.giftEntries
 import com.usuallycoding.opensecretsanta.ui.groups.GroupStateInfo
 import com.usuallycoding.opensecretsanta.ui.groups.formatWhen
 import com.usuallycoding.opensecretsanta.ui.groups.groupPhase
@@ -99,13 +97,5 @@ class GroupFormatTest {
         assertEquals(GroupPhase.Archived, groupPhase("Archived"))
         assertEquals(GroupPhase.Other, groupPhase("draft"))
         assertEquals(GroupPhase.Other, groupPhase(""))
-    }
-
-    @Test
-    fun yourGiftHasNothingBeforeTheDrawAndTheSantaOnlyOnceArchived() {
-        assertEquals(emptyList(), giftEntries(GroupPhase.Pending))
-        assertEquals(emptyList(), giftEntries(GroupPhase.Other))
-        assertEquals(listOf(GiftEntry.Receiver, GiftEntry.SantaQuestions), giftEntries(GroupPhase.Active))
-        assertEquals(listOf(GiftEntry.Receiver, GiftEntry.SantaQuestions, GiftEntry.Santa), giftEntries(GroupPhase.Archived))
     }
 }

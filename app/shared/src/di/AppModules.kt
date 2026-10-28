@@ -8,6 +8,8 @@ import com.usuallycoding.opensecretsanta.data.session.MemoryTokenStore
 import com.usuallycoding.opensecretsanta.data.session.SessionManager
 import com.usuallycoding.opensecretsanta.data.session.TokenStore
 import com.usuallycoding.opensecretsanta.ui.groups.GroupDetailViewModel
+import com.usuallycoding.opensecretsanta.ui.groups.MyDetailsViewModel
+import com.usuallycoding.opensecretsanta.ui.groups.PairViewModel
 import com.usuallycoding.opensecretsanta.ui.groups.GroupsViewModel
 import com.usuallycoding.opensecretsanta.ui.login.LoginViewModel
 import com.usuallycoding.opensecretsanta.ui.password.ChangePasswordViewModel
@@ -64,6 +66,8 @@ fun appModules(baseUrl: String): List<Module> = listOf(
         viewModel { (groupId: Long) -> SantaRevealViewModel(groupId, get(), viewModelScope()) }
         viewModel { (groupId: Long) -> ReceiverWishlistViewModel(groupId, get(), viewModelScope()) }
         viewModel { (groupId: Long, me: String) -> GroupDetailViewModel(groupId, me, get(), viewModelScope()) }
+        viewModel { (groupId: Long) -> PairViewModel(groupId, get(), viewModelScope()) }
+        viewModel { MyDetailsViewModel(get(), viewModelScope()) }
     },
 )
 

@@ -41,16 +41,6 @@ fun groupStateInfo(state: String): GroupStateInfo = when (state.lowercase()) {
 /** Where a group is in its life, for deciding what the person may do with it; [Other] is a state this app does not know. */
 enum class GroupPhase { Pending, Active, Archived, Other }
 
-/** What a participant can open under "Your gift" once the names are drawn. */
-enum class GiftEntry { Receiver, SantaQuestions, Santa }
-
-/** The receiver and the Santa's questions from the draw on; the Santa only once the group is archived. */
-fun giftEntries(phase: GroupPhase): List<GiftEntry> = when (phase) {
-    GroupPhase.Active -> listOf(GiftEntry.Receiver, GiftEntry.SantaQuestions)
-    GroupPhase.Archived -> listOf(GiftEntry.Receiver, GiftEntry.SantaQuestions, GiftEntry.Santa)
-    GroupPhase.Pending, GroupPhase.Other -> emptyList()
-}
-
 fun groupPhase(state: String): GroupPhase = when (state.lowercase()) {
     "pending" -> GroupPhase.Pending
     "active" -> GroupPhase.Active
