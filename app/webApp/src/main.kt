@@ -6,8 +6,10 @@ import androidx.navigation.ExperimentalBrowserHistoryApi
 import androidx.navigation.NavController
 import androidx.navigation.bindToBrowserNavigation
 import com.usuallycoding.opensecretsanta.data.session.webTokenStore
+import com.usuallycoding.opensecretsanta.data.settings.BrowserSettingsStore
 import com.usuallycoding.opensecretsanta.data.web.resolveBaseUrl
 import com.usuallycoding.opensecretsanta.di.initKoin
+import com.usuallycoding.opensecretsanta.di.settingsStoreModule
 import com.usuallycoding.opensecretsanta.di.tokenStoreModule
 import com.usuallycoding.opensecretsanta.ui.App
 import com.usuallycoding.opensecretsanta.ui.navigation.WebAddresses
@@ -73,7 +75,7 @@ fun main() {
     MainScope().launch {
         initKoin(
             baseUrl = resolveBaseUrl(readConfigText(), window.location.origin),
-            platformModule = tokenStoreModule { webTokenStore() },
+            platformModules = listOf(tokenStoreModule { webTokenStore() }, settingsStoreModule { BrowserSettingsStore() }),
         )
         ComposeViewport {
             // The back button and the address bar follow the screens the participant moves between.

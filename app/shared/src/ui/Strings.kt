@@ -8,6 +8,12 @@ object Strings {
     const val PASSWORD = "Password"
     const val SIGN_IN = "Sign in"
     const val SIGN_OUT = "Sign out"
+    const val APPEARANCE = "Appearance"
+    const val THEME_FOLLOW_DEVICE = "Follow device"
+    const val THEME_LIGHT = "Light"
+    const val THEME_DARK = "Dark"
+    const val DYNAMIC_COLORS = "Dynamic colours"
+    const val DYNAMIC_COLORS_NOTE = "Use the colours of your wallpaper"
     const val SIGNING_IN = "Signing in..."
     const val STAY_SIGNED_IN = "Stay signed in"
 

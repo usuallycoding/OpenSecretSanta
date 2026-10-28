@@ -8,9 +8,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
@@ -27,6 +24,8 @@ import com.usuallycoding.opensecretsanta.ui.login.LoginScreen
 import com.usuallycoding.opensecretsanta.ui.password.ChangePasswordScreen
 import com.usuallycoding.opensecretsanta.ui.shell.ShellScreen
 import com.usuallycoding.opensecretsanta.ui.shell.ShellViewModel
+import com.usuallycoding.opensecretsanta.data.settings.AppearanceSettings
+import com.usuallycoding.opensecretsanta.ui.theme.AppTheme
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -42,7 +41,9 @@ fun App(
     gate: @Composable (content: @Composable () -> Unit) -> Unit = { it() },
     onNavigationReady: suspend (NavController, isAdmin: Boolean) -> Unit = { _, _ -> },
 ) {
-    AppTheme {
+    val settings = koinInject<AppearanceSettings>()
+    val appearance by settings.appearance.collectAsState()
+    AppTheme(appearance) {
         gate { AppContent(onNavigationReady) }
     }
 }
@@ -75,10 +76,4 @@ private fun AppContent(onNavigationReady: suspend (NavController, isAdmin: Boole
             }
         }
     }
-}
-
-/** Material colours that follow the system's light or dark setting. */
-@Composable
-fun AppTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme(), content = content)
 }

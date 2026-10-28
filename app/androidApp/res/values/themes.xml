@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The window behind Compose: the app's light background, so nothing flashes before the first frame. -->
+    <style name="Theme.OpenSecretSanta" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">#FFFFF8F6</item>
+    </style>
+</resources>

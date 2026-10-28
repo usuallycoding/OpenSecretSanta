@@ -5,3 +5,14 @@ html, body {
     padding: 0;
     overflow: hidden;
 }
+
+/* The page behind the app, so it does not flash the wrong colour before the app has loaded: the app's own backgrounds. */
+html, body {
+    background: #FFF8F6;
+}
+
+@media (prefers-color-scheme: dark) {
+    html, body {
+        background: #1A110F;
+    }
+}

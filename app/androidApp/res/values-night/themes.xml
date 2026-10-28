@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The same at night: the app's dark background. -->
+    <style name="Theme.OpenSecretSanta" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#FF1A110F</item>
+    </style>
+</resources>

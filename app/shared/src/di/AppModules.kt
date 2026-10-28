@@ -5,6 +5,9 @@ import com.usuallycoding.opensecretsanta.data.api.ApiClient
 import com.usuallycoding.opensecretsanta.data.api.AuthContext
 import com.usuallycoding.opensecretsanta.data.api.createHttpClient
 import com.usuallycoding.opensecretsanta.data.session.MemoryTokenStore
+import com.usuallycoding.opensecretsanta.data.settings.AppearanceSettings
+import com.usuallycoding.opensecretsanta.data.settings.MemorySettingsStore
+import com.usuallycoding.opensecretsanta.data.settings.SettingsStore
 import com.usuallycoding.opensecretsanta.data.session.SessionManager
 import com.usuallycoding.opensecretsanta.data.session.TokenStore
 import com.usuallycoding.opensecretsanta.ui.groups.GroupDetailViewModel
@@ -41,6 +44,7 @@ fun appModules(baseUrl: String): List<Module> = listOf(
     module {
         single { BackendConfig(baseUrl) }
         single { createHttpClient() }
+        single { AppearanceSettings(get()) }
         // The session and the client need each other (one holds the token, the other sends it), so the
         // session only looks the client up when it first needs it.
         single { SessionManager(api = lazy { get<ApiClient>() }, store = get()) } bind AuthContext::class
@@ -76,13 +80,19 @@ private fun viewModelScope() = CoroutineScope(SupervisorJob() + Dispatchers.Main
 /** What a platform host supplies: where a sign-in is kept between runs. Memory only, unless a host says otherwise. */
 fun tokenStoreModule(store: () -> TokenStore): Module = module { single<TokenStore> { store() } }
 
+/** What a platform host supplies: where the device's preferences (the appearance) are kept. Memory only, unless a host says otherwise. */
+fun settingsStoreModule(store: () -> SettingsStore): Module = module { single<SettingsStore> { store() } }
+
 /**
  * Starts the shared dependency graph. Hosts call this once at launch, before the first screen
  * composes; repeated calls (for example after an Android configuration change) are ignored.
  */
-fun initKoin(baseUrl: String, platformModule: Module = tokenStoreModule { MemoryTokenStore() }) {
+fun initKoin(
+    baseUrl: String,
+    platformModules: List<Module> = listOf(tokenStoreModule { MemoryTokenStore() }, settingsStoreModule { MemorySettingsStore() }),
+) {
     if (KoinPlatform.getKoinOrNull() != null) return
     startKoin {
-        modules(appModules(baseUrl) + platformModule)
+        modules(appModules(baseUrl) + platformModules)
     }
 }
