@@ -138,7 +138,7 @@ The app SHALL offer to sign out from every view after sign-in. Signing out SHALL
 - **THEN** nothing of the previous person's session or screens is shown
 
 ### Requirement: Views by role
-After sign-in the app SHALL show a participant view to everyone and an admin view to administrators only. The participant view SHALL be a Groups tab and a Profile tab under a top bar; the admin view SHALL be a Groups tab with the administrator's groups and a Users tab, under the same top bar. The top bar SHALL have a menu with "Change password", "Sign out" and, for administrators only, an item that switches to the other view. An administrator SHALL start in the admin view. A person who is not an administrator SHALL see no admin view and no item to reach it. The choice SHALL last for the current run only. The admin status SHALL come from the server's `GET /me` and be refreshed whenever the app starts or the person signs in.
+After sign-in the app SHALL show a participant view to everyone and an admin view to administrators only. The participant view SHALL be a Groups tab and a Profile tab under a top bar; the admin view SHALL be a Groups tab with the administrator's groups and a Users tab, under the same top bar. The top bar SHALL have a menu with "Appearance", "Change password", "Sign out" and, for administrators only, an item that switches to the other view. An administrator SHALL start in the admin view. A person who is not an administrator SHALL see no admin view and no item to reach it. The choice SHALL last for the current run only. The admin status SHALL come from the server's `GET /me` and be refreshed whenever the app starts or the person signs in.
 
 #### Scenario: Administrator
 - **WHEN** an administrator signs in
@@ -158,7 +158,7 @@ After sign-in the app SHALL show a participant view to everyone and an admin vie
 
 #### Scenario: The menu in both views
 - **WHEN** the person opens the top-bar menu in the participant view or in the admin view
-- **THEN** it offers "Change password" and "Sign out", and the view switch for an administrator
+- **THEN** it offers "Appearance", "Change password" and "Sign out", and the view switch for an administrator
 
 ### Requirement: Requests carry the session and nothing else
 Every request after sign-in SHALL carry the access token in the `Authorization: Bearer` header and no other credential. The app SHALL send the password only to `POST /auth/login` and `PUT /me/password`.
