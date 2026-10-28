@@ -126,7 +126,7 @@ While the group is Active or Archived, choosing "Your receiver's wishlist" SHALL
 - **THEN** refreshing or returning to the app shows the current list
 
 ### Requirement: Loading, errors and refresh
-While a wishlist screen loads, the app SHALL show a progress indicator. When it cannot be loaded the app SHALL say so without technical details and offer to try again, keeping what was shown on a failed refresh. Both wishlist screens SHALL offer a refresh action and reload when the app returns to the foreground.
+While a wishlist screen loads, the app SHALL show a progress indicator. When it cannot be loaded the app SHALL say so without technical details and offer to try again, keeping what was shown on a failed refresh. Both wishlist screens SHALL be refreshed as described in "Pulling a screen refreshes it" and "The web has no refresh control" and reload when the app returns to the foreground.
 
 #### Scenario: Loading
 - **WHEN** a wishlist screen is opened

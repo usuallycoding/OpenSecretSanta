@@ -87,7 +87,7 @@ The app SHALL show a group's date and time as the local values the organiser ent
 - **THEN** only the date is shown
 
 ### Requirement: Loading, errors and refresh
-While a groups screen loads, the app SHALL show a progress indicator. When the server cannot be reached or answers with an error, the app SHALL show a message that says so, without technical details, with an action to try again. The groups screens SHALL offer a refresh action and SHALL reload when the app returns to the foreground, keeping what is shown while the new answer loads.
+While a groups screen loads, the app SHALL show a progress indicator. When the server cannot be reached or answers with an error, the app SHALL show a message that says so, without technical details, with an action to try again. The groups screens SHALL be refreshed as described in "Pulling a screen refreshes it" and "The web has no refresh control" and SHALL reload when the app returns to the foreground, keeping what is shown while the new answer loads.
 
 #### Scenario: Loading
 - **WHEN** a groups screen is opened
