@@ -72,11 +72,15 @@ Both oversight endpoints SHALL be usable only by the owner of the named group. A
 - **THEN** the response is 401
 
 ### Requirement: Oversight is read-only
-The oversight endpoints SHALL only read. No admin endpoint SHALL change, delete or answer a wishlist item, a question or an answer.
+The oversight endpoints SHALL only read. No admin endpoint SHALL change or answer a wishlist item, a question or an answer, and the only way an administrator removes them is by deleting the whole group, which removes everything of it at once.
 
 #### Scenario: No write endpoint
 - **WHEN** an owner looks for a way to change a participant's wishlist, question or answer through admin endpoints
 - **THEN** none exists
+
+#### Scenario: Only with the group
+- **WHEN** an owner looks for a way to delete one wishlist item, question or answer of a participant
+- **THEN** none exists; deleting the group is the only way they go
 
 ### Requirement: Oversight leaves no trace
 Reading through the oversight endpoints SHALL NOT be visible to participants in any form: no response a participant receives, including their own wishlist, their own threads, group views and timestamps, SHALL differ because the owner has read, and nothing SHALL record that or when the owner read.

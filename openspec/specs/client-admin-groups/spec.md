@@ -144,7 +144,7 @@ While a group is Draft or Pending the administrator SHALL be able to edit the pa
 - **THEN** the sheet closes, the detail reloads and says the participants can no longer change
 
 ### Requirement: Moving a group forward
-The detail SHALL offer the next step for the state: "Make pending" for a Draft (`POST /admin/groups/{id}/pending`), "Draw the names" for a Pending group (`POST /admin/groups/{id}/activate`) and "Archive" for an Active one (`POST /admin/groups/{id}/archive`), each after a confirmation that says what it does. The step SHALL be a button in the same row as "Edit details" (and, for a Draft, "Delete"), above the people; the row SHALL wrap onto a second line when it does not fit. An Archived group has no step.
+The detail SHALL offer the next step for the state: "Make pending" for a Draft (`POST /admin/groups/{id}/pending`), "Draw the names" for a Pending group (`POST /admin/groups/{id}/activate`) and "Archive" for an Active one (`POST /admin/groups/{id}/archive`), each after a confirmation that says what it does. The step SHALL be a button in the same row as "Edit details" and "Delete", above the people; the row SHALL wrap onto a second line when it does not fit. An Archived group has no step.
 
 #### Scenario: Make pending
 - **WHEN** the administrator confirms "Make pending" on a Draft
@@ -156,7 +156,7 @@ The detail SHALL offer the next step for the state: "Make pending" for a Draft (
 
 #### Scenario: Archive
 - **WHEN** the administrator confirms "Archive" on an Active group
-- **THEN** the group shows as Archived and no action remains except reading
+- **THEN** the group shows as Archived and no action remains except reading and deleting
 
 #### Scenario: Cancel a confirmation
 - **WHEN** the administrator cancels any confirmation
@@ -168,7 +168,7 @@ The detail SHALL offer the next step for the state: "Make pending" for a Draft (
 
 #### Scenario: Buttons together
 - **WHEN** the detail of a Pending group is shown
-- **THEN** "Edit details" and "Draw the names" are in one row above the participants
+- **THEN** "Edit details", "Draw the names" and "Delete" are in one row above the participants
 
 ### Requirement: Confirmations say what a step does
 The confirmation for "Make pending" SHALL say that accounts are created for people who have none, the one for "Draw the names" that the names are drawn and the participants frozen, and the one for "Archive" that the exchange is finished and becomes read-only.
@@ -183,17 +183,6 @@ The confirmation for "Make pending" SHALL say that accounts are created for peop
 #### Scenario: Too few participants
 - **WHEN** a Pending group has 3 participants
 - **THEN** "Draw the names" is unavailable and says at least 4 are needed
-
-### Requirement: Deleting a Draft
-A Draft SHALL also offer "Delete", after a confirmation, with `DELETE /admin/groups/{id}`, in the same row of buttons as "Edit details" and "Make pending", and deleting SHALL return to the list. A group that is not a Draft SHALL offer no delete.
-
-#### Scenario: Delete a Draft
-- **WHEN** the administrator confirms "Delete" on a Draft
-- **THEN** the group is gone and the list is shown
-
-#### Scenario: Not a Draft
-- **WHEN** the group is Pending, Active or Archived
-- **THEN** there is no delete action
 
 ### Requirement: Temporary passwords are shown once
 When making a group Pending, or saving a Pending group's participants, creates accounts, the app SHALL show each created username with its temporary password in a dialog, selectable so that it can be copied, and SHALL say that each person must change it when first signing in and that an administrator can look it up under Users until then. The dialog SHALL be shown only when accounts were created. Once it is closed the app SHALL keep none of the passwords.
@@ -243,3 +232,34 @@ Choosing "Duplicate" on a group SHALL ask for confirmation, naming the group. Co
 #### Scenario: Failure
 - **WHEN** the server cannot be reached, or refuses the new group
 - **THEN** the dialog says so, nothing is created and the list stays as it was
+
+### Requirement: Deleting a group
+Every group, whatever its state, SHALL offer "Delete" in the row of buttons under its details, after a confirmation, sent with `DELETE /admin/groups/{id}`. When the server answers 409 `confirmation_required` the app SHALL show a second dialog naming what would be deleted from the counts it returns (wishlist items, questions, answers and the draw) and saying that this cannot be undone, and SHALL send the request again with `confirm=true` only if that is confirmed. Deleting SHALL return to the list.
+
+#### Scenario: Delete a Draft
+- **WHEN** the administrator confirms "Delete" on a Draft
+- **THEN** the group is gone and the list is shown, with no second dialog
+
+#### Scenario: Delete in any state
+- **WHEN** the group is Pending, Active or Archived
+- **THEN** it offers "Delete" like a Draft does
+
+#### Scenario: Second confirmation
+- **WHEN** the administrator confirms "Delete" on an Active group that has wishlist items, questions and answers
+- **THEN** a second dialog says how many of each will be deleted, with the draw, and that this cannot be undone, and the group is still there
+
+#### Scenario: Confirmed twice
+- **WHEN** the administrator confirms the second dialog
+- **THEN** the group is deleted and the list is shown
+
+#### Scenario: Cancelled at the second dialog
+- **WHEN** the administrator cancels the second dialog
+- **THEN** nothing is deleted and the group's page is shown as it was
+
+#### Scenario: Pending without wishlist items
+- **WHEN** the administrator confirms "Delete" on a Pending group that has no wishlist items
+- **THEN** the group is deleted with one confirmation
+
+#### Scenario: Group gone meanwhile
+- **WHEN** the server answers that the group no longer exists while the administrator deletes it
+- **THEN** the app says the group is no longer available
