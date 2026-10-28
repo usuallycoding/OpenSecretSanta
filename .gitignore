@@ -20,6 +20,7 @@ xcuserdata
 *.db-shm
 .env
 .env.*
+!.env.example
 
 # Local tooling
 local.properties

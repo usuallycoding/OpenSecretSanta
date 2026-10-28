@@ -1,0 +1,16 @@
+# Keeps the build context small and free of local state and secrets.
+# The modules' module.yaml files are all needed (project.yaml lists every module), so only output and tooling is left out.
+.git
+.idea
+.claude
+.kotlin
+build
+**/build
+openspec
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+.env
+.env.*
+**/xcuserdata

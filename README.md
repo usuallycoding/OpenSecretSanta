@@ -57,6 +57,31 @@ Login is limited to 20 requests per minute per client address, and a username is
 
 Pending database migrations are applied automatically at startup. They live in `server/resources/db/migration` and are listed, in order, in that folder's `index.txt`.
 
+### Run with Docker
+
+`docker-compose.yml` builds and runs the server and the web app, with nothing but Docker on the machine. Every setting comes from a `.env` file next to it, which is not committed:
+
+```
+cp .env.example .env        # then fill it in: at least JWT_SECRET, DATA_ENCRYPTION_KEY and ADMIN_PASSWORD
+openssl rand -base64 32     # a value for DATA_ENCRYPTION_KEY
+docker compose up --build
+```
+
+The first build downloads the Kotlin toolchain and the dependencies and takes several minutes; later builds are much faster. Then the web app is at `http://localhost:8080` and the server at `http://localhost:8081`. Sign in as `admin` with `ADMIN_PASSWORD`; you are asked to choose your own password straight away.
+
+| `.env` variable | Default | Meaning |
+|---|---|---|
+| `JWT_SECRET` | required | the server's `JWT_SECRET` |
+| `DATA_ENCRYPTION_KEY` | required | the server's `DATA_ENCRYPTION_KEY` |
+| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | `admin`, none | the first administrator; only used while the database has no users, so the password can be removed after the first start |
+| `WEB_PORT`, `SERVER_PORT` | `8080`, `8081` | the ports published on this machine |
+| `PUBLIC_SERVER_URL` | `http://localhost:` and `SERVER_PORT` | where the browser finds the server; written into the web app's `config.json` each time the web container starts, so changing it needs a restart (`docker compose up -d`), not a rebuild |
+| `PUBLIC_WEB_ORIGIN` | `http://localhost:` and `WEB_PORT` | the address the web app is opened at; the server's `CORS_ALLOWED_ORIGINS` |
+
+Compose stops and names the variable when a required one is missing, and the server container exits naming a variable it finds invalid. The database lives in the named volume `data`, so removing or rebuilding the containers keeps your users and groups (`docker compose down -v` deletes it). To back it up, copy the file out with `docker compose cp server:/data/opensecretsanta.db .`; to start from an existing database, copy it in the same way (to `server:/data/opensecretsanta.db`), give the file to the server's user with `docker compose exec -u root server chown santa /data/opensecretsanta.db`, and restart the server. The server runs as an unprivileged user and has a healthcheck on `/health`; the web container starts once it is healthy.
+
+Things this setup does not do. It does not provide TLS: a browser refuses an `https` page that calls an `http` server, and the Android and iOS apps only accept plain `http` for development hosts, so a deployment that is not just for your own network puts TLS in front of both services and sets the two public addresses to `https`. The login limit keys on the client's address, which with Docker Desktop is the same for everyone, so it is shared by all clients there. The images are built for the machine's own architecture, and there is no hot reload; use `./kotlin run` for development.
+
 ### Groups and their lifecycle
 
 An admin owns the groups they create and nobody else can see or change them (other admins get 404). A group moves strictly forward, one step at a time:
