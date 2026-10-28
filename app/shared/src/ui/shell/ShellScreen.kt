@@ -78,6 +78,7 @@ import com.usuallycoding.opensecretsanta.ui.navigation.ReceiverWishlistRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.SantaQuestionsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.SantaRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.WishlistRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.isAdminScreen
 import com.usuallycoding.opensecretsanta.ui.profile.ProfileScreen
 import com.usuallycoding.opensecretsanta.ui.wishlist.ReceiverWishlistScreen
 import com.usuallycoding.opensecretsanta.ui.wishlist.ReceiverWishlistViewModel
@@ -91,10 +92,10 @@ import com.usuallycoding.opensecretsanta.ui.wishlist.WishlistViewModel
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavController) -> Unit = {}) {
+fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavController, isAdmin: Boolean) -> Unit = { _, _ -> }) {
     val view by viewModel.view.collectAsState()
     val navController = rememberNavController()
-    LaunchedEffect(navController) { onNavigationReady(navController) }
+    LaunchedEffect(navController) { onNavigationReady(navController, viewModel.account.isAdmin) }
     val destination = navController.currentBackStackEntryAsState().value?.destination
     val participant = view == AppView.Participant
     // below a group (its detail or one of its wishlists) there is a way back
@@ -105,7 +106,16 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
     LaunchedEffect(view) {
         if (view != shownView) {
             shownView = view
-            navController.openView(if (view == AppView.Admin) AdminGroupsRoute else GroupsRoute)
+            // an address that opened a screen of the other view has already moved there
+            if (navController.currentDestination?.isAdminScreen() != (view == AppView.Admin)) {
+                navController.openView(if (view == AppView.Admin) AdminGroupsRoute else GroupsRoute)
+            }
+        }
+    }
+    // a screen of the other view, opened from an address, brings its view along
+    LaunchedEffect(destination) {
+        if (destination != null && destination.isAdminScreen() != (view == AppView.Admin)) {
+            viewModel.select(if (destination.isAdminScreen()) AppView.Admin else AppView.Participant)
         }
     }
 

@@ -40,7 +40,7 @@ import org.koin.core.parameter.parametersOf
 @Composable
 fun App(
     gate: @Composable (content: @Composable () -> Unit) -> Unit = { it() },
-    onNavigationReady: suspend (NavController) -> Unit = {},
+    onNavigationReady: suspend (NavController, isAdmin: Boolean) -> Unit = { _, _ -> },
 ) {
     AppTheme {
         gate { AppContent(onNavigationReady) }
@@ -48,7 +48,7 @@ fun App(
 }
 
 @Composable
-private fun AppContent(onNavigationReady: suspend (NavController) -> Unit) {
+private fun AppContent(onNavigationReady: suspend (NavController, isAdmin: Boolean) -> Unit) {
     val session = koinInject<SessionManager>()
     val state by session.state.collectAsState()
     LaunchedEffect(session) { session.restore() }
