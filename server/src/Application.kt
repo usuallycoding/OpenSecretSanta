@@ -13,7 +13,6 @@ import com.usuallycoding.opensecretsanta.domain.admin.GetManagedUser
 import com.usuallycoding.opensecretsanta.domain.admin.SeedDefaultAdmin
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 import com.usuallycoding.opensecretsanta.domain.admin.ListManagedUsers
-import com.usuallycoding.opensecretsanta.domain.admin.PromoteUser
 import com.usuallycoding.opensecretsanta.domain.admin.ResetPassword
 import com.usuallycoding.opensecretsanta.domain.auth.ChangePassword
 import com.usuallycoding.opensecretsanta.domain.auth.Login
@@ -129,7 +128,7 @@ fun Application.module(
             install(PasswordChangeGate)
             accountRoutes(get<ChangePassword>())
             profileRoutes(get<UpdateProfile>())
-            adminRoutes(get<ListManagedUsers>(), get<GetManagedUser>(), get<ResetPassword>(), get<PromoteUser>())
+            adminRoutes(get<ListManagedUsers>(), get<GetManagedUser>(), get<ResetPassword>())
             adminGroupRoutes(
                 get<CreateGroup>(),
                 get<ListOwnedGroups>(),

@@ -36,6 +36,14 @@ data class ReceiverWishlistRoute(val groupId: Long)
 @Serializable
 data object AdminGroupsRoute
 
+/** The users the administrator manages. */
+@Serializable
+data object AdminUsersRoute
+
+/** One of those users; the username is lowercase letters, digits, dots, underscores and hyphens. */
+@Serializable
+data class AdminUserRoute(val username: String)
+
 /** The form for a new group. */
 @Serializable
 data object AdminGroupNewRoute

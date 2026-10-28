@@ -35,7 +35,6 @@ import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -49,6 +48,9 @@ import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupFormViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupScreen
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupsScreen
+import com.usuallycoding.opensecretsanta.ui.admin.AdminUserScreen
+import com.usuallycoding.opensecretsanta.ui.admin.AdminUserViewModel
+import com.usuallycoding.opensecretsanta.ui.admin.AdminUsersScreen
 import com.usuallycoding.opensecretsanta.ui.gift.ReceiverScreen
 import com.usuallycoding.opensecretsanta.ui.gift.ReceiverViewModel
 import com.usuallycoding.opensecretsanta.ui.gift.SantaQuestionsScreen
@@ -63,6 +65,8 @@ import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupEditRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupNewRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupsRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.AdminUserRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.AdminUsersRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.GroupRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.GroupsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.ProfileRoute
@@ -117,7 +121,7 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
             )
         },
         // The tabs stay while a group is open, so switching tabs and coming back finds the group as it was left.
-        bottomBar = { if (participant) TabBar(navController, destination) },
+        bottomBar = { if (participant) TabBar(navController, destination) else AdminTabBar(navController, destination) },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             run {
@@ -187,6 +191,16 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                             onNew = { navController.navigate(AdminGroupNewRoute) },
                         )
                     }
+                    composable<AdminUsersRoute> {
+                        AdminUsersScreen(koinViewModel(), onOpen = { navController.navigate(AdminUserRoute(it)) })
+                    }
+                    composable<AdminUserRoute> { entry ->
+                        val username = entry.toRoute<AdminUserRoute>().username
+                        AdminUserScreen(
+                            koinViewModel<AdminUserViewModel>(key = "admin-user-$username") { parametersOf(username, viewModel.account.username) },
+                            onBack = { navController.popBackStack() },
+                        )
+                    }
                     composable<AdminGroupNewRoute> {
                         AdminGroupFormScreen(
                             koinViewModel<AdminGroupFormViewModel>(key = "admin-group-new") { parametersOf(AdminGroupFormViewModel.NEW_GROUP) },
@@ -219,6 +233,8 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
 }
 
 private fun titleOf(view: AppView, destination: NavDestination?): String = when {
+    destination?.hasRoute<AdminUserRoute>() == true -> Strings.ADMIN_USER
+    destination?.hasRoute<AdminUsersRoute>() == true -> Strings.ADMIN_TAB_USERS
     destination?.hasRoute<AdminGroupNewRoute>() == true -> Strings.ADMIN_NEW_GROUP
     destination?.hasRoute<AdminGroupEditRoute>() == true -> Strings.ADMIN_EDIT_GROUP
     destination?.hasRoute<AdminGroupRoute>() == true -> Strings.ADMIN_GROUP
@@ -282,7 +298,27 @@ private fun NavDestination.belowGroups(): Boolean =
         hasRoute<ReceiverRoute>() || hasRoute<SantaQuestionsRoute>() || hasRoute<SantaRoute>()
 
 private fun NavDestination.belowAdminGroups(): Boolean =
-    hasRoute<AdminGroupNewRoute>() || hasRoute<AdminGroupRoute>() || hasRoute<AdminGroupEditRoute>()
+    hasRoute<AdminGroupNewRoute>() || hasRoute<AdminGroupRoute>() || hasRoute<AdminGroupEditRoute>() || hasRoute<AdminUserRoute>()
+
+/** The admin view's two tabs: the groups and the users the administrator manages. */
+@Composable
+private fun AdminTabBar(navController: NavController, destination: NavDestination?) {
+    val onUsers = destination?.hierarchy?.any { it.hasRoute<AdminUsersRoute>() || it.hasRoute<AdminUserRoute>() } == true
+    NavigationBar {
+        NavigationBarItem(
+            selected = !onUsers,
+            onClick = { navController.openTab(AdminGroupsRoute, AdminGroupsRoute) },
+            icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
+            label = { Text(Strings.ADMIN_TAB_GROUPS) },
+        )
+        NavigationBarItem(
+            selected = onUsers,
+            onClick = { navController.openTab(AdminUsersRoute, AdminGroupsRoute) },
+            icon = { Icon(Icons.Filled.Person, contentDescription = null) },
+            label = { Text(Strings.ADMIN_TAB_USERS) },
+        )
+    }
+}
 
 /** Opens a view's first screen with nothing of the other view behind it, so back leaves the app from either. */
 private fun NavController.openView(route: Any) = navigate(route) {
@@ -290,8 +326,9 @@ private fun NavController.openView(route: Any) = navigate(route) {
     launchSingleTop = true
 }
 
-private fun NavController.openTab(route: Any) = navigate(route) {
-    popUpTo(graph.findStartDestination().id) { saveState = true }
+/** Opens a tab, keeping each tab's own place; [root] is the first screen of the view the tab belongs to. */
+private fun NavController.openTab(route: Any, root: Any = GroupsRoute) = navigate(route) {
+    popUpTo(root) { saveState = true }
     launchSingleTop = true
     restoreState = true
 }

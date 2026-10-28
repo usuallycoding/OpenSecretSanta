@@ -73,15 +73,6 @@ class ResetPassword(
     }
 }
 
-/** Promotion is deliberately not limited to the admin's groups; nothing ever removes admin rights. */
-class PromoteUser(private val users: UserRepository) {
-    operator fun invoke(actor: User, rawTarget: String): User {
-        requireAdmin(actor)
-        val user = users.find(targetUsername(rawTarget)) ?: throw DomainException.NotFound("User not found.")
-        return if (user.isAdmin) user else users.markAdmin(user.username) ?: throw DomainException.NotFound("User not found.")
-    }
-}
-
 private fun viewOf(users: UserRepository, secretBox: SecretBox, user: User): ManagedUser {
     val temporary = if (user.mustChangePassword) {
         users.credentials(user.username)?.encryptedTempPassword?.let(secretBox::decrypt)

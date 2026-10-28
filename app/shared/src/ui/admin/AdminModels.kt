@@ -86,3 +86,38 @@ data class AdminGroupUi(
     /** The group was deleted: the screen goes back to the list. */
     val deleted: Boolean = false,
 )
+
+/** A user the administrator manages, with the profile fields they have set and whether they still have a temporary password. */
+data class ManagedUser(
+    val username: String,
+    val fullName: String?,
+    val email: String?,
+    val phone: String?,
+    val address: String?,
+    val deliveryInfo: String?,
+    val mustChangePassword: Boolean,
+    /** What the server returns while the password is still the temporary one; null once the person changed it. */
+    val temporaryPassword: String?,
+)
+
+internal fun com.usuallycoding.opensecretsanta.contract.ManagedUserDto.toManagedUser() = ManagedUser(
+    username = user.username,
+    fullName = user.fullName?.trim()?.ifEmpty { null },
+    email = user.email?.trim()?.ifEmpty { null },
+    phone = user.phone?.trim()?.ifEmpty { null },
+    address = user.address?.trim()?.ifEmpty { null },
+    deliveryInfo = user.deliveryInfo?.trim()?.ifEmpty { null },
+    mustChangePassword = user.mustChangePassword,
+    temporaryPassword = temporaryPassword,
+)
+
+/** Something that went wrong with a reset, said once. */
+enum class UserNotice { Unreachable, Failed }
+
+data class AdminUserUi(
+    val confirming: Boolean = false,
+    val busy: Boolean = false,
+    /** The new temporary password after a reset, shown in its dialog until it is closed. */
+    val created: CreatedAccount? = null,
+    val notice: UserNotice? = null,
+)

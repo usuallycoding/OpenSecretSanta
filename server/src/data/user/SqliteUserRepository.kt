@@ -88,14 +88,6 @@ class SqliteUserRepository(private val database: Database) : UserRepository {
         if (changed == 0) null else find(c, username)
     }
 
-    override fun markAdmin(username: Username): User? = database.connection().use { c ->
-        val changed = c.prepareStatement("UPDATE users SET is_admin = 1 WHERE username = ?").use { s ->
-            s.setString(1, username.value)
-            s.executeUpdate()
-        }
-        if (changed == 0) null else find(c, username)
-    }
-
     private fun find(connection: Connection, username: Username): User? =
         connection.prepareStatement("SELECT $USER_COLUMNS FROM users WHERE username = ?").use { s ->
             s.setString(1, username.value)

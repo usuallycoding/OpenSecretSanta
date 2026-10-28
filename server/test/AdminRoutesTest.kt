@@ -73,7 +73,6 @@ class AdminRoutesTest {
         startApp()
 
         assertEquals(HttpStatusCode.Unauthorized, client.getAs(ApiRoutes.ADMIN_USERS, null).status)
-        assertEquals(HttpStatusCode.Unauthorized, client.postAs(ApiRoutes.adminUserPromote("alice"), null).status)
     }
 
     @Test
@@ -85,8 +84,6 @@ class AdminRoutesTest {
         assertEquals(HttpStatusCode.Forbidden, client.getAs(ApiRoutes.ADMIN_USERS, token).status)
         assertEquals(HttpStatusCode.Forbidden, client.getAs(ApiRoutes.adminUser("carol"), token).status)
         assertEquals(HttpStatusCode.Forbidden, client.postAs(ApiRoutes.adminUserResetPassword("carol"), token).status)
-        assertEquals(HttpStatusCode.Forbidden, client.postAs(ApiRoutes.adminUserPromote("alice"), token).status)
-        assertFalse(fx.users.find(Username.parse("alice"))!!.isAdmin)
     }
 
     @Test
@@ -221,40 +218,15 @@ class AdminRoutesTest {
         assertEquals(1, fx.users.find(Username.parse("bob"))!!.tokenVersion)
     }
 
-    // --- promote ---
+    // --- no way to make an administrator ---
 
     @Test
-    fun promotionWorksForAUserInNoneOfTheAdminsGroups() = testApplication {
-        startApp()
-        seedWorld()
-        val outsiderToken = fx.token("outsider")
-        assertEquals(HttpStatusCode.Forbidden, client.getAs(ApiRoutes.ADMIN_USERS, outsiderToken).status)
-
-        val response = client.postAs(ApiRoutes.adminUserPromote("outsider"), fx.token("admin-a"))
-
-        assertEquals(HttpStatusCode.OK, response.status)
-        assertTrue(Json.decodeFromString<AccountDto>(response.bodyAsText()).isAdmin)
-        // the older token now reaches admin endpoints without logging in again
-        assertEquals(HttpStatusCode.OK, client.getAs(ApiRoutes.ADMIN_USERS, outsiderToken).status)
-    }
-
-    @Test
-    fun promotingAnAdminAgainSucceedsWithoutChange() = testApplication {
+    fun thereIsNoPromoteRoute() = testApplication {
         startApp()
         seedWorld()
 
-        val response = client.postAs(ApiRoutes.adminUserPromote("admin-b"), fx.token("admin-a"))
-
-        assertEquals(HttpStatusCode.OK, response.status)
-        assertTrue(Json.decodeFromString<AccountDto>(response.bodyAsText()).isAdmin)
-    }
-
-    @Test
-    fun promotingAnUnknownUserIsNotFound() = testApplication {
-        startApp()
-        seedWorld()
-
-        assertEquals(HttpStatusCode.NotFound, client.postAs(ApiRoutes.adminUserPromote("nobody-at-all"), fx.token("admin-a")).status)
+        assertEquals(HttpStatusCode.NotFound, client.postAs("/admin/users/outsider/promote", fx.token("admin-a")).status)
+        assertFalse(fx.users.find(Username.parse("outsider"))!!.isAdmin)
     }
 
     @Test

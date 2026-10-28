@@ -71,7 +71,6 @@ class SqliteRepositoriesTest {
         assertNull(users.find(u("nobody")))
         assertNull(users.credentials(u("nobody")))
         assertNull(users.updateProfile(u("nobody"), Profile.EMPTY))
-        assertNull(users.markAdmin(u("nobody")))
         assertNull(users.replaceCredentials(u("nobody"), "h", null, false))
     }
 
@@ -97,13 +96,6 @@ class SqliteRepositoriesTest {
         assertEquals("new-hash", credentials.passwordHash)
         assertNull(credentials.encryptedTempPassword)
         assertEquals(3, users.replaceCredentials(u("alice"), "x", byteArrayOf(1), true)!!.tokenVersion)
-    }
-
-    @Test
-    fun markAdminPersists() {
-        users.insertAll(listOf(newUser("alice")))
-        assertTrue(users.markAdmin(u("alice"))!!.isAdmin)
-        assertTrue(users.find(u("alice"))!!.isAdmin)
     }
 
     @Test

@@ -13,12 +13,14 @@ import com.usuallycoding.opensecretsanta.contract.GroupChangeResponse
 import com.usuallycoding.opensecretsanta.contract.GroupDetailsRequest
 import com.usuallycoding.opensecretsanta.contract.LoginRequest
 import com.usuallycoding.opensecretsanta.contract.LoginResponse
+import com.usuallycoding.opensecretsanta.contract.ManagedUserDto
 import com.usuallycoding.opensecretsanta.contract.MemberGroupDto
 import com.usuallycoding.opensecretsanta.contract.ParticipantsRequest
 import com.usuallycoding.opensecretsanta.contract.ProfileUpdateRequest
 import com.usuallycoding.opensecretsanta.contract.QuestionDto
 import com.usuallycoding.opensecretsanta.contract.ReceiverDto
 import com.usuallycoding.opensecretsanta.contract.ReorderWishlistRequest
+import com.usuallycoding.opensecretsanta.contract.ResetPasswordResponse
 import com.usuallycoding.opensecretsanta.contract.SantaRevealDto
 import com.usuallycoding.opensecretsanta.contract.SharedWishlistItemDto
 import com.usuallycoding.opensecretsanta.contract.WishlistItemDto
@@ -164,6 +166,18 @@ class ApiClient(
 
     suspend fun archive(id: Long): ApiResult<GroupChangeResponse> =
         call(HttpMethod.Post, ApiRoutes.adminGroupArchive(id))
+
+    // --- administrator: users -----------------------------------------------------------------
+
+    /** The users the administrator manages (people in their non-Draft groups, and themselves). */
+    suspend fun adminUsers(): ApiResult<List<ManagedUserDto>> = call(HttpMethod.Get, ApiRoutes.ADMIN_USERS)
+
+    /** One managed user; the answer carries the temporary password only while it is still the temporary one. */
+    suspend fun adminUser(username: String): ApiResult<ManagedUserDto> = call(HttpMethod.Get, ApiRoutes.adminUser(username))
+
+    /** Gives a managed user a new temporary password, which they must change at their next sign-in. */
+    suspend fun resetPassword(username: String): ApiResult<ResetPasswordResponse> =
+        call(HttpMethod.Post, ApiRoutes.adminUserResetPassword(username))
 
     suspend fun changePassword(currentPassword: String, newPassword: String): ApiResult<ChangePasswordResponse> =
         call(HttpMethod.Put, ApiRoutes.ME_PASSWORD, body = ChangePasswordRequest(currentPassword, newPassword))

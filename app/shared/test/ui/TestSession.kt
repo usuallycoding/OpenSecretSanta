@@ -15,7 +15,10 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import com.usuallycoding.opensecretsanta.contract.AccountDto
 import com.usuallycoding.opensecretsanta.contract.AdminGroupDto
+import com.usuallycoding.opensecretsanta.contract.ManagedUserDto
+import com.usuallycoding.opensecretsanta.contract.ResetPasswordResponse
 import com.usuallycoding.opensecretsanta.contract.AnswerRequest
 import com.usuallycoding.opensecretsanta.contract.CreateGroupRequest
 import com.usuallycoding.opensecretsanta.contract.CreatedAccountDto
@@ -48,6 +51,9 @@ class ScriptedServer {
         HttpStatusCode.OK to """{"username":"alice","isAdmin":false,"mustChangePassword":false}"""
     /** The person's own wishlist as the server keeps it: it really adds, edits, deletes and reorders. */
     val wishlist = FakeWishlist()
+
+    /** The users the administrator manages, as the admin user routes keep and answer them. */
+    val adminUsers = FakeAdminUsers()
 
     /** The administrator's groups, as the admin routes keep and answer them. */
     val adminGroups = FakeAdminGroups()
@@ -86,6 +92,7 @@ class ScriptedServer {
             ApiRoutes.GROUPS -> json(groupsAnswer.first, groupsAnswer.second)
             else -> {
                 val path = request.url.encodedPath
+                adminUsers.answer(request.method.value, path)?.let { return@MockEngine json(it.first, it.second) }
                 adminGroups.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 gift.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 val wishlistAnswer = wishlist.answer(request.method.value, path, bodies.last())
@@ -445,6 +452,83 @@ class FakeAdminGroups {
                 response(group)
             } else {
                 notNow
+            }
+            else -> null
+        }
+    }
+}
+
+/**
+ * The admin user routes with the server's behavior: the administrator manages the users added here
+ * and themselves, a user outside that scope answers 404, the temporary password is returned only
+ * while it is still the temporary one, and a reset makes a new one and requires a change.
+ */
+class FakeAdminUsers(val me: String = "admin") {
+    class Row(
+        val username: String,
+        var fullName: String? = null,
+        var email: String? = null,
+        var phone: String? = null,
+        var address: String? = null,
+        var deliveryInfo: String? = null,
+        var mustChange: Boolean = false,
+        var temporary: String? = null,
+    )
+
+    private val rows = mutableListOf(Row(me))
+    private val managed = mutableSetOf(me)
+    private var resets = 0
+    private val failures = ArrayDeque<Pair<HttpStatusCode, String>>()
+
+    val usernames: List<String> get() = rows.filter { it.username in managed }.map { it.username }
+    fun row(username: String): Row = rows.first { it.username == username }
+
+    /** A user the administrator manages; one who still has to change a temporary password has [temporary]. */
+    fun add(username: String, fullName: String? = null, temporary: String? = null): Row =
+        Row(username, fullName = fullName, mustChange = temporary != null, temporary = temporary).also {
+            rows += it
+            managed += username
+        }
+
+    /** A user that exists but is not the administrator's to manage. */
+    fun addOutsider(username: String): Row = Row(username).also { rows += it }
+
+    /** The user dropped out of the administrator's scope behind the screen's back. */
+    fun leaveScope(username: String) {
+        managed -= username
+    }
+
+    /** The person changed their own password: no temporary one is returned any more. */
+    fun changesOwnPassword(username: String) {
+        row(username).apply { mustChange = false; temporary = null }
+    }
+
+    fun failNextResetWith(status: HttpStatusCode, code: String, message: String = "refused") {
+        failures += status to """{"code":"$code","message":"$message"}"""
+    }
+
+    private fun dto(row: Row) = ManagedUserDto(
+        AccountDto(row.username, row.fullName, row.email, row.phone, row.address, row.deliveryInfo, row.username == me, row.mustChange),
+        row.temporary,
+    )
+
+    /** The answer to a request under `/admin/users`, or null when the request is about something else. */
+    fun answer(method: String, path: String): Pair<HttpStatusCode, String>? {
+        val match = Regex("/admin/users(?:/([a-z0-9._-]+)(?:/(reset-password))?)?").matchEntire(path) ?: return null
+        val username = match.groupValues[1]
+        val reset = match.groupValues[2].isNotEmpty()
+        if (username.isEmpty()) {
+            return if (method == "GET") HttpStatusCode.OK to Json.encodeToString(rows.filter { it.username in managed }.map(::dto)) else null
+        }
+        val row = rows.firstOrNull { it.username == username && it.username in managed }
+            ?: return HttpStatusCode.NotFound to """{"code":"not_found","message":"User not found."}"""
+        return when {
+            method == "GET" && !reset -> HttpStatusCode.OK to Json.encodeToString(dto(row))
+            method == "POST" && reset -> {
+                failures.removeFirstOrNull()?.let { return it }
+                row.temporary = "NewTemp-${row.username}-${++resets}"
+                row.mustChange = true
+                HttpStatusCode.OK to Json.encodeToString(ResetPasswordResponse(row.username, row.temporary!!))
             }
             else -> null
         }

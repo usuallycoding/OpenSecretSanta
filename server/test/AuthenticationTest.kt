@@ -129,20 +129,6 @@ class AuthenticationTest {
         assertEquals(HttpStatusCode.OK, client.getWith("/test/whoami", fx.token("alice")).status)
     }
 
-    // --- live user state ---
-
-    @Test
-    fun promotionAppliesToAnOlderTokenImmediately() = testApplication {
-        startApp()
-        val alice = fx.addUser("alice")
-        val token = fx.token("alice")
-        assertEquals("alice:false", client.getWith("/test/whoami", token).bodyAsText())
-
-        fx.users.markAdmin(alice)
-
-        assertEquals("alice:true", client.getWith("/test/whoami", token).bodyAsText())
-    }
-
     // --- forced password change gate ---
 
     @Test

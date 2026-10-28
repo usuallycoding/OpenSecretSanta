@@ -3,7 +3,6 @@ package com.usuallycoding.opensecretsanta.domain
 import com.usuallycoding.opensecretsanta.domain.admin.AccessPolicy
 import com.usuallycoding.opensecretsanta.domain.admin.GetManagedUser
 import com.usuallycoding.opensecretsanta.domain.admin.ListManagedUsers
-import com.usuallycoding.opensecretsanta.domain.admin.PromoteUser
 import com.usuallycoding.opensecretsanta.domain.admin.ResetPassword
 import com.usuallycoding.opensecretsanta.domain.auth.LoginAttempts
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
@@ -35,7 +34,6 @@ class ManagedUsersTest {
     private val list = ListManagedUsers(users, access, secretBox)
     private val get = GetManagedUser(users, access, secretBox)
     private val reset = ResetPassword(users, access, FakeHasher(), secretBox, SequenceTempPasswords(), attempts)
-    private val promote = PromoteUser(users)
 
     @Test
     fun nonAdminsAreForbiddenEverywhere() {
@@ -43,7 +41,6 @@ class ManagedUsersTest {
         assertFailsWith<DomainException.Forbidden> { list(normal) }
         assertFailsWith<DomainException.Forbidden> { get(normal, "carol") }
         assertFailsWith<DomainException.Forbidden> { reset(normal, "carol") }
-        assertFailsWith<DomainException.Forbidden> { promote(normal, "alice") }
     }
 
     @Test
@@ -109,23 +106,6 @@ class ManagedUsersTest {
         assertFailsWith<DomainException.NotFound> { reset(actor("admin-a"), "bob") }
         assertEquals("hash:TempPass9002", users.credentials(bob)!!.passwordHash)
         assertEquals(1, users.find(bob)!!.tokenVersion)
-    }
-
-    @Test
-    fun promoteWorksForAnyExistingUserEvenOutsideTheAdminsGroups() {
-        assertTrue(promote(actor("admin-a"), "outsider").isAdmin)
-        assertTrue(users.find(outsider)!!.isAdmin)
-    }
-
-    @Test
-    fun promotingAnAdminIsANoOp() {
-        val before = users.find(adminB)!!
-        assertEquals(before, promote(actor("admin-a"), "admin-b"))
-    }
-
-    @Test
-    fun promotingUnknownUserIsNotFound() {
-        assertFailsWith<DomainException.NotFound> { promote(actor("admin-a"), "nobody-at-all") }
     }
 
     @Test

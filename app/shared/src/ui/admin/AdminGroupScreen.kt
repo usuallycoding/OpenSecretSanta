@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -69,7 +68,7 @@ fun AdminGroupScreen(viewModel: AdminGroupViewModel, onBack: () -> Unit, onEdit:
     }
     ui.participants?.let { ParticipantsSheet(it, viewModel) }
     ui.confirming?.let { step -> StepDialog(step, state.value?.name.orEmpty(), viewModel) }
-    ui.passwords?.let { PasswordsDialog(it, viewModel::dismissPasswords) }
+    ui.passwords?.let { PasswordsDialog(Strings.PASSWORDS_TITLE, Strings.PASSWORDS_BODY, it, viewModel::dismissPasswords) }
 }
 
 private fun AdminNotice.text() = when (this) {
@@ -167,28 +166,6 @@ private fun StepDialog(step: AdminStep, groupName: String, viewModel: AdminGroup
             }
         },
         dismissButton = { TextButton(onClick = viewModel::cancelStep) { Text(Strings.CANCEL) } },
-    )
-}
-
-/** The accounts a step created, each with the password to hand over. Closing it forgets them. */
-@Composable
-private fun PasswordsDialog(accounts: List<CreatedAccount>, onClose: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onClose,
-        title = { Text(Strings.PASSWORDS_TITLE) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(Strings.PASSWORDS_BODY, style = MaterialTheme.typography.bodyMedium)
-                SelectionContainer {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        for (account in accounts) {
-                            Text("${account.username}: ${account.temporaryPassword}", style = MaterialTheme.typography.bodyLarge)
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = onClose) { Text(Strings.OK) } },
     )
 }
 

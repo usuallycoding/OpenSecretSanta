@@ -4,7 +4,6 @@ import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.ResetPasswordResponse
 import com.usuallycoding.opensecretsanta.domain.admin.GetManagedUser
 import com.usuallycoding.opensecretsanta.domain.admin.ListManagedUsers
-import com.usuallycoding.opensecretsanta.domain.admin.PromoteUser
 import com.usuallycoding.opensecretsanta.domain.admin.ResetPassword
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
@@ -19,7 +18,6 @@ fun Route.adminRoutes(
     listUsers: ListManagedUsers,
     getUser: GetManagedUser,
     resetPassword: ResetPassword,
-    promoteUser: PromoteUser,
 ) {
     get(ApiRoutes.ADMIN_USERS) {
         val actor = call.currentUser()
@@ -33,9 +31,5 @@ fun Route.adminRoutes(
         val actor = call.currentUser()
         val credentials = blocking { resetPassword(actor, call.targetUsername()) }
         call.respond(ResetPasswordResponse(credentials.username.value, credentials.temporaryPassword))
-    }
-    post(ApiRoutes.ADMIN_USER_PROMOTE) {
-        val actor = call.currentUser()
-        call.respond(blocking { promoteUser(actor, call.targetUsername()) }.toDto())
     }
 }

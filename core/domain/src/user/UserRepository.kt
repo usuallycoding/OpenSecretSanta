@@ -37,6 +37,4 @@ interface UserRepository {
         encryptedTempPassword: ByteArray?,
         mustChangePassword: Boolean,
     ): User?
-
-    fun markAdmin(username: Username): User?
 }

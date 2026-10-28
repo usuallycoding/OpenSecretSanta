@@ -5,6 +5,8 @@ import com.usuallycoding.opensecretsanta.di.initKoin
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupFormViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupsViewModel
+import com.usuallycoding.opensecretsanta.ui.admin.AdminUserViewModel
+import com.usuallycoding.opensecretsanta.ui.admin.AdminUsersViewModel
 import com.usuallycoding.opensecretsanta.ui.gift.ReceiverViewModel
 import com.usuallycoding.opensecretsanta.ui.gift.SantaQuestionsViewModel
 import com.usuallycoding.opensecretsanta.ui.gift.SantaRevealViewModel
@@ -70,6 +72,8 @@ class AppModulesTest {
             assertEquals(7L, koin.get<AdminGroupFormViewModel> { parametersOf(7L) }.groupId)
             assertNull(koin.get<AdminGroupFormViewModel> { parametersOf(AdminGroupFormViewModel.NEW_GROUP) }.groupId)
             assertNotNull(koin.get<AdminGroupsViewModel>())
+            assertNotNull(koin.get<AdminUsersViewModel>())
+            assertEquals("alice", koin.get<AdminUserViewModel> { parametersOf("alice", "carol") }.username)
         } finally {
             Dispatchers.resetMain()
         }

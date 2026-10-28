@@ -110,9 +110,6 @@ class InMemoryUsers : UserRepository {
         it.user = it.user.copy(mustChangePassword = mustChangePassword, tokenVersion = it.user.tokenVersion + 1)
     }?.user
 
-    override fun markAdmin(username: Username): User? =
-        rows[username]?.also { it.user = it.user.copy(isAdmin = true) }?.user
-
     fun add(
         name: String,
         password: String = "password1",
