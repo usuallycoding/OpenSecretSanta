@@ -40,41 +40,6 @@ The app SHALL show a group's state as Pending, Active or Archived, with a short 
 - **WHEN** a group is Archived
 - **THEN** it is labelled Archived and its note says the exchange is over
 
-### Requirement: Group detail
-Choosing a group SHALL open its detail screen, loaded with `GET /groups/{id}`, showing its name, state and state note, description, date, time, location and the participants' usernames, with the person's own username marked, followed by a Wishlists section and, once the group is Active or Archived, a Your gift section. Parts the group does not have SHALL be left out. The Wishlists section SHALL always offer "My wishlist" and SHALL offer "Your receiver's wishlist" only while the group is Active or Archived; while it is Pending it SHALL say that the receiver's list appears after the names are drawn. The Your gift section SHALL offer "Your receiver" and "Questions from your Santa", and "Your Santa" only while the group is Archived.
-
-#### Scenario: Opening a group
-- **WHEN** the person chooses a group in the list
-- **THEN** the detail screen shows its details and every participant's username, with their own marked "you"
-
-#### Scenario: Back to the list
-- **WHEN** the person goes back from the detail screen
-- **THEN** the list is shown again
-
-#### Scenario: Group no longer available
-- **WHEN** the server answers that the group does not exist, for example because the person was removed from it
-- **THEN** the screen says the group is no longer available and offers to go back
-
-#### Scenario: Wishlists in a Pending group
-- **WHEN** the group is Pending
-- **THEN** the Wishlists section offers only "My wishlist" and says the receiver's list appears after the draw
-
-#### Scenario: Wishlists in an Active or Archived group
-- **WHEN** the group is Active or Archived
-- **THEN** the Wishlists section offers both "My wishlist" and "Your receiver's wishlist"
-
-#### Scenario: Your gift in a Pending group
-- **WHEN** the group is Pending
-- **THEN** the detail screen has no Your gift section
-
-#### Scenario: Your gift in an Active group
-- **WHEN** the group is Active
-- **THEN** the Your gift section offers "Your receiver" and "Questions from your Santa" and nothing that names the Santa
-
-#### Scenario: Your gift in an Archived group
-- **WHEN** the group is Archived
-- **THEN** the Your gift section also offers "Your Santa"
-
 ### Requirement: Dates and times are shown as the group has them
 The app SHALL show a group's date and time as the local values the organiser entered, formatted for reading (for example "24 Dec 2026, 18:30"), without converting them to another timezone.
 
@@ -108,3 +73,22 @@ While a groups screen loads, the app SHALL show a progress indicator. When the s
 #### Scenario: Session ended
 - **WHEN** the server answers 401 while a groups screen loads
 - **THEN** the app handles it as for any request: the sign-in screen is shown with the note that the person was signed out
+
+### Requirement: Group page
+Choosing a group SHALL open its page, loaded with `GET /groups/{id}`, showing its name, state and state note, description, date, time and location, then the pair rows of `client-group-pages`, and at the end the list of every participant's username with the person's own marked. The participants list SHALL be a small list of fixed height that scrolls inside itself when it has more names than fit. Parts the group does not have SHALL be left out.
+
+#### Scenario: Opening a group
+- **WHEN** the person chooses a group in the list
+- **THEN** the page shows its details, the pair rows and, at the end, every participant's username with their own marked "you"
+
+#### Scenario: Back to the list
+- **WHEN** the person goes back from the group page
+- **THEN** the list is shown again
+
+#### Scenario: Group no longer available
+- **WHEN** the server answers that the group does not exist, for example because the person was removed from it
+- **THEN** the page says the group is no longer available and offers to go back
+
+#### Scenario: Many participants
+- **WHEN** the group has more participants than fit in the list
+- **THEN** the list keeps its height and scrolls inside itself, and the rest of the page does not grow

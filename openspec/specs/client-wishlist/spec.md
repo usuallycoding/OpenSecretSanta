@@ -6,21 +6,6 @@ TBD - created by archiving change participant-wishlists. Update Purpose after ar
 
 ## Requirements
 
-### Requirement: My wishlist
-Choosing "My wishlist" in a group SHALL open the person's own wishlist for that group, loaded with `GET /groups/{id}/wishlist`, showing each item's title, note and link in the person's own order, or a short explanation that nothing has been added yet.
-
-#### Scenario: Items in order
-- **WHEN** the person has three items
-- **THEN** they are shown in the order the person chose, each with its title and, when present, its note and link
-
-#### Scenario: Empty list
-- **WHEN** the person has not added anything to this group
-- **THEN** the screen says so and offers to add the first item
-
-#### Scenario: Separate per group
-- **WHEN** the person is in two groups
-- **THEN** each group's wishlist screen shows only that group's items
-
 ### Requirement: Adding an item
 While the group is Pending or Active, the person SHALL be able to add an item in a bottom sheet over the list, with a title, an optional note and an optional link. A successful save through `POST /groups/{id}/wishlist/items` SHALL close the sheet and show the item at the end of the list. A list holds at most 50 items; at 50 adding SHALL be unavailable with an explanation.
 
@@ -89,49 +74,34 @@ Before sending, the sheet SHALL check what the server checks: a title of 1 to 20
 - **THEN** the sheet says so, stays open and keeps the edits so the person can try again
 
 ### Requirement: Read-only once archived
-While the group is Archived, "My wishlist" SHALL be read-only: no add, edit, delete or reorder control is shown and the screen says the list can no longer be changed. When the group is archived while the person is editing, a refused change SHALL close the sheet, reload the list as read-only and say so.
+While the group is Archived, the wishlist on the Receiver page SHALL be read-only: no add, edit, delete or reorder control is shown and the page says the list can no longer be changed. When the group is archived while the person is editing, a refused change SHALL close the sheet, reload the list as read-only and say so.
 
 #### Scenario: Archived group
-- **WHEN** the person opens "My wishlist" of an Archived group
+- **WHEN** the person opens the Receiver page of an Archived group
 - **THEN** the items are shown with no way to change them and a note that the list is closed
 
 #### Scenario: Archived meanwhile
-- **WHEN** the server answers a change with 409 because the group was archived after the screen opened
-- **THEN** the sheet closes, the list reloads read-only and the screen says it can no longer be changed
+- **WHEN** the server answers a change with 409 because the group was archived after the page opened
+- **THEN** the sheet closes, the list reloads read-only and the page says it can no longer be changed
 
 #### Scenario: Item deleted elsewhere
 - **WHEN** the server answers an edit or delete with 404 because the item no longer exists
-- **THEN** the sheet closes, the list reloads and the screen says the item no longer exists
-
-### Requirement: Your receiver's wishlist
-While the group is Active or Archived, choosing "Your receiver's wishlist" SHALL open the list the person's receiver keeps for the group, loaded with `GET /groups/{id}/receiver/wishlist`, read-only, in the receiver's order, with each item's title, note and link, or a short explanation that nothing has been added yet. The screen SHALL NOT name the receiver and nothing the person does SHALL be visible to the receiver.
-
-#### Scenario: Receiver's items
-- **WHEN** the person opens it and the receiver has two items
-- **THEN** both are shown in the receiver's order with their note and link, and no control changes them
-
-#### Scenario: Nothing added yet
-- **WHEN** the receiver has not added anything
-- **THEN** the screen says the receiver has not added anything yet
-
-#### Scenario: Latest list
-- **WHEN** the receiver changed their list after the person last looked
-- **THEN** refreshing or returning to the app shows the current list
+- **THEN** the sheet closes, the list reloads and the page says the item no longer exists
 
 ### Requirement: Loading, errors and refresh
-While a wishlist screen loads, the app SHALL show a progress indicator. When it cannot be loaded the app SHALL say so without technical details and offer to try again, keeping what was shown on a failed refresh. Both wishlist screens SHALL be refreshed as described in "Pulling a screen refreshes it" and "The web has no refresh control" and reload when the app returns to the foreground.
+While a wishlist loads, the app SHALL show a progress indicator in its place. When it cannot be loaded the app SHALL say so without technical details and offer to try again, keeping what was shown on a failed refresh. Both wishlists (the person's own on the Receiver page and the receiver's on the Gifter page) SHALL be refreshed as described in "Pulling a screen refreshes it" and "The web has no refresh control" and reload when the app returns to the foreground.
 
 #### Scenario: Loading
-- **WHEN** a wishlist screen is opened
-- **THEN** a progress indicator is shown until the list arrives
+- **WHEN** a page with a wishlist is opened
+- **THEN** a progress indicator is shown in the wishlist's place until the list arrives
 
 #### Scenario: Server unreachable
 - **WHEN** the list cannot be loaded because the server cannot be reached
-- **THEN** the screen says so and offers "Try again"
+- **THEN** the wishlist area says so and offers "Try again"
 
 #### Scenario: Return to the app
 - **WHEN** the app returns to the foreground
-- **THEN** the visible wishlist screen reloads without clearing what it shows
+- **THEN** the visible page's wishlist reloads without clearing what it shows
 
 ### Requirement: Links open in a dialog
 Choosing a link shown on an item SHALL open a dialog with the whole link, not cut, with an "Open in browser" button and a "Cancel" button, and a copy icon as for other read-only text. "Open in browser" SHALL open the link in the platform's browser or default handler and close the dialog; "Cancel" SHALL close it and open nothing. Only addresses the server accepted (`http` or `https`) SHALL ever be shown as links. This applies to every place a wishlist link is shown.

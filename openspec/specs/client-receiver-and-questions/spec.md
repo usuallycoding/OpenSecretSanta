@@ -6,23 +6,8 @@ TBD - created by archiving change participant-receiver-and-questions. Update Pur
 
 ## Requirements
 
-### Requirement: Your receiver
-Choosing "Your receiver" in an Active or Archived group SHALL open a screen loaded with `GET /groups/{id}/receiver` showing the receiver's username and, for each of full name, address, phone and delivery information that the receiver has set, its value. Fields the receiver has not set SHALL be left out; when the receiver has set none of them the screen SHALL say that the receiver has not added postal details yet.
-
-#### Scenario: Details shown
-- **WHEN** the receiver has set a full name and an address but no phone or delivery information
-- **THEN** the screen shows the username, the full name and the address and nothing for the others
-
-#### Scenario: No details yet
-- **WHEN** the receiver has set none of the four fields
-- **THEN** the screen shows the username and says the receiver has not added postal details yet
-
-#### Scenario: Group no longer available
-- **WHEN** the server answers that the group does not exist
-- **THEN** the screen says the group is no longer available and offers to go back
-
 ### Requirement: Your questions to the receiver
-The "Your receiver" screen SHALL list the person's own questions to the receiver, loaded with `GET /groups/{id}/receiver/questions`, in the order asked and numbered, each with the receiver's answer when there is one and "Not answered yet" when there is not. A question SHALL NOT be editable or deletable.
+The Gifter page SHALL list the person's own questions to the receiver, loaded with `GET /groups/{id}/receiver/questions`, in the order asked and numbered, each with the receiver's answer when there is one and "Not answered yet" when there is not. A question SHALL NOT be editable or deletable.
 
 #### Scenario: Questions and answers in order
 - **WHEN** the person has asked two questions and the receiver answered the first
@@ -56,7 +41,7 @@ While the group is Active the person SHALL be able to ask a question in a bottom
 - **THEN** the sheet stays open with what they typed and says so
 
 ### Requirement: Questions from your Santa
-Choosing "Questions from your Santa" in an Active or Archived group SHALL open a screen loaded with `GET /groups/{id}/santa/questions` listing the questions the person's Santa asked, numbered and in order, each with the person's own answer when there is one. Nothing on the screen SHALL identify the Santa. When the Santa has asked nothing the screen SHALL say so.
+In an Active or Archived group the Receiver page SHALL list, below the wishlist, the questions the person's Santa asked, loaded with `GET /groups/{id}/santa/questions`, numbered and in order, each with the person's own answer when there is one. Nothing on the page SHALL identify the Santa. When the Santa has asked nothing the section SHALL say so.
 
 #### Scenario: Questions shown
 - **WHEN** the Santa has asked two questions and the person answered the second
@@ -64,10 +49,10 @@ Choosing "Questions from your Santa" in an Active or Archived group SHALL open a
 
 #### Scenario: Nothing asked
 - **WHEN** the Santa has not asked anything
-- **THEN** the screen says no questions have been asked yet
+- **THEN** the section says no questions have been asked yet
 
 #### Scenario: No sign of the Santa
-- **WHEN** the screen is shown in an Active group
+- **WHEN** the page is shown in an Active group
 - **THEN** it contains no name, username or other hint of who the Santa is
 
 #### Scenario: Archived group
@@ -93,27 +78,12 @@ While the group is Active the person SHALL be able to answer a question, or chan
 - **WHEN** the server answers that the question does not exist, or refuses because the group is no longer Active
 - **THEN** the sheet closes, the screen reloads and says what happened
 
-### Requirement: Your Santa
-In an Archived group the group page SHALL offer "Your Santa", which opens a screen loaded with `GET /groups/{id}/santa` showing the Santa's username and full name when it has one. The entry SHALL NOT exist while the group is Pending or Active.
-
-#### Scenario: Reveal after archiving
-- **WHEN** the group is Archived and the person opens "Your Santa"
-- **THEN** the screen shows the Santa's username and full name
-
-#### Scenario: No reveal before archiving
-- **WHEN** the group is Active
-- **THEN** the group page has no "Your Santa" entry
-
-#### Scenario: Revealed in the meantime
-- **WHEN** the server refuses because the group is not Archived
-- **THEN** the screen says the Santa is revealed once the group is archived
-
 ### Requirement: Loading, errors and refreshing
-Every screen of this capability SHALL show that it is loading, SHALL show a message with "Try again" when the server cannot be reached or answers with an error, and SHALL keep what it already shows while a refresh fails. Each screen SHALL be refreshed as described in "Pulling a screen refreshes it" and "The web has no refresh control" and SHALL reload when the app returns to the foreground.
+Every page section and sheet of this capability SHALL show that it is loading, SHALL show a message with "Try again" when the server cannot be reached or answers with an error, and SHALL keep what it already shows while a refresh fails. Each page SHALL be refreshed as described in "Pulling a screen refreshes it" and "The web has no refresh control" and SHALL reload when the app returns to the foreground.
 
 #### Scenario: Server unreachable
-- **WHEN** the server cannot be reached while a screen loads
-- **THEN** the screen says so and offers "Try again"
+- **WHEN** the server cannot be reached while a section loads
+- **THEN** the section says so and offers "Try again"
 
 #### Scenario: Refresh keeps what is shown
 - **WHEN** a refresh fails while questions are shown
