@@ -40,7 +40,7 @@ import com.usuallycoding.opensecretsanta.ui.Strings
 import kotlinx.coroutines.launch
 
 /** The Material "content copy" icon, drawn here because the core icon set has none and the extended set is large. */
-private val CopyIcon: ImageVector by lazy {
+internal val CopyIcon: ImageVector by lazy {
     ImageVector.Builder("Copy", 24.dp, 24.dp, 24f, 24f).addPath(
         PathParser().parsePathString(
             "M16,1L4,1c-1.1,0 -2,0.9 -2,2v14h2L4,3h12L16,1zM19,5L8,5c-1.1,0 -2,0.9 -2,2v14c0,1.1 0.9,2 2,2h11c1.1,0 2,-0.9 2,-2L21,7c0,-1.1 -0.9,-2 -2,-2zM19,21L8,21L8,7h11v14z",

@@ -3,11 +3,16 @@ package com.usuallycoding.opensecretsanta.ui
 import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupsViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminPhase
+import com.usuallycoding.opensecretsanta.ui.admin.copyName
 import com.usuallycoding.opensecretsanta.ui.admin.adminPhase
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import io.ktor.http.HttpStatusCode
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class AdminGroupsViewModelTest {
     private val server = ScriptedServer().also { it.session() }
@@ -70,5 +75,107 @@ class AdminGroupsViewModelTest {
         assertEquals(AdminPhase.Active, adminPhase("active"))
         assertEquals(AdminPhase.Archived, adminPhase("archived"))
         assertEquals(AdminPhase.Other, adminPhase("frozen"))
+    }
+
+    // --- duplicating -----------------------------------------------------------------------------------
+
+    @Test
+    fun aCopyIsNamedAfterTheOriginal() {
+        assertEquals("Copy of Office party", copyName("Office party"))
+    }
+
+    @Test
+    fun aCopyNameIsCutToTheLimitWithAnEllipsis() {
+        val fits = "x".repeat(92)
+        assertEquals("Copy of $fits", copyName(fits))
+        assertEquals(100, copyName(fits).length)
+
+        val cut = copyName("x".repeat(93))
+        assertEquals(100, cut.length)
+        assertTrue(cut.startsWith("Copy of x"))
+        assertTrue(cut.endsWith("…"))
+        assertEquals(100, copyName("y".repeat(100)).length)
+    }
+
+    @Test
+    fun confirmingMakesADraftWithTheDetailsAndParticipantsOfAnyGroup() = runTest {
+        val id = server.adminGroups.add("Party", state = "active", participants = listOf("alice", "bob", "newcomer"))
+        server.adminGroups.group(id).apply {
+            description = "Yearly"; location = "Office"; date = "2026-12-24"; time = "18:30"
+        }
+        val model = viewModel()
+
+        model.askDuplicate(model.state.value.value!!.first())
+        assertEquals("Copy of Party", model.duplicate.value!!.copyName)
+        model.confirmDuplicate()?.join()
+
+        val copy = server.adminGroups.group(model.created.value!!)
+        assertEquals("Copy of Party", copy.name)
+        assertEquals("draft", copy.state)
+        assertEquals(listOf("alice", "bob", "newcomer"), copy.participants)
+        assertEquals("Yearly", copy.description)
+        assertEquals("Office", copy.location)
+        assertEquals("2026-12-24", copy.date)
+        assertEquals("18:30", copy.time)
+        assertNull(model.duplicate.value)
+        // the original is as it was
+        assertEquals("active", server.adminGroups.group(id).state)
+        assertEquals("Party", server.adminGroups.group(id).name)
+    }
+
+    @Test
+    fun cancellingCreatesNothing() = runTest {
+        server.adminGroups.add("Party")
+        val model = viewModel()
+
+        model.askDuplicate(model.state.value.value!!.first())
+        model.cancelDuplicate()
+
+        assertNull(model.duplicate.value)
+        assertNull(model.created.value)
+        assertEquals(1, server.adminGroups.ids.size)
+    }
+
+    @Test
+    fun anUnreachableServerLeavesTheDialogOpenWithAMessageAndCreatesNothing() = runTest {
+        server.adminGroups.add("Party")
+        val model = viewModel()
+        model.askDuplicate(model.state.value.value!!.first())
+        server.unreachable = true
+
+        model.confirmDuplicate()?.join()
+
+        assertEquals(Strings.SERVER_UNREACHABLE, model.duplicate.value!!.error)
+        assertFalse(model.duplicate.value!!.busy)
+        assertNull(model.created.value)
+        server.unreachable = false
+        assertEquals(1, server.adminGroups.ids.size)
+    }
+
+    @Test
+    fun aRefusedCopyShowsTheServersMessage() = runTest {
+        server.adminGroups.add("Party")
+        val model = viewModel()
+        model.askDuplicate(model.state.value.value!!.first())
+        server.adminGroups.failNextWriteWith(HttpStatusCode.BadRequest, "validation_failed", "Name is not allowed.", "name")
+
+        model.confirmDuplicate()?.join()
+
+        assertNotNull(model.duplicate.value)
+        assertEquals("Name is not allowed.", model.duplicate.value!!.error)
+        assertNull(model.created.value)
+    }
+
+    @Test
+    fun theCreatedGroupIsHandedOverOnce() = runTest {
+        server.adminGroups.add("Party")
+        val model = viewModel()
+        model.askDuplicate(model.state.value.value!!.first())
+        model.confirmDuplicate()?.join()
+        assertNotNull(model.created.value)
+
+        model.createdHandled()
+
+        assertNull(model.created.value)
     }
 }

@@ -8,6 +8,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import com.usuallycoding.opensecretsanta.ui.form.CopyIcon
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -34,9 +40,18 @@ import com.usuallycoding.opensecretsanta.ui.form.FAB_CLEARANCE
 
 /** The administrator's own groups, with a way to create one. */
 @Composable
-fun AdminGroupsScreen(viewModel: AdminGroupsViewModel, onOpen: (Long) -> Unit, onNew: () -> Unit) {
+fun AdminGroupsScreen(viewModel: AdminGroupsViewModel, onOpen: (Long) -> Unit, onNew: () -> Unit, onCreated: (Long) -> Unit) {
     val state by viewModel.state.collectAsState()
+    val duplicate by viewModel.duplicate.collectAsState()
+    val created by viewModel.created.collectAsState()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
+    // a copy was made: open it, once
+    LaunchedEffect(created) {
+        created?.let {
+            viewModel.createdHandled()
+            onCreated(it)
+        }
+    }
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.fillMaxSize()) {
@@ -49,17 +64,38 @@ fun AdminGroupsScreen(viewModel: AdminGroupsViewModel, onOpen: (Long) -> Unit, o
                         contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp + FAB_CLEARANCE),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        items(groups, key = { it.id }) { group -> GroupCard(group) { onOpen(group.id) } }
+                        items(groups, key = { it.id }) { group -> GroupCard(group, onDuplicate = { viewModel.askDuplicate(group) }) { onOpen(group.id) } }
                     }
                 }
             }
         }
         AppFab(Icons.Filled.Add, Strings.NEW_GROUP, onClick = onNew)
     }
+    duplicate?.let { DuplicateDialog(it, viewModel) }
 }
 
 @Composable
-private fun GroupCard(group: AdminGroup, onClick: () -> Unit) {
+private fun DuplicateDialog(ui: DuplicateUi, viewModel: AdminGroupsViewModel) {
+    AlertDialog(
+        onDismissRequest = viewModel::cancelDuplicate,
+        title = { Text(Strings.DUPLICATE_TITLE) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(Strings.duplicateBody(ui.copyName))
+                ui.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { viewModel.confirmDuplicate() }, enabled = !ui.busy) {
+                Text(if (ui.busy) Strings.DUPLICATING else Strings.DUPLICATE)
+            }
+        },
+        dismissButton = { TextButton(onClick = viewModel::cancelDuplicate, enabled = !ui.busy) { Text(Strings.CANCEL) } },
+    )
+}
+
+@Composable
+private fun GroupCard(group: AdminGroup, onDuplicate: () -> Unit, onClick: () -> Unit) {
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -68,11 +104,16 @@ private fun GroupCard(group: AdminGroup, onClick: () -> Unit) {
             }
             group.whenText?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
             group.location?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
-            Text(
-                Strings.participantCount(group.participants.size),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    Strings.participantCount(group.participants.size),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                IconButton(onClick = onDuplicate, modifier = Modifier.size(32.dp)) {
+                    Icon(CopyIcon, contentDescription = Strings.DUPLICATE, modifier = Modifier.size(20.dp))
+                }
+            }
         }
     }
 }

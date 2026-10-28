@@ -184,6 +184,7 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                                 koinViewModel(),
                                 onOpen = { navController.navigate(AdminGroupRoute(it)) },
                                 onNew = { navController.navigate(AdminGroupNewRoute) },
+                                onCreated = { navController.navigate(AdminGroupRoute(it)) },
                             )
                         }
                         composable<AdminUsersRoute> {
