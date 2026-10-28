@@ -63,7 +63,7 @@ While a group is Draft, Pending or Active the administrator SHALL be able to ope
 - **THEN** there is no way to edit its details
 
 ### Requirement: Group detail shows who takes part
-Choosing a group SHALL open its detail, loaded with `GET /admin/groups/{id}`, showing its details, its state with a sentence on what that state means for the owner, and who takes part. For a Draft or Pending group that is the participants list; for an Active or Archived group it is the pair list of `client-admin-oversight`, which replaces the participants list. In a Pending group each participant SHALL offer "Read wishlist".
+Choosing a group SHALL open its detail, loaded with `GET /admin/groups/{id}`, showing its details, its state with a sentence on what that state means for the owner, the actions of the group, and at the end who takes part. For a Draft or Pending group that is the participants list; for an Active or Archived group it is the pair list of `client-admin-oversight`, which replaces the participants list. In a Pending group each participant SHALL offer "Read wishlist". The people SHALL be shown in a box at the end of the page that scrolls inside itself and fills all the height left below the details and the actions, with a minimum height; when the details and actions leave less room than that, they SHALL scroll above it.
 
 #### Scenario: Group not available
 - **WHEN** the server answers that the group does not exist for this administrator
@@ -80,6 +80,10 @@ Choosing a group SHALL open its detail, loaded with `GET /admin/groups/{id}`, sh
 #### Scenario: Drawn group
 - **WHEN** the group is Active or Archived
 - **THEN** the detail shows the pair list and no separate participants list, and no Questions button
+
+#### Scenario: Many participants
+- **WHEN** a Pending group has 13 participants
+- **THEN** the participants are in a box that fills the rest of the page and scrolls inside itself, and the buttons above it stay in view
 
 ### Requirement: Marks on participants
 In the participants list of a Draft or Pending group a participant without an account SHALL be marked "no account yet" and a participant whose profile lacks a name or an address SHALL be marked "profile incomplete". In the pair list of an Active or Archived group a username whose profile lacks a name or an address SHALL be followed by `*`, as described in `client-admin-oversight`. The marks SHALL NOT block any action.
@@ -120,7 +124,7 @@ While a group is Draft or Pending the administrator SHALL be able to edit the pa
 - **THEN** the sheet closes, the detail reloads and says the participants can no longer change
 
 ### Requirement: Moving a group forward
-The detail SHALL offer the next step for the state: "Make pending" for a Draft (`POST /admin/groups/{id}/pending`), "Draw the names" for a Pending group (`POST /admin/groups/{id}/activate`) and "Archive" for an Active one (`POST /admin/groups/{id}/archive`), each after a confirmation that says what it does. An Archived group has no step.
+The detail SHALL offer the next step for the state: "Make pending" for a Draft (`POST /admin/groups/{id}/pending`), "Draw the names" for a Pending group (`POST /admin/groups/{id}/activate`) and "Archive" for an Active one (`POST /admin/groups/{id}/archive`), each after a confirmation that says what it does. The step SHALL be a button in the same row as "Edit details" (and, for a Draft, "Delete"), above the people; the row SHALL wrap onto a second line when it does not fit. An Archived group has no step.
 
 #### Scenario: Make pending
 - **WHEN** the administrator confirms "Make pending" on a Draft
@@ -142,6 +146,10 @@ The detail SHALL offer the next step for the state: "Make pending" for a Draft (
 - **WHEN** the server refuses a step because the group is no longer in the state the screen showed
 - **THEN** the detail reloads and says what happened
 
+#### Scenario: Buttons together
+- **WHEN** the detail of a Pending group is shown
+- **THEN** "Edit details" and "Draw the names" are in one row above the participants
+
 ### Requirement: Confirmations say what a step does
 The confirmation for "Make pending" SHALL say that accounts are created for people who have none, the one for "Draw the names" that the names are drawn and the participants frozen, and the one for "Archive" that the exchange is finished and becomes read-only.
 
@@ -157,7 +165,7 @@ The confirmation for "Make pending" SHALL say that accounts are created for peop
 - **THEN** "Draw the names" is unavailable and says at least 4 are needed
 
 ### Requirement: Deleting a Draft
-A Draft SHALL also offer "Delete", after a confirmation, with `DELETE /admin/groups/{id}`, and deleting SHALL return to the list. A group that is not a Draft SHALL offer no delete.
+A Draft SHALL also offer "Delete", after a confirmation, with `DELETE /admin/groups/{id}`, in the same row of buttons as "Edit details" and "Make pending", and deleting SHALL return to the list. A group that is not a Draft SHALL offer no delete.
 
 #### Scenario: Delete a Draft
 - **WHEN** the administrator confirms "Delete" on a Draft
