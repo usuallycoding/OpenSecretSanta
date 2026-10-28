@@ -6,11 +6,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -125,26 +127,28 @@ private fun ItemRow(
     onUp: () -> Unit,
     onDown: () -> Unit,
 ) {
-    val rowModifier = Modifier.fillMaxWidth()
-    val content: @Composable () -> Unit = {
+    Card(Modifier.fillMaxWidth()) {
         Row(Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             ItemText(item, Modifier.weight(1f))
             if (editable) {
                 Column {
-                    IconButton(onClick = onUp, enabled = canMoveUp) { Icon(Icons.Filled.KeyboardArrowUp, contentDescription = Strings.MOVE_UP) }
-                    IconButton(onClick = onDown, enabled = canMoveDown) { Icon(Icons.Filled.KeyboardArrowDown, contentDescription = Strings.MOVE_DOWN) }
+                    IconButton(onClick = onEdit, modifier = Modifier.size(ITEM_BUTTON)) { Icon(Icons.Filled.Edit, contentDescription = Strings.EDIT_ITEM) }
+                    IconButton(onClick = onUp, enabled = canMoveUp, modifier = Modifier.size(ITEM_BUTTON)) { Icon(Icons.Filled.KeyboardArrowUp, contentDescription = Strings.MOVE_UP) }
+                    IconButton(onClick = onDown, enabled = canMoveDown, modifier = Modifier.size(ITEM_BUTTON)) { Icon(Icons.Filled.KeyboardArrowDown, contentDescription = Strings.MOVE_DOWN) }
                 }
             }
         }
     }
-    if (editable) Card(onClick = onEdit, modifier = rowModifier) { content() } else Card(modifier = rowModifier) { content() }
 }
+/** The side of the edit and move buttons: three of them make a column that keeps the cards compact. */
+private val ITEM_BUTTON = 40.dp
+
 
 /** An item's title, note and link, as the person and their Santa both read it. A link opens a dialog first. */
 @Composable
 internal fun ItemText(title: String, note: String?, url: String?, modifier: Modifier = Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        ReadOnlyText(title, style = MaterialTheme.typography.titleMedium, label = Strings.FIELD_TITLE)
+        ReadOnlyText(title, style = MaterialTheme.typography.titleMedium, label = Strings.FIELD_TITLE, maxLines = 1)
         note?.let { ReadOnlyText(it, style = MaterialTheme.typography.bodyMedium, label = Strings.NOTE_LABEL) }
         url?.let { LinkText(it) }
     }

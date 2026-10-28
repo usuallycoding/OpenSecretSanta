@@ -103,6 +103,7 @@ object Strings {
     const val FIELD_URL = "Link (optional)"
     const val DELETE_ITEM_TITLE = "Delete this item?"
     fun deleteItemBody(title: String) = "\"$title\" will be removed from your list."
+    const val EDIT_ITEM = "Edit item"
     const val MOVE_UP = "Move up"
     const val MOVE_DOWN = "Move down"
     const val WISHLIST_EMPTY = "You have not added anything to this list yet."
