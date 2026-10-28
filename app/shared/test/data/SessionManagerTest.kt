@@ -26,14 +26,18 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 private class FakeStore(var stored: String? = null, var failing: Boolean = false) : TokenStore {
+    /** What the last write was told about remembering. */
+    var lastRemember: Boolean? = null
+
     override suspend fun read(): String? {
         if (failing) throw IllegalStateException("keystore unavailable")
         return stored
     }
 
-    override suspend fun write(token: String) {
+    override suspend fun write(token: String, remember: Boolean?) {
         if (failing) throw IllegalStateException("keystore unavailable")
         stored = token
+        lastRemember = remember
     }
 
     override suspend fun clear() {
@@ -175,6 +179,16 @@ class SessionManagerTest {
     }
 
     @Test
+    fun signingInAsksTheStoreToRememberUnlessTheChoiceIsNo() = runTest {
+        newSession().signIn("alice", "password1")
+        assertEquals(true, store.lastRemember)
+
+        session.signOut()
+        newSession().signIn("alice", "password1", remember = false)
+        assertEquals(false, store.lastRemember)
+    }
+
+    @Test
     fun signingInWithATemporaryPasswordGoesToThePasswordChange() = runTest {
         server.loginAnswer = HttpStatusCode.OK to """{"token":"t1","mustChangePassword":true}"""
         server.accountFor = { account(must = true) }
@@ -219,6 +233,18 @@ class SessionManagerTest {
         assertEquals(SessionState.SignedIn(alice), session.state.value)
         assertEquals("t2", session.token)
         assertEquals("t2", store.stored)
+    }
+
+    @Test
+    fun aChangedPasswordTokenIsWrittenWithoutANewChoice() = runTest {
+        server.loginAnswer = HttpStatusCode.OK to """{"token":"t1","mustChangePassword":true}"""
+        server.accountFor = { token -> if (token == "t2") account() else account(must = true) }
+        newSession().signIn("alice", "TempPass0001", remember = false)
+
+        session.changePassword("TempPass0001", "new-password-1")
+
+        assertEquals("t2", store.stored)
+        assertNull(store.lastRemember) // it stays wherever the old token was
     }
 
     @Test

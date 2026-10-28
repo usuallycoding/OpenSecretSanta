@@ -33,7 +33,7 @@ class AndroidTokenStore(context: Context) : TokenStore {
         null
     }
 
-    override suspend fun write(token: String) {
+    override suspend fun write(token: String, remember: Boolean?) {
         try {
             val cipher = Cipher.getInstance(TRANSFORMATION)
             cipher.init(Cipher.ENCRYPT_MODE, key())

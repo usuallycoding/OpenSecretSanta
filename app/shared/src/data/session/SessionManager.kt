@@ -56,12 +56,12 @@ class SessionManager(
     }
 
     /** Signs in; on success the state has moved on by the time this returns. */
-    suspend fun signIn(username: String, password: String): ApiResult<Unit> {
+    suspend fun signIn(username: String, password: String, remember: Boolean = true): ApiResult<Unit> {
         when (val login = api.value.login(username, password)) {
             is ApiResult.Failure -> return login
             is ApiResult.Success -> {
                 accessToken = login.value.token
-                safely { store.write(login.value.token) }
+                safely { store.write(login.value.token, remember) }
             }
         }
         return when (val account = api.value.account()) {

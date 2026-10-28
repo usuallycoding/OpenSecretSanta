@@ -69,7 +69,7 @@ class KeychainTokenStore : TokenStore {
         bytes?.decodeToString()
     }
 
-    override suspend fun write(token: String) {
+    override suspend fun write(token: String, remember: Boolean?) {
         clear()
         val bytes = token.encodeToByteArray()
         val data: CFDataRef? = bytes.usePinned { CFDataCreate(null, it.addressOf(0).reinterpret(), bytes.size.convert()) }

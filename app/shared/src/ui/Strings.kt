@@ -9,6 +9,7 @@ object Strings {
     const val SIGN_IN = "Sign in"
     const val SIGN_OUT = "Sign out"
     const val SIGNING_IN = "Signing in..."
+    const val STAY_SIGNED_IN = "Stay signed in"
 
     const val SESSION_ENDED = "You have been signed out. Please sign in again."
     const val WRONG_CREDENTIALS = "Wrong username or password."

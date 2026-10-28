@@ -133,4 +133,15 @@ class LoginViewModelTest {
 
         assertTrue(session.state.value is SessionState.PasswordChangeRequired)
     }
+
+    @Test
+    fun staySignedInIsTickedUntilTheCheckboxIsUnticked() = runTest {
+        assertTrue(model.state.value.staySignedIn)
+
+        model.onStaySignedInChange(false)
+        assertFalse(model.state.value.staySignedIn)
+
+        model.onStaySignedInChange(true)
+        assertTrue(model.state.value.staySignedIn)
+    }
 }

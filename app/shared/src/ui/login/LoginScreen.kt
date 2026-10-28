@@ -21,6 +21,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.usuallycoding.opensecretsanta.getPlatform
+import androidx.compose.ui.semantics.Role
+import androidx.compose.material3.Checkbox
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Row
 import com.usuallycoding.opensecretsanta.ui.Strings
 
 @Composable
@@ -52,6 +58,16 @@ fun LoginScreen(viewModel: LoginViewModel, sessionEnded: Boolean) {
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { viewModel.submit() }),
         )
+        if (getPlatform().canChooseToStaySignedIn) {
+            Row(
+                Modifier.fillMaxWidth().toggleable(state.staySignedIn, role = Role.Checkbox, onValueChange = viewModel::onStaySignedInChange),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(state.staySignedIn, onCheckedChange = null)
+                Spacer(Modifier.width(8.dp))
+                Text(Strings.STAY_SIGNED_IN)
+            }
+        }
         state.problem?.let { Text(it.text(), color = MaterialTheme.colorScheme.error) }
         Button(onClick = viewModel::submit, enabled = state.canSubmit, modifier = Modifier.fillMaxWidth()) {
             Text(if (state.inProgress) Strings.SIGNING_IN else Strings.SIGN_IN)

@@ -14,4 +14,9 @@ class PlatformWasmJsTest {
     fun `the web has no pull to refresh because the browser refreshes the page`() {
         assertFalse(getPlatform().hasPullToRefresh)
     }
+
+    @Test
+    fun theWebOffersTheChoiceToStaySignedIn() {
+        assertTrue(getPlatform().canChooseToStaySignedIn)
+    }
 }

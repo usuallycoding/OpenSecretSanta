@@ -24,6 +24,8 @@ data class LoginUiState(
     val username: String = "",
     val password: String = "",
     val inProgress: Boolean = false,
+    /** Whether the web keeps the person signed in after the tab is closed; ticked until the person unticks it. */
+    val staySignedIn: Boolean = true,
     val problem: LoginProblem? = null,
 ) {
     val canSubmit: Boolean get() = username.isNotBlank() && password.isNotBlank() && !inProgress
@@ -40,13 +42,15 @@ class LoginViewModel(
 
     fun onPasswordChange(value: String) = _state.update { it.copy(password = value) }
 
+    fun onStaySignedInChange(value: Boolean) = _state.update { it.copy(staySignedIn = value) }
+
     /** Starts the sign-in and returns the running work, or null when there is nothing to send. */
     fun submit(): Job? {
         val current = _state.value
         if (!current.canSubmit) return null
         _state.update { it.copy(inProgress = true, problem = null) }
         return scope.launch {
-            val result = session.signIn(current.username.trim(), current.password)
+            val result = session.signIn(current.username.trim(), current.password, remember = current.staySignedIn)
             _state.update { state ->
                 when (result) {
                     // The session has moved on and the screen is about to be replaced; nothing to show.
