@@ -1,8 +1,9 @@
 package com.usuallycoding.opensecretsanta.data.session
 
 /**
- * The web keeps the token in memory only: a script on the page could read anything written to
- * `localStorage` or `sessionStorage`, so a refresh asks for the password again. Persisting a web
- * session is a separate, later design.
+ * The web keeps the token in the tab's `sessionStorage`, so a refresh keeps the person signed in and closing
+ * the tab ends the session. A script on the page can read `sessionStorage`; the app draws to a canvas and builds
+ * no HTML from what people type, which keeps that exposure small. An httpOnly cookie would take it away entirely
+ * and is the stronger, later design (it needs the server to issue and read it).
  */
-fun webTokenStore(): TokenStore = MemoryTokenStore()
+fun webTokenStore(): TokenStore = SessionStorageTokenStore()
