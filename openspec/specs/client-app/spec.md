@@ -276,21 +276,6 @@ A drag by the person that scrolls a form or a bottom sheet SHALL close the keybo
 - **WHEN** the person drags inside a multi-line field that is scrolling its own text
 - **THEN** the keyboard stays open
 
-### Requirement: Multi-line fields stop growing at six rows
-Every multi-line text field SHALL keep its minimum height while its text is short, grow with its text up to six rows and then stop growing and scroll inside itself.
-
-#### Scenario: Short text
-- **WHEN** a multi-line field holds one line
-- **THEN** it keeps its minimum height
-
-#### Scenario: Long text
-- **WHEN** the text of a multi-line field is longer than six rows
-- **THEN** the field is six rows tall and its text scrolls inside it
-
-#### Scenario: Same everywhere
-- **WHEN** the address, the delivery information, a wishlist note, a question, an answer and a group description are edited
-- **THEN** each stops growing at six rows
-
 ### Requirement: Typing in a sheet keeps the cursor
 In a text field of a bottom sheet the cursor SHALL stay after the text just typed, on every platform, so that typing "abcd" gives "abcd".
 
@@ -383,18 +368,18 @@ In the web app, opening or refreshing an address, or typing one into the address
 - **THEN** the first screen is shown
 
 ### Requirement: Long read-only text is cut and opens in full
-Read-only text that people wrote (a wishlist title, note and link, a question and its answer, a group's description, and a user's or receiver's profile fields) SHALL show at most six lines, with an ellipsis when there is more. Choosing text that was cut SHALL open a dialog with its full text, which scrolls when it is long and can be closed. Text that is not cut SHALL do nothing when chosen.
+Read-only text that people wrote (a wishlist title, note and link, a question and its answer, a group's description, and a user's or receiver's profile fields) SHALL show at most three lines, with an ellipsis when there is more. Choosing text that was cut SHALL open a dialog with its full text, which scrolls when it is long and can be closed. Text that is not cut SHALL do nothing when chosen.
 
 #### Scenario: A long note is cut
-- **WHEN** a wishlist item has a note of more than six lines
-- **THEN** the list shows the first six lines and an ellipsis
+- **WHEN** a wishlist item has a note of more than three lines
+- **THEN** the list shows the first three lines and an ellipsis
 
 #### Scenario: Open the full text
 - **WHEN** the person chooses a note that was cut
 - **THEN** a dialog shows the whole note and can be closed
 
 #### Scenario: A short note
-- **WHEN** the person chooses a note that fits in six lines
+- **WHEN** the person chooses a note that fits in three lines
 - **THEN** no dialog opens
 
 #### Scenario: Own list
@@ -409,7 +394,7 @@ Every read-only value of the kinds named in the previous requirement, and the us
 - **THEN** the whole address is on the clipboard and the icon shows a check mark for a moment
 
 #### Scenario: Copy a cut note
-- **WHEN** the person chooses the copy icon of a note that is cut at six lines
+- **WHEN** the person chooses the copy icon of a note that is cut at three lines
 - **THEN** the clipboard holds the whole note
 
 #### Scenario: Copy in the full-text dialog
@@ -419,3 +404,33 @@ Every read-only value of the kinds named in the previous requirement, and the us
 #### Scenario: Copy refused
 - **WHEN** the platform refuses access to the clipboard
 - **THEN** the icon shows that the copy failed and nothing else changes
+
+### Requirement: Multi-line fields stop growing at three rows
+Every multi-line text field SHALL keep its minimum height while its text is short, grow with its text up to three rows and then stop growing and scroll inside itself.
+
+#### Scenario: Short text
+- **WHEN** a multi-line field holds one line
+- **THEN** it keeps its minimum height
+
+#### Scenario: Long text
+- **WHEN** the text of a multi-line field is longer than three rows
+- **THEN** the field is three rows tall and its text scrolls inside it
+
+#### Scenario: Same everywhere
+- **WHEN** the address, the delivery information, a wishlist note, a question, an answer and a group description are edited
+- **THEN** each stops growing at three rows
+
+### Requirement: Actions that add are floating buttons
+Adding a wishlist item, asking a question and creating a group (the owner's "New group") SHALL each be a floating action button at the bottom end of its screen, showing an icon and offering the action's name to assistive technology, shown only while the action is available. When the action is not available the screen SHALL keep saying why in text, as before. The button SHALL NOT cover the last row of the content.
+
+#### Scenario: Add item
+- **WHEN** the person's wishlist can be changed and has room
+- **THEN** a floating button with a plus icon opens the add sheet
+
+#### Scenario: Not available
+- **WHEN** the wishlist is full or closed
+- **THEN** there is no button and the screen says so in text
+
+#### Scenario: Last row
+- **WHEN** a list is scrolled to its end
+- **THEN** its last item is fully visible above the button

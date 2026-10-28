@@ -7,7 +7,7 @@ TBD - created by archiving change participant-wishlists. Update Purpose after ar
 ## Requirements
 
 ### Requirement: Adding an item
-While the group is Pending or Active, the person SHALL be able to add an item in a bottom sheet over the list, with a title, an optional note and an optional link. A successful save through `POST /groups/{id}/wishlist/items` SHALL close the sheet and show the item at the end of the list. A list holds at most 50 items; at 50 adding SHALL be unavailable with an explanation.
+While the group is Pending or Active, the person SHALL be able to add an item with the floating "Add item" button, in a bottom sheet over the list, with a title, an optional note and an optional link. A successful save through `POST /groups/{id}/wishlist/items` SHALL close the sheet and show the item at the end of the list. A list holds at most 50 items; at 50 adding SHALL be unavailable with an explanation.
 
 #### Scenario: Add an item
 - **WHEN** the person opens the add sheet, enters a title and saves

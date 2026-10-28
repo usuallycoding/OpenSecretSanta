@@ -7,7 +7,7 @@ TBD - created by archiving change participant-groups-and-profile. Update Purpose
 ## Requirements
 
 ### Requirement: Groups tab
-The participant view SHALL have a Groups tab that lists the groups the signed-in person participates in, as returned by `GET /groups`, in the order the server returns them. Each entry SHALL show the group's name and state and, when present, its date and time and its location, and the number of participants.
+The participant view SHALL have a Groups tab that lists the groups the signed-in person participates in, as returned by `GET /groups`, in the order the server returns them. Each entry SHALL show the group's name on one row, with an ellipsis when it is longer, and its state and, when present, its date and time and its location, and the number of participants. The name SHALL NOT open anything by itself: choosing the entry opens the group.
 
 #### Scenario: Listed groups
 - **WHEN** the person opens the Groups tab and is in two groups
@@ -24,6 +24,10 @@ The participant view SHALL have a Groups tab that lists the groups the signed-in
 #### Scenario: Draft groups
 - **WHEN** an organiser has named the person only in a group that is still a Draft
 - **THEN** that group is not shown, because the server does not return it
+
+#### Scenario: A long name
+- **WHEN** a group's name is longer than one row
+- **THEN** the entry shows one row with an ellipsis, and choosing it opens the group
 
 ### Requirement: Group states
 The app SHALL show a group's state as Pending, Active or Archived, with a short note on the detail screen saying what it means: Pending, that the organiser has not drawn the names yet; Active, that the names have been drawn; Archived, that the exchange is over. No note and no other part of the groups screens SHALL say or imply who gives to whom.
@@ -75,7 +79,7 @@ While a groups screen loads, the app SHALL show a progress indicator. When the s
 - **THEN** the app handles it as for any request: the sign-in screen is shown with the note that the person was signed out
 
 ### Requirement: Group page
-Choosing a group SHALL open its page, loaded with `GET /groups/{id}`, showing its name, state and state note, description, date, time and location, then the pair rows of `client-group-pages`, and at the end the list of every participant's username with the person's own marked. The participants list SHALL be a box that scrolls inside itself and fills all the height left below the details and the pair rows, with a minimum height; when the details leave less room than that, they SHALL scroll above it. Parts the group does not have SHALL be left out.
+Choosing a group SHALL open its page, loaded with `GET /groups/{id}`, showing its name on one row with an ellipsis when it is longer, then its state and state note, description, date, time and location, then the pair rows of `client-group-pages`, and at the end the list of every participant's username with the person's own marked. Choosing a name that was cut SHALL open a dialog with the whole name and the copy icon. The participants list SHALL be a box that scrolls inside itself and fills all the height left below the details and the pair rows, with a minimum height; when the details leave less room than that, they SHALL scroll above it. Parts the group does not have SHALL be left out.
 
 #### Scenario: Opening a group
 - **WHEN** the person chooses a group in the list
@@ -96,3 +100,7 @@ Choosing a group SHALL open its page, loaded with `GET /groups/{id}`, showing it
 #### Scenario: Few participants
 - **WHEN** the group has four participants on a tall screen
 - **THEN** the box still fills the rest of the page, with the names at its top
+
+#### Scenario: A long name
+- **WHEN** the group's name is longer than one row and the person chooses it
+- **THEN** a dialog shows the whole name and can be closed
