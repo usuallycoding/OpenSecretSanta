@@ -68,7 +68,6 @@ private fun Notice(notice: GiftNotice, onDismiss: () -> Unit) {
 @Composable
 private fun QuestionsHeader(data: ReceiverData, viewModel: ReceiverViewModel) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(Strings.YOUR_QUESTIONS, style = MaterialTheme.typography.titleMedium)
         when {
             data.phase != GroupPhase.Active -> Text(Strings.THREAD_CLOSED, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             !viewModel.canAsk -> Text(Strings.questionLimit(QuestionLimits.MAX_QUESTIONS_PER_SANTA), style = MaterialTheme.typography.bodyMedium)

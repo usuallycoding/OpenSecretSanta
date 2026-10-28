@@ -3,15 +3,12 @@ package com.usuallycoding.opensecretsanta.ui.groups
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -27,7 +24,8 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
 import com.usuallycoding.opensecretsanta.ui.load.LoadSection
-import com.usuallycoding.opensecretsanta.ui.load.PullPage
+import com.usuallycoding.opensecretsanta.ui.load.HeaderWithFooter
+import com.usuallycoding.opensecretsanta.ui.load.ScrollingBox
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -60,15 +58,19 @@ fun GroupPage(
     val receiver = pair?.receiver?.collectAsState()?.value
     var sheet by remember { mutableStateOf<PairSheet?>(null) }
 
-    PullPage(loading = state.loading || receiver?.loading == true, onRefresh = { viewModel.refresh(); pair?.refresh() }) {
-        LoadSection(state, onRetry = { viewModel.refresh() }) { detail ->
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Header(detail)
-                PairRows(detail.phase, me, receiver, onRetry = { pair?.refresh() }, onOpenGifter, onOpenReceiver, onSheet = { sheet = it })
-                Participants(detail.participants)
+    HeaderWithFooter(
+        loading = state.loading || receiver?.loading == true,
+        onRefresh = { viewModel.refresh(); pair?.refresh() },
+        header = {
+            LoadSection(state, onRetry = { viewModel.refresh() }) { detail ->
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Header(detail)
+                    PairRows(detail.phase, me, receiver, onRetry = { pair?.refresh() }, onOpenGifter, onOpenReceiver, onSheet = { sheet = it })
+                }
             }
-        }
-    }
+        },
+        footer = { state.value?.let { Participants(it.participants) } },
+    )
     sheet?.let { PairSheets(it, viewModel.groupId, pair, onDismiss = { sheet = null }) }
 }
 
@@ -97,22 +99,13 @@ private fun Header(group: GroupDetail) {
     }
 }
 
-/** Everyone in the group, in a list of fixed height that scrolls inside itself when there are more names than fit. */
+/** Everyone in the group, in a box that fills the rest of the page and scrolls inside itself when there are more names than fit. */
 @Composable
-private fun Participants(participants: List<ParticipantItem>) {
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("${Strings.GROUP_PARTICIPANTS} (${participants.size})", style = MaterialTheme.typography.titleMedium)
-        OutlinedCard(Modifier.fillMaxWidth()) {
-            Column(
-                Modifier.fillMaxWidth().heightIn(max = PARTICIPANTS_MAX_HEIGHT).verticalScroll(rememberScrollState()).padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                for (participant in participants) {
-                    Text(if (participant.isMe) "${participant.username} (${Strings.YOU})" else participant.username)
-                }
-            }
+private fun ColumnScope.Participants(participants: List<ParticipantItem>) {
+    Text("${Strings.GROUP_PARTICIPANTS} (${participants.size})", style = MaterialTheme.typography.titleMedium)
+    ScrollingBox {
+        for (participant in participants) {
+            Text(if (participant.isMe) "${participant.username} (${Strings.YOU})" else participant.username)
         }
     }
 }
-
-private val PARTICIPANTS_MAX_HEIGHT = 144.dp

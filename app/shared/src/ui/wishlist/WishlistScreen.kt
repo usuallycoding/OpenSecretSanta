@@ -44,7 +44,6 @@ fun WishlistSection(viewModel: WishlistViewModel) {
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
 
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(Strings.MY_WISHLIST, style = MaterialTheme.typography.titleMedium)
         Toolbar(viewModel)
         ui.notice?.let { Notice(it, onDismiss = viewModel::dismissNotice) }
         LoadSection(state, onRetry = { viewModel.refresh() }) { data ->

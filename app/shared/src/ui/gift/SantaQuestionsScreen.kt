@@ -34,7 +34,6 @@ fun SantaQuestionsSection(viewModel: SantaQuestionsViewModel) {
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
 
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(Strings.SANTA_QUESTIONS, style = MaterialTheme.typography.titleMedium)
         val data = state.value
         if (data != null && !data.canAnswer) {
             Text(Strings.THREAD_CLOSED, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

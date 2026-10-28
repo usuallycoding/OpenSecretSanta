@@ -2,6 +2,7 @@ package com.usuallycoding.opensecretsanta.ui.admin
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,6 +42,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
 import com.usuallycoding.opensecretsanta.ui.form.SheetFrame
+import com.usuallycoding.opensecretsanta.ui.load.ScrollingBox
 
 /** A username as the owner reads it in the list: `alice`, `alice (you)`, `alice *` or `alice (you) *`. */
 internal fun usernameLabel(name: String, isMe: Boolean, incomplete: Boolean): String =
@@ -55,30 +57,32 @@ internal fun usernameLabel(name: String, isMe: Boolean, incomplete: Boolean): St
  * that person's sheet, the arrow opens the pair's sheet. Nothing here changes anything.
  */
 @Composable
-internal fun PairList(draw: DrawState, onRetry: () -> Unit, onUser: (String) -> Unit, onPair: (AdminPair) -> Unit) {
+internal fun ColumnScope.PairList(draw: DrawState, onRetry: () -> Unit, onUser: (String) -> Unit, onPair: (AdminPair) -> Unit) {
     when (draw) {
         DrawState.None -> Unit
         DrawState.Failed -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(Strings.ADMIN_DRAW_FAILED, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
             OutlinedButton(onClick = onRetry) { Text(Strings.TRY_AGAIN) }
         }
-        is DrawState.Pairs -> Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        is DrawState.Pairs -> {
             Text(Strings.ADMIN_DRAW, style = MaterialTheme.typography.titleMedium)
-            for (pair in draw.pairs) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = { onUser(pair.santa) }, modifier = Modifier.weight(1f)) {
-                        Text(usernameLabel(pair.santa, pair.santaIsMe, pair.santaIncomplete), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
-                    }
-                    IconButton(onClick = { onPair(pair) }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = Strings.adminPair(pair.santa, pair.receiver))
-                    }
-                    TextButton(onClick = { onUser(pair.receiver) }, modifier = Modifier.weight(1f)) {
-                        Text(usernameLabel(pair.receiver, pair.receiverIsMe, pair.receiverIncomplete), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+            ScrollingBox {
+                for (pair in draw.pairs) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(onClick = { onUser(pair.santa) }, modifier = Modifier.weight(1f)) {
+                            Text(usernameLabel(pair.santa, pair.santaIsMe, pair.santaIncomplete), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+                        }
+                        IconButton(onClick = { onPair(pair) }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = Strings.adminPair(pair.santa, pair.receiver))
+                        }
+                        TextButton(onClick = { onUser(pair.receiver) }, modifier = Modifier.weight(1f)) {
+                            Text(usernameLabel(pair.receiver, pair.receiverIsMe, pair.receiverIncomplete), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+                        }
                     }
                 }
-            }
-            if (draw.pairs.any { it.santaIncomplete || it.receiverIncomplete }) {
-                Text(Strings.ADMIN_INCOMPLETE_LEGEND, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (draw.pairs.any { it.santaIncomplete || it.receiverIncomplete }) {
+                    Text(Strings.ADMIN_INCOMPLETE_LEGEND, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }

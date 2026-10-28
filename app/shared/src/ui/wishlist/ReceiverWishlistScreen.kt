@@ -34,7 +34,6 @@ fun ReceiverWishlistSection(viewModel: ReceiverWishlistViewModel) {
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
 
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(Strings.RECEIVER_WISHLIST, style = MaterialTheme.typography.titleMedium)
         LoadSection(state, onRetry = { viewModel.refresh() }) { items ->
             if (items.isEmpty()) {
                 Text(Strings.RECEIVER_WISHLIST_EMPTY, style = MaterialTheme.typography.bodyLarge)
