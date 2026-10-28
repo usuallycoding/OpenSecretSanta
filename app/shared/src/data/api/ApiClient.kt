@@ -2,9 +2,11 @@ package com.usuallycoding.opensecretsanta.data.api
 
 import com.usuallycoding.opensecretsanta.contract.AccountDto
 import com.usuallycoding.opensecretsanta.contract.AdminGroupDto
+import com.usuallycoding.opensecretsanta.contract.AdminQuestionThreadDto
 import com.usuallycoding.opensecretsanta.contract.AnswerRequest
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.AskQuestionRequest
+import com.usuallycoding.opensecretsanta.contract.AssignmentDto
 import com.usuallycoding.opensecretsanta.contract.ChangePasswordRequest
 import com.usuallycoding.opensecretsanta.contract.ChangePasswordResponse
 import com.usuallycoding.opensecretsanta.contract.CreateGroupRequest
@@ -166,6 +168,20 @@ class ApiClient(
 
     suspend fun archive(id: Long): ApiResult<GroupChangeResponse> =
         call(HttpMethod.Post, ApiRoutes.adminGroupArchive(id))
+
+    // --- administrator: oversight (owner only, read-only) --------------------------------------
+
+    /** Every Santa and receiver pair of an Active or Archived group the caller owns. */
+    suspend fun adminAssignments(id: Long): ApiResult<List<AssignmentDto>> =
+        call(HttpMethod.Get, ApiRoutes.adminGroupAssignments(id))
+
+    /** One participant's wishlist for the group, in their order and without item ids. */
+    suspend fun adminParticipantWishlist(id: Long, username: String): ApiResult<List<SharedWishlistItemDto>> =
+        call(HttpMethod.Get, ApiRoutes.adminGroupParticipantWishlist(id, username))
+
+    /** Every question thread of an Active or Archived group, naming both people in each. */
+    suspend fun adminQuestions(id: Long): ApiResult<List<AdminQuestionThreadDto>> =
+        call(HttpMethod.Get, ApiRoutes.adminGroupQuestions(id))
 
     // --- administrator: users -----------------------------------------------------------------
 

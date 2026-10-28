@@ -15,6 +15,8 @@ import com.usuallycoding.opensecretsanta.ui.profile.ProfileViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupFormViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupsViewModel
+import com.usuallycoding.opensecretsanta.ui.admin.AdminParticipantWishlistViewModel
+import com.usuallycoding.opensecretsanta.ui.admin.AdminQuestionsViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminUserViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminUsersViewModel
 import com.usuallycoding.opensecretsanta.ui.gift.ReceiverViewModel
@@ -54,7 +56,9 @@ fun appModules(baseUrl: String): List<Module> = listOf(
         viewModel { (username: String, me: String) -> AdminUserViewModel(username, me, get(), viewModelScope()) }
         // a new group has no id: the form is given NEW_GROUP, which Koin can carry where it could not carry null
         viewModel { (groupId: Long) -> AdminGroupFormViewModel(groupId.takeIf { it != AdminGroupFormViewModel.NEW_GROUP }, get(), viewModelScope()) }
-        viewModel { (groupId: Long) -> AdminGroupViewModel(groupId, get(), viewModelScope()) }
+        viewModel { (groupId: Long, me: String) -> AdminGroupViewModel(groupId, me, get(), viewModelScope()) }
+        viewModel { (groupId: Long, username: String) -> AdminParticipantWishlistViewModel(groupId, username, get(), viewModelScope()) }
+        viewModel { (groupId: Long, me: String) -> AdminQuestionsViewModel(groupId, me, get(), viewModelScope()) }
         viewModel { (groupId: Long) -> ReceiverViewModel(groupId, get(), viewModelScope()) }
         viewModel { (groupId: Long) -> SantaQuestionsViewModel(groupId, get(), viewModelScope()) }
         viewModel { (groupId: Long) -> SantaRevealViewModel(groupId, get(), viewModelScope()) }

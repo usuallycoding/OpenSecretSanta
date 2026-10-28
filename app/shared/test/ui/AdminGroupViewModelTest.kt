@@ -19,7 +19,7 @@ class AdminGroupViewModelTest {
     private val server = ScriptedServer().also { it.session() }
     private val fake get() = server.adminGroups
 
-    private suspend fun viewModel(id: Long) = AdminGroupViewModel(id, server.api, immediateScope()).also { it.refresh().join() }
+    private suspend fun viewModel(id: Long) = AdminGroupViewModel(id, "admin", server.api, immediateScope()).also { it.refresh().join() }
 
     private fun AdminGroupViewModel.names() = data.value.value!!.participants.map { it.username }
 
@@ -97,7 +97,7 @@ class AdminGroupViewModelTest {
     fun anUnreachableServerCanBeRetried() = runTest {
         val id = fake.add("Office party")
         server.unreachable = true
-        val model = AdminGroupViewModel(id, server.api, immediateScope()).also { it.refresh().join() }
+        val model = AdminGroupViewModel(id, "admin", server.api, immediateScope()).also { it.refresh().join() }
         assertEquals(ApiError.Network, model.data.value.error)
 
         server.unreachable = false

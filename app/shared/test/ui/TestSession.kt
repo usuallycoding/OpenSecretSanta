@@ -17,6 +17,8 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import com.usuallycoding.opensecretsanta.contract.AccountDto
 import com.usuallycoding.opensecretsanta.contract.AdminGroupDto
+import com.usuallycoding.opensecretsanta.contract.AdminQuestionThreadDto
+import com.usuallycoding.opensecretsanta.contract.AssignmentDto
 import com.usuallycoding.opensecretsanta.contract.ManagedUserDto
 import com.usuallycoding.opensecretsanta.contract.ResetPasswordResponse
 import com.usuallycoding.opensecretsanta.contract.AnswerRequest
@@ -58,6 +60,9 @@ class ScriptedServer {
     /** The administrator's groups, as the admin routes keep and answer them. */
     val adminGroups = FakeAdminGroups()
 
+    /** What the owner reads inside those groups: the draw, participants' wishlists and question threads. */
+    val oversight = FakeAdminOversight(adminGroups)
+
     /** The receiver, the two question threads and the reveal as the server keeps and answers them. */
     val gift = FakeGift()
 
@@ -93,6 +98,7 @@ class ScriptedServer {
             else -> {
                 val path = request.url.encodedPath
                 adminUsers.answer(request.method.value, path)?.let { return@MockEngine json(it.first, it.second) }
+                oversight.answer(request.method.value, path)?.let { return@MockEngine json(it.first, it.second) }
                 adminGroups.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 gift.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 val wishlistAnswer = wishlist.answer(request.method.value, path, bodies.last())
@@ -342,6 +348,9 @@ class FakeAdminGroups {
     val ids: List<Long> get() = groups.map { it.id }
     fun group(id: Long): Group = groups.first { it.id == id }
 
+    /** The group as this administrator may see it: null when it does not exist or belongs to someone else. */
+    fun visible(id: Long): Group? = groups.firstOrNull { it.id == id && it.id !in foreign }
+
     fun add(name: String, state: String = "draft", participants: List<String> = emptyList()): Long {
         val group = Group(nextId++, name, state = state, participants = participants)
         groups += group
@@ -531,6 +540,68 @@ class FakeAdminUsers(val me: String = "admin") {
                 HttpStatusCode.OK to Json.encodeToString(ResetPasswordResponse(row.username, row.temporary!!))
             }
             else -> null
+        }
+    }
+}
+
+/**
+ * The owner's read-only routes with the server's behavior: they answer 404 for a group that is not
+ * this administrator's or a username that does not take part, and 409 `invalid_state` when the group's
+ * state has nothing to read (wishlists need a started group, the draw and the threads an Active or
+ * Archived one). Nothing here writes, and reading changes nothing. A test can queue a failure.
+ */
+class FakeAdminOversight(private val groups: FakeAdminGroups) {
+    private val wishlists = mutableMapOf<Pair<Long, String>, List<SharedWishlistItemDto>>()
+    private val pairs = mutableMapOf<Long, List<AssignmentDto>>()
+    private val threads = mutableMapOf<Long, List<AdminQuestionThreadDto>>()
+    private val failures = ArrayDeque<Pair<HttpStatusCode, String>>()
+
+    fun draw(groupId: Long, vararg santaToReceiver: Pair<String, String>) {
+        pairs[groupId] = santaToReceiver.map { AssignmentDto(it.first, it.second) }
+    }
+
+    fun wishlist(groupId: Long, username: String, vararg titles: String) {
+        wishlists[groupId to username] = titles.map { SharedWishlistItemDto(it, null, null, "2026-12-01T10:00:00Z", "2026-12-01T10:00:00Z") }
+    }
+
+    fun wishlistItems(groupId: Long, username: String, items: List<SharedWishlistItemDto>) {
+        wishlists[groupId to username] = items
+    }
+
+    fun threads(groupId: Long, vararg thread: AdminQuestionThreadDto) {
+        threads[groupId] = thread.toList()
+    }
+
+    fun failNextWith(status: HttpStatusCode, code: String, message: String = "refused") {
+        failures += status to """{"code":"$code","message":"$message"}"""
+    }
+
+    private fun error(status: HttpStatusCode, code: String, message: String) =
+        status to """{"code":"$code","message":"$message"}"""
+
+    /** The answer to a request under `/admin/groups/{id}` about the draw, a wishlist or the threads, or null for anything else. */
+    fun answer(method: String, path: String): Pair<HttpStatusCode, String>? {
+        val match = Regex("/admin/groups/(\\d+)/(assignments|questions|participants/([^/]+)/wishlist)").matchEntire(path) ?: return null
+        if (method != "GET") return null
+        failures.removeFirstOrNull()?.let { return it }
+        val id = match.groupValues[1].toLong()
+        val group = groups.visible(id) ?: return error(HttpStatusCode.NotFound, "not_found", "Group not found.")
+        val started = group.state == "active" || group.state == "archived"
+        return when (match.groupValues[2]) {
+            "assignments" ->
+                if (started) HttpStatusCode.OK to Json.encodeToString(pairs[id].orEmpty())
+                else error(HttpStatusCode.Conflict, "invalid_state", "The names have not been drawn.")
+            "questions" ->
+                if (started) HttpStatusCode.OK to Json.encodeToString(threads[id].orEmpty())
+                else error(HttpStatusCode.Conflict, "invalid_state", "There are no questions yet.")
+            else -> {
+                val username = match.groupValues[3]
+                when {
+                    username !in group.participants -> error(HttpStatusCode.NotFound, "not_found", "Participant not found.")
+                    group.state == "draft" -> error(HttpStatusCode.Conflict, "invalid_state", "A Draft group has no wishlists yet.")
+                    else -> HttpStatusCode.OK to Json.encodeToString(wishlists[id to username].orEmpty())
+                }
+            }
         }
     }
 }

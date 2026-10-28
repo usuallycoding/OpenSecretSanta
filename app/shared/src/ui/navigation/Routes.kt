@@ -55,3 +55,11 @@ data class AdminGroupRoute(val id: Long)
 /** The form for the details of an existing group. */
 @Serializable
 data class AdminGroupEditRoute(val id: Long)
+
+/** What one participant keeps for a group, read by the group's owner. */
+@Serializable
+data class AdminParticipantWishlistRoute(val groupId: Long, val username: String)
+
+/** Every question thread of a group, read by its owner. */
+@Serializable
+data class AdminQuestionsRoute(val groupId: Long)

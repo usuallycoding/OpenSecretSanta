@@ -3,6 +3,7 @@ package com.usuallycoding.opensecretsanta.ui.admin
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,8 +38,16 @@ import com.usuallycoding.opensecretsanta.ui.load.LoadContent
 
 /** One of the administrator's groups: its details and people, and what can be done with it in its state. */
 @Composable
-fun AdminGroupScreen(viewModel: AdminGroupViewModel, onBack: () -> Unit, onEdit: () -> Unit, onDeleted: () -> Unit) {
+fun AdminGroupScreen(
+    viewModel: AdminGroupViewModel,
+    onBack: () -> Unit,
+    onEdit: () -> Unit,
+    onDeleted: () -> Unit,
+    onOpenWishlist: (String) -> Unit,
+    onOpenQuestions: () -> Unit,
+) {
     val state by viewModel.data.collectAsState()
+    val draw by viewModel.draw.collectAsState()
     val ui by viewModel.ui.collectAsState()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
     LaunchedEffect(ui.deleted) { if (ui.deleted) onDeleted() }
@@ -63,7 +72,7 @@ fun AdminGroupScreen(viewModel: AdminGroupViewModel, onBack: () -> Unit, onEdit:
                     TextButton(onClick = viewModel::dismissNotice) { Text(Strings.OK) }
                 }
             }
-            LoadContent(state, onRetry = { viewModel.refresh() }) { group -> Detail(group, viewModel, ui.busy, onEdit) }
+            LoadContent(state, onRetry = { viewModel.refresh() }) { group -> Detail(group, viewModel, ui.busy, draw, onEdit, onOpenWishlist, onOpenQuestions) }
         }
     }
     ui.participants?.let { ParticipantsSheet(it, viewModel) }
@@ -93,7 +102,15 @@ private fun AdminStep.label() = when (this) {
 }
 
 @Composable
-private fun Detail(group: AdminGroup, viewModel: AdminGroupViewModel, busy: Boolean, onEdit: () -> Unit) {
+private fun Detail(
+    group: AdminGroup,
+    viewModel: AdminGroupViewModel,
+    busy: Boolean,
+    draw: DrawState,
+    onEdit: () -> Unit,
+    onOpenWishlist: (String) -> Unit,
+    onOpenQuestions: () -> Unit,
+) {
     Column(
         Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -124,11 +141,20 @@ private fun Detail(group: AdminGroup, viewModel: AdminGroupViewModel, busy: Bool
                     Strings.ADMIN_NO_ACCOUNT.takeIf { !participant.hasAccount },
                     Strings.ADMIN_PROFILE_INCOMPLETE.takeIf { participant.hasAccount && !participant.profileComplete },
                 )
-                Text(
-                    if (marks.isEmpty()) participant.username else "${participant.username} (${marks.joinToString(", ")})",
-                    style = MaterialTheme.typography.bodyLarge,
-                )
+                val label = if (marks.isEmpty()) participant.username else "${participant.username} (${marks.joinToString(", ")})"
+                if (viewModel.canReadWishlists) {
+                    TextButton(onClick = { onOpenWishlist(participant.username) }, modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(vertical = 4.dp)) {
+                        Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                        Text(Strings.ADMIN_OPEN_WISHLIST, style = MaterialTheme.typography.labelLarge)
+                    }
+                } else {
+                    Text(label, style = MaterialTheme.typography.bodyLarge)
+                }
             }
+        }
+        DrawSection(draw)
+        if (viewModel.canReadDraw) {
+            OutlinedButton(onClick = onOpenQuestions) { Text(Strings.ADMIN_QUESTIONS_OPEN) }
         }
         val step = viewModel.nextStep
         if (step != null) {

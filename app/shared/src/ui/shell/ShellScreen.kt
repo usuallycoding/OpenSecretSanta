@@ -64,6 +64,12 @@ import com.usuallycoding.opensecretsanta.ui.groups.GroupsScreen
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupEditRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupNewRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.AdminParticipantWishlistRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.AdminQuestionsRoute
+import com.usuallycoding.opensecretsanta.ui.admin.AdminParticipantWishlistScreen
+import com.usuallycoding.opensecretsanta.ui.admin.AdminParticipantWishlistViewModel
+import com.usuallycoding.opensecretsanta.ui.admin.AdminQuestionsScreen
+import com.usuallycoding.opensecretsanta.ui.admin.AdminQuestionsViewModel
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminUserRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminUsersRoute
@@ -212,10 +218,28 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                     composable<AdminGroupRoute> { entry ->
                         val groupId = entry.toRoute<AdminGroupRoute>().id
                         AdminGroupScreen(
-                            koinViewModel<AdminGroupViewModel>(key = "admin-group-$groupId") { parametersOf(groupId) },
+                            koinViewModel<AdminGroupViewModel>(key = "admin-group-$groupId") { parametersOf(groupId, viewModel.account.username) },
                             onBack = { navController.popBackStack() },
                             onEdit = { navController.navigate(AdminGroupEditRoute(groupId)) },
                             onDeleted = { navController.popBackStack() },
+                            onOpenWishlist = { navController.navigate(AdminParticipantWishlistRoute(groupId, it)) },
+                            onOpenQuestions = { navController.navigate(AdminQuestionsRoute(groupId)) },
+                        )
+                    }
+                    composable<AdminParticipantWishlistRoute> { entry ->
+                        val route = entry.toRoute<AdminParticipantWishlistRoute>()
+                        AdminParticipantWishlistScreen(
+                            koinViewModel<AdminParticipantWishlistViewModel>(key = "admin-wishlist-${route.groupId}-${route.username}") {
+                                parametersOf(route.groupId, route.username)
+                            },
+                            onBack = { navController.popBackStack() },
+                        )
+                    }
+                    composable<AdminQuestionsRoute> { entry ->
+                        val groupId = entry.toRoute<AdminQuestionsRoute>().groupId
+                        AdminQuestionsScreen(
+                            koinViewModel<AdminQuestionsViewModel>(key = "admin-questions-$groupId") { parametersOf(groupId, viewModel.account.username) },
+                            onBack = { navController.popBackStack() },
                         )
                     }
                     composable<AdminGroupEditRoute> { entry ->
@@ -235,6 +259,8 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
 private fun titleOf(view: AppView, destination: NavDestination?): String = when {
     destination?.hasRoute<AdminUserRoute>() == true -> Strings.ADMIN_USER
     destination?.hasRoute<AdminUsersRoute>() == true -> Strings.ADMIN_TAB_USERS
+    destination?.hasRoute<AdminParticipantWishlistRoute>() == true -> Strings.ADMIN_WISHLIST_TITLE
+    destination?.hasRoute<AdminQuestionsRoute>() == true -> Strings.ADMIN_QUESTIONS
     destination?.hasRoute<AdminGroupNewRoute>() == true -> Strings.ADMIN_NEW_GROUP
     destination?.hasRoute<AdminGroupEditRoute>() == true -> Strings.ADMIN_EDIT_GROUP
     destination?.hasRoute<AdminGroupRoute>() == true -> Strings.ADMIN_GROUP
@@ -298,7 +324,8 @@ private fun NavDestination.belowGroups(): Boolean =
         hasRoute<ReceiverRoute>() || hasRoute<SantaQuestionsRoute>() || hasRoute<SantaRoute>()
 
 private fun NavDestination.belowAdminGroups(): Boolean =
-    hasRoute<AdminGroupNewRoute>() || hasRoute<AdminGroupRoute>() || hasRoute<AdminGroupEditRoute>() || hasRoute<AdminUserRoute>()
+    hasRoute<AdminGroupNewRoute>() || hasRoute<AdminGroupRoute>() || hasRoute<AdminGroupEditRoute>() || hasRoute<AdminUserRoute>() ||
+        hasRoute<AdminParticipantWishlistRoute>() || hasRoute<AdminQuestionsRoute>()
 
 /** The admin view's two tabs: the groups and the users the administrator manages. */
 @Composable

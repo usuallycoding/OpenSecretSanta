@@ -60,3 +60,13 @@ fun groupPhase(state: String): GroupPhase = when (state.lowercase()) {
 
 /** Usernames are case-insensitive, so "Alice" and "alice" are the same person. */
 fun isMe(username: String, me: String): Boolean = username.equals(me, ignoreCase = true)
+
+private val INSTANT = Regex("(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2})(?::\\d{2}(?:\\.\\d+)?)?Z")
+
+/** An instant from the server (ISO-8601, UTC) for reading: `1 Dec 2026, 10:00 UTC`. One that cannot be read is shown as it came. */
+fun formatInstant(raw: String): String {
+    val match = INSTANT.matchEntire(raw.trim()) ?: return raw
+    val (year, month, day, hour, minute) = match.destructured
+    val monthName = MONTHS.getOrNull(month.toInt() - 1) ?: return raw
+    return "${day.toInt()} $monthName $year, $hour:$minute UTC"
+}
