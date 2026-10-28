@@ -30,6 +30,8 @@ data class ChangePasswordUiState(
     val new: String = "",
     val repeat: String = "",
     val inProgress: Boolean = false,
+    /** The password was changed; the sheet then shows its confirmation instead of the fields. */
+    val done: Boolean = false,
     val errors: PasswordErrors = PasswordErrors(),
 ) {
     val canSubmit: Boolean get() = current.isNotEmpty() && new.isNotEmpty() && repeat.isNotEmpty() && !inProgress
@@ -48,6 +50,9 @@ class ChangePasswordViewModel(
 
     fun onRepeatChange(value: String) = _state.update { it.copy(repeat = value) }
 
+    /** Back to empty fields and no message, so nothing that was typed outlives the sheet it was typed in. */
+    fun reset() = _state.update { ChangePasswordUiState() }
+
     /** Starts the change and returns the running work, or null when there is nothing to send. */
     fun submit(): Job? {
         val input = _state.value
@@ -63,7 +68,7 @@ class ChangePasswordViewModel(
             _state.update { state ->
                 when (result) {
                     // The session has moved on and the screen is about to be replaced.
-                    is ApiResult.Success -> state.copy(inProgress = false)
+                    is ApiResult.Success -> state.copy(inProgress = false, done = true)
                     is ApiResult.Failure -> state.copy(inProgress = false, errors = errorsFor(result.error))
                 }
             }

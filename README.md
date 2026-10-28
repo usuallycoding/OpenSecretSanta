@@ -160,7 +160,7 @@ A Draft group has no wishlists yet and a Draft or Pending group has no threads; 
 
 ### The app
 
-One Compose Multiplatform UI (`app/shared`) runs on Android, iOS and the web. It signs in, makes a person replace a temporary password, keeps the session, and shows a participant view for everyone plus an admin view for administrators, who switch between the two from the menu at the top right (each switch opens the other view on its first screen).
+One Compose Multiplatform UI (`app/shared`) runs on Android, iOS and the web. It signs in, makes a person replace a temporary password, keeps the session, and shows a participant view for everyone plus an admin view for administrators, who switch between the two from the menu at the top right (each switch opens the other view on its first screen). The same menu has **Change password** for everyone, in either view: a sheet over the current screen asks for the current password and a new one twice, keeps you signed in on this device and signs you out everywhere else (the server ends every older sign-in when a password changes); closing the sheet forgets what was typed.
 
 The participant view has two tabs:
 

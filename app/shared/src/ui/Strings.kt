@@ -30,6 +30,8 @@ object Strings {
     const val REPEAT_PASSWORD = "Repeat new password"
     const val CHANGE_PASSWORD = "Change password"
     const val CHANGING_PASSWORD = "Changing..."
+    const val CHANGE_PASSWORD_SHEET_INTRO = "You will be signed out on your other devices."
+    const val PASSWORD_CHANGED = "Your password was changed. You are signed out on your other devices."
     const val PASSWORDS_DO_NOT_MATCH = "The two passwords do not match."
 
     const val STATE_PENDING = "Pending"

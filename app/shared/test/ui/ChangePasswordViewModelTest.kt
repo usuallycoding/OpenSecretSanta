@@ -137,4 +137,33 @@ class ChangePasswordViewModelTest {
         assertFalse(model.state.value.errors.any)
         assertTrue("TempPass0001" in server.bodies.first() && "a-better-password" in server.bodies.first())
     }
+
+    @Test
+    fun aChangeIsDoneAndResettingForgetsEverything() = runTest {
+        signInWithTemporaryPassword()
+        fill()
+        assertFalse(model.state.value.done)
+
+        model.submit()?.join()
+        assertTrue(model.state.value.done)
+
+        model.reset()
+        assertFalse(model.state.value.done)
+        assertEquals("", model.state.value.current)
+        assertEquals("", model.state.value.new)
+        assertEquals("", model.state.value.repeat)
+    }
+
+    @Test
+    fun aRefusedChangeIsNotDone() = runTest {
+        signInWithTemporaryPassword()
+        server.passwordAnswer = HttpStatusCode.Forbidden to """{"code":"forbidden","message":"The current password is incorrect."}"""
+        fill()
+
+        model.submit()?.join()
+        assertFalse(model.state.value.done)
+
+        model.reset()
+        assertFalse(model.state.value.errors.any)
+    }
 }

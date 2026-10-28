@@ -45,6 +45,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.backhandler.BackHandler
+import com.usuallycoding.opensecretsanta.ui.password.ChangePasswordSheet
+import com.usuallycoding.opensecretsanta.ui.password.ChangePasswordViewModel
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import com.usuallycoding.opensecretsanta.ui.Strings
@@ -83,7 +87,7 @@ import com.usuallycoding.opensecretsanta.ui.wishlist.WishlistViewModel
  * opened from the list) for everyone, and the admin view for administrators, who switch between the
  * two from the top-bar menu. The bar shows where the person is and how to go back.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavController, isAdmin: Boolean) -> Unit = { _, _ -> }) {
     val view by viewModel.view.collectAsState()
@@ -113,6 +117,9 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
     }
 
     val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    var changingPassword by remember { mutableStateOf(false) }
+    // Back closes the sheet before it leaves the screen, on the platforms whose back is not already the sheet's own
+    BackHandler(enabled = changingPassword) { changingPassword = false }
     // One standard width for the bars, content and buttons; on a wider window the rest is plain background
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.TopCenter) {
         Scaffold(
@@ -127,7 +134,7 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                             }
                         }
                     },
-                    actions = { ShellMenu(viewModel, view) },
+                    actions = { ShellMenu(viewModel, view, onChangePassword = { changingPassword = true }) },
                 )
             },
             // The tabs stay while a group is open, so switching tabs and coming back finds the group as it was left.
@@ -218,6 +225,9 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                 }
             }
         }
+        if (changingPassword) {
+            ChangePasswordSheet(koinViewModel<ChangePasswordViewModel>(key = "change-password-sheet"), onDismiss = { changingPassword = false })
+        }
     }
 }
 
@@ -238,9 +248,9 @@ private fun titleOf(view: AppView, destination: NavDestination?): String = when 
     else -> Strings.TITLE_GROUPS
 }
 
-/** The menu at the right of the bar: the view switch (administrators only) and sign out. */
+/** The menu at the right of the bar: the view switch (administrators only), change password and sign out. */
 @Composable
-private fun ShellMenu(viewModel: ShellViewModel, view: AppView) {
+private fun ShellMenu(viewModel: ShellViewModel, view: AppView, onChangePassword: () -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { open = true }) {
@@ -256,6 +266,7 @@ private fun ShellMenu(viewModel: ShellViewModel, view: AppView) {
                     },
                 )
             }
+            DropdownMenuItem(text = { Text(Strings.CHANGE_PASSWORD) }, onClick = { open = false; onChangePassword() })
             DropdownMenuItem(text = { Text(Strings.SIGN_OUT) }, onClick = { open = false; viewModel.signOut() })
         }
     }

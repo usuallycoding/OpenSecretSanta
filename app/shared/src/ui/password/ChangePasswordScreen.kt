@@ -44,7 +44,7 @@ fun ChangePasswordScreen(viewModel: ChangePasswordViewModel, onSignOut: () -> Un
 }
 
 @Composable
-private fun PasswordField(
+internal fun PasswordField(
     label: String,
     value: String,
     onChange: (String) -> Unit,
