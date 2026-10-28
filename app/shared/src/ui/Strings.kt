@@ -50,7 +50,18 @@ object Strings {
     const val GROUP_PARTICIPANTS = "Participants"
     const val YOU = "you"
 
-    const val PROFILE_WHY = "A Santa uses your name and address to post your gift."
+    const val PROFILE_WHY = "A Santa uses your name and address to post your gift. Your email is used to send you your draw when a group you are in is drawn."
+
+    /** What the owner is told after "Draw the names" about the emails: "Emails sent to 8 of 11 participants. 1 failed, 2 have no email address." */
+    fun emailSummary(sent: Int, failed: Int, noAddress: Int): String {
+        val total = sent + failed + noAddress
+        if (sent == total) return "Emails sent to all $total participants."
+        val problems = buildList {
+            if (failed > 0) add("$failed failed")
+            if (noAddress > 0) add(if (noAddress == 1) "1 has no email address" else "$noAddress have no email address")
+        }
+        return "Emails sent to $sent of $total participants. ${problems.joinToString(", ")}."
+    }
     const val PROFILE_INCOMPLETE = "Add your name and address so a gift can reach you."
     const val SAVE = "Save"
     const val SAVING = "Saving..."

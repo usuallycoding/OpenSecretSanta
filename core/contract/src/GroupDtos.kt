@@ -57,11 +57,23 @@ data class CreatedAccountDto(
     val temporaryPassword: String,
 )
 
-/** The group after a change, plus the accounts the change created (empty when it created none). */
+/** How the emails of a draw went: how many were sent, how many failed and how many participants have no email address. */
+@Serializable
+data class EmailSummaryDto(
+    val sent: Int,
+    val failed: Int,
+    val noAddress: Int,
+)
+
+/**
+ * The group after a change, plus the accounts the change created (empty when it created none). Only the answer to an
+ * activation carries [emails], and only when email is configured.
+ */
 @Serializable
 data class GroupChangeResponse(
     val group: AdminGroupDto,
     val createdAccounts: List<CreatedAccountDto> = emptyList(),
+    val emails: EmailSummaryDto? = null,
 )
 
 /** What a participant sees of a group: details, state and the other participants' usernames. */

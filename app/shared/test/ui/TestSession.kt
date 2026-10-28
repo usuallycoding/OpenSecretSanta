@@ -1,6 +1,7 @@
 package com.usuallycoding.opensecretsanta.ui
 
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
+import com.usuallycoding.opensecretsanta.contract.EmailSummaryDto
 import com.usuallycoding.opensecretsanta.contract.ErrorResponse
 import com.usuallycoding.opensecretsanta.contract.DeletionImpactDto
 import com.usuallycoding.opensecretsanta.data.api.ApiClient
@@ -400,8 +401,11 @@ class FakeAdminGroups {
         group.participants.map { ParticipantDto(it, it in accounts, it in completeProfiles) },
     )
 
-    private fun response(group: Group, created: List<CreatedAccountDto> = emptyList()) =
-        HttpStatusCode.OK to Json.encodeToString(GroupChangeResponse(dto(group), created))
+    private fun response(group: Group, created: List<CreatedAccountDto> = emptyList(), emails: EmailSummaryDto? = null) =
+        HttpStatusCode.OK to Json.encodeToString(GroupChangeResponse(dto(group), created, emails))
+
+    /** What the server says about the emails of a draw; null (the default) is a server with email off. */
+    var drawEmails: EmailSummaryDto? = null
 
     private fun createMissingAccounts(group: Group): List<CreatedAccountDto> {
         val created = group.participants.filter { it !in accounts }
@@ -478,7 +482,7 @@ class FakeAdminGroups {
                 group.participants.size < 4 -> error(HttpStatusCode.BadRequest, "validation_failed", "A group needs at least 4 participants.", "participants")
                 else -> {
                     group.state = "active"
-                    response(group)
+                    response(group, emails = drawEmails)
                 }
             }
             method == "POST" && action == "archive" -> if (group.state == "active") {

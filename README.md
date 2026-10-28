@@ -32,6 +32,16 @@ The server reads its configuration from environment variables and refuses to sta
 | `ADMIN_USERNAME`      | no                        | `admin`              | Username of the first administrator                                  |
 | `ADMIN_PASSWORD`      | only on an empty database | -                    | Initial password of the first administrator (at least 8 characters)  |
 | `CORS_ALLOWED_ORIGINS`| no                        | empty (no CORS)      | Comma-separated web origins allowed to call the API from a browser, for example `https://app.example.org,http://localhost:8081` |
+| `RESEND_API_KEY`      | no                        | -                    | Resend API key; with `EMAIL_FROM` it turns on the emails sent when a group is drawn (see below) |
+| `EMAIL_FROM`          | with `RESEND_API_KEY`     | -                    | The sender, `santa@mail.example.org` or `Name <santa@mail.example.org>`, on a domain verified at Resend |
+| `APP_URL`             | no                        | -                    | Where the web app is, linked from the emails (`https://app.example.org`) |
+| `RESEND_API_URL`      | no                        | `https://api.resend.com` | Only for tests: points the server at a stand-in for Resend |
+
+#### Emails when the names are drawn
+
+When the owner draws a group's names the server can email every participant who has an email address on their profile: the group's details, that the names have been drawn and who they are Secret Santa for (their own receiver only; no postal details are in the email, and the subject does not name the receiver). It uses [Resend](https://resend.com), is off unless `RESEND_API_KEY` and `EMAIL_FROM` are both set, and never decides whether the draw happens: the group is Active even when no email can be sent, and the owner's page says how many went out (`Emails sent to 8 of 11 participants. 1 failed, 2 have no email address.`). Participants see on their Profile tab that their email is used for this.
+
+To set it up, add a domain to Resend (a subdomain such as `mail.example.org` keeps its DNS records apart from any mail you already receive on the main domain), create the DNS records Resend lists (DKIM, SPF and MX, normally TXT and MX records named `resend._domainkey.mail`, `send.mail` and `send.mail`) at your DNS provider, wait for the domain to show as verified, create an API key with sending access to that domain and put it in `RESEND_API_KEY`, with a sender on the domain in `EMAIL_FROM`. The free plan allows 100 emails a day and 3,000 a month with one domain; an email that does not go out because the limit is reached is counted as failed and not retried. The key is never logged or returned by the API.
 
 Generate the encryption key once and keep it with your other secrets. Losing it makes stored temporary passwords unreadable (an admin can simply reset them), and rotating it has the same effect:
 
@@ -74,6 +84,7 @@ The first build downloads the Kotlin toolchain and the dependencies and takes se
 | `JWT_SECRET` | required | the server's `JWT_SECRET` |
 | `DATA_ENCRYPTION_KEY` | required | the server's `DATA_ENCRYPTION_KEY` |
 | `ADMIN_USERNAME`, `ADMIN_PASSWORD` | `admin`, none | the first administrator; only used while the database has no users, so the password can be removed after the first start |
+| `RESEND_API_KEY`, `EMAIL_FROM`, `APP_URL` | none | optional: the emails sent when a group is drawn (see above); they reach the server only |
 | `WEB_PORT`, `SERVER_PORT` | `8080`, `8081` | the ports published on this machine |
 | `PUBLIC_SERVER_URL` | `http://localhost:` and `SERVER_PORT` | where the browser finds the server; written into the web app's `config.json` each time the web container starts, so changing it needs a restart (`docker compose up -d`), not a rebuild |
 | `PUBLIC_WEB_ORIGIN` | `http://localhost:` and `WEB_PORT` | the address the web app is opened at; the server's `CORS_ALLOWED_ORIGINS` |

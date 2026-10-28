@@ -113,6 +113,11 @@ class InMemoryGroups(private val users: InMemoryUsers) : GroupRepository {
         return group
     }
 
+    /** Test helper: changes the details of a seeded group. */
+    fun setDetails(id: Long, details: GroupDetails) {
+        groups[id] = require(id).copy(details = details)
+    }
+
     /** Test helper: stores [list] as the draw of a seeded group. */
     fun assign(id: Long, list: List<Assignment>) {
         assignmentsByGroup[id] = list

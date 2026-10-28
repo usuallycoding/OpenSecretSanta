@@ -11,6 +11,8 @@ import com.usuallycoding.opensecretsanta.server.data.db.MigrationRunner
 import com.usuallycoding.opensecretsanta.server.di.serverModules
 import com.usuallycoding.opensecretsanta.domain.admin.GetManagedUser
 import com.usuallycoding.opensecretsanta.domain.admin.SeedDefaultAdmin
+import com.usuallycoding.opensecretsanta.domain.email.Mailer
+import com.usuallycoding.opensecretsanta.domain.email.SendDrawEmails
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 import com.usuallycoding.opensecretsanta.domain.admin.ListManagedUsers
 import com.usuallycoding.opensecretsanta.domain.admin.ResetPassword
@@ -101,9 +103,10 @@ fun Application.module(
     migrations: List<Migration> = ClasspathMigrations.load(),
     clock: Clock = SystemClock,
     shuffler: Shuffler = SecureShuffler(),
+    mailer: Mailer? = null,
 ) {
     install(Koin) {
-        modules(serverModules(config, migrations, clock, shuffler))
+        modules(serverModules(config, migrations, clock, shuffler, mailer))
     }
     install(ContentNegotiation) { json() }
     if (config.corsAllowedOrigins.isNotEmpty()) install(CORS) { allowConfiguredOrigins(config.corsAllowedOrigins) }
@@ -137,7 +140,7 @@ fun Application.module(
                 get<SetParticipants>(),
                 get<DeleteGroup>(),
             )
-            groupLifecycleRoutes(get<MoveToPending>(), get<ActivateGroup>(), get<ArchiveGroup>(), get<ListAssignments>())
+            groupLifecycleRoutes(get<MoveToPending>(), get<ActivateGroup>(), get<ArchiveGroup>(), get<ListAssignments>(), get<SendDrawEmails>())
             memberGroupRoutes(get<ListMyGroups>(), get<GetMyGroup>())
             giftVisibilityRoutes(get<GetMyReceiver>(), get<GetMySanta>())
             questionRoutes(get<AskQuestion>(), get<ListMyQuestions>(), get<ListQuestionsFromMySanta>(), get<AnswerQuestion>())

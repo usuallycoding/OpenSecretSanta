@@ -2,6 +2,7 @@ package com.usuallycoding.opensecretsanta.ui.admin
 
 import com.usuallycoding.opensecretsanta.contract.AdminGroupDto
 import com.usuallycoding.opensecretsanta.contract.DeletionImpactDto
+import com.usuallycoding.opensecretsanta.contract.EmailSummaryDto
 import com.usuallycoding.opensecretsanta.ui.groups.GroupStateInfo
 import com.usuallycoding.opensecretsanta.ui.groups.formatWhen
 import com.usuallycoding.opensecretsanta.ui.groups.groupStateInfo
@@ -93,6 +94,8 @@ sealed interface GroupSheet {
 data class AdminGroupUi(
     val participants: ParticipantsEditor? = null,
     val confirming: AdminStep? = null,
+    /** How the emails of the draw just made went, until the owner dismisses it; null when there is nothing to say. */
+    val emails: EmailSummaryDto? = null,
     /** What deleting the group would also delete, once the server has asked for a second confirmation of it. */
     val confirmingDelete: DeletionImpactDto? = null,
     val busy: Boolean = false,

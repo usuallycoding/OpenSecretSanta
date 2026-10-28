@@ -1,6 +1,7 @@
 package com.usuallycoding.opensecretsanta.ui
 
 import com.usuallycoding.opensecretsanta.contract.DeletionImpactDto
+import com.usuallycoding.opensecretsanta.contract.EmailSummaryDto
 import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminNotice
@@ -408,6 +409,46 @@ class AdminGroupViewModelTest {
 
         assertTrue(model.data.value.isGone())
         assertFalse(model.ui.value.deleted)
+    }
+
+    @Test
+    fun theDrawKeepsTheEmailSummaryUntilItIsDismissed() = runTest {
+        fake.drawEmails = EmailSummaryDto(sent = 8, failed = 1, noAddress = 2)
+        val model = viewModel(fake.add("Pending", state = "pending", participants = four))
+
+        model.ask(AdminStep.DrawNames)
+        model.confirmStep()?.join()
+
+        assertEquals(EmailSummaryDto(8, 1, 2), model.ui.value.emails)
+
+        model.dismissEmails()
+
+        assertNull(model.ui.value.emails)
+    }
+
+    @Test
+    fun aServerWithoutEmailLeavesNothingToSay() = runTest {
+        val model = viewModel(fake.add("Pending", state = "pending", participants = four))
+
+        model.ask(AdminStep.DrawNames)
+        model.confirmStep()?.join()
+
+        assertEquals(AdminPhase.Active, model.data.value.value!!.phase)
+        assertNull(model.ui.value.emails)
+    }
+
+    @Test
+    fun anotherStepClearsAnOldSummary() = runTest {
+        fake.drawEmails = EmailSummaryDto(4, 0, 0)
+        val model = viewModel(fake.add("Pending", state = "pending", participants = four))
+        model.ask(AdminStep.DrawNames)
+        model.confirmStep()?.join()
+        assertNotNull(model.ui.value.emails)
+
+        model.ask(AdminStep.Archive)
+        model.confirmStep()?.join()
+
+        assertNull(model.ui.value.emails)
     }
 
     @Test

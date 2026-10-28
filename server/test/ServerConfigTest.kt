@@ -111,4 +111,65 @@ class ServerConfigTest {
             assertEquals("CORS_ALLOWED_ORIGINS", failingVariable(envWith("CORS_ALLOWED_ORIGINS" to bad)), bad)
         }
     }
+
+    // --- email ---
+
+    @Test
+    fun emailIsOffByDefaultAndOnWithAKeyAndASender() {
+        val off = ServerConfig.fromEnv(envWith())
+        assertNull(off.resendApiKey)
+        assertNull(off.emailFrom)
+        assertEquals(false, off.emailEnabled)
+
+        val on = ServerConfig.fromEnv(
+            envWith("RESEND_API_KEY" to " re_abc123 ", "EMAIL_FROM" to "Santa <santa@mail.example.org>", "APP_URL" to "https://santa.example.org"),
+        )
+        assertEquals("re_abc123", on.resendApiKey)
+        assertEquals("Santa <santa@mail.example.org>", on.emailFrom)
+        assertEquals("https://santa.example.org", on.appUrl)
+        assertEquals(true, on.emailEnabled)
+    }
+
+    @Test
+    fun blankEmailSettingsCountAsUnset() {
+        val config = ServerConfig.fromEnv(envWith("RESEND_API_KEY" to " ", "EMAIL_FROM" to "", "APP_URL" to " "))
+        assertEquals(false, config.emailEnabled)
+        assertNull(config.appUrl)
+    }
+
+    @Test
+    fun aKeyWithoutASenderNamesEmailFromAndNeverPrintsTheKey() {
+        val error = assertFailsWith<ConfigurationException> { ServerConfig.fromEnv(envWith("RESEND_API_KEY" to "re_topsecret")) }
+
+        assertEquals("EMAIL_FROM", error.variable)
+        assertEquals(false, "re_topsecret" in error.message.orEmpty())
+    }
+
+    @Test
+    fun aSenderThatIsNotAnAddressNamesEmailFrom() {
+        for (bad in listOf("santa", "santa@", "Santa <santa>", "two words@example.org")) {
+            assertEquals("EMAIL_FROM", failingVariable(envWith("RESEND_API_KEY" to "re_x", "EMAIL_FROM" to bad)), bad)
+        }
+        assertEquals("EMAIL_FROM", failingVariable(envWith("EMAIL_FROM" to "nonsense")))
+    }
+
+    @Test
+    fun anAppAddressThatIsNotHttpNamesAppUrl() {
+        assertEquals("APP_URL", failingVariable(envWith("APP_URL" to "not a url")))
+        assertEquals("APP_URL", failingVariable(envWith("APP_URL" to "ftp://example.org")))
+    }
+
+    @Test
+    fun thePrintedConfigurationHidesEverySecret() {
+        val config = ServerConfig.fromEnv(
+            envWith("RESEND_API_KEY" to "re_topsecret", "EMAIL_FROM" to "santa@example.org", "ADMIN_PASSWORD" to "first-pass-secret"),
+        )
+
+        val printed = config.toString()
+
+        for (secret in listOf("re_topsecret", "first-pass-secret", "s3cret", TEST_ENCRYPTION_KEY)) {
+            assertEquals(false, secret in printed, secret)
+        }
+        assertEquals(true, "santa@example.org" in printed)
+    }
 }

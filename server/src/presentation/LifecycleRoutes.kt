@@ -2,7 +2,10 @@ package com.usuallycoding.opensecretsanta.server.presentation
 
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.AssignmentDto
+import com.usuallycoding.opensecretsanta.contract.EmailSummaryDto
 import com.usuallycoding.opensecretsanta.contract.GroupChangeResponse
+import com.usuallycoding.opensecretsanta.domain.email.EmailSummary
+import com.usuallycoding.opensecretsanta.domain.email.SendDrawEmails
 import com.usuallycoding.opensecretsanta.domain.group.ActivateGroup
 import com.usuallycoding.opensecretsanta.domain.group.ArchiveGroup
 import com.usuallycoding.opensecretsanta.domain.group.GetMyGroup
@@ -13,6 +16,9 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import org.slf4j.LoggerFactory
+
+private val logger = LoggerFactory.getLogger("GroupLifecycleRoutes")
 
 /** Owner-only state changes. Every response is the group after the change plus any accounts it created. */
 fun Route.groupLifecycleRoutes(
@@ -20,6 +26,7 @@ fun Route.groupLifecycleRoutes(
     activate: ActivateGroup,
     archive: ArchiveGroup,
     listAssignments: ListAssignments,
+    sendDrawEmails: SendDrawEmails,
 ) {
     post(ApiRoutes.ADMIN_GROUP_PENDING) {
         val actor = call.currentUser()
@@ -28,7 +35,16 @@ fun Route.groupLifecycleRoutes(
     post(ApiRoutes.ADMIN_GROUP_ACTIVATE) {
         val actor = call.currentUser()
         val view = blocking { activate(actor, call.groupId()) }
-        call.respond(GroupChangeResponse(group = view.toDto()))
+        // the draw is stored: whatever happens to the emails cannot undo it
+        val emails = blocking {
+            try {
+                sendDrawEmails(view.group)
+            } catch (e: Exception) {
+                logger.error("Sending the draw emails failed ({})", e::class.simpleName)
+                EmailSummary(sent = 0, failed = view.participants.size, noAddress = 0)
+            }
+        }
+        call.respond(GroupChangeResponse(group = view.toDto(), emails = emails?.let { EmailSummaryDto(it.sent, it.failed, it.noAddress) }))
     }
     post(ApiRoutes.ADMIN_GROUP_ARCHIVE) {
         val actor = call.currentUser()

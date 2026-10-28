@@ -52,7 +52,11 @@ import com.usuallycoding.opensecretsanta.domain.wishlist.ReorderWishlist
 import com.usuallycoding.opensecretsanta.domain.wishlist.UpdateWishlistItem
 import com.usuallycoding.opensecretsanta.domain.wishlist.WishlistRepository
 import com.usuallycoding.opensecretsanta.domain.user.UserRepository
+import com.usuallycoding.opensecretsanta.domain.email.DisabledMailer
+import com.usuallycoding.opensecretsanta.domain.email.Mailer
+import com.usuallycoding.opensecretsanta.domain.email.SendDrawEmails
 import com.usuallycoding.opensecretsanta.server.config.ServerConfig
+import com.usuallycoding.opensecretsanta.server.data.email.ResendMailer
 import com.usuallycoding.opensecretsanta.server.data.auth.SqliteLoginAttemptTracker
 import com.usuallycoding.opensecretsanta.server.data.db.ClasspathMigrations
 import com.usuallycoding.opensecretsanta.server.data.db.Database
@@ -103,6 +107,21 @@ val repositoryModule = module {
     single<GroupRepository> { SqliteGroupRepository(get()) }
     single<QuestionRepository> { SqliteQuestionRepository(get()) }
     single<WishlistRepository> { SqliteWishlistRepository(get()) }
+}
+
+/** The mailer is Resend when the settings are there and a stand-in (a test's mailer) when one is given. */
+fun emailModule(mailer: Mailer? = null) = module {
+    single<Mailer> {
+        val config = get<ServerConfig>()
+        if (mailer != null) {
+            mailer
+        } else if (config.emailEnabled) {
+            ResendMailer(config.resendApiKey!!, config.emailFrom!!, baseUrl = config.resendApiUrl ?: ResendMailer.DEFAULT_BASE_URL)
+        } else {
+            DisabledMailer
+        }
+    }
+    single { SendDrawEmails(get(), get(), get(), get<ServerConfig>().appUrl) }
 }
 
 val useCaseModule = module {
@@ -161,6 +180,7 @@ fun serverModules(
     migrations: List<Migration> = ClasspathMigrations.load(),
     clock: Clock = SystemClock,
     shuffler: Shuffler = SecureShuffler(),
+    mailer: Mailer? = null,
 ) = listOf(
     configModule(config),
     clockModule(clock),
@@ -168,6 +188,7 @@ fun serverModules(
     securityModule,
     shufflerModule(shuffler),
     repositoryModule,
+    emailModule(mailer),
     useCaseModule,
     presentationModule,
 )

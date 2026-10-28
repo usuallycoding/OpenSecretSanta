@@ -206,7 +206,8 @@ class AdminGroupViewModel(
             when (result) {
                 is ApiResult.Success -> {
                     applyChange(result.value)
-                    _ui.update { it.copy(busy = false) }
+                    // only the answer to a draw has an email summary; any other step leaves nothing to say
+                    _ui.update { it.copy(busy = false, emails = result.value.emails) }
                 }
                 is ApiResult.Failure -> stepFailed(result.error)
             }
@@ -218,6 +219,8 @@ class AdminGroupViewModel(
     fun dismissPasswords() = _ui.update { it.copy(passwords = null) }
 
     fun dismissNotice() = _ui.update { it.copy(notice = null) }
+
+    fun dismissEmails() = _ui.update { it.copy(emails = null) }
 
     // --- internals ----------------------------------------------------------------------------------------
 

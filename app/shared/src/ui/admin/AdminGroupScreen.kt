@@ -86,6 +86,17 @@ fun AdminGroupScreen(
                     TextButton(onClick = viewModel::dismissNotice) { Text(Strings.OK) }
                 }
             }
+            ui.emails?.let { emails ->
+                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        Strings.emailSummary(emails.sent, emails.failed, emails.noAddress),
+                        modifier = Modifier.weight(1f),
+                        color = if (emails.failed > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    TextButton(onClick = viewModel::dismissEmails) { Text(Strings.OK) }
+                }
+            }
             HeaderWithFooter(
                 loading = state.loading,
                 onRefresh = { viewModel.refresh() },
