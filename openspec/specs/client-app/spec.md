@@ -214,3 +214,14 @@ Top-level tabs SHALL keep their own place: switching tabs and returning SHALL sh
 #### Scenario: Sign out clears navigation
 - **WHEN** the person signs out and another person signs in
 - **THEN** the new person starts on the first screen of their view, not where the previous person was
+
+### Requirement: Oversight routes in the admin view
+The admin view SHALL have typed routes for a participant's wishlist and for a group's questions, reached from the group detail and kept under the Groups tab. Back SHALL return to the group detail, and on the web the address bar SHALL follow them.
+
+#### Scenario: Back from a wishlist
+- **WHEN** the owner opens a participant's wishlist and goes back
+- **THEN** the group detail is shown
+
+#### Scenario: Groups tab stays selected
+- **WHEN** the questions screen is open
+- **THEN** the Groups tab is the selected tab
