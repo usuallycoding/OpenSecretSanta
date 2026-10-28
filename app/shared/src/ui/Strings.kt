@@ -109,7 +109,6 @@ object Strings {
     const val NOTICE_LIST_FULL = "Your list is full, so the item was not added."
 
     const val TRY_AGAIN = "Try again"
-    const val REFRESH = "Refresh"
 
     const val LOCAL_NETWORK_TITLE = "Allow access to your local network"
     const val LOCAL_NETWORK_WHY = "The server is on a private network (this computer or your home or office network). Android needs your permission before this app can connect to it."

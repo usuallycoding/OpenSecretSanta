@@ -27,6 +27,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.load.LoadContent
+import com.usuallycoding.opensecretsanta.ui.load.ScrollableMessage
 
 /** What the person's receiver wants, in the receiver's order. Nothing here can be changed. */
 @Composable
@@ -45,12 +46,9 @@ fun ReceiverWishlistScreen(viewModel: ReceiverWishlistViewModel, onBack: () -> U
     }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = { viewModel.refresh() }) { Text(Strings.REFRESH) }
-            }
-            LoadContent(state, onRetry = { viewModel.refresh() }) { items ->
+            LoadContent(state, onRetry = { viewModel.refresh() }, onRefresh = { viewModel.refresh() }) { items ->
                 if (items.isEmpty()) {
-                    Text(Strings.RECEIVER_WISHLIST_EMPTY, modifier = Modifier.fillMaxWidth().padding(24.dp), style = MaterialTheme.typography.bodyLarge)
+                    ScrollableMessage(Strings.RECEIVER_WISHLIST_EMPTY)
                 } else {
                     LazyColumn(
                         Modifier.fillMaxWidth(),

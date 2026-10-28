@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -33,10 +35,7 @@ fun GroupsScreen(viewModel: GroupsViewModel, onOpen: (Long) -> Unit) {
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = { viewModel.refresh() }) { Text(Strings.REFRESH) }
-            }
-            LoadContent(state, onRetry = { viewModel.refresh() }) { groups ->
+            LoadContent(state, onRetry = { viewModel.refresh() }, onRefresh = { viewModel.refresh() }) { groups ->
                 if (groups.isEmpty()) {
                     EmptyGroups()
                 } else {
@@ -75,7 +74,7 @@ private fun GroupCard(group: GroupRow, onClick: () -> Unit) {
 @Composable
 private fun EmptyGroups() {
     Column(
-        Modifier.fillMaxWidth().padding(32.dp),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {

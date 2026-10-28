@@ -49,10 +49,7 @@ fun GroupDetailScreen(
     }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = { viewModel.refresh() }) { Text(Strings.REFRESH) }
-            }
-            LoadContent(state, onRetry = { viewModel.refresh() }) { detail -> Detail(detail, onOpenWishlist, onOpenReceiverWishlist, onOpenGift) }
+            LoadContent(state, onRetry = { viewModel.refresh() }, onRefresh = { viewModel.refresh() }) { detail -> Detail(detail, onOpenWishlist, onOpenReceiverWishlist, onOpenGift) }
         }
     }
 }
@@ -60,7 +57,7 @@ fun GroupDetailScreen(
 @Composable
 private fun Detail(group: GroupDetail, onOpenWishlist: () -> Unit, onOpenReceiverWishlist: () -> Unit, onOpenGift: (GiftEntry) -> Unit) {
     Column(
-        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(group.name, style = MaterialTheme.typography.headlineSmall)

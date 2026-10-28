@@ -26,6 +26,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.load.LoadContent
+import com.usuallycoding.opensecretsanta.ui.load.ScrollableMessage
 
 /** The questions the person's Santa asked and the person's answers. Nothing here says who the Santa is. */
 @Composable
@@ -53,17 +54,16 @@ fun SantaQuestionsScreen(viewModel: SantaQuestionsViewModel, onBack: () -> Unit)
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                TextButton(onClick = { viewModel.refresh() }) { Text(Strings.REFRESH) }
-            }
+                    }
             ui.notice?.let { notice ->
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(notice.text(), modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
                     TextButton(onClick = viewModel::dismissNotice) { Text(Strings.OK) }
                 }
             }
-            LoadContent(state, onRetry = { viewModel.refresh() }) { data ->
+            LoadContent(state, onRetry = { viewModel.refresh() }, onRefresh = { viewModel.refresh() }) { data ->
                 if (data.questions.isEmpty()) {
-                    Text(Strings.NO_SANTA_QUESTIONS, modifier = Modifier.fillMaxWidth().padding(24.dp), style = MaterialTheme.typography.bodyLarge)
+                    ScrollableMessage(Strings.NO_SANTA_QUESTIONS)
                 } else {
                     LazyColumn(
                         Modifier.fillMaxWidth(),

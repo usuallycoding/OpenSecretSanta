@@ -26,6 +26,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.load.LoadContent
+import com.usuallycoding.opensecretsanta.ui.load.ScrollableMessage
 
 /** The administrator's own groups, with a way to create one. */
 @Composable
@@ -37,13 +38,10 @@ fun AdminGroupsScreen(viewModel: AdminGroupsViewModel, onOpen: (Long) -> Unit, o
         Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Button(onClick = onNew) { Text(Strings.NEW_GROUP) }
-                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = { viewModel.refresh() }) { Text(Strings.REFRESH) }
-                }
             }
-            LoadContent(state, onRetry = { viewModel.refresh() }) { groups ->
+            LoadContent(state, onRetry = { viewModel.refresh() }, onRefresh = { viewModel.refresh() }) { groups ->
                 if (groups.isEmpty()) {
-                    Text(Strings.ADMIN_NO_GROUPS, modifier = Modifier.fillMaxWidth().padding(24.dp), style = MaterialTheme.typography.bodyLarge)
+                    ScrollableMessage(Strings.ADMIN_NO_GROUPS)
                 } else {
                     LazyColumn(
                         Modifier.fillMaxWidth(),

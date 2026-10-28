@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -42,17 +44,17 @@ fun SantaScreen(viewModel: SantaRevealViewModel, onBack: () -> Unit) {
     }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = { viewModel.refresh() }) { Text(Strings.REFRESH) }
-            }
             if (viewModel.notYet) {
                 Text(Strings.SANTA_NOT_YET, modifier = Modifier.fillMaxWidth().padding(24.dp), style = MaterialTheme.typography.bodyLarge)
             } else {
-                LoadContent(state, onRetry = { viewModel.refresh() }) { santa ->
-                    Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Detail(Strings.SANTA_USERNAME, santa.username)
-                            santa.fullName?.let { Detail(Strings.SANTA_FULL_NAME, it) }
+                LoadContent(state, onRetry = { viewModel.refresh() }, onRefresh = { viewModel.refresh() }) { santa ->
+                    // scrolls, so that the screen can be pulled down to refresh
+                    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                        Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Detail(Strings.SANTA_USERNAME, santa.username)
+                                santa.fullName?.let { Detail(Strings.SANTA_FULL_NAME, it) }
+                            }
                         }
                     }
                 }

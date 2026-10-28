@@ -48,13 +48,10 @@ fun AdminUserScreen(viewModel: AdminUserViewModel, onBack: () -> Unit) {
     }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = { viewModel.refresh() }) { Text(Strings.REFRESH) }
-            }
             UserNoticeRow(ui, viewModel)
-            LoadContent(state, onRetry = { viewModel.refresh() }) { user ->
+            LoadContent(state, onRetry = { viewModel.refresh() }, onRefresh = { viewModel.refresh() }) { user ->
                 // the detail does not scroll by itself: the sheet that shows it scrolls as a whole
-                Column(Modifier.verticalScroll(rememberScrollState())) { UserDetail(user, viewModel, ui.busy) }
+                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { UserDetail(user, viewModel, ui.busy) }
             }
         }
     }

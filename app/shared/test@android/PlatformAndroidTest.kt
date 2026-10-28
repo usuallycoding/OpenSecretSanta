@@ -8,4 +8,9 @@ class PlatformAndroidTest {
     fun `platform name is reported`() {
         assertTrue(getPlatform().name.isNotBlank())
     }
+
+    @Test
+    fun `android refreshes a screen by pulling it down`() {
+        assertTrue(getPlatform().hasPullToRefresh)
+    }
 }

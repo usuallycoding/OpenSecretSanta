@@ -68,16 +68,13 @@ fun AdminGroupScreen(
     }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = { viewModel.refresh() }) { Text(Strings.REFRESH) }
-            }
             ui.notice?.let { notice ->
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(notice.text(), modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
                     TextButton(onClick = viewModel::dismissNotice) { Text(Strings.OK) }
                 }
             }
-            LoadContent(state, onRetry = { viewModel.refresh() }) { group -> Detail(group, viewModel, ui.busy, draw, onEdit) }
+            LoadContent(state, onRetry = { viewModel.refresh() }, onRefresh = { viewModel.refresh() }) { group -> Detail(group, viewModel, ui.busy, draw, onEdit) }
         }
     }
     ui.participants?.let { ParticipantsSheet(it, viewModel) }
@@ -116,7 +113,7 @@ private fun Detail(
     onEdit: () -> Unit,
 ) {
     Column(
-        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(group.name, style = MaterialTheme.typography.headlineSmall)

@@ -36,6 +36,7 @@ import com.usuallycoding.opensecretsanta.domain.wishlist.WishlistLimits
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.load.LoadContent
+import com.usuallycoding.opensecretsanta.ui.load.ScrollableMessage
 
 /** The person's own wishlist for one group: their items in their order, and while the group allows it, ways to change them. */
 @Composable
@@ -57,9 +58,9 @@ fun WishlistScreen(viewModel: WishlistViewModel, onBack: () -> Unit) {
         Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
             Toolbar(viewModel)
             ui.notice?.let { Notice(it, onDismiss = viewModel::dismissNotice) }
-            LoadContent(state, onRetry = { viewModel.refresh() }) { data ->
+            LoadContent(state, onRetry = { viewModel.refresh() }, onRefresh = { viewModel.refresh() }) { data ->
                 if (data.items.isEmpty()) {
-                    Text(Strings.WISHLIST_EMPTY, modifier = Modifier.fillMaxWidth().padding(24.dp), style = MaterialTheme.typography.bodyLarge)
+                    ScrollableMessage(Strings.WISHLIST_EMPTY)
                 } else {
                     LazyColumn(
                         Modifier.fillMaxWidth(),
@@ -98,7 +99,6 @@ private fun Toolbar(viewModel: WishlistViewModel) {
                 else -> Button(onClick = viewModel::openAdd) { Text(Strings.ADD_ITEM) }
             }
         }
-        TextButton(onClick = { viewModel.refresh() }) { Text(Strings.REFRESH) }
     }
 }
 

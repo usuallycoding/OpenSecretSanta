@@ -48,11 +48,8 @@ fun ReceiverScreen(viewModel: ReceiverViewModel, onBack: () -> Unit) {
     }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = { viewModel.refresh() }) { Text(Strings.REFRESH) }
-            }
             ui.notice?.let { Notice(it, onDismiss = viewModel::dismissNotice) }
-            LoadContent(state, onRetry = { viewModel.refresh() }) { data ->
+            LoadContent(state, onRetry = { viewModel.refresh() }, onRefresh = { viewModel.refresh() }) { data ->
                 LazyColumn(
                     Modifier.fillMaxWidth(),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
