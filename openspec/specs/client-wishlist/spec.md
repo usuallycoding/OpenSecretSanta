@@ -103,13 +103,6 @@ While the group is Archived, "My wishlist" SHALL be read-only: no add, edit, del
 - **WHEN** the server answers an edit or delete with 404 because the item no longer exists
 - **THEN** the sheet closes, the list reloads and the screen says the item no longer exists
 
-### Requirement: Links open in the browser
-A link shown on an item SHALL open in the platform's browser or default handler when chosen, and only addresses the server accepted (`http` or `https`) SHALL ever be shown as links.
-
-#### Scenario: Open a link
-- **WHEN** the person chooses the link of an item
-- **THEN** it opens outside the app in the platform's browser
-
 ### Requirement: Your receiver's wishlist
 While the group is Active or Archived, choosing "Your receiver's wishlist" SHALL open the list the person's receiver keeps for the group, loaded with `GET /groups/{id}/receiver/wishlist`, read-only, in the receiver's order, with each item's title, note and link, or a short explanation that nothing has been added yet. The screen SHALL NOT name the receiver and nothing the person does SHALL be visible to the receiver.
 
@@ -139,3 +132,18 @@ While a wishlist screen loads, the app SHALL show a progress indicator. When it 
 #### Scenario: Return to the app
 - **WHEN** the app returns to the foreground
 - **THEN** the visible wishlist screen reloads without clearing what it shows
+
+### Requirement: Links open in a dialog
+Choosing a link shown on an item SHALL open a dialog with the whole link, not cut, with an "Open in browser" button and a "Cancel" button, and a copy icon as for other read-only text. "Open in browser" SHALL open the link in the platform's browser or default handler and close the dialog; "Cancel" SHALL close it and open nothing. Only addresses the server accepted (`http` or `https`) SHALL ever be shown as links. This applies to every place a wishlist link is shown.
+
+#### Scenario: Show the whole link
+- **WHEN** the person chooses a link of 300 characters
+- **THEN** a dialog shows all of it, wrapped
+
+#### Scenario: Open it
+- **WHEN** the person chooses "Open in browser" in the link dialog
+- **THEN** the link opens outside the app in the platform's browser and the dialog closes
+
+#### Scenario: Cancel
+- **WHEN** the person chooses "Cancel" in the link dialog
+- **THEN** the dialog closes and nothing opens

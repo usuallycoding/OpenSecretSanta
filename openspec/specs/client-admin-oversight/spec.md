@@ -34,7 +34,7 @@ The detail of an Active or Archived group SHALL show one list of every Santa and
 - **THEN** the list area shows the problem with "Try again" and the rest of the detail stays
 
 ### Requirement: Participant wishlist
-Choosing "Read wishlist" on a participant of a Pending group SHALL open a bottom sheet with that person's wishlist for the group, loaded with `GET /admin/groups/{id}/participants/{username}/wishlist`, read-only and in the order the participant chose, showing for each item its title and, when set, its note and link, and when it was added or last changed. A link SHALL open in the browser. There SHALL be no wishlist screen, and the sheet SHALL offer no way to add, change, delete or reorder items.
+Choosing "Read wishlist" on a participant of a Pending group SHALL open a bottom sheet with that person's wishlist for the group, loaded with `GET /admin/groups/{id}/participants/{username}/wishlist`, read-only and in the order the participant chose, showing for each item its title and, when set, its note and link, and when it was added or last changed. Choosing a link SHALL open the link dialog of `client-wishlist`. There SHALL be no wishlist screen, and the sheet SHALL offer no way to add, change, delete or reorder items.
 
 #### Scenario: List shown in order
 - **WHEN** a Pending group's participant has three items in a chosen order
@@ -50,7 +50,7 @@ Choosing "Read wishlist" on a participant of a Pending group SHALL open a bottom
 
 #### Scenario: Link opens
 - **WHEN** the owner chooses an item's link
-- **THEN** it opens in the browser
+- **THEN** the link dialog opens, and the link opens in the browser only from its "Open in browser" button
 
 ### Requirement: User sheet
 Choosing either username in a row of the pair list SHALL open a bottom sheet with that person's details, loaded with `GET /admin/users/{username}` and shown as the user detail of `client-admin-users`: username, the profile fields that are set, and the temporary password while it is still temporary. The sheet SHALL offer "Reset password" with the same confirmation and one-time password dialog as the Users tab, and SHALL offer none for the administrator's own username.
