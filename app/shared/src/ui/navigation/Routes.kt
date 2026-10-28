@@ -31,3 +31,19 @@ data class SantaRoute(val groupId: Long)
 /** What the person's receiver keeps for one group, read-only. */
 @Serializable
 data class ReceiverWishlistRoute(val groupId: Long)
+
+/** The administrator's own groups: the first screen of the admin view. */
+@Serializable
+data object AdminGroupsRoute
+
+/** The form for a new group. */
+@Serializable
+data object AdminGroupNewRoute
+
+/** One of the administrator's groups. */
+@Serializable
+data class AdminGroupRoute(val id: Long)
+
+/** The form for the details of an existing group. */
+@Serializable
+data class AdminGroupEditRoute(val id: Long)

@@ -44,6 +44,11 @@ import androidx.navigation.toRoute
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupFormScreen
+import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupFormViewModel
+import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupScreen
+import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupViewModel
+import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupsScreen
 import com.usuallycoding.opensecretsanta.ui.gift.ReceiverScreen
 import com.usuallycoding.opensecretsanta.ui.gift.ReceiverViewModel
 import com.usuallycoding.opensecretsanta.ui.gift.SantaQuestionsScreen
@@ -54,6 +59,10 @@ import com.usuallycoding.opensecretsanta.ui.groups.GiftEntry
 import com.usuallycoding.opensecretsanta.ui.groups.GroupDetailScreen
 import com.usuallycoding.opensecretsanta.ui.groups.GroupDetailViewModel
 import com.usuallycoding.opensecretsanta.ui.groups.GroupsScreen
+import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupEditRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupNewRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.GroupRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.GroupsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.ProfileRoute
@@ -82,7 +91,16 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
     val destination = navController.currentBackStackEntryAsState().value?.destination
     val participant = view == AppView.Participant
     // below a group (its detail or one of its wishlists) there is a way back
-    val onGroup = participant && destination?.belowGroups() == true
+    val onGroup = if (participant) destination?.belowGroups() == true else destination?.belowAdminGroups() == true
+    // the first view is the one the NavHost starts on; a later switch opens the other view's first screen
+    val startRoute = remember { if (viewModel.view.value == AppView.Admin) AdminGroupsRoute else GroupsRoute }
+    var shownView by remember { mutableStateOf(view) }
+    LaunchedEffect(view) {
+        if (view != shownView) {
+            shownView = view
+            navController.openView(if (view == AppView.Admin) AdminGroupsRoute else GroupsRoute)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -102,8 +120,8 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
         bottomBar = { if (participant) TabBar(navController, destination) },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
-            if (participant) {
-                NavHost(navController, startDestination = GroupsRoute) {
+            run {
+                NavHost(navController, startDestination = startRoute) {
                     composable<GroupsRoute> {
                         GroupsScreen(koinViewModel(), onOpen = { navController.navigate(GroupRoute(it)) })
                     }
@@ -161,11 +179,39 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                         )
                     }
                     composable<ProfileRoute> { ProfileScreen(koinViewModel()) }
-                }
-            } else {
-                Centered {
-                    Text(Strings.currentView(Strings.ADMIN_VIEW), style = MaterialTheme.typography.titleMedium)
-                    Text(Strings.ADMIN_PLACEHOLDER)
+                    // stand-ins until the admin screens arrive
+                    composable<AdminGroupsRoute> {
+                        AdminGroupsScreen(
+                            koinViewModel(),
+                            onOpen = { navController.navigate(AdminGroupRoute(it)) },
+                            onNew = { navController.navigate(AdminGroupNewRoute) },
+                        )
+                    }
+                    composable<AdminGroupNewRoute> {
+                        AdminGroupFormScreen(
+                            koinViewModel<AdminGroupFormViewModel>(key = "admin-group-new") { parametersOf(AdminGroupFormViewModel.NEW_GROUP) },
+                            // the new group takes the form's place, so back from it returns to the list
+                            onSaved = { id -> navController.navigate(AdminGroupRoute(id)) { popUpTo<AdminGroupNewRoute> { inclusive = true } } },
+                            onBack = { navController.popBackStack() },
+                        )
+                    }
+                    composable<AdminGroupRoute> { entry ->
+                        val groupId = entry.toRoute<AdminGroupRoute>().id
+                        AdminGroupScreen(
+                            koinViewModel<AdminGroupViewModel>(key = "admin-group-$groupId") { parametersOf(groupId) },
+                            onBack = { navController.popBackStack() },
+                            onEdit = { navController.navigate(AdminGroupEditRoute(groupId)) },
+                            onDeleted = { navController.popBackStack() },
+                        )
+                    }
+                    composable<AdminGroupEditRoute> { entry ->
+                        val groupId = entry.toRoute<AdminGroupEditRoute>().id
+                        AdminGroupFormScreen(
+                            koinViewModel<AdminGroupFormViewModel>(key = "admin-group-edit-$groupId") { parametersOf(groupId) },
+                            onSaved = { navController.popBackStack() },
+                            onBack = { navController.popBackStack() },
+                        )
+                    }
                 }
             }
         }
@@ -173,7 +219,10 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
 }
 
 private fun titleOf(view: AppView, destination: NavDestination?): String = when {
-    view == AppView.Admin -> Strings.TITLE_ADMIN
+    destination?.hasRoute<AdminGroupNewRoute>() == true -> Strings.ADMIN_NEW_GROUP
+    destination?.hasRoute<AdminGroupEditRoute>() == true -> Strings.ADMIN_EDIT_GROUP
+    destination?.hasRoute<AdminGroupRoute>() == true -> Strings.ADMIN_GROUP
+    view == AppView.Admin -> Strings.ADMIN_GROUPS
     destination?.hasRoute<GroupRoute>() == true -> Strings.TITLE_GROUP
     destination?.hasRoute<WishlistRoute>() == true -> Strings.MY_WISHLIST
     destination?.hasRoute<ReceiverWishlistRoute>() == true -> Strings.RECEIVER_WISHLIST
@@ -231,6 +280,15 @@ private fun TabBar(navController: NavController, destination: NavDestination?) {
 private fun NavDestination.belowGroups(): Boolean =
     hasRoute<GroupRoute>() || hasRoute<WishlistRoute>() || hasRoute<ReceiverWishlistRoute>() ||
         hasRoute<ReceiverRoute>() || hasRoute<SantaQuestionsRoute>() || hasRoute<SantaRoute>()
+
+private fun NavDestination.belowAdminGroups(): Boolean =
+    hasRoute<AdminGroupNewRoute>() || hasRoute<AdminGroupRoute>() || hasRoute<AdminGroupEditRoute>()
+
+/** Opens a view's first screen with nothing of the other view behind it, so back leaves the app from either. */
+private fun NavController.openView(route: Any) = navigate(route) {
+    popUpTo(graph.id) { inclusive = true }
+    launchSingleTop = true
+}
 
 private fun NavController.openTab(route: Any) = navigate(route) {
     popUpTo(graph.findStartDestination().id) { saveState = true }

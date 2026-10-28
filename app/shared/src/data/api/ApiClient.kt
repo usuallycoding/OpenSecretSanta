@@ -1,15 +1,20 @@
 package com.usuallycoding.opensecretsanta.data.api
 
 import com.usuallycoding.opensecretsanta.contract.AccountDto
+import com.usuallycoding.opensecretsanta.contract.AdminGroupDto
 import com.usuallycoding.opensecretsanta.contract.AnswerRequest
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.AskQuestionRequest
 import com.usuallycoding.opensecretsanta.contract.ChangePasswordRequest
 import com.usuallycoding.opensecretsanta.contract.ChangePasswordResponse
+import com.usuallycoding.opensecretsanta.contract.CreateGroupRequest
 import com.usuallycoding.opensecretsanta.contract.ErrorResponse
+import com.usuallycoding.opensecretsanta.contract.GroupChangeResponse
+import com.usuallycoding.opensecretsanta.contract.GroupDetailsRequest
 import com.usuallycoding.opensecretsanta.contract.LoginRequest
 import com.usuallycoding.opensecretsanta.contract.LoginResponse
 import com.usuallycoding.opensecretsanta.contract.MemberGroupDto
+import com.usuallycoding.opensecretsanta.contract.ParticipantsRequest
 import com.usuallycoding.opensecretsanta.contract.ProfileUpdateRequest
 import com.usuallycoding.opensecretsanta.contract.QuestionDto
 import com.usuallycoding.opensecretsanta.contract.ReceiverDto
@@ -126,6 +131,39 @@ class ApiClient(
 
     /** Who the person's Santa was; the server only answers once the group is archived. */
     suspend fun santa(groupId: Long): ApiResult<SantaRevealDto> = call(HttpMethod.Get, ApiRoutes.groupSanta(groupId))
+
+    // --- administrator: groups --------------------------------------------------------------
+
+    /** The administrator's own groups, in the order the server returns them. */
+    suspend fun adminGroups(): ApiResult<List<AdminGroupDto>> = call(HttpMethod.Get, ApiRoutes.ADMIN_GROUPS)
+
+    suspend fun adminGroup(id: Long): ApiResult<AdminGroupDto> = call(HttpMethod.Get, ApiRoutes.adminGroup(id))
+
+    /** Creates a Draft owned by the caller. */
+    suspend fun createGroup(request: CreateGroupRequest): ApiResult<AdminGroupDto> =
+        call(HttpMethod.Post, ApiRoutes.ADMIN_GROUPS, body = request)
+
+    /** Replaces the editable details; a field left out is cleared. */
+    suspend fun updateGroup(id: Long, request: GroupDetailsRequest): ApiResult<AdminGroupDto> =
+        call(HttpMethod.Put, ApiRoutes.adminGroup(id), body = request)
+
+    /** Replaces the whole participant list; in a Pending group the answer lists the accounts it created. */
+    suspend fun setParticipants(id: Long, usernames: List<String>): ApiResult<GroupChangeResponse> =
+        call(HttpMethod.Put, ApiRoutes.adminGroupParticipants(id), body = ParticipantsRequest(usernames))
+
+    /** The server answers 204 with no body; only a Draft can be deleted. */
+    suspend fun deleteGroup(id: Long): ApiResult<Unit> = call(HttpMethod.Delete, ApiRoutes.adminGroup(id))
+
+    /** Draft to Pending; the answer lists the accounts it created, with their temporary passwords. */
+    suspend fun makePending(id: Long): ApiResult<GroupChangeResponse> =
+        call(HttpMethod.Post, ApiRoutes.adminGroupPending(id))
+
+    /** Pending to Active: draws the names and freezes the participants. */
+    suspend fun activate(id: Long): ApiResult<GroupChangeResponse> =
+        call(HttpMethod.Post, ApiRoutes.adminGroupActivate(id))
+
+    suspend fun archive(id: Long): ApiResult<GroupChangeResponse> =
+        call(HttpMethod.Post, ApiRoutes.adminGroupArchive(id))
 
     suspend fun changePassword(currentPassword: String, newPassword: String): ApiResult<ChangePasswordResponse> =
         call(HttpMethod.Put, ApiRoutes.ME_PASSWORD, body = ChangePasswordRequest(currentPassword, newPassword))

@@ -135,7 +135,7 @@ A Draft group has no wishlists yet and a Draft or Pending group has no threads; 
 
 ### The app
 
-One Compose Multiplatform UI (`app/shared`) runs on Android, iOS and the web. It signs in, makes a person replace a temporary password, keeps the session, and shows a participant view for everyone plus an admin view for administrators, who switch between the two from the menu at the top right. The admin view is still a placeholder.
+One Compose Multiplatform UI (`app/shared`) runs on Android, iOS and the web. It signs in, makes a person replace a temporary password, keeps the session, and shows a participant view for everyone plus an admin view for administrators, who switch between the two from the menu at the top right (each switch opens the other view on its first screen).
 
 The participant view has two tabs:
 
@@ -145,6 +145,17 @@ The participant view has two tabs:
 
   Once the names are drawn the page also has a **Your gift** section. **Your receiver** shows who you give to and whatever postal details they have set (full name, address, phone, delivery information), then the questions you asked them, numbered, each with their answer or "Not answered yet"; "Ask a question" opens a bottom sheet, you can ask up to 30, and a question cannot be changed or deleted. **Questions from your Santa** lists what your Santa asked, with "Answer" or "Change answer" opening a bottom sheet; nothing on it says who the Santa is. When the group is Archived both threads stay readable but nothing changes, and a third entry, **Your Santa**, reveals their username and name.
 - **Profile** shows your username and lets you edit your full name, email, phone, address and delivery information. A Santa uses your name and address to post your gift, so the screen asks for them while either is empty. Edits are kept when you switch tabs, and the email and the 500-character limit are checked before anything is sent.
+
+The admin view starts on the administrator's own groups (never another administrator's). **New group** opens a form for name, description, location, date and time; the date is typed as `2026-12-24` and the time as `18:30`, and everything is checked before sending exactly as the server checks it. A group's page shows its state and what it means, its participants (marked "no account yet" or "profile incomplete" where that is so) and what can be done in that state:
+
+| State    | What the page offers                                                                                          |
+|----------|---------------------------------------------------------------------------------------------------------------|
+| Draft    | Edit details, edit participants, **Make pending**, **Delete**                                                 |
+| Pending  | Edit details, edit participants (people added now get an account), **Draw the names** (needs at least 4 people) |
+| Active   | Edit details, the roster read-only, **Archive**                                                               |
+| Archived | Everything read-only                                                                                          |
+
+Each step asks for a confirmation that says what it does. When a step creates accounts, a dialog shows each new username with its temporary password once, selectable so it can be copied; the people must change it when they first sign in, and the app keeps none of it after the dialog is closed. Users (reset a password, promote) and the owner's oversight screens are the next admin changes.
 
 Back works the platform's way: the system back button or gesture on Android (from the Groups list it leaves the app; from Profile it goes back to Groups first), the edge swipe on iOS and the browser's back button on the web, where the address bar also follows the screens. After a page refresh the web app asks for the password again, and once you sign in it opens the screen named in the address.
 

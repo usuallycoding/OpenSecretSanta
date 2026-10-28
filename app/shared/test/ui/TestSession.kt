@@ -15,7 +15,14 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import com.usuallycoding.opensecretsanta.contract.AdminGroupDto
 import com.usuallycoding.opensecretsanta.contract.AnswerRequest
+import com.usuallycoding.opensecretsanta.contract.CreateGroupRequest
+import com.usuallycoding.opensecretsanta.contract.CreatedAccountDto
+import com.usuallycoding.opensecretsanta.contract.GroupChangeResponse
+import com.usuallycoding.opensecretsanta.contract.GroupDetailsRequest
+import com.usuallycoding.opensecretsanta.contract.ParticipantDto
+import com.usuallycoding.opensecretsanta.contract.ParticipantsRequest
 import com.usuallycoding.opensecretsanta.contract.AskQuestionRequest
 import com.usuallycoding.opensecretsanta.contract.QuestionDto
 import com.usuallycoding.opensecretsanta.contract.ReceiverDto
@@ -41,6 +48,9 @@ class ScriptedServer {
         HttpStatusCode.OK to """{"username":"alice","isAdmin":false,"mustChangePassword":false}"""
     /** The person's own wishlist as the server keeps it: it really adds, edits, deletes and reorders. */
     val wishlist = FakeWishlist()
+
+    /** The administrator's groups, as the admin routes keep and answer them. */
+    val adminGroups = FakeAdminGroups()
 
     /** The receiver, the two question threads and the reveal as the server keeps and answers them. */
     val gift = FakeGift()
@@ -76,6 +86,7 @@ class ScriptedServer {
             ApiRoutes.GROUPS -> json(groupsAnswer.first, groupsAnswer.second)
             else -> {
                 val path = request.url.encodedPath
+                adminGroups.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 gift.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 val wishlistAnswer = wishlist.answer(request.method.value, path, bodies.last())
                 if (wishlistAnswer != null) return@MockEngine json(wishlistAnswer.first, wishlistAnswer.second)
@@ -288,6 +299,152 @@ class FakeGift {
                 val updated = old.copy(answer = text.trim(), answeredAt = old.answeredAt ?: "2026-12-03T10:00:00Z", answerUpdatedAt = "2026-12-03T10:00:00Z")
                 received[index] = updated
                 HttpStatusCode.OK to Json.encodeToString(updated)
+            }
+            else -> null
+        }
+    }
+}
+
+/**
+ * The administrator's group routes with the server's behavior: a group has a state that only moves
+ * forward, the participants can change in a Draft and a Pending group (a Pending group creates the
+ * accounts it lacks), the names can be drawn with at least 4 people, and only a Draft is deleted.
+ * A group owned by someone else answers 404. A test can queue a failure for the next write.
+ */
+class FakeAdminGroups {
+    class Group(
+        val id: Long,
+        var name: String,
+        var description: String? = null,
+        var location: String? = null,
+        var date: String? = null,
+        var time: String? = null,
+        var state: String = "draft",
+        var participants: List<String> = emptyList(),
+    )
+
+    private val groups = mutableListOf<Group>()
+    private val foreign = mutableSetOf<Long>()
+    private var nextId = 1L
+    private val failures = ArrayDeque<Pair<HttpStatusCode, String>>()
+
+    /** The usernames that have an account, and which of them have a name and an address. */
+    val accounts = mutableSetOf("alice", "bob")
+    val completeProfiles = mutableSetOf("alice")
+
+    val ids: List<Long> get() = groups.map { it.id }
+    fun group(id: Long): Group = groups.first { it.id == id }
+
+    fun add(name: String, state: String = "draft", participants: List<String> = emptyList()): Long {
+        val group = Group(nextId++, name, state = state, participants = participants)
+        groups += group
+        return group.id
+    }
+
+    /** A group of another administrator, which this one must never see. */
+    fun addForeign(name: String): Long = add(name).also { foreign += it }
+
+    /** Another device changed the group behind the screen. */
+    fun moveBehindTheScenes(id: Long, state: String) {
+        group(id).state = state
+    }
+
+    fun removeBehindTheScenes(id: Long) {
+        groups.removeAll { it.id == id }
+    }
+
+    fun failNextWriteWith(status: HttpStatusCode, code: String, message: String = "refused", field: String? = null) {
+        failures += error(status, code, message, field)
+    }
+
+    private fun error(status: HttpStatusCode, code: String, message: String, field: String? = null) =
+        status to """{"code":"$code","message":"$message"${if (field != null) ""","field":"$field"""" else ""}}"""
+
+    private fun dto(group: Group) = AdminGroupDto(
+        group.id, "admin", group.name, group.description, group.location, group.date, group.time, group.state,
+        group.participants.map { ParticipantDto(it, it in accounts, it in completeProfiles) },
+    )
+
+    private fun response(group: Group, created: List<CreatedAccountDto> = emptyList()) =
+        HttpStatusCode.OK to Json.encodeToString(GroupChangeResponse(dto(group), created))
+
+    private fun createMissingAccounts(group: Group): List<CreatedAccountDto> {
+        val created = group.participants.filter { it !in accounts }
+        accounts += created
+        return created.map { CreatedAccountDto(it, "Temp-$it-1234") }
+    }
+
+    private fun blankName(name: String?) = name.isNullOrBlank() || name.trim().length > 100
+
+    /** The answer to a request under `/admin/groups`, or null when the request is about something else. */
+    fun answer(method: String, path: String, body: String): Pair<HttpStatusCode, String>? {
+        val match = Regex("/admin/groups(?:/(\\d+)(?:/(participants|pending|activate|archive))?)?").matchEntire(path) ?: return null
+        val id = match.groupValues[1].toLongOrNull()
+        val action = match.groupValues[2]
+        if (id == null) {
+            return when (method) {
+                "GET" -> HttpStatusCode.OK to Json.encodeToString(groups.filter { it.id !in foreign }.map(::dto))
+                "POST" -> {
+                    failures.removeFirstOrNull()?.let { return it }
+                    val request = Json.decodeFromString<CreateGroupRequest>(body)
+                    if (blankName(request.name)) return error(HttpStatusCode.BadRequest, "validation_failed", "Name must be 1 to 100 characters long.", "name")
+                    val group = Group(nextId++, request.name.trim(), request.description, request.location, request.date, request.time, participants = request.participants)
+                    groups += group
+                    HttpStatusCode.Created to Json.encodeToString(dto(group))
+                }
+                else -> null
+            }
+        }
+        val group = groups.firstOrNull { it.id == id && it.id !in foreign }
+            ?: return error(HttpStatusCode.NotFound, "not_found", "Group not found.")
+        if (method == "GET" && action.isEmpty()) return HttpStatusCode.OK to Json.encodeToString(dto(group))
+        // everything below changes the group
+        failures.removeFirstOrNull()?.let { return it }
+        val notNow = error(HttpStatusCode.Conflict, "invalid_state", "The group is not in a state that allows this.")
+        return when {
+            method == "PUT" && action.isEmpty() -> {
+                if (group.state == "archived") return notNow
+                val request = Json.decodeFromString<GroupDetailsRequest>(body)
+                if (blankName(request.name)) return error(HttpStatusCode.BadRequest, "validation_failed", "Name must be 1 to 100 characters long.", "name")
+                group.name = request.name.trim()
+                group.description = request.description; group.location = request.location
+                group.date = request.date; group.time = request.time
+                HttpStatusCode.OK to Json.encodeToString(dto(group))
+            }
+            method == "PUT" && action == "participants" -> {
+                if (group.state != "draft" && group.state != "pending") return notNow
+                val names = Json.decodeFromString<ParticipantsRequest>(body).participants
+                if (names.any { !Regex("[a-z0-9._-]{3,32}").matches(it.lowercase()) }) {
+                    return error(HttpStatusCode.BadRequest, "validation_failed", "Username must be 3 to 32 characters long.", "participants")
+                }
+                group.participants = names.map { it.lowercase() }.distinct()
+                response(group, if (group.state == "pending") createMissingAccounts(group) else emptyList())
+            }
+            method == "DELETE" && action.isEmpty() -> if (group.state == "draft") {
+                groups.remove(group)
+                HttpStatusCode.NoContent to ""
+            } else {
+                notNow
+            }
+            method == "POST" && action == "pending" -> if (group.state == "draft") {
+                group.state = "pending"
+                response(group, createMissingAccounts(group))
+            } else {
+                notNow
+            }
+            method == "POST" && action == "activate" -> when {
+                group.state != "pending" -> notNow
+                group.participants.size < 4 -> error(HttpStatusCode.BadRequest, "validation_failed", "A group needs at least 4 participants.", "participants")
+                else -> {
+                    group.state = "active"
+                    response(group)
+                }
+            }
+            method == "POST" && action == "archive" -> if (group.state == "active") {
+                group.state = "archived"
+                response(group)
+            } else {
+                notNow
             }
             else -> null
         }
