@@ -3,7 +3,6 @@ package com.usuallycoding.opensecretsanta.ui.admin
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,8 +26,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.backhandler.BackHandler
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.domain.group.ActivateGroup
@@ -37,20 +38,21 @@ import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.load.LoadContent
 
 /** One of the administrator's groups: its details and people, and what can be done with it in its state. */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AdminGroupScreen(
     viewModel: AdminGroupViewModel,
     onBack: () -> Unit,
     onEdit: () -> Unit,
     onDeleted: () -> Unit,
-    onOpenWishlist: (String) -> Unit,
-    onOpenQuestions: () -> Unit,
 ) {
     val state by viewModel.data.collectAsState()
     val draw by viewModel.draw.collectAsState()
     val ui by viewModel.ui.collectAsState()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
     LaunchedEffect(ui.deleted) { if (ui.deleted) onDeleted() }
+    // Back closes an open sheet before it leaves the screen, on the platforms whose back is not already the sheet's own
+    BackHandler(enabled = ui.sheet != null) { viewModel.dismissSheet() }
 
     if (state.isGone()) {
         Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
@@ -72,10 +74,11 @@ fun AdminGroupScreen(
                     TextButton(onClick = viewModel::dismissNotice) { Text(Strings.OK) }
                 }
             }
-            LoadContent(state, onRetry = { viewModel.refresh() }) { group -> Detail(group, viewModel, ui.busy, draw, onEdit, onOpenWishlist, onOpenQuestions) }
+            LoadContent(state, onRetry = { viewModel.refresh() }) { group -> Detail(group, viewModel, ui.busy, draw, onEdit) }
         }
     }
     ui.participants?.let { ParticipantsSheet(it, viewModel) }
+    ui.sheet?.let { GroupSheetHost(it, viewModel.groupId, viewModel.me, draw, viewModel::dismissSheet) }
     ui.confirming?.let { step -> StepDialog(step, state.value?.name.orEmpty(), viewModel) }
     ui.passwords?.let { PasswordsDialog(Strings.PASSWORDS_TITLE, Strings.PASSWORDS_BODY, it, viewModel::dismissPasswords) }
 }
@@ -108,8 +111,6 @@ private fun Detail(
     busy: Boolean,
     draw: DrawState,
     onEdit: () -> Unit,
-    onOpenWishlist: (String) -> Unit,
-    onOpenQuestions: () -> Unit,
 ) {
     Column(
         Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
@@ -126,35 +127,41 @@ private fun Detail(
         if (viewModel.canEditDetails) {
             OutlinedButton(onClick = onEdit) { Text(Strings.ADMIN_EDIT_DETAILS) }
         }
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("${Strings.GROUP_PARTICIPANTS} (${group.participants.size})", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-            if (viewModel.canEditParticipants) {
-                TextButton(onClick = viewModel::openParticipants) { Text(Strings.ADMIN_EDIT_PARTICIPANTS) }
-            }
-        }
-        if (group.participants.isEmpty()) {
-            Text(Strings.ADMIN_NO_PARTICIPANTS, style = MaterialTheme.typography.bodyMedium)
-        }
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            for (participant in group.participants) {
-                val marks = listOfNotNull(
-                    Strings.ADMIN_NO_ACCOUNT.takeIf { !participant.hasAccount },
-                    Strings.ADMIN_PROFILE_INCOMPLETE.takeIf { participant.hasAccount && !participant.profileComplete },
-                )
-                val label = if (marks.isEmpty()) participant.username else "${participant.username} (${marks.joinToString(", ")})"
-                if (viewModel.canReadWishlists) {
-                    TextButton(onClick = { onOpenWishlist(participant.username) }, modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(vertical = 4.dp)) {
-                        Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                        Text(Strings.ADMIN_OPEN_WISHLIST, style = MaterialTheme.typography.labelLarge)
-                    }
-                } else {
-                    Text(label, style = MaterialTheme.typography.bodyLarge)
+        if (viewModel.canReadDraw) {
+            PairList(
+                draw,
+                onRetry = { viewModel.refresh() },
+                onUser = viewModel::openUserSheet,
+                onPair = { viewModel.openPairSheet(it.santa, it.receiver) },
+            )
+        } else {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("${Strings.GROUP_PARTICIPANTS} (${group.participants.size})", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                if (viewModel.canEditParticipants) {
+                    TextButton(onClick = viewModel::openParticipants) { Text(Strings.ADMIN_EDIT_PARTICIPANTS) }
                 }
             }
-        }
-        DrawSection(draw)
-        if (viewModel.canReadDraw) {
-            OutlinedButton(onClick = onOpenQuestions) { Text(Strings.ADMIN_QUESTIONS_OPEN) }
+            if (group.participants.isEmpty()) {
+                Text(Strings.ADMIN_NO_PARTICIPANTS, style = MaterialTheme.typography.bodyMedium)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                for (participant in group.participants) {
+                    val marks = listOfNotNull(
+                        Strings.ADMIN_NO_ACCOUNT.takeIf { !participant.hasAccount },
+                        Strings.ADMIN_PROFILE_INCOMPLETE.takeIf { participant.hasAccount && !participant.profileComplete },
+                    )
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            if (marks.isEmpty()) participant.username else "${participant.username} (${marks.joinToString(", ")})",
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (viewModel.canReadPendingWishlists) {
+                            TextButton(onClick = { viewModel.openWishlistSheet(participant.username) }) { Text(Strings.ADMIN_OPEN_WISHLIST) }
+                        }
+                    }
+                }
+            }
         }
         val step = viewModel.nextStep
         if (step != null) {

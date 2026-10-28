@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
  */
 class AdminGroupViewModel(
     val groupId: Long,
-    private val me: String,
+    val me: String,
     private val api: ApiClient,
     private val scope: CoroutineScope,
 ) : ViewModel(scope) {
@@ -36,7 +36,7 @@ class AdminGroupViewModel(
     private val _ui = MutableStateFlow(AdminGroupUi())
     private val loader = Loader(scope) {
         api.adminGroup(groupId).map { it.toGroup() }.also { result ->
-            if (result is ApiResult.Success) loadDraw(result.value.phase)
+            if (result is ApiResult.Success) loadDraw(result.value.phase, result.value.participants)
         }
     }
 
@@ -52,22 +52,35 @@ class AdminGroupViewModel(
 
     // --- oversight (read-only) ------------------------------------------------------------------------
 
-    /** The owner reads a participant's list from the moment the group is Pending; a Draft has none. */
-    val canReadWishlists: Boolean
-        get() = current?.phase.let { it == AdminPhase.Pending || it == AdminPhase.Active || it == AdminPhase.Archived }
-
     /** The draw and the question threads exist once the names are drawn. */
     val canReadDraw: Boolean
         get() = current?.phase.let { it == AdminPhase.Active || it == AdminPhase.Archived }
 
+    /** The wishlist link of a Pending group's participants; once the names are drawn the pair sheet shows the receiver's list. */
+    val canReadPendingWishlists: Boolean get() = current?.phase == AdminPhase.Pending
+
+    fun openUserSheet(username: String) {
+        if (canReadDraw) _ui.update { it.copy(sheet = GroupSheet.User(username)) }
+    }
+
+    fun openPairSheet(santa: String, receiver: String) {
+        if (canReadDraw) _ui.update { it.copy(sheet = GroupSheet.Pair(santa, receiver)) }
+    }
+
+    fun openWishlistSheet(username: String) {
+        if (canReadPendingWishlists) _ui.update { it.copy(sheet = GroupSheet.Wishlist(username)) }
+    }
+
+    fun dismissSheet() = _ui.update { it.copy(sheet = null) }
+
     /** Reads the draw for a group that has one; a group that has none is not asked. */
-    private suspend fun loadDraw(phase: AdminPhase) {
+    private suspend fun loadDraw(phase: AdminPhase, participants: List<AdminParticipant>) {
         if (phase != AdminPhase.Active && phase != AdminPhase.Archived) {
             _draw.value = DrawState.None
             return
         }
         _draw.value = when (val result = api.adminAssignments(groupId)) {
-            is ApiResult.Success -> DrawState.Pairs(result.value.map { it.toPair(me) })
+            is ApiResult.Success -> DrawState.Pairs(result.value.map { it.toPair(me, participants) })
             is ApiResult.Failure -> DrawState.Failed
         }
     }
@@ -189,8 +202,9 @@ class AdminGroupViewModel(
 
     /** The server's answer replaces the group; accounts it created are shown once and kept nowhere else. */
     private suspend fun applyChange(change: GroupChangeResponse) {
-        loader.replace(change.group.toGroup())
-        loadDraw(adminPhase(change.group.state))
+        val group = change.group.toGroup()
+        loader.replace(group)
+        loadDraw(group.phase, group.participants)
         val created = change.createdAccounts.map { CreatedAccount(it.username, it.temporaryPassword) }
         if (created.isNotEmpty()) _ui.update { it.copy(passwords = created) }
     }

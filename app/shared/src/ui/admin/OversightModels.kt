@@ -7,7 +7,15 @@ import com.usuallycoding.opensecretsanta.contract.SharedWishlistItemDto
 import com.usuallycoding.opensecretsanta.ui.groups.formatInstant
 
 /** Who gives to whom, with which side is the administrator themselves. */
-data class AdminPair(val santa: String, val receiver: String, val santaIsMe: Boolean, val receiverIsMe: Boolean)
+data class AdminPair(
+    val santa: String,
+    val receiver: String,
+    val santaIsMe: Boolean,
+    val receiverIsMe: Boolean,
+    /** The person's profile lacks a name or an address, so a gift cannot yet be posted to them. */
+    val santaIncomplete: Boolean = false,
+    val receiverIncomplete: Boolean = false,
+)
 
 /** The draw on a group's detail: absent while the group has no draw, otherwise the pairs or the reason they are missing. */
 sealed interface DrawState {
@@ -16,7 +24,10 @@ sealed interface DrawState {
     data object Failed : DrawState
 }
 
-internal fun AssignmentDto.toPair(me: String) = AdminPair(santa, receiver, santa == me, receiver == me)
+internal fun AssignmentDto.toPair(me: String, participants: List<AdminParticipant>): AdminPair {
+    val incomplete = participants.filter { !it.profileComplete }.map { it.username }.toSet()
+    return AdminPair(santa, receiver, santa == me, receiver == me, santa in incomplete, receiver in incomplete)
+}
 
 /** One item of a participant's list as the owner reads it; [changed] is set only when it was edited after it was added. */
 data class OversightItem(val title: String, val note: String?, val url: String?, val added: String, val changed: String?)

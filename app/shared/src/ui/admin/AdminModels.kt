@@ -77,12 +77,25 @@ data class CreatedAccount(val username: String, val temporaryPassword: String)
 /** Something that happened behind the screen's back, said once. */
 enum class AdminNotice { ChangedElsewhere, RosterFrozen, Unreachable }
 
+/** The bottom sheet open on a group's detail, if any: state of the screen, not a route, so nothing keeps it after the screen is left. */
+sealed interface GroupSheet {
+    /** A person's details, with the reset. */
+    data class User(val username: String) : GroupSheet
+
+    /** One pair: the receiver's wishlist and the questions the Santa asked them. */
+    data class Pair(val santa: String, val receiver: String) : GroupSheet
+
+    /** One participant's wishlist, in a Pending group. */
+    data class Wishlist(val username: String) : GroupSheet
+}
+
 data class AdminGroupUi(
     val participants: ParticipantsEditor? = null,
     val confirming: AdminStep? = null,
     val busy: Boolean = false,
     val passwords: List<CreatedAccount>? = null,
     val notice: AdminNotice? = null,
+    val sheet: GroupSheet? = null,
     /** The group was deleted: the screen goes back to the list. */
     val deleted: Boolean = false,
 )

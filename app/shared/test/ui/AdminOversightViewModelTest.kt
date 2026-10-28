@@ -5,9 +5,10 @@ import com.usuallycoding.opensecretsanta.contract.QuestionDto
 import com.usuallycoding.opensecretsanta.contract.SharedWishlistItemDto
 import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupViewModel
+import com.usuallycoding.opensecretsanta.ui.admin.AdminPairThreadViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminParticipantWishlistViewModel
-import com.usuallycoding.opensecretsanta.ui.admin.AdminQuestionsViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.DrawState
+import com.usuallycoding.opensecretsanta.ui.admin.GroupSheet
 import com.usuallycoding.opensecretsanta.ui.groups.formatInstant
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import io.ktor.http.HttpStatusCode
@@ -28,7 +29,8 @@ class AdminOversightViewModelTest {
     private suspend fun wishlist(id: Long, username: String) =
         AdminParticipantWishlistViewModel(id, username, server.api, immediateScope()).also { it.refresh().join() }
 
-    private suspend fun questions(id: Long) = AdminQuestionsViewModel(id, "admin", server.api, immediateScope()).also { it.refresh().join() }
+    private suspend fun thread(id: Long, santa: String, receiver: String) =
+        AdminPairThreadViewModel(id, santa, receiver, server.api, immediateScope()).also { it.refresh().join() }
 
     private fun assignmentCalls() = server.calls.count { it.endsWith("/assignments") }
 
@@ -92,11 +94,83 @@ class AdminOversightViewModelTest {
     }
 
     @Test
-    fun theOwnerReadsWishlistsFromPendingOnButNotInADraft() = runTest {
-        assertFalse(group(groups.add("Idea", "draft", listOf("alice"))).canReadWishlists)
-        assertTrue(group(groups.add("Soon", "pending", listOf("alice"))).canReadWishlists)
-        assertTrue(group(groups.add("Live", "active", listOf("alice", "bob"))).canReadWishlists)
-        assertTrue(group(groups.add("Done", "archived", listOf("alice", "bob"))).canReadWishlists)
+    fun aUsernameWithAnIncompleteProfileIsFlaggedInEveryRowItIsIn() = runTest {
+        groups.completeProfiles += setOf("alice", "carol", "admin")
+        val id = groups.add("Party", "active", listOf("admin", "alice", "bob", "carol"))
+        oversight.draw(id, "alice" to "bob", "bob" to "carol", "carol" to "admin", "admin" to "alice")
+
+        val pairs = (group(id).draw.value as DrawState.Pairs).pairs
+
+        assertEquals(listOf(false, true, false, false), pairs.map { it.santaIncomplete })
+        assertEquals(listOf(true, false, false, false), pairs.map { it.receiverIncomplete })
+    }
+
+    @Test
+    fun noOneIsFlaggedWhenEveryProfileIsComplete() = runTest {
+        groups.completeProfiles += setOf("alice", "bob")
+        val id = groups.add("Party", "archived", listOf("alice", "bob"))
+        oversight.draw(id, "alice" to "bob", "bob" to "alice")
+
+        val pairs = (group(id).draw.value as DrawState.Pairs).pairs
+
+        assertTrue(pairs.none { it.santaIncomplete || it.receiverIncomplete })
+    }
+
+    @Test
+    fun onlyAPendingGroupOffersTheWishlistLink() = runTest {
+        assertFalse(group(groups.add("Idea", "draft", listOf("alice"))).canReadPendingWishlists)
+        assertTrue(group(groups.add("Soon", "pending", listOf("alice"))).canReadPendingWishlists)
+        assertFalse(group(groups.add("Live", "active", listOf("alice", "bob"))).canReadPendingWishlists)
+        assertFalse(group(groups.add("Done", "archived", listOf("alice", "bob"))).canReadPendingWishlists)
+    }
+
+    // --- the sheets on the group's detail ------------------------------------------------------------
+
+    @Test
+    fun aDrawnGroupOpensAUserSheetAndAPairSheetOneAtATime() = runTest {
+        val id = groups.add("Party", "active", listOf("alice", "bob"))
+        oversight.draw(id, "alice" to "bob", "bob" to "alice")
+        val model = group(id)
+
+        model.openUserSheet("alice")
+        assertEquals(GroupSheet.User("alice"), model.ui.value.sheet)
+
+        model.openPairSheet("alice", "bob")
+        assertEquals(GroupSheet.Pair("alice", "bob"), model.ui.value.sheet)
+
+        model.dismissSheet()
+        assertNull(model.ui.value.sheet)
+    }
+
+    @Test
+    fun aPendingGroupOpensOnlyTheWishlistSheet() = runTest {
+        val model = group(groups.add("Soon", "pending", listOf("alice", "bob")))
+
+        model.openUserSheet("alice")
+        model.openPairSheet("alice", "bob")
+        assertNull(model.ui.value.sheet)
+
+        model.openWishlistSheet("bob")
+        assertEquals(GroupSheet.Wishlist("bob"), model.ui.value.sheet)
+    }
+
+    @Test
+    fun aDraftOpensNoSheet() = runTest {
+        val model = group(groups.add("Idea", "draft", listOf("alice", "bob")))
+
+        model.openUserSheet("alice")
+        model.openWishlistSheet("alice")
+
+        assertNull(model.ui.value.sheet)
+    }
+
+    @Test
+    fun anActiveGroupHasNoWishlistSheetOfItsOwn() = runTest {
+        val model = group(groups.add("Live", "active", listOf("alice", "bob")))
+
+        model.openWishlistSheet("bob")
+
+        assertNull(model.ui.value.sheet)
     }
 
     // --- a participant's wishlist ----------------------------------------------------------------------
@@ -165,20 +239,23 @@ class AdminOversightViewModelTest {
         assertEquals(listOf("Socks"), model.state.value.value!!.map { it.title })
     }
 
-    // --- all question threads --------------------------------------------------------------------------
+    // --- one pair's thread ---------------------------------------------------------------------------
 
-    private fun thread(santa: String, receiver: String, vararg questions: QuestionDto) = AdminQuestionThreadDto(santa, receiver, questions.toList())
+    private fun threadOf(santa: String, receiver: String, vararg questions: QuestionDto) = AdminQuestionThreadDto(santa, receiver, questions.toList())
 
     @Test
-    fun everyThreadNamesBothPeopleInOrderAndMarksTheOwner() = runTest {
-        val id = groups.add("Live", "active", listOf("admin", "bob", "carol"))
-        oversight.threads(id, thread("admin", "bob"), thread("bob", "carol"), thread("carol", "admin"))
+    fun onlyTheChosenPairsThreadIsKept() = runTest {
+        val id = groups.add("Live", "active", listOf("alice", "bob", "carol"))
+        oversight.threads(
+            id,
+            threadOf("alice", "bob", QuestionDto(1, "Size?", "2026-12-02T09:00:00Z")),
+            threadOf("bob", "carol", QuestionDto(1, "Colour?", "2026-12-02T09:01:00Z"), QuestionDto(2, "Allergies?", "2026-12-02T09:02:00Z")),
+            threadOf("carol", "alice"),
+        )
 
-        val threads = questions(id).state.value.value!!
+        val questions = thread(id, "bob", "carol").state.value.value!!.questions
 
-        assertEquals(listOf("admin" to "bob", "bob" to "carol", "carol" to "admin"), threads.map { it.santa to it.receiver })
-        assertEquals(listOf(true, false, false), threads.map { it.santaIsMe })
-        assertEquals(listOf(false, false, true), threads.map { it.receiverIsMe })
+        assertEquals(listOf("Colour?", "Allergies?"), questions.map { it.text })
     }
 
     @Test
@@ -186,7 +263,7 @@ class AdminOversightViewModelTest {
         val id = groups.add("Live", "active", listOf("alice", "bob"))
         oversight.threads(
             id,
-            thread(
+            threadOf(
                 "alice", "bob",
                 QuestionDto(1, "Size?", "2026-12-02T09:00:00Z"),
                 QuestionDto(2, "Colour?", "2026-12-02T09:05:00Z", "Blue", "2026-12-03T09:00:00Z", "2026-12-04T10:15:00Z"),
@@ -194,7 +271,7 @@ class AdminOversightViewModelTest {
             ),
         )
 
-        val (first, second, third) = questions(id).state.value.value!!.single().questions
+        val (first, second, third) = thread(id, "alice", "bob").state.value.value!!.questions
 
         assertNull(first.answer)
         assertNull(first.answered)
@@ -205,23 +282,43 @@ class AdminOversightViewModelTest {
     }
 
     @Test
-    fun aThreadWithNoQuestionsIsStillThere() = runTest {
+    fun aPairWithNothingAskedHasAnEmptyThread() = runTest {
         val id = groups.add("Live", "active", listOf("alice", "bob"))
-        oversight.threads(id, thread("alice", "bob"))
+        oversight.threads(id, threadOf("alice", "bob"))
 
-        assertEquals(emptyList(), questions(id).state.value.value!!.single().questions)
+        assertEquals(emptyList(), thread(id, "alice", "bob").state.value.value!!.questions)
+    }
+
+    @Test
+    fun aPairWithNoThreadAtAllIsAlsoEmpty() = runTest {
+        val id = groups.add("Live", "active", listOf("alice", "bob"))
+
+        assertEquals(emptyList(), thread(id, "bob", "alice").state.value.value!!.questions)
     }
 
     @Test
     fun aPendingGroupHasNoThreadsToRead() = runTest {
         val id = groups.add("Soon", "pending", listOf("alice", "bob"))
 
-        assertEquals(409, (questions(id).state.value.error as ApiError.Rejected).status)
+        assertEquals(409, (thread(id, "alice", "bob").state.value.error as ApiError.Rejected).status)
     }
 
     @Test
     fun aGroupOfAnotherAdministratorIsShownAsGone() = runTest {
-        assertTrue(questions(groups.addForeign("Not mine")).state.value.isGone())
+        assertTrue(thread(groups.addForeign("Not mine"), "alice", "bob").state.value.isGone())
+    }
+
+    @Test
+    fun anUnreachableServerKeepsTheThreadAndOffersARetry() = runTest {
+        val id = groups.add("Live", "active", listOf("alice", "bob"))
+        oversight.threads(id, threadOf("alice", "bob", QuestionDto(1, "Size?", "2026-12-02T09:00:00Z")))
+        val model = thread(id, "alice", "bob")
+
+        server.unreachable = true
+        model.refresh().join()
+
+        assertEquals(ApiError.Network, model.state.value.error)
+        assertEquals(1, model.state.value.value!!.questions.size)
     }
 
     // --- reading is never writing ------------------------------------------------------------------------
@@ -232,7 +329,7 @@ class AdminOversightViewModelTest {
         oversight.draw(id, "alice" to "bob")
         group(id)
         wishlist(id, "alice")
-        questions(id)
+        thread(id, "alice", "bob")
 
         assertTrue(server.calls.all { it.startsWith("GET ") }, server.calls.toString())
     }

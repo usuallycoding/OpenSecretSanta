@@ -51,20 +51,35 @@ fun AdminUserScreen(viewModel: AdminUserViewModel, onBack: () -> Unit) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
                 TextButton(onClick = { viewModel.refresh() }) { Text(Strings.REFRESH) }
             }
-            ui.notice?.let { notice ->
-                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        if (notice == UserNotice.Unreachable) Strings.SERVER_UNREACHABLE else Strings.NOTICE_RESET_FAILED,
-                        modifier = Modifier.weight(1f),
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    TextButton(onClick = viewModel::dismissNotice) { Text(Strings.OK) }
-                }
+            UserNoticeRow(ui, viewModel)
+            LoadContent(state, onRetry = { viewModel.refresh() }) { user ->
+                // the detail does not scroll by itself: the sheet that shows it scrolls as a whole
+                Column(Modifier.verticalScroll(rememberScrollState())) { UserDetail(user, viewModel, ui.busy) }
             }
-            LoadContent(state, onRetry = { viewModel.refresh() }) { user -> Detail(user, viewModel, ui.busy) }
         }
     }
+    UserDialogs(viewModel, ui)
+}
+
+/** The failure a reset can leave behind, said once with a way to dismiss it. */
+@Composable
+internal fun UserNoticeRow(ui: AdminUserUi, viewModel: AdminUserViewModel) {
+    ui.notice?.let { notice ->
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                if (notice == UserNotice.Unreachable) Strings.SERVER_UNREACHABLE else Strings.NOTICE_RESET_FAILED,
+                modifier = Modifier.weight(1f),
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            TextButton(onClick = viewModel::dismissNotice) { Text(Strings.OK) }
+        }
+    }
+}
+
+/** The confirmation before a reset and the dialog that shows the new temporary password once. */
+@Composable
+internal fun UserDialogs(viewModel: AdminUserViewModel, ui: AdminUserUi) {
     if (ui.confirming) {
         AlertDialog(
             onDismissRequest = viewModel::cancelReset,
@@ -77,10 +92,11 @@ fun AdminUserScreen(viewModel: AdminUserViewModel, onBack: () -> Unit) {
     ui.created?.let { PasswordsDialog(Strings.RESET_DONE_TITLE, Strings.RESET_DONE_BODY, listOf(it), viewModel::dismissCreated) }
 }
 
+/** A user's profile, their temporary password while it is temporary, and the reset: the Users tab and the group sheet show the same thing. */
 @Composable
-private fun Detail(user: ManagedUser, viewModel: AdminUserViewModel, busy: Boolean) {
+internal fun UserDetail(user: ManagedUser, viewModel: AdminUserViewModel, busy: Boolean) {
     Column(
-        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(user.username, style = MaterialTheme.typography.headlineSmall)

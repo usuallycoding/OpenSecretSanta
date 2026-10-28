@@ -16,6 +16,7 @@ dependencies:
   - $libs.androidx.lifecycle.runtime.compose
   - $libs.androidx.navigation.compose
   - $libs.compose.material.icons.core
+  - $libs.compose.ui.backhandler
   - $libs.koin.core
   - $libs.koin.compose
   - $libs.koin.compose.viewmodel
