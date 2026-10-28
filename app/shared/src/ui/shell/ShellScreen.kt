@@ -3,6 +3,8 @@ package com.usuallycoding.opensecretsanta.ui.shell
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -30,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
@@ -106,6 +109,7 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
         }
     }
 
+    val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     Scaffold(
         topBar = {
             TopAppBar(
@@ -121,7 +125,12 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
             )
         },
         // The tabs stay while a group is open, so switching tabs and coming back finds the group as it was left.
-        bottomBar = { if (participant) TabBar(navController, destination) else AdminTabBar(navController, destination) },
+        // While the keyboard is open the bar is hidden behind it anyway; leaving it out keeps a form's own keyboard padding exact.
+        bottomBar = {
+            if (!imeVisible) {
+                if (participant) TabBar(navController, destination) else AdminTabBar(navController, destination)
+            }
+        },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             run {

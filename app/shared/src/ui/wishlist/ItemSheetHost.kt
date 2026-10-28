@@ -1,6 +1,7 @@
 package com.usuallycoding.opensecretsanta.ui.wishlist
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +24,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.form.FormColumn
+import com.usuallycoding.opensecretsanta.ui.form.MultiLineTextField
+import com.usuallycoding.opensecretsanta.ui.form.SheetTextField
 
 /** The bottom sheet for adding and editing an item, and the confirmation before an item is deleted. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,14 +39,20 @@ internal fun ItemSheetHost(viewModel: WishlistViewModel) {
             onDismissRequest = viewModel::dismissEditor,
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
-            Column(
-                Modifier.fillMaxWidth().imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+            FormColumn(
+                Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(if (editor.adding) Strings.ADD_ITEM_TITLE else Strings.EDIT_ITEM_TITLE, style = MaterialTheme.typography.titleLarge)
-                SheetField(Strings.FIELD_TITLE, editor.title, editor.errors[WishField.Title], singleLine = true) { viewModel.edit(WishField.Title, it) }
-                SheetField(Strings.FIELD_NOTE, editor.note, editor.errors[WishField.Note], singleLine = false) { viewModel.edit(WishField.Note, it) }
-                SheetField(Strings.FIELD_URL, editor.url, editor.errors[WishField.Url], singleLine = true) { viewModel.edit(WishField.Url, it) }
+                SheetField(Strings.FIELD_TITLE, editor.title, editor.errors[WishField.Title]) { viewModel.edit(WishField.Title, it) }
+                MultiLineTextField(
+                    value = editor.note,
+                    onValueChange = { viewModel.edit(WishField.Note, it) },
+                    label = Strings.FIELD_NOTE,
+                    error = editor.errors[WishField.Note],
+                )
+                SheetField(Strings.FIELD_URL, editor.url, editor.errors[WishField.Url]) { viewModel.edit(WishField.Url, it) }
                 editor.general?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }
                 Row(Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (!editor.adding) {
@@ -68,16 +78,6 @@ internal fun ItemSheetHost(viewModel: WishlistViewModel) {
 }
 
 @Composable
-private fun SheetField(label: String, value: String, error: String?, singleLine: Boolean, onChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onChange,
-        label = { Text(label) },
-        singleLine = singleLine,
-        minLines = if (singleLine) 1 else 3,
-        maxLines = if (singleLine) 1 else 6,
-        isError = error != null,
-        supportingText = error?.let { { Text(it) } },
-        modifier = Modifier.fillMaxWidth(),
-    )
+private fun SheetField(label: String, value: String, error: String?, onChange: (String) -> Unit) {
+    SheetTextField(value = value, onValueChange = onChange, label = label, error = error)
 }

@@ -1,6 +1,7 @@
 package com.usuallycoding.opensecretsanta.ui.gift
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +21,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.form.FormColumn
+import com.usuallycoding.opensecretsanta.ui.form.MultiLineTextField
 
 /** The bottom sheet for writing a question or an answer: one multi-line field, Cancel and Save. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,21 +36,13 @@ internal fun TextSheet(
     onDismiss: () -> Unit,
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Column(
-            Modifier.fillMaxWidth().imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+        FormColumn(
+            Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(title, style = MaterialTheme.typography.titleLarge)
-            OutlinedTextField(
-                value = editor.text,
-                onValueChange = onChange,
-                label = { Text(label) },
-                minLines = 3,
-                maxLines = 6,
-                isError = editor.error != null,
-                supportingText = editor.error?.let { { Text(it) } },
-                modifier = Modifier.fillMaxWidth(),
-            )
+            MultiLineTextField(value = editor.text, onValueChange = onChange, label = label, error = editor.error)
             editor.general?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }
             Row(Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalArrangement = Arrangement.End) {
                 TextButton(onClick = onDismiss) { Text(Strings.CANCEL) }

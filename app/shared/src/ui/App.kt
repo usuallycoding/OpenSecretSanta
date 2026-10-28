@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import com.usuallycoding.opensecretsanta.data.session.SessionManager
 import com.usuallycoding.opensecretsanta.data.session.SessionState
 import com.usuallycoding.opensecretsanta.data.session.SignedOutReason
+import com.usuallycoding.opensecretsanta.ui.form.dismissKeyboardOnDrag
 import com.usuallycoding.opensecretsanta.ui.login.LoginScreen
 import com.usuallycoding.opensecretsanta.ui.password.ChangePasswordScreen
 import com.usuallycoding.opensecretsanta.ui.shell.ShellScreen
@@ -58,15 +59,18 @@ private fun AppContent(onNavigationReady: suspend (NavController) -> Unit) {
             is SessionState.SignedIn -> key(current.account.username) {
                 ShellScreen(koinViewModel<ShellViewModel>(key = current.account.username) { parametersOf(current.account) }, onNavigationReady)
             }
-            else -> Box(
-                Modifier.fillMaxSize().safeContentPadding().verticalScroll(rememberScrollState()),
-                contentAlignment = Alignment.Center,
-            ) {
+            else -> {
+                val scrollState = rememberScrollState()
+                Box(
+                    Modifier.fillMaxSize().dismissKeyboardOnDrag(scrollState).safeContentPadding().verticalScroll(scrollState),
+                    contentAlignment = Alignment.Center,
+                ) {
                 when (current) {
                     SessionState.Loading -> CircularProgressIndicator()
                     is SessionState.SignedOut -> LoginScreen(koinViewModel(), sessionEnded = current.reason == SignedOutReason.SessionEnded)
                     is SessionState.PasswordChangeRequired -> ChangePasswordScreen(koinViewModel(), onSignOut = session::signOut)
                     is SessionState.SignedIn -> Unit
+                }
                 }
             }
         }

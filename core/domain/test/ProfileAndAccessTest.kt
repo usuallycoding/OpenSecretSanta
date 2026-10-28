@@ -54,6 +54,13 @@ class ProfileTest {
     }
 
     @Test
+    fun aLineBreakInsideAnAddressIsKeptAndBlankLinesAroundItAreTrimmed() {
+        assertEquals("1 Main Street\nSpringfield", profile(address = "1 Main Street\nSpringfield").address)
+        assertEquals("1 Main Street\n\nSpringfield", profile(address = "\n\n  1 Main Street\n\nSpringfield \n").address)
+        assertEquals("Ring twice\nleave at the door", profile(deliveryInfo = "Ring twice\nleave at the door").deliveryInfo)
+    }
+
+    @Test
     fun clearedFieldIsNull() {
         assertNull(profile(phone = null).phone)
     }

@@ -1,6 +1,7 @@
 package com.usuallycoding.opensecretsanta.ui.admin
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.form.FormColumn
+import com.usuallycoding.opensecretsanta.ui.form.MultiLineTextField
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.load.LoadContent
 
@@ -53,12 +56,18 @@ fun AdminGroupFormScreen(viewModel: AdminGroupFormViewModel, onSaved: (Long) -> 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
             LoadContent(loaded, onRetry = { viewModel.refresh() }) {
-                Column(
-                    Modifier.fillMaxWidth().imePadding().verticalScroll(rememberScrollState()).padding(16.dp),
+                FormColumn(
+                    Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Field(Strings.GROUP_NAME, form.name, form.errors[GroupField.Name], hint = null, singleLine = true) { viewModel.edit(GroupField.Name, it) }
-                    Field(Strings.GROUP_DESCRIPTION, form.description, form.errors[GroupField.Description], hint = null, singleLine = false) { viewModel.edit(GroupField.Description, it) }
+                    MultiLineTextField(
+                        value = form.description,
+                        onValueChange = { viewModel.edit(GroupField.Description, it) },
+                        label = Strings.GROUP_DESCRIPTION,
+                        error = form.errors[GroupField.Description],
+                    )
                     Field(Strings.GROUP_LOCATION, form.location, form.errors[GroupField.Location], hint = null, singleLine = true) { viewModel.edit(GroupField.Location, it) }
                     Field(Strings.GROUP_DATE, form.date, form.errors[GroupField.Date], hint = Strings.GROUP_DATE_HINT, singleLine = true, numeric = true) { viewModel.edit(GroupField.Date, it) }
                     Field(Strings.GROUP_TIME, form.time, form.errors[GroupField.Time], hint = Strings.GROUP_TIME_HINT, singleLine = true, numeric = true) { viewModel.edit(GroupField.Time, it) }
@@ -77,8 +86,6 @@ private fun Field(label: String, value: String, error: String?, hint: String?, s
         onValueChange = onChange,
         label = { Text(label) },
         singleLine = singleLine,
-        minLines = if (singleLine) 1 else 3,
-        maxLines = if (singleLine) 1 else 6,
         isError = error != null,
         supportingText = (error ?: hint)?.let { { Text(it) } },
         keyboardOptions = if (numeric) KeyboardOptions(keyboardType = KeyboardType.Ascii) else KeyboardOptions.Default,

@@ -3,6 +3,7 @@ package com.usuallycoding.opensecretsanta.ui.admin
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,6 +35,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.domain.group.ActivateGroup
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.form.FormColumn
+import com.usuallycoding.opensecretsanta.ui.form.SheetTextField
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.load.LoadContent
 
@@ -206,19 +209,18 @@ private fun StepDialog(step: AdminStep, groupName: String, viewModel: AdminGroup
 @Composable
 private fun ParticipantsSheet(editor: ParticipantsEditor, viewModel: AdminGroupViewModel) {
     ModalBottomSheet(onDismissRequest = viewModel::dismissParticipants, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Column(
-            Modifier.fillMaxWidth().imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+        FormColumn(
+            Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(Strings.ADMIN_PARTICIPANTS_TITLE, style = MaterialTheme.typography.titleLarge)
             Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
+                SheetTextField(
                     value = editor.input,
                     onValueChange = viewModel::typeUsername,
-                    label = { Text(Strings.ADMIN_USERNAME) },
-                    singleLine = true,
-                    isError = editor.error != null,
-                    supportingText = editor.error?.let { { Text(it) } },
+                    label = Strings.ADMIN_USERNAME,
+                    error = editor.error,
                     modifier = Modifier.weight(1f),
                 )
                 Button(onClick = viewModel::addUsername, modifier = Modifier.padding(top = 8.dp)) { Text(Strings.ADMIN_ADD) }
