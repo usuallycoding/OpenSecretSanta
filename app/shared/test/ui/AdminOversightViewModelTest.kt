@@ -205,9 +205,9 @@ class AdminOversightViewModelTest {
 
         val items = wishlist(id, "alice").state.value.value!!
 
-        assertEquals("1 Dec 2026, 10:00 UTC", items[0].added)
+        assertEquals("1 Dec 2026, 12:00", items[0].added)
         assertNull(items[0].changed)
-        assertEquals("5 Dec 2026, 08:30 UTC", items[1].changed)
+        assertEquals("5 Dec 2026, 10:30", items[1].changed)
         assertEquals("Blue", items[1].note)
         assertEquals("https://shop.example/x", items[1].url)
     }
@@ -277,9 +277,9 @@ class AdminOversightViewModelTest {
 
         assertNull(first.answer)
         assertNull(first.answered)
-        assertEquals("2 Dec 2026, 09:00 UTC", first.asked)
-        assertEquals("3 Dec 2026, 09:00 UTC", second.answered)
-        assertEquals("4 Dec 2026, 10:15 UTC", second.answerChanged)
+        assertEquals("2 Dec 2026, 11:00", first.asked)
+        assertEquals("3 Dec 2026, 11:00", second.answered)
+        assertEquals("4 Dec 2026, 12:15", second.answerChanged)
         assertNull(third.answerChanged)
     }
 
@@ -339,6 +339,6 @@ class AdminOversightViewModelTest {
     @Test
     fun instantsThatCannotBeReadAreShownAsTheyCame() {
         assertEquals("yesterday", formatInstant("yesterday"))
-        assertEquals("24 Dec 2026, 18:30 UTC", formatInstant("2026-12-24T18:30:15.123Z"))
+        assertEquals("24 Dec 2026, 20:30", formatInstant("2026-12-24T18:30:15.123Z"))
     }
 }

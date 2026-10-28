@@ -27,9 +27,9 @@ class ReceiverWishlistViewModelTest {
 
         assertEquals(
             listOf(
-                SharedWishItem("Gloves", "Black", "https://shop.example/gloves"),
-                SharedWishItem("Book", null, null),
-                SharedWishItem("Tea", "Loose", null),
+                SharedWishItem("Gloves", "Black", "https://shop.example/gloves", "1 Dec 2026, 12:00", null),
+                SharedWishItem("Book", null, null, "1 Dec 2026, 12:00", null),
+                SharedWishItem("Tea", "Loose", null, "1 Dec 2026, 12:00", null),
             ),
             items,
         )

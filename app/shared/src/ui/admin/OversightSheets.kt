@@ -41,6 +41,7 @@ import com.usuallycoding.opensecretsanta.ui.wishlist.ItemText
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
+import com.usuallycoding.opensecretsanta.ui.form.TimesLine
 import com.usuallycoding.opensecretsanta.ui.form.SheetFrame
 import com.usuallycoding.opensecretsanta.ui.load.ScrollingBox
 
@@ -214,11 +215,7 @@ private fun WishlistItems(items: List<OversightItem>) {
         for (item in items) {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    ItemText(item.title, item.note, item.url)
-                    Text(Strings.adminAdded(item.added), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    item.changed?.let {
-                        Text(Strings.adminChanged(it), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                    ItemText(item.title, item.note, item.url, item.added, item.changed)
                 }
             }
         }
@@ -235,15 +232,10 @@ private fun ThreadQuestions(thread: PairThread) {
         for (question in thread.questions) {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 ReadOnlyText("${question.number}. ${question.text}", style = MaterialTheme.typography.titleSmall, label = Strings.QUESTION_LABEL)
-                Text(Strings.adminAsked(question.asked), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TimesLine(Strings.asked(question.asked))
                 if (question.answer != null) {
                     ReadOnlyText(question.answer, style = MaterialTheme.typography.bodyMedium, label = Strings.ANSWER)
-                    question.answered?.let {
-                        Text(Strings.adminAnswered(it), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    question.answerChanged?.let {
-                        Text(Strings.adminAnswerChanged(it), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                    TimesLine(question.answered?.let(Strings::answered), question.answerChanged?.let(Strings::answerChanged))
                 } else {
                     Text(Strings.NOT_ANSWERED, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }

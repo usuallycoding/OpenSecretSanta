@@ -1,6 +1,17 @@
 package com.usuallycoding.opensecretsanta.ui.groups
 
 import com.usuallycoding.opensecretsanta.ui.Strings
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.minus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Instant
 
 private val MONTHS = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 private val DATE = Regex("(\\d{4})-(\\d{2})-(\\d{2})")
@@ -51,12 +62,40 @@ fun groupPhase(state: String): GroupPhase = when (state.lowercase()) {
 /** Usernames are case-insensitive, so "Alice" and "alice" are the same person. */
 fun isMe(username: String, me: String): Boolean = username.equals(me, ignoreCase = true)
 
-private val INSTANT = Regex("(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2})(?::\\d{2}(?:\\.\\d+)?)?Z")
-
-/** An instant from the server (ISO-8601, UTC) for reading: `1 Dec 2026, 10:00 UTC`. One that cannot be read is shown as it came. */
+/**
+ * An instant from the server (ISO-8601, UTC) for reading in Bucharest time, summer time included, with no zone suffix:
+ * `1 Dec 2026, 12:00`. One that cannot be read is shown as it came.
+ *
+ * Bucharest is UTC+2, and UTC+3 from the last Sunday of March at 01:00 UTC until the last Sunday of October at
+ * 01:00 UTC (the EU rule). It is applied here instead of asking the platform for the `Europe/Bucharest` zone, because the
+ * web cannot always provide the time-zone database, and every platform must show the same time.
+ */
 fun formatInstant(raw: String): String {
-    val match = INSTANT.matchEntire(raw.trim()) ?: return raw
-    val (year, month, day, hour, minute) = match.destructured
-    val monthName = MONTHS.getOrNull(month.toInt() - 1) ?: return raw
-    return "${day.toInt()} $monthName $year, $hour:$minute UTC"
+    val instant = try {
+        Instant.parse(raw.trim())
+    } catch (_: Exception) {
+        return raw
+    }
+    val offset = if (inEuSummerTime(instant)) 3.hours else 2.hours
+    val local = (instant + offset).toLocalDateTime(TimeZone.UTC)
+    val monthName = MONTHS[local.month.ordinal]
+    val hour = local.hour.toString().padStart(2, '0')
+    val minute = local.minute.toString().padStart(2, '0')
+    return "${local.day} $monthName ${local.year}, $hour:$minute"
+}
+
+/** When something was changed, for reading, or null when it never was: the change is the same instant as the creation. */
+fun changedTime(created: String?, updated: String): String? = updated.takeIf { it != created }?.let(::formatInstant)
+
+/** Whether the EU's summer time is in force at [instant]. */
+private fun inEuSummerTime(instant: Instant): Boolean {
+    val year = instant.toLocalDateTime(TimeZone.UTC).year
+    return instant >= lastSundayAtOneUtc(year, 3) && instant < lastSundayAtOneUtc(year, 10)
+}
+
+/** 01:00 UTC on the last Sunday of [month], a month of 31 days (March and October are). */
+private fun lastSundayAtOneUtc(year: Int, month: Int): Instant {
+    val lastDay = LocalDate(year, month, 31)
+    val sunday = lastDay.minus(DatePeriod(days = lastDay.dayOfWeek.isoDayNumber % 7))
+    return LocalDateTime(sunday, LocalTime(1, 0)).toInstant(TimeZone.UTC)
 }

@@ -3,9 +3,21 @@ package com.usuallycoding.opensecretsanta.ui.gift
 import com.usuallycoding.opensecretsanta.contract.QuestionDto
 import com.usuallycoding.opensecretsanta.contract.ReceiverDto
 import com.usuallycoding.opensecretsanta.ui.groups.GroupPhase
+import com.usuallycoding.opensecretsanta.ui.groups.changedTime
+import com.usuallycoding.opensecretsanta.ui.groups.formatInstant
 
-/** One question of a thread with the answer the receiver gave, if any. Nothing in it can name anyone. */
-data class Question(val number: Int, val text: String, val answer: String?)
+/**
+ * One question of a thread with the answer the receiver gave, if any, and when each happened. [answerChanged] is set only
+ * when the answer was changed after it was first given. Nothing in it can name anyone.
+ */
+data class Question(
+    val number: Int,
+    val text: String,
+    val answer: String?,
+    val asked: String,
+    val answered: String?,
+    val answerChanged: String?,
+)
 
 /** Where the person posts their gift: whatever the receiver has set, blank values left out. */
 data class ReceiverInfo(
@@ -40,7 +52,14 @@ enum class GiftNotice { Locked, LimitReached, QuestionGone, Unreachable }
 
 data class ReceiverUiState(val editor: TextEditor? = null, val notice: GiftNotice? = null)
 
-internal fun QuestionDto.toQuestion() = Question(number, text, answer)
+internal fun QuestionDto.toQuestion() = Question(
+    number = number,
+    text = text,
+    answer = answer,
+    asked = formatInstant(askedAt),
+    answered = answeredAt?.let(::formatInstant),
+    answerChanged = answerUpdatedAt?.let { changedTime(answeredAt, it) },
+)
 
 internal fun ReceiverDto.toInfo() = ReceiverInfo(
     username,

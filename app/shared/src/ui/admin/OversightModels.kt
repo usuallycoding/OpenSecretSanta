@@ -4,6 +4,7 @@ import com.usuallycoding.opensecretsanta.contract.AdminQuestionThreadDto
 import com.usuallycoding.opensecretsanta.contract.AssignmentDto
 import com.usuallycoding.opensecretsanta.contract.QuestionDto
 import com.usuallycoding.opensecretsanta.contract.SharedWishlistItemDto
+import com.usuallycoding.opensecretsanta.ui.groups.changedTime
 import com.usuallycoding.opensecretsanta.ui.groups.formatInstant
 
 /** Who gives to whom, with which side is the administrator themselves. */
@@ -37,7 +38,7 @@ internal fun SharedWishlistItemDto.toOversightItem() = OversightItem(
     note = note?.takeIf { it.isNotBlank() },
     url = url?.takeIf { it.isNotBlank() },
     added = formatInstant(createdAt),
-    changed = updatedAt.takeIf { it != createdAt }?.let(::formatInstant),
+    changed = changedTime(createdAt, updatedAt),
 )
 
 /** A question with its answer; [answerChanged] is set only when the answer was changed after it was first given. */
@@ -58,7 +59,7 @@ internal fun QuestionDto.toOversightQuestion() = OversightQuestion(
     asked = formatInstant(askedAt),
     answer = answer,
     answered = answeredAt?.let(::formatInstant),
-    answerChanged = answerUpdatedAt?.takeIf { it != answeredAt }?.let(::formatInstant),
+    answerChanged = answerUpdatedAt?.let { changedTime(answeredAt, it) },
 )
 
 internal fun AdminQuestionThreadDto.toThread(me: String) = OversightThread(

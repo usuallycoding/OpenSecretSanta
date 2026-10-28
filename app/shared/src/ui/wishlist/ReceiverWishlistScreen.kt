@@ -40,7 +40,7 @@ fun ReceiverWishlistSection(viewModel: ReceiverWishlistViewModel) {
                 Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     for (item in items) {
                         Card(Modifier.fillMaxWidth()) {
-                            ItemText(item.title, item.note, item.url, Modifier.padding(16.dp))
+                            ItemText(item.title, item.note, item.url, item.added, item.changed, Modifier.padding(16.dp))
                         }
                     }
                 }

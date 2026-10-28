@@ -36,6 +36,7 @@ import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.load.LoadSection
 import com.usuallycoding.opensecretsanta.ui.form.LinkText
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
+import com.usuallycoding.opensecretsanta.ui.form.TimesLine
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.material.icons.filled.Add
 import com.usuallycoding.opensecretsanta.ui.form.AppFab
@@ -145,13 +146,14 @@ private val ITEM_BUTTON = 40.dp
 
 /** An item's title, note and link, as the person and their Santa both read it. A link opens a dialog first. */
 @Composable
-internal fun ItemText(title: String, note: String?, url: String?, modifier: Modifier = Modifier) {
+internal fun ItemText(title: String, note: String?, url: String?, added: String, changed: String?, modifier: Modifier = Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
         ReadOnlyText(title, style = MaterialTheme.typography.titleMedium, label = Strings.FIELD_TITLE, maxLines = 1)
         note?.let { ReadOnlyText(it, style = MaterialTheme.typography.bodyMedium, label = Strings.NOTE_LABEL) }
         url?.let { LinkText(it) }
+        TimesLine(Strings.added(added), changed?.let(Strings::changed))
     }
 }
 
 @Composable
-private fun ItemText(item: WishItem, modifier: Modifier = Modifier) = ItemText(item.title, item.note, item.url, modifier)
+private fun ItemText(item: WishItem, modifier: Modifier = Modifier) = ItemText(item.title, item.note, item.url, item.added, item.changed, modifier)
