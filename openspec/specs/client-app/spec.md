@@ -121,8 +121,8 @@ The app SHALL offer to sign out from every view after sign-in. Signing out SHALL
 - **WHEN** another person signs in afterwards on the same device
 - **THEN** nothing of the previous person's session or screens is shown
 
-### Requirement: Participant view and admin view
-After sign-in the app SHALL show a participant view to everyone and an admin view to administrators only. The participant view SHALL be a Groups tab and a Profile tab under a top bar; the admin view SHALL show the administrator's groups under the same top bar. The top bar SHALL have a menu with "Sign out" and, for administrators only, an item that switches to the other view. An administrator SHALL start in the admin view. A person who is not an administrator SHALL see no admin view and no item to reach it. The choice SHALL last for the current run only. The admin status SHALL come from the server's `GET /me` and be refreshed whenever the app starts or the person signs in.
+### Requirement: Views by role
+After sign-in the app SHALL show a participant view to everyone and an admin view to administrators only. The participant view SHALL be a Groups tab and a Profile tab under a top bar; the admin view SHALL be a Groups tab with the administrator's groups and a Users tab, under the same top bar. The top bar SHALL have a menu with "Sign out" and, for administrators only, an item that switches to the other view. An administrator SHALL start in the admin view. A person who is not an administrator SHALL see no admin view and no item to reach it. The choice SHALL last for the current run only. The admin status SHALL come from the server's `GET /me` and be refreshed whenever the app starts or the person signs in.
 
 #### Scenario: Administrator
 - **WHEN** an administrator signs in
@@ -132,13 +132,13 @@ After sign-in the app SHALL show a participant view to everyone and an admin vie
 - **WHEN** a non-administrator signs in
 - **THEN** only the participant view is shown and there is no way to reach the admin view
 
-#### Scenario: Promoted while signed in
-- **WHEN** an account is promoted after the person signed in
-- **THEN** the admin view becomes available the next time the app starts or the person signs in again
-
-#### Scenario: The admin view shows the groups
+#### Scenario: The admin view has two tabs
 - **WHEN** an administrator is in the admin view
-- **THEN** it shows the administrator's own groups, and switching to the participant view and back opens each view on its first screen
+- **THEN** a bottom bar offers Groups, which shows the administrator's own groups, and Users
+
+#### Scenario: Switching views
+- **WHEN** an administrator switches to the participant view and back
+- **THEN** each view opens on its first screen
 
 ### Requirement: Requests carry the session and nothing else
 Every request after sign-in SHALL carry the access token in the `Authorization: Bearer` header and no other credential. The app SHALL send the password only to `POST /auth/login` and `PUT /me/password`.

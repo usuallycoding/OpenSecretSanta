@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines what administrators can do with other users' accounts in Open Secret Santa: which users they may manage, how they see and reset temporary credentials, how admins are promoted, and how missing users are created in bulk for groups.
+Defines what administrators can do with other users' accounts in Open Secret Santa: which users they may manage, how they see and reset temporary credentials, and how missing users are created in bulk for groups.
 
 ## Requirements
 
@@ -65,21 +65,6 @@ The server SHALL expose `POST /admin/users/{username}/reset-password` that gener
 #### Scenario: Out of scope
 - **WHEN** an admin resets a user outside their scope
 - **THEN** the response is 404 and nothing changes
-
-### Requirement: Promote a user to admin
-The server SHALL expose `POST /admin/users/{username}/promote` that makes any existing user an admin, regardless of group membership. Promoting an existing admin SHALL succeed without change. No endpoint SHALL remove admin rights.
-
-#### Scenario: Promotion
-- **WHEN** an admin promotes an existing normal user who is in none of their groups
-- **THEN** the response is 200 and the user is an admin
-
-#### Scenario: Already admin
-- **WHEN** an admin promotes a user who is already an admin
-- **THEN** the response is 200 and nothing changes
-
-#### Scenario: Unknown user
-- **WHEN** an admin promotes a username that does not exist
-- **THEN** the response is 404
 
 ### Requirement: Bulk creation of missing users
 The system SHALL provide an all-or-nothing operation, for use by group management, that takes a list of usernames and creates each missing user with a generated temporary password while leaving existing users untouched.

@@ -152,7 +152,7 @@ A Draft SHALL also offer "Delete", after a confirmation, with `DELETE /admin/gro
 - **THEN** there is no delete action
 
 ### Requirement: Temporary passwords are shown once
-When making a group Pending, or saving a Pending group's participants, creates accounts, the app SHALL show each created username with its temporary password in a dialog, selectable so that it can be copied, and SHALL say that each person must change it when first signing in. The dialog SHALL be shown only when accounts were created. Once it is closed the app SHALL keep none of the passwords.
+When making a group Pending, or saving a Pending group's participants, creates accounts, the app SHALL show each created username with its temporary password in a dialog, selectable so that it can be copied, and SHALL say that each person must change it when first signing in and that an administrator can look it up under Users until then. The dialog SHALL be shown only when accounts were created. Once it is closed the app SHALL keep none of the passwords.
 
 #### Scenario: Accounts created
 - **WHEN** making a group Pending creates accounts for `bob` and `carol`

@@ -36,12 +36,12 @@ The server SHALL issue signed access tokens valid for 7 days and SHALL reject a 
 - **WHEN** a user's password is changed or reset after a token was issued
 - **THEN** that earlier token is rejected with 401
 
-### Requirement: Current user state on every request
+### Requirement: Stored user state decides each request
 The server SHALL determine a caller's admin status and password-change requirement from the stored user on each authenticated request, not from claims in the token.
 
-#### Scenario: Promotion takes effect immediately
-- **WHEN** a user holding an older token is promoted to admin
-- **THEN** their next request to an admin endpoint is authorized without logging in again
+#### Scenario: A password reset applies to an older token
+- **WHEN** an admin resets a user's password after that user's token was issued
+- **THEN** the user's next request with that token is rejected and a new sign-in with the new temporary password requires a password change
 
 ### Requirement: Forced password change gate
 While a user's password is temporary, the server SHALL reject every authenticated request except reading their own account and changing their password, with HTTP 403 and the code `password_change_required`.
