@@ -35,6 +35,7 @@ import com.usuallycoding.opensecretsanta.getPlatform
 import com.usuallycoding.opensecretsanta.ui.Strings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import androidx.compose.ui.unit.Dp
 
 /**
  * Shows [content] once there is something to show, and the loading and failure cases of [LoadState] around it.
@@ -124,13 +125,19 @@ fun <T : Any> LoadSection(state: LoadState<T>, onRetry: () -> Unit, modifier: Mo
  * section and [loading] is true while any of them loads.
  */
 @Composable
-fun PullPage(loading: Boolean, onRefresh: () -> Unit, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+fun PullPage(
+    loading: Boolean,
+    onRefresh: () -> Unit,
+    modifier: Modifier = Modifier,
+    bottomSpace: Dp = 0.dp,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     val scroll = rememberScrollState()
     val body: @Composable (Boolean) -> Unit = { pulled ->
         CompositionLocalProvider(LocalPullActive provides pulled) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                 Column(
-                    Modifier.widthIn(max = 640.dp).fillMaxSize().verticalScroll(scroll).padding(horizontal = 16.dp, vertical = 8.dp),
+                    Modifier.widthIn(max = 640.dp).fillMaxSize().verticalScroll(scroll).padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp + bottomSpace),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     content = content,
                 )

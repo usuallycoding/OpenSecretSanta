@@ -26,6 +26,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.load.LoadContent
+import androidx.compose.ui.text.style.TextOverflow
 
 /** The Groups tab: the groups the person is in, or a short explanation when there are none. */
 @Composable
@@ -57,7 +58,7 @@ private fun GroupCard(group: GroupRow, onClick: () -> Unit) {
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(group.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                Text(group.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                 Text(group.state.label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             }
             group.whenText?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }

@@ -35,6 +35,9 @@ import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.load.LoadSection
 import com.usuallycoding.opensecretsanta.ui.form.LinkText
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.material.icons.filled.Add
+import com.usuallycoding.opensecretsanta.ui.form.AppFab
 
 /** The person's own wishlist for one group, as a section of the Receiver page: their items in their order, and while the group allows it, ways to change them. */
 @Composable
@@ -71,6 +74,16 @@ fun WishlistSection(viewModel: WishlistViewModel) {
     ItemSheetHost(viewModel)
 }
 
+/** The floating "Add item" button of the wishlist: there only while the list can be changed and has room. */
+@Composable
+fun BoxScope.WishlistFab(viewModel: WishlistViewModel) {
+    val state by viewModel.data.collectAsState()
+    val data = state.value
+    if (data != null && data.editable && viewModel.canAdd) {
+        AppFab(Icons.Filled.Add, Strings.ADD_ITEM, onClick = viewModel::openAdd)
+    }
+}
+
 @Composable
 private fun Toolbar(viewModel: WishlistViewModel) {
     val state by viewModel.data.collectAsState()
@@ -81,7 +94,7 @@ private fun Toolbar(viewModel: WishlistViewModel) {
                 data == null -> Unit
                 !data.editable -> Text(Strings.WISHLIST_CLOSED, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 !viewModel.canAdd -> Text(Strings.wishlistFull(WishlistLimits.MAX_ITEMS), style = MaterialTheme.typography.bodyMedium)
-                else -> Button(onClick = viewModel::openAdd) { Text(Strings.ADD_ITEM) }
+                else -> Unit
             }
         }
     }

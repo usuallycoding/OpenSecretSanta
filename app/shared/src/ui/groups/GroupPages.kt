@@ -6,11 +6,20 @@ import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.usuallycoding.opensecretsanta.ui.wishlist.WishlistFab
+import com.usuallycoding.opensecretsanta.ui.gift.AskQuestionFab
+import com.usuallycoding.opensecretsanta.ui.form.FAB_CLEARANCE
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.drop
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.gift.ReceiverQuestionsSection
@@ -45,23 +54,23 @@ fun ReceiverPage(groupId: Long, wishlist: WishlistViewModel, onBack: () -> Unit)
         GroupGone(onBack)
         return
     }
-    var tab by rememberSaveable { mutableIntStateOf(0) }
-    Column(Modifier.fillMaxSize()) {
-        if (questions != null) {
-            Tabs(tab, onChoose = { chosen ->
-                tab = chosen
-                // only the shown tab is composed, so a tab that was left may be stale: reload it when it is chosen
-                if (chosen == 0) wishlist.refresh() else questions.refresh()
-            })
+    if (questions == null) {
+        Box(Modifier.fillMaxSize()) {
+            PullPage(loading = wishlistState.loading, onRefresh = { wishlist.refresh() }, bottomSpace = FAB_CLEARANCE) { WishlistSection(wishlist) }
+            WishlistFab(wishlist)
         }
-        if (questions == null || tab == 0) {
-            PullPage(loading = wishlistState.loading, onRefresh = { wishlist.refresh() }, modifier = Modifier.weight(1f)) {
-                WishlistSection(wishlist)
+        return
+    }
+    TabbedPages(
+        onShown = { page -> if (page == 0) wishlist.refresh() else questions.refresh() },
+    ) { page ->
+        if (page == 0) {
+            Box(Modifier.fillMaxSize()) {
+                PullPage(loading = wishlistState.loading, onRefresh = { wishlist.refresh() }, bottomSpace = FAB_CLEARANCE) { WishlistSection(wishlist) }
+                WishlistFab(wishlist)
             }
         } else {
-            PullPage(loading = questionsState?.loading == true, onRefresh = { questions.refresh() }, modifier = Modifier.weight(1f)) {
-                SantaQuestionsSection(questions)
-            }
+            PullPage(loading = questionsState?.loading == true, onRefresh = { questions.refresh() }) { SantaQuestionsSection(questions) }
         }
     }
 }
@@ -79,29 +88,37 @@ fun GifterPage(wishlist: ReceiverWishlistViewModel, questions: ReceiverViewModel
         GroupGone(onBack)
         return
     }
-    var tab by rememberSaveable { mutableIntStateOf(0) }
-    Column(Modifier.fillMaxSize()) {
-        Tabs(tab, onChoose = { chosen ->
-            tab = chosen
-            if (chosen == 0) wishlist.refresh() else questions.refresh()
-        })
-        if (tab == 0) {
-            PullPage(loading = wishlistState.loading, onRefresh = { wishlist.refresh() }, modifier = Modifier.weight(1f)) {
-                ReceiverWishlistSection(wishlist)
-            }
+    TabbedPages(
+        onShown = { page -> if (page == 0) wishlist.refresh() else questions.refresh() },
+    ) { page ->
+        if (page == 0) {
+            PullPage(loading = wishlistState.loading, onRefresh = { wishlist.refresh() }) { ReceiverWishlistSection(wishlist) }
         } else {
-            PullPage(loading = questionsState.loading, onRefresh = { questions.refresh() }, modifier = Modifier.weight(1f)) {
-                ReceiverQuestionsSection(questions)
+            Box(Modifier.fillMaxSize()) {
+                PullPage(loading = questionsState.loading, onRefresh = { questions.refresh() }, bottomSpace = FAB_CLEARANCE) { ReceiverQuestionsSection(questions) }
+                AskQuestionFab(questions)
             }
         }
     }
 }
 
-/** The Wishlist and Questions tabs of the two pages. */
+/**
+ * The Wishlist and Questions tabs of the two pages: a tab row and the content of the shown tab, which can be changed by choosing
+ * a tab or by swiping the content sideways. [onShown] reloads a tab when it is shown (a tab that was left may be stale).
+ */
 @Composable
-private fun Tabs(selected: Int, onChoose: (Int) -> Unit) {
-    PrimaryTabRow(selectedTabIndex = selected) {
-        Tab(selected = selected == 0, onClick = { onChoose(0) }, text = { Text(Strings.TAB_WISHLIST) })
-        Tab(selected = selected == 1, onClick = { onChoose(1) }, text = { Text(Strings.TAB_QUESTIONS) })
+private fun TabbedPages(onShown: (Int) -> Unit, page: @Composable (Int) -> Unit) {
+    val pager = rememberPagerState { 2 }
+    val scope = rememberCoroutineScope()
+    val latestOnShown by rememberUpdatedState(onShown)
+    LaunchedEffect(pager) {
+        snapshotFlow { pager.settledPage }.drop(1).collect { latestOnShown(it) }
+    }
+    Column(Modifier.fillMaxSize()) {
+        PrimaryTabRow(selectedTabIndex = pager.currentPage) {
+            Tab(selected = pager.currentPage == 0, onClick = { scope.launch { pager.animateScrollToPage(0) } }, text = { Text(Strings.TAB_WISHLIST) })
+            Tab(selected = pager.currentPage == 1, onClick = { scope.launch { pager.animateScrollToPage(1) } }, text = { Text(Strings.TAB_QUESTIONS) })
+        }
+        HorizontalPager(pager, Modifier.weight(1f), beyondViewportPageCount = 1) { index -> page(index) }
     }
 }

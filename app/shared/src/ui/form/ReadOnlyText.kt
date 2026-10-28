@@ -72,7 +72,7 @@ fun CopyButton(text: String, modifier: Modifier = Modifier) {
 }
 
 /**
- * Read-only text with a copy icon at its end. It shows at most [MULTILINE_MAX_ROWS] lines; when it was cut,
+ * Read-only text with a copy icon at its end (unless [copy] is false). It shows at most [maxLines] lines; when it was cut,
  * choosing it opens a dialog with the whole text ([label] is the dialog's title), and when it was not,
  * choosing it does nothing.
  */
@@ -83,6 +83,8 @@ fun ReadOnlyText(
     style: TextStyle = MaterialTheme.typography.bodyLarge,
     color: Color = Color.Unspecified,
     label: String? = null,
+    maxLines: Int = MULTILINE_MAX_ROWS,
+    copy: Boolean = true,
 ) {
     var cut by remember(text) { mutableStateOf(false) }
     // when the text is cut at the end of a line (a line break, not the line's width) the platform adds no
@@ -94,17 +96,20 @@ fun ReadOnlyText(
             shown,
             style = style,
             color = color,
-            maxLines = MULTILINE_MAX_ROWS,
+            maxLines = maxLines,
             overflow = TextOverflow.Ellipsis,
             onTextLayout = { result: TextLayoutResult ->
                 if (!cut && result.hasVisualOverflow) {
                     cut = true
-                    shown = text.substring(0, result.getLineEnd(MULTILINE_MAX_ROWS - 1, visibleEnd = true)).trimEnd() + "…"
+                    // a line that is cut by its width already ends in the platform's ellipsis
+                    if (!result.isLineEllipsized(maxLines - 1)) {
+                        shown = text.substring(0, result.getLineEnd(maxLines - 1, visibleEnd = true)).trimEnd() + "…"
+                    }
                 }
             },
             modifier = Modifier.weight(1f).then(if (cut) Modifier.clickable { open = true } else Modifier),
         )
-        CopyButton(text)
+        if (copy) CopyButton(text)
     }
     if (open) FullTextDialog(label, text, onDismiss = { open = false })
 }

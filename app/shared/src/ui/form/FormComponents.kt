@@ -33,7 +33,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 
 /** A multi-line field grows with its text up to this many rows, then stops growing and scrolls inside itself. */
-const val MULTILINE_MAX_ROWS = 6
+const val MULTILINE_MAX_ROWS = 3
 
 /**
  * A text field that owns its selection. The text still lives in the caller (it comes in as [value] and goes out

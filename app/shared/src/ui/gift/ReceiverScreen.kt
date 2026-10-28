@@ -30,6 +30,9 @@ import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.groups.GroupPhase
 import com.usuallycoding.opensecretsanta.ui.load.LoadSection
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
+import androidx.compose.foundation.layout.BoxScope
+import com.usuallycoding.opensecretsanta.ui.form.AppFab
+import com.usuallycoding.opensecretsanta.ui.form.QuestionIcon
 
 /** The person's questions to their receiver and the receiver's answers, as a section of the Gifter page. */
 @Composable
@@ -57,6 +60,15 @@ fun ReceiverQuestionsSection(viewModel: ReceiverViewModel) {
     }
 }
 
+/** The floating "Ask a question" button: there only while the group is Active and the person has questions left. */
+@Composable
+fun BoxScope.AskQuestionFab(viewModel: ReceiverViewModel) {
+    val state by viewModel.data.collectAsState()
+    if (state.value != null && viewModel.canAsk) {
+        AppFab(QuestionIcon, Strings.ASK_QUESTION, onClick = viewModel::openAsk)
+    }
+}
+
 @Composable
 private fun Notice(notice: GiftNotice, onDismiss: () -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -71,7 +83,7 @@ private fun QuestionsHeader(data: ReceiverData, viewModel: ReceiverViewModel) {
         when {
             data.phase != GroupPhase.Active -> Text(Strings.THREAD_CLOSED, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             !viewModel.canAsk -> Text(Strings.questionLimit(QuestionLimits.MAX_QUESTIONS_PER_SANTA), style = MaterialTheme.typography.bodyMedium)
-            else -> Button(onClick = viewModel::openAsk) { Text(Strings.ASK_QUESTION) }
+            else -> Unit
         }
     }
 }

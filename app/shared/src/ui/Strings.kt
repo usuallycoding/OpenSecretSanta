@@ -128,7 +128,7 @@ object Strings {
     const val TITLE_GROUP = "Group"
     const val TITLE_PROFILE = "Profile"
     const val TITLE_ADMIN = "Admin"
-    const val ADMIN_NO_GROUPS = "You do not have any group yet."
+    const val ADMIN_NO_GROUPS = "You do not have any group yet. Use the + button to create one."
     const val NEW_GROUP = "New group"
     const val GROUP_NAME = "Name"
     const val GROUP_DESCRIPTION = "Description (optional)"

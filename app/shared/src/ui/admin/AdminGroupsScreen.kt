@@ -27,6 +27,11 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.load.LoadContent
 import com.usuallycoding.opensecretsanta.ui.load.ScrollableMessage
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import com.usuallycoding.opensecretsanta.ui.form.AppFab
+import com.usuallycoding.opensecretsanta.ui.form.FAB_CLEARANCE
 
 /** The administrator's own groups, with a way to create one. */
 @Composable
@@ -36,16 +41,13 @@ fun AdminGroupsScreen(viewModel: AdminGroupsViewModel, onOpen: (Long) -> Unit, o
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Button(onClick = onNew) { Text(Strings.NEW_GROUP) }
-            }
             LoadContent(state, onRetry = { viewModel.refresh() }, onRefresh = { viewModel.refresh() }) { groups ->
                 if (groups.isEmpty()) {
                     ScrollableMessage(Strings.ADMIN_NO_GROUPS)
                 } else {
                     LazyColumn(
                         Modifier.fillMaxWidth(),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp + FAB_CLEARANCE),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         items(groups, key = { it.id }) { group -> GroupCard(group) { onOpen(group.id) } }
@@ -53,6 +55,7 @@ fun AdminGroupsScreen(viewModel: AdminGroupsViewModel, onOpen: (Long) -> Unit, o
                 }
             }
         }
+        AppFab(Icons.Filled.Add, Strings.NEW_GROUP, onClick = onNew)
     }
 }
 
@@ -61,7 +64,7 @@ private fun GroupCard(group: AdminGroup, onClick: () -> Unit) {
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(group.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                Text(group.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                 Text(group.state.label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             }
             group.whenText?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
