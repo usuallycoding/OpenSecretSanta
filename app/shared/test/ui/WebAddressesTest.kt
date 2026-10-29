@@ -12,6 +12,7 @@ class WebAddressesTest {
         GifterRoute(2) to "#/groups/2/gifter",
         ReceiverRoute(2) to "#/groups/2/receiver",
         ProfileRoute to "#/profile",
+        SettingsRoute to "#/settings",
         AdminGroupsRoute to "#/admin/groups",
         AdminGroupNewRoute to "#/admin/groups/new",
         AdminGroupRoute(2) to "#/admin/groups/2",
@@ -36,7 +37,7 @@ class WebAddressesTest {
 
     @Test
     fun unknownAndOldFormAddressesNameNothing() {
-        for (a in listOf("", "#", "#/", "#/nope", "#/groups/x", "#/groups/2/other", "#/groups/2/wishlist", "#/groups/2/receiver/wishlist", "#/groups/2/questions", "#/groups/2/santa", "#/profile/x", "#/admin", "#/admin/users/Al ice",
+        for (a in listOf("", "#", "#/", "#/nope", "#/groups/x", "#/groups/2/other", "#/groups/2/wishlist", "#/groups/2/receiver/wishlist", "#/groups/2/questions", "#/groups/2/santa", "#/profile/x", "#/settings/extra", "#/admin", "#/admin/users/Al ice",
             "#com.usuallycoding.opensecretsanta.ui.navigation.GroupRoute/2")) {
             assertNull(WebAddresses.routeOf(a, true), a)
         }
@@ -49,4 +50,11 @@ class WebAddressesTest {
             else assertEquals(route, WebAddresses.routeOf(address, false))
         }
     }
+    @Test
+    fun theSettingsAddressIsForEveryoneAndToleratesASlash() {
+        assertEquals(SettingsRoute, WebAddresses.routeOf("#/settings", isAdmin = false))
+        assertEquals(SettingsRoute, WebAddresses.routeOf("#/settings", isAdmin = true))
+        assertEquals(SettingsRoute, WebAddresses.routeOf("#/settings/", isAdmin = true))
+    }
+
 }

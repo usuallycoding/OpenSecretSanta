@@ -12,6 +12,10 @@ data class GroupRoute(val id: Long)
 @Serializable
 data object ProfileRoute
 
+/** The settings page: appearance, notifications, changing the password and signing out. Both views share it, and it belongs to neither. */
+@Serializable
+data object SettingsRoute
+
 /** The page for the relationship in which the person gives: the receiver's list and the person's questions to them. */
 @Serializable
 data class GifterRoute(val groupId: Long)

@@ -168,6 +168,7 @@ object Strings {
     const val TITLE_GROUPS = "Groups"
     const val TITLE_GROUP = "Group"
     const val TITLE_PROFILE = "Profile"
+    const val TITLE_SETTINGS = "Settings"
     const val TITLE_ADMIN = "Admin"
     const val ADMIN_NO_GROUPS = "You do not have any group yet. Use the + button to create one."
     const val NEW_GROUP = "New group"
@@ -269,7 +270,6 @@ object Strings {
     const val ADMIN_GROUP = "Group"
     const val ADMIN_EDIT_GROUP = "Edit group"
     const val BACK = "Back"
-    const val MENU = "Menu"
     const val SWITCH_TO_ADMIN = "Switch to admin view"
     const val SWITCH_TO_PARTICIPANT = "Switch to participant view"
 

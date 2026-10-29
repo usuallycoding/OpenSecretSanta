@@ -1,7 +1,7 @@
 # client-notifications Specification
 
 ## Purpose
-How a person controls push notifications in the Android and web apps: a menu item and bottom sheet with a switch for the device and the four kinds of notification, the permission flow, and what happens when a notification arrives or is tapped.
+How a person controls push notifications in the Android and web apps: a Settings row and bottom sheet with a switch for the device and the four kinds of notification, the permission flow, and what happens when a notification arrives or is tapped.
 
 ## Requirements
 

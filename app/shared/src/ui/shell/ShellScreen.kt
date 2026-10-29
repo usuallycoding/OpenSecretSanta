@@ -12,10 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,12 +45,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import androidx.compose.ui.ExperimentalComposeUiApi
 import com.usuallycoding.opensecretsanta.data.push.PushRegistration
-import com.usuallycoding.opensecretsanta.ui.form.SheetBackHandler
-import com.usuallycoding.opensecretsanta.ui.notifications.NotificationsSheet
-import com.usuallycoding.opensecretsanta.ui.notifications.NotificationsViewModel
-import com.usuallycoding.opensecretsanta.ui.password.ChangePasswordSheet
-import com.usuallycoding.opensecretsanta.ui.password.ChangePasswordViewModel
-import com.usuallycoding.opensecretsanta.data.settings.AppearanceSettings
+import com.usuallycoding.opensecretsanta.ui.form.SwapIcon
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -82,8 +75,10 @@ import com.usuallycoding.opensecretsanta.ui.navigation.GroupRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.GroupsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.ProfileRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.ReceiverRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.SettingsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.isAdminScreen
 import com.usuallycoding.opensecretsanta.ui.profile.ProfileScreen
+import com.usuallycoding.opensecretsanta.ui.settings.SettingsScreen
 import com.usuallycoding.opensecretsanta.ui.wishlist.ReceiverWishlistViewModel
 import com.usuallycoding.opensecretsanta.ui.wishlist.WishlistViewModel
 
@@ -108,30 +103,22 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
     LaunchedEffect(view) {
         if (view != shownView) {
             shownView = view
-            // an address that opened a screen of the other view has already moved there
-            if (navController.currentDestination?.isAdminScreen() != (view == AppView.Admin)) {
+            // an address that opened a screen of the other view has already moved there; a screen of neither (Settings) is not of the new view either
+            if (navController.currentDestination?.ownView() != view) {
                 navController.openView(if (view == AppView.Admin) AdminGroupsRoute else GroupsRoute)
             }
         }
     }
-    // a screen of the other view, opened from an address, brings its view along
+    // a screen of the other view, opened from an address, brings its view along; a screen of neither (Settings) leaves the view as it is
     LaunchedEffect(destination) {
-        if (destination != null && destination.isAdminScreen() != (view == AppView.Admin)) {
-            viewModel.select(if (destination.isAdminScreen()) AppView.Admin else AppView.Participant)
-        }
+        val own = destination?.ownView()
+        if (own != null && own != view) viewModel.select(own)
     }
 
     val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
-    var changingPassword by remember { mutableStateOf(false) }
-    var choosingAppearance by remember { mutableStateOf(false) }
-    var choosingNotifications by remember { mutableStateOf(false) }
     val push = koinInject<PushRegistration>()
     // a device that had notifications on tells the server its current token, which may have changed
     LaunchedEffect(Unit) { push.resume() }
-    // Back closes the sheet before it leaves the screen, on the platforms whose back is not already the sheet's own
-    SheetBackHandler(enabled = changingPassword) { changingPassword = false }
-    SheetBackHandler(enabled = choosingAppearance) { choosingAppearance = false }
-    SheetBackHandler(enabled = choosingNotifications) { choosingNotifications = false }
     // One standard width for the bars, content and buttons; on a wider window the rest is plain background
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.TopCenter) {
         Scaffold(
@@ -147,12 +134,15 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                         }
                     },
                     actions = {
-                        ShellMenu(
-                            viewModel, view,
-                            onAppearance = { choosingAppearance = true },
-                            onNotifications = if (push.isOffered) ({ choosingNotifications = true }) else null,
-                            onChangePassword = { changingPassword = true },
-                        )
+                        // the one thing in the top bar: administrators switch between their two views
+                        if (viewModel.canSwitch) {
+                            IconButton(onClick = { viewModel.select(if (view == AppView.Admin) AppView.Participant else AppView.Admin) }) {
+                                Icon(
+                                    SwapIcon,
+                                    contentDescription = if (view == AppView.Admin) Strings.SWITCH_TO_PARTICIPANT else Strings.SWITCH_TO_ADMIN,
+                                )
+                            }
+                        }
                     },
                 )
             },
@@ -197,6 +187,7 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                             )
                         }
                         composable<ProfileRoute> { ProfileScreen(koinViewModel()) }
+                        composable<SettingsRoute> { SettingsScreen(onSignOut = viewModel::signOut) }
                         // stand-ins until the admin screens arrive
                         composable<AdminGroupsRoute> {
                             AdminGroupsScreen(
@@ -245,15 +236,6 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                 }
             }
         }
-        if (choosingAppearance) {
-            AppearanceSheet(koinInject<AppearanceSettings>(), onDismiss = { choosingAppearance = false })
-        }
-        if (choosingNotifications) {
-            NotificationsSheet(koinViewModel<NotificationsViewModel>(key = "notifications-sheet"), onDismiss = { choosingNotifications = false })
-        }
-        if (changingPassword) {
-            ChangePasswordSheet(koinViewModel<ChangePasswordViewModel>(key = "change-password-sheet"), onDismiss = { changingPassword = false })
-        }
     }
 }
 
@@ -261,6 +243,7 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
 private val MAX_CONTENT_WIDTH = 640.dp
 
 private fun titleOf(view: AppView, destination: NavDestination?): String = when {
+    destination?.hasRoute<SettingsRoute>() == true -> Strings.TITLE_SETTINGS
     destination?.hasRoute<AdminUserRoute>() == true -> Strings.ADMIN_USER
     destination?.hasRoute<AdminUsersRoute>() == true -> Strings.ADMIN_TAB_USERS
     destination?.hasRoute<AdminGroupNewRoute>() == true -> Strings.ADMIN_NEW_GROUP
@@ -274,42 +257,12 @@ private fun titleOf(view: AppView, destination: NavDestination?): String = when 
     else -> Strings.TITLE_GROUPS
 }
 
-/**
- * The menu at the right of the bar: the view switch (administrators only), appearance, notifications (only where the
- * platform has them: [onNotifications] is null on iOS), change password and sign out.
- */
-@Composable
-private fun ShellMenu(viewModel: ShellViewModel, view: AppView, onAppearance: () -> Unit, onNotifications: (() -> Unit)?, onChangePassword: () -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    Box {
-        IconButton(onClick = { open = true }) {
-            Icon(Icons.Filled.MoreVert, contentDescription = Strings.MENU)
-        }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            if (viewModel.canSwitch) {
-                DropdownMenuItem(
-                    text = { Text(if (view == AppView.Admin) Strings.SWITCH_TO_PARTICIPANT else Strings.SWITCH_TO_ADMIN) },
-                    onClick = {
-                        open = false
-                        viewModel.select(if (view == AppView.Admin) AppView.Participant else AppView.Admin)
-                    },
-                )
-            }
-            DropdownMenuItem(text = { Text(Strings.APPEARANCE) }, onClick = { open = false; onAppearance() })
-            if (onNotifications != null) {
-                DropdownMenuItem(text = { Text(Strings.NOTIFICATIONS) }, onClick = { open = false; onNotifications() })
-            }
-            DropdownMenuItem(text = { Text(Strings.CHANGE_PASSWORD) }, onClick = { open = false; onChangePassword() })
-            DropdownMenuItem(text = { Text(Strings.SIGN_OUT) }, onClick = { open = false; viewModel.signOut() })
-        }
-    }
-}
-
-/** Groups and Profile. Each tab keeps its own place: switching away and back restores it. */
+/** Groups, Profile and Settings. Each tab keeps its own place: switching away and back restores it. */
 @Composable
 private fun TabBar(navController: NavController, destination: NavDestination?) {
     val onGroups = destination?.hierarchy?.any { it.hasRoute<GroupsRoute>() || it.belowGroups() } == true
     val onProfile = destination?.hierarchy?.any { it.hasRoute<ProfileRoute>() } == true
+    val onSettings = destination?.hierarchy?.any { it.hasRoute<SettingsRoute>() } == true
     NavigationBar {
         NavigationBarItem(
             selected = onGroups,
@@ -323,7 +276,20 @@ private fun TabBar(navController: NavController, destination: NavDestination?) {
             icon = { Icon(Icons.Filled.Person, contentDescription = null) },
             label = { Text(Strings.TITLE_PROFILE) },
         )
+        NavigationBarItem(
+            selected = onSettings,
+            onClick = { navController.openTab(SettingsRoute) },
+            icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+            label = { Text(Strings.TITLE_SETTINGS) },
+        )
     }
+}
+
+/** The view a screen belongs to, or null for a screen both views share and that belongs to neither: the settings page. */
+private fun NavDestination.ownView(): AppView? = when {
+    hasRoute<SettingsRoute>() -> null
+    isAdminScreen() -> AppView.Admin
+    else -> AppView.Participant
 }
 
 private fun NavDestination.belowGroups(): Boolean =
@@ -332,13 +298,14 @@ private fun NavDestination.belowGroups(): Boolean =
 private fun NavDestination.belowAdminGroups(): Boolean =
     hasRoute<AdminGroupNewRoute>() || hasRoute<AdminGroupRoute>() || hasRoute<AdminGroupEditRoute>() || hasRoute<AdminUserRoute>()
 
-/** The admin view's two tabs: the groups and the users the administrator manages. */
+/** The admin view's tabs: the groups and the users the administrator manages, and the settings both views share. */
 @Composable
 private fun AdminTabBar(navController: NavController, destination: NavDestination?) {
     val onUsers = destination?.hierarchy?.any { it.hasRoute<AdminUsersRoute>() || it.hasRoute<AdminUserRoute>() } == true
+    val onSettings = destination?.hierarchy?.any { it.hasRoute<SettingsRoute>() } == true
     NavigationBar {
         NavigationBarItem(
-            selected = !onUsers,
+            selected = !onUsers && !onSettings,
             onClick = { navController.openTab(AdminGroupsRoute, AdminGroupsRoute) },
             icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
             label = { Text(Strings.ADMIN_TAB_GROUPS) },
@@ -348,6 +315,12 @@ private fun AdminTabBar(navController: NavController, destination: NavDestinatio
             onClick = { navController.openTab(AdminUsersRoute, AdminGroupsRoute) },
             icon = { Icon(Icons.Filled.Person, contentDescription = null) },
             label = { Text(Strings.ADMIN_TAB_USERS) },
+        )
+        NavigationBarItem(
+            selected = onSettings,
+            onClick = { navController.openTab(SettingsRoute, AdminGroupsRoute) },
+            icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+            label = { Text(Strings.TITLE_SETTINGS) },
         )
     }
 }

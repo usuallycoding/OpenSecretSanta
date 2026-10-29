@@ -19,6 +19,7 @@ object WebAddresses {
         is GifterRoute -> "#/groups/${route.groupId}/gifter"
         is ReceiverRoute -> "#/groups/${route.groupId}/receiver"
         ProfileRoute -> "#/profile"
+        SettingsRoute -> "#/settings"
         AdminGroupsRoute -> "#/admin/groups"
         AdminGroupNewRoute -> "#/admin/groups/new"
         is AdminGroupRoute -> "#/admin/groups/${route.id}"
@@ -37,6 +38,7 @@ object WebAddresses {
         return when (parts.firstOrNull()) {
             "groups" -> groupRoute(parts.drop(1))
             "profile" -> if (parts.size == 1) ProfileRoute else null
+            "settings" -> if (parts.size == 1) SettingsRoute else null
             "admin" -> if (isAdmin) adminRoute(parts.drop(1)) else null
             else -> null
         }
@@ -84,6 +86,7 @@ object WebAddresses {
             d.hasRoute<GifterRoute>() -> entry.toRoute<GifterRoute>()
             d.hasRoute<ReceiverRoute>() -> entry.toRoute<ReceiverRoute>()
             d.hasRoute<ProfileRoute>() -> ProfileRoute
+            d.hasRoute<SettingsRoute>() -> SettingsRoute
             d.hasRoute<AdminGroupsRoute>() -> AdminGroupsRoute
             d.hasRoute<AdminGroupNewRoute>() -> AdminGroupNewRoute
             d.hasRoute<AdminGroupRoute>() -> entry.toRoute<AdminGroupRoute>()
