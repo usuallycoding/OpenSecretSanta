@@ -102,7 +102,6 @@ private fun Participants(participants: List<ParticipantItem>) {
         Text("${Strings.GROUP_PARTICIPANTS} (${participants.size})", style = MaterialTheme.typography.titleMedium)
         ParticipantChips(
             participants.map { ParticipantChip(it.username, highlighted = it.isMe, spoken = if (it.isMe) "${it.username}, ${Strings.YOU}" else null) },
-            boxed = false,
         )
     }
 }

@@ -269,7 +269,8 @@ object Strings {
     const val NOTICE_RESET_FAILED = "The password could not be reset. Please try again."
     const val USER_NO_PROFILE = "This person has not added any details yet."
     const val USER_GONE = "This user is no longer available."
-    const val ADMIN_DRAW = "Who gives to whom"
+    /** The label above the pairs, with how many people the draw is for: "Who gives to whom (4 participants)". */
+    fun adminDraw(participants: Int) = "Who gives to whom ($participants participants)"
     const val ADMIN_DRAW_FAILED = "The draw could not be loaded."
     const val ADMIN_INCOMPLETE_LEGEND = "* profile incomplete"
     const val ADMIN_SHEET_CLOSE = "Close"

@@ -46,9 +46,8 @@ import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.form.FormColumn
 import com.usuallycoding.opensecretsanta.ui.form.SheetTextField
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
-import com.usuallycoding.opensecretsanta.ui.load.HeaderWithFooter
+import com.usuallycoding.opensecretsanta.ui.load.PullPage
 import com.usuallycoding.opensecretsanta.ui.load.LoadSection
-import com.usuallycoding.opensecretsanta.ui.load.ScrollingBox
 import com.usuallycoding.opensecretsanta.ui.form.GiftIcon
 import com.usuallycoding.opensecretsanta.ui.form.ParticipantChip
 import com.usuallycoding.opensecretsanta.ui.form.ParticipantChips
@@ -90,32 +89,30 @@ fun AdminGroupScreen(
         }
         return
     }
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        Column(Modifier.fillMaxSize()) {
-            ui.notice?.let { notice ->
-                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(notice.text(), modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-                    TextButton(onClick = viewModel::dismissNotice) { Text(Strings.OK) }
-                }
+    // one page that scrolls as a whole (and can be pulled down to reload): notices, details, buttons, search and people
+    PullPage(loading = state.loading, onRefresh = { viewModel.refresh() }) {
+        ui.notice?.let { notice ->
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(notice.text(), modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                TextButton(onClick = viewModel::dismissNotice) { Text(Strings.OK) }
             }
-            ui.emails?.let { emails ->
-                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        Strings.emailSummary(emails.sent, emails.failed, emails.noAddress),
-                        modifier = Modifier.weight(1f),
-                        color = if (emails.failed > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    TextButton(onClick = viewModel::dismissEmails) { Text(Strings.OK) }
-                }
+        }
+        ui.emails?.let { emails ->
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    Strings.emailSummary(emails.sent, emails.failed, emails.noAddress),
+                    modifier = Modifier.weight(1f),
+                    color = if (emails.failed > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                TextButton(onClick = viewModel::dismissEmails) { Text(Strings.OK) }
             }
-            HeaderWithFooter(
-                loading = state.loading,
-                onRefresh = { viewModel.refresh() },
-                modifier = Modifier.weight(1f),
-                header = { LoadSection(state, onRetry = { viewModel.refresh() }) { group -> Header(group, viewModel, ui.busy, onEdit) { announcing = true } } },
-                footer = { state.value?.let { group -> People(group, viewModel, draw) } },
-            )
+        }
+        LoadSection(state, onRetry = { viewModel.refresh() }) { group ->
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Header(group, viewModel, ui.busy, onEdit) { announcing = true }
+                People(group, viewModel, draw)
+            }
         }
     }
     ui.participants?.let { ParticipantsSheet(it, viewModel) }
@@ -191,7 +188,7 @@ private fun Header(group: AdminGroup, viewModel: AdminGroupViewModel, busy: Bool
     }
 }
 
-/** Who takes part, in a box at the end that fills the rest of the page: the participants, or once drawn the pairs. */
+/** Who takes part, at the end of the page: the participants, or once drawn the pairs. */
 @Composable
 private fun ColumnScope.People(group: AdminGroup, viewModel: AdminGroupViewModel, draw: DrawState) {
     if (viewModel.canReadDraw) {
@@ -212,14 +209,14 @@ private fun ColumnScope.People(group: AdminGroup, viewModel: AdminGroupViewModel
         }
     }
     if (group.participants.isEmpty()) {
-        ScrollingBox { Text(Strings.ADMIN_NO_PARTICIPANTS, style = MaterialTheme.typography.bodyMedium) }
+        Text(Strings.ADMIN_NO_PARTICIPANTS, style = MaterialTheme.typography.bodyMedium)
         return
     }
     val legend = Strings.ADMIN_MARK_LEGEND.takeIf { group.participants.any { it.marked() } }
     if (viewModel.canReadPendingWishlists) {
         ParticipantSearchField(viewModel)
         val shown = filterParticipants(group.participants, viewModel.search)
-        ScrollingBox {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             if (shown.isEmpty()) Text(Strings.ADMIN_NO_PERSON_MATCH, style = MaterialTheme.typography.bodyMedium)
             for (participant in shown) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

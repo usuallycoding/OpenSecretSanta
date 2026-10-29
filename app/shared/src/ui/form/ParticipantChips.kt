@@ -14,28 +14,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.usuallycoding.opensecretsanta.ui.load.ScrollingBox
 
 /** One chip of [ParticipantChips]: the [label] it shows and, for the person's own, a [spoken] form that says so without relying on colour. */
 data class ParticipantChip(val label: String, val highlighted: Boolean = false, val spoken: String? = null)
 
 /**
- * The people of a group as chips that wrap onto as many lines as needed. With [boxed] they are in the scrolling box that
- * fills the rest of the page; without, they are part of the page, which scrolls as a whole. The chips only show; they
- * are not buttons. The [legend] is shown under them when there is one.
+ * The people of a group as chips that wrap onto as many lines as needed. They are part of the page, which scrolls as a
+ * whole. The chips only show; they are not buttons. The [legend] is shown under them when there is one.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ColumnScope.ParticipantChips(chips: List<ParticipantChip>, legend: String? = null, boxed: Boolean = true) {
-    val content: @Composable ColumnScope.() -> Unit = {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            for (chip in chips) Chip(chip)
-        }
-        if (legend != null) {
-            Text(legend, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+fun ColumnScope.ParticipantChips(chips: List<ParticipantChip>, legend: String? = null) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        for (chip in chips) Chip(chip)
     }
-    if (boxed) ScrollingBox(content) else content()
+    if (legend != null) {
+        Text(legend, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
 }
 
 @Composable

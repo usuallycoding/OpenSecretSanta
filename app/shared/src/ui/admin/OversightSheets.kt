@@ -39,7 +39,6 @@ import org.koin.core.parameter.parametersOf
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
 import com.usuallycoding.opensecretsanta.ui.form.TimesLine
 import com.usuallycoding.opensecretsanta.ui.form.SheetFrame
-import com.usuallycoding.opensecretsanta.ui.load.ScrollingBox
 
 /** A username as the owner reads it in the list: `alice`, `alice (you)`, `alice *` or `alice (you) *`. */
 internal fun usernameLabel(name: String, isMe: Boolean, incomplete: Boolean): String =
@@ -62,9 +61,10 @@ internal fun ColumnScope.PairList(draw: DrawState, query: String, onRetry: () ->
             OutlinedButton(onClick = onRetry) { Text(Strings.TRY_AGAIN) }
         }
         is DrawState.Pairs -> {
-            Text(Strings.ADMIN_DRAW, style = MaterialTheme.typography.titleMedium)
+            // the count is the whole group's, not the narrowed list's
+            Text(Strings.adminDraw(draw.pairs.size), style = MaterialTheme.typography.titleMedium)
             val shown = filterPairs(draw.pairs, query)
-            ScrollingBox {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 if (shown.isEmpty()) Text(Strings.ADMIN_NO_PERSON_MATCH, style = MaterialTheme.typography.bodyMedium)
                 for (pair in shown) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
