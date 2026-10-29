@@ -10,14 +10,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -33,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.form.PairLink
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.load.LoadState
 import com.usuallycoding.opensecretsanta.ui.load.loadMessage
@@ -54,7 +51,7 @@ internal fun usernameLabel(name: String, isMe: Boolean, incomplete: Boolean): St
 
 /**
  * The single list of an Active or Archived group: one row per pair, `santa -> receiver`. A username opens
- * that person's sheet, the arrow opens the pair's sheet. Nothing here changes anything.
+ * that person's sheet, the pair link between them opens the pair's sheet. Nothing here changes anything.
  */
 @Composable
 internal fun ColumnScope.PairList(draw: DrawState, onRetry: () -> Unit, onUser: (String) -> Unit, onPair: (AdminPair) -> Unit) {
@@ -72,9 +69,7 @@ internal fun ColumnScope.PairList(draw: DrawState, onRetry: () -> Unit, onUser: 
                         TextButton(onClick = { onUser(pair.santa) }, modifier = Modifier.weight(1f)) {
                             Text(usernameLabel(pair.santa, pair.santaIsMe, pair.santaIncomplete), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
                         }
-                        IconButton(onClick = { onPair(pair) }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = Strings.adminPair(pair.santa, pair.receiver))
-                        }
+                        PairLink(Strings.adminPair(pair.santa, pair.receiver), onClick = { onPair(pair) })
                         TextButton(onClick = { onUser(pair.receiver) }, modifier = Modifier.weight(1f)) {
                             Text(usernameLabel(pair.receiver, pair.receiverIsMe, pair.receiverIncomplete), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.End)
                         }

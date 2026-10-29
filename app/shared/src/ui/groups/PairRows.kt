@@ -4,8 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -19,6 +17,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.form.GiftIcon
+import com.usuallycoding.opensecretsanta.ui.form.PairLink
 import com.usuallycoding.opensecretsanta.ui.gift.ReceiverInfo
 import com.usuallycoding.opensecretsanta.ui.load.LoadState
 import com.usuallycoding.opensecretsanta.ui.load.loadMessage
@@ -28,8 +27,8 @@ enum class PairSheet { Me, Receiver, Santa }
 
 /**
  * Who gives to whom, from the person's own side. While the group is Pending only the person themselves and a gift icon
- * for their wishlist; once the names are drawn `me -> receiver` and `Secret Santa -> me`. A username opens a sheet; an
- * arrow opens the Gifter page (the first row) or the Receiver page (the second row). The Santa stays unnamed until the
+ * for their wishlist; once the names are drawn `me -> receiver` and `Secret Santa -> me`. A username opens a sheet; the
+ * pair link between the names opens the Gifter page (the first row) or the Receiver page (the second row). The Santa stays unnamed until the
  * group is Archived.
  */
 @Composable
@@ -50,7 +49,7 @@ internal fun PairRows(
         GroupPhase.Active, GroupPhase.Archived -> Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 UserButton(me, onClick = { onSheet(PairSheet.Me) }, modifier = Modifier.weight(1f))
-                IconButton(onClick = onOpenGifter) { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = Strings.TITLE_GIFTER) }
+                PairLink(Strings.TITLE_GIFTER, onClick = onOpenGifter)
                 val name = receiver?.value?.username
                 UserButton(name ?: "...", onClick = { onSheet(PairSheet.Receiver) }, modifier = Modifier.weight(1f), enabled = name != null, align = TextAlign.End)
             }
@@ -65,7 +64,7 @@ internal fun PairRows(
                     modifier = Modifier.weight(1f),
                     enabled = phase == GroupPhase.Archived,
                 )
-                IconButton(onClick = onOpenReceiver) { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = Strings.TITLE_RECEIVER) }
+                PairLink(Strings.TITLE_RECEIVER, onClick = onOpenReceiver)
                 UserButton(me, onClick = { onSheet(PairSheet.Me) }, modifier = Modifier.weight(1f), align = TextAlign.End)
             }
         }
