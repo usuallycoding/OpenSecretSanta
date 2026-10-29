@@ -4,6 +4,7 @@ import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.ui.admin.AdminUserViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminUsersViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.UserNotice
+import com.usuallycoding.opensecretsanta.ui.admin.UsersNotice
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.test.runTest
@@ -201,5 +202,139 @@ class AdminUsersViewModelTest {
 
         assertEquals(UserNotice.Failed, model.ui.value.notice)
         assertNotNull(model.data.value.value)
+    }
+
+    // --- searching and deleting ----------------------------------------------------------------
+
+    @Test
+    fun theSearchStartsEmptyKeepsWhatWasTypedAndClears() = runTest {
+        val vm = list()
+        assertEquals("", vm.search)
+
+        vm.setSearch("  Ali ")
+        assertEquals("  Ali ", vm.search)
+
+        vm.clearSearch()
+        assertEquals("", vm.search)
+    }
+
+    @Test
+    fun usersWhoCanBeDeletedAreMarkedAsSuch() = runTest {
+        fake.add("alice")
+        fake.addUnassigned("erin", fullName = "Erin Typo")
+
+        val users = list().state.value.value!!
+
+        assertEquals(listOf(false, false, true), users.map { it.canDelete })
+    }
+
+    @Test
+    fun theDetailOfADeletableUserOffersNoDeletion() = runTest {
+        fake.addUnassigned("erin")
+
+        assertTrue(detail("erin").data.value.value!!.canDelete)
+        assertEquals(0, server.calls.count { it.startsWith("DELETE") })
+    }
+
+    @Test
+    fun onlyAUserTheServerSaidCanBeDeletedCanBeAskedAbout() = runTest {
+        fake.add("alice")
+        fake.addUnassigned("erin")
+        val vm = list()
+
+        vm.askDelete("alice")
+        assertNull(vm.ui.value.confirmingDelete)
+        vm.askDelete("admin")
+        assertNull(vm.ui.value.confirmingDelete)
+        vm.askDelete("nobody")
+        assertNull(vm.ui.value.confirmingDelete)
+        vm.askDelete("erin")
+        assertEquals("erin", vm.ui.value.confirmingDelete)
+    }
+
+    @Test
+    fun nothingIsSentUntilTheDeletionIsConfirmed() = runTest {
+        fake.addUnassigned("erin")
+        val vm = list()
+
+        vm.askDelete("erin")
+        vm.cancelDelete()
+
+        assertNull(vm.ui.value.confirmingDelete)
+        assertEquals(0, server.calls.count { it.startsWith("DELETE") })
+        assertNull(vm.confirmDelete())
+    }
+
+    @Test
+    fun aConfirmedDeletionRemovesTheUserAndReloadsTheList() = runTest {
+        fake.add("alice")
+        fake.addUnassigned("erin")
+        fake.addUnassigned("fran")
+        val vm = list()
+        vm.askDelete("erin")
+
+        vm.confirmDelete()!!.join()
+
+        assertEquals("DELETE /admin/users/erin", server.calls.filter { it.startsWith("DELETE") }.single())
+        assertEquals(listOf("admin", "alice", "fran"), vm.state.value.value!!.map { it.username })
+        assertNull(vm.ui.value.notice)
+        assertFalse(vm.ui.value.busy)
+    }
+
+    @Test
+    fun aUserWhoJoinedAGroupMeanwhileIsReportedAndShownWithoutTheIcon() = runTest {
+        fake.addUnassigned("erin")
+        val vm = list()
+        fake.joinsAGroup("erin")
+        vm.askDelete("erin")
+
+        vm.confirmDelete()!!.join()
+
+        assertEquals(UsersNotice.DeleteRefused, vm.ui.value.notice)
+        val erin = vm.state.value.value!!.first { it.username == "erin" }
+        assertFalse(erin.canDelete)
+        assertFalse(vm.ui.value.busy)
+    }
+
+    @Test
+    fun aUserWhoLeftTheScopeMeanwhileJustDisappearsFromTheList() = runTest {
+        fake.addUnassigned("erin")
+        val vm = list()
+        fake.leaveScope("erin")
+        vm.askDelete("erin")
+
+        vm.confirmDelete()!!.join()
+
+        assertEquals(listOf("admin"), vm.state.value.value!!.map { it.username })
+        assertNull(vm.ui.value.notice)
+    }
+
+    @Test
+    fun anUnreachableServerLeavesTheUserAndSaysSo() = runTest {
+        fake.addUnassigned("erin")
+        val vm = list()
+        vm.askDelete("erin")
+        server.unreachable = true
+
+        vm.confirmDelete()!!.join()
+
+        assertEquals(UsersNotice.Unreachable, vm.ui.value.notice)
+        server.unreachable = false
+        assertTrue(fake.usernames.contains("erin"))
+    }
+
+    @Test
+    fun anyOtherFailureIsSaidAndKeepsTheUser() = runTest {
+        fake.addUnassigned("erin")
+        val vm = list()
+        fake.failNextDeleteWith(HttpStatusCode.InternalServerError, "internal_error")
+        vm.askDelete("erin")
+
+        vm.confirmDelete()!!.join()
+
+        assertEquals(UsersNotice.DeleteFailed, vm.ui.value.notice)
+        assertTrue(fake.usernames.contains("erin"))
+        vm.dismissNotice()
+        assertNull(vm.ui.value.notice)
     }
 }

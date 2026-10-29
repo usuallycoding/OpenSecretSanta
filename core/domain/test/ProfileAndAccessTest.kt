@@ -72,6 +72,7 @@ class AccessPolicyTest {
 
     private class FakeMemberships(private val owned: Map<Username, Set<Username>>) : GroupMembershipRepository {
         override fun membersOfGroupsOwnedBy(owner: Username): Set<Username> = owned[owner].orEmpty()
+        override fun unassignedUsersCreatedBy(admin: Username): Set<Username> = emptySet()
     }
 
     private val adminA = u("admin-a")

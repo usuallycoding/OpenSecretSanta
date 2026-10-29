@@ -64,8 +64,12 @@ class InMemoryAttempts : LoginAttemptTracker {
     }
 }
 
-class FakeMemberships(var owned: Map<Username, Set<Username>> = emptyMap()) : GroupMembershipRepository {
+class FakeMemberships(
+    var owned: Map<Username, Set<Username>> = emptyMap(),
+    var unassigned: Map<Username, Set<Username>> = emptyMap(),
+) : GroupMembershipRepository {
     override fun membersOfGroupsOwnedBy(owner: Username): Set<Username> = owned[owner].orEmpty()
+    override fun unassignedUsersCreatedBy(admin: Username): Set<Username> = unassigned[admin].orEmpty()
 }
 
 class InMemoryUsers : UserRepository {
@@ -73,6 +77,7 @@ class InMemoryUsers : UserRepository {
         var user: User,
         var passwordHash: String,
         var encryptedTemp: ByteArray?,
+        var createdBy: Username?,
     )
 
     private val rows = linkedMapOf<Username, Row>()
@@ -92,8 +97,31 @@ class InMemoryUsers : UserRepository {
                 User(it.username, Profile.EMPTY, it.isAdmin, it.mustChangePassword, tokenVersion = 1),
                 it.passwordHash,
                 it.encryptedTempPassword,
+                it.createdBy,
             )
         }
+    }
+
+    /** The creator recorded for [username], for tests. */
+    fun createdBy(username: Username): Username? = rows[username]?.createdBy
+
+    /** Records [creator] as the one who made [username], for tests that start from existing accounts. */
+    fun setCreator(username: Username, creator: Username) {
+        rows.getValue(username).createdBy = creator
+    }
+
+    private val stubborn = mutableSetOf<Username>()
+
+    /** Makes the repository refuse to delete [username], as when a group has named the person since the policy was read. */
+    fun refuseDeleting(username: Username) {
+        stubborn += username
+    }
+
+    override fun deleteUnassigned(username: Username, createdBy: Username): Boolean {
+        val row = rows[username] ?: return false
+        if (username in stubborn || row.createdBy != createdBy || row.user.isAdmin) return false
+        rows.remove(username)
+        return true
     }
 
     override fun updateProfile(username: Username, profile: Profile): User? =

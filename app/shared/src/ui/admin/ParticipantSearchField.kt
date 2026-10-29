@@ -19,19 +19,23 @@ import com.usuallycoding.opensecretsanta.ui.form.SheetTextField
  * keyboard's search action only puts the keyboard away: the list is narrowed as the person types.
  */
 @Composable
-internal fun ParticipantSearchField(viewModel: AdminGroupViewModel) {
-    val query = viewModel.search
+internal fun ParticipantSearchField(viewModel: AdminGroupViewModel) =
+    PeopleSearchField(viewModel.search, viewModel::setSearch, viewModel::clearSearch, Strings.ADMIN_SEARCH_PEOPLE)
+
+/** The same field for any list of people: [label] names it, [onClear] empties it. */
+@Composable
+internal fun PeopleSearchField(query: String, onQueryChange: (String) -> Unit, onClear: () -> Unit, label: String) {
     val focus = LocalFocusManager.current
     SheetTextField(
         value = query,
-        onValueChange = viewModel::setSearch,
-        label = Strings.ADMIN_SEARCH_PEOPLE,
+        onValueChange = onQueryChange,
+        label = label,
         modifier = Modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
         keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
         trailingIcon = if (query.isNotEmpty()) {
             {
-                IconButton(onClick = viewModel::clearSearch) {
+                IconButton(onClick = onClear) {
                     Icon(Icons.Filled.Close, contentDescription = Strings.ADMIN_SEARCH_CLEAR)
                 }
             }

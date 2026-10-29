@@ -91,6 +91,17 @@ class LifecycleTest {
     }
 
     @Test
+    fun theAccountsPendingCreatesRecordWhoMadeThem() {
+        users.add("alice")
+        val group = group(GroupState.DRAFT, "alice", "bob-b")
+
+        toPending(adminA, group.id)
+
+        assertEquals(adminA.username, users.createdBy(u("bob-b")))
+        assertNull(users.createdBy(u("alice")))
+    }
+
+    @Test
     fun accountsAreNotCreatedBeforePending() {
         group(GroupState.DRAFT, "alice")
         assertNull(users.find(u("alice")))

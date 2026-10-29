@@ -23,4 +23,16 @@ class SqliteGroupMembershipRepository(private val database: Database) : GroupMem
             }
         }
     }
+
+    override fun unassignedUsersCreatedBy(admin: Username): Set<Username> = database.connection().use { c ->
+        c.prepareStatement(
+            "SELECT u.username FROM users u WHERE u.created_by = ? AND u.is_admin = 0 " +
+                "AND NOT EXISTS (SELECT 1 FROM group_participants p WHERE p.username = u.username)",
+        ).use { s ->
+            s.setString(1, admin.value)
+            s.executeQuery().use { rows ->
+                generateSequence { if (rows.next()) Username.parse(rows.getString(1)) else null }.toSet()
+            }
+        }
+    }
 }

@@ -6,6 +6,7 @@ import com.usuallycoding.opensecretsanta.domain.admin.GetManagedUser
 import com.usuallycoding.opensecretsanta.domain.admin.GroupMembershipRepository
 import com.usuallycoding.opensecretsanta.domain.admin.ListManagedUsers
 import com.usuallycoding.opensecretsanta.domain.admin.NewAccountPlanner
+import com.usuallycoding.opensecretsanta.domain.admin.DeleteUser
 import com.usuallycoding.opensecretsanta.domain.admin.ResetPassword
 import com.usuallycoding.opensecretsanta.domain.admin.SeedDefaultAdmin
 import com.usuallycoding.opensecretsanta.domain.auth.ChangePassword
@@ -178,6 +179,7 @@ val useCaseModule = module {
     single { ListManagedUsers(get(), get(), get()) }
     single { GetManagedUser(get(), get(), get()) }
     single { ResetPassword(get(), get(), get(), get(), get(), get()) }
+    single { DeleteUser(get(), get()) }
     single { NewAccountPlanner(get(), get(), get()) }
     single { CreateMissingUsers(get(), get()) }
     single { SeedDefaultAdmin(get(), get()) }

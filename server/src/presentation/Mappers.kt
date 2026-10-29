@@ -20,4 +20,4 @@ fun User.toDto(channels: Channels? = null) = AccountDto(
     pushAvailable = channels?.pushAvailable ?: false,
 )
 
-fun ManagedUser.toDto() = ManagedUserDto(user = user.toDto(), temporaryPassword = temporaryPassword)
+fun ManagedUser.toDto() = ManagedUserDto(user = user.toDto(), temporaryPassword = temporaryPassword, canDelete = canDelete)

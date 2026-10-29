@@ -223,6 +223,9 @@ class ApiClient(
     suspend fun adminUser(username: String): ApiResult<ManagedUserDto> = call(HttpMethod.Get, ApiRoutes.adminUser(username))
 
     /** Gives a managed user a new temporary password, which they must change at their next sign-in. */
+    /** Deletes a user the administrator created who is in no group; refused with 409 for anyone else the administrator can see. */
+    suspend fun deleteUser(username: String): ApiResult<Unit> = call(HttpMethod.Delete, ApiRoutes.adminUser(username))
+
     suspend fun resetPassword(username: String): ApiResult<ResetPasswordResponse> =
         call(HttpMethod.Post, ApiRoutes.adminUserResetPassword(username))
 

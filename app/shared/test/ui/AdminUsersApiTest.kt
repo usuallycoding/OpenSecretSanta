@@ -76,4 +76,32 @@ class AdminUsersApiTest {
         assertTrue(api.resetPassword("alice") is ApiResult.Failure)
         assertTrue(api.resetPassword("alice") is ApiResult.Success)
     }
+
+    @Test
+    fun aDeleteAnswersNoContentForAnUnassignedUserAndConflictForAnyoneElseTheAdministratorCanSee() = runTest {
+        server.adminUsers.add("alice")
+        server.adminUsers.addUnassigned("erin")
+
+        assertEquals(ApiResult.Success(Unit), api.deleteUser("erin"))
+        val refused = failure(api.deleteUser("alice"))
+        assertEquals(ApiError.Rejected(409, "invalid_state", "Only an account you created that is in no group can be deleted."), refused)
+        assertEquals(listOf("DELETE /admin/users/erin", "DELETE /admin/users/alice"), server.calls.filter { it.startsWith("DELETE") })
+    }
+
+    @Test
+    fun aDeleteOfAUserOutsideTheScopeIsNotFound() = runTest {
+        server.adminUsers.addOutsider("zed")
+
+        assertEquals(404, (failure(api.deleteUser("zed")) as ApiError.Rejected).status)
+    }
+
+    @Test
+    fun theListCarriesTheDeletableFlag() = runTest {
+        server.adminUsers.add("alice")
+        server.adminUsers.addUnassigned("erin")
+
+        val users = success(api.adminUsers())
+
+        assertEquals(mapOf("admin" to false, "alice" to false, "erin" to true), users.associate { it.user.username to it.canDelete })
+    }
 }

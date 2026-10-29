@@ -21,3 +21,7 @@ fun filterParticipants(participants: List<AdminParticipant>, query: String): Lis
 /** The pairs whose Santa or whose receiver matches [query], in the order they came in. */
 fun filterPairs(pairs: List<AdminPair>, query: String): List<AdminPair> =
     if (query.isBlank()) pairs else pairs.filter { matchesSearch(query, it.santa, it.santaFullName) || matchesSearch(query, it.receiver, it.receiverFullName) }
+
+/** The users whose username or full name matches [query], in the order they came in. */
+fun filterUsers(users: List<ManagedUser>, query: String): List<ManagedUser> =
+    if (query.isBlank()) users else users.filter { matchesSearch(query, it.username, it.fullName) }

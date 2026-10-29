@@ -120,6 +120,8 @@ data class ManagedUser(
     val mustChangePassword: Boolean,
     /** What the server returns while the password is still the temporary one; null once the person changed it. */
     val temporaryPassword: String?,
+    /** The server says this account can be deleted: one the administrator created that is in no group. */
+    val canDelete: Boolean = false,
 )
 
 internal fun com.usuallycoding.opensecretsanta.contract.ManagedUserDto.toManagedUser() = ManagedUser(
@@ -131,10 +133,21 @@ internal fun com.usuallycoding.opensecretsanta.contract.ManagedUserDto.toManaged
     deliveryInfo = user.deliveryInfo?.trim()?.ifEmpty { null },
     mustChangePassword = user.mustChangePassword,
     temporaryPassword = temporaryPassword,
+    canDelete = canDelete,
 )
 
 /** Something that went wrong with a reset, said once. */
 enum class UserNotice { Unreachable, Failed }
+
+/** Something that went wrong with a deletion on the Users list, said once. */
+enum class UsersNotice { Unreachable, DeleteFailed, DeleteRefused }
+
+data class AdminUsersUi(
+    /** The username the deletion confirmation is open for. */
+    val confirmingDelete: String? = null,
+    val busy: Boolean = false,
+    val notice: UsersNotice? = null,
+)
 
 data class AdminUserUi(
     val confirming: Boolean = false,

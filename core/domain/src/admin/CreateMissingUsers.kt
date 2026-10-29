@@ -21,9 +21,9 @@ class CreateMissingUsers(
         generator: TempPasswordGenerator,
     ) : this(users, NewAccountPlanner(hasher, secretBox, generator))
 
-    operator fun invoke(rawUsernames: List<String>): List<TemporaryCredentials> {
+    operator fun invoke(rawUsernames: List<String>, createdBy: Username? = null): List<TemporaryCredentials> {
         val requested = rawUsernames.map { Username.parse(it, field = "usernames") }.distinct()
-        val planned = planner.plan(requested, existing = users.existing(requested))
+        val planned = planner.plan(requested, existing = users.existing(requested), createdBy = createdBy)
 
         users.insertAll(planned.map { it.newUser })
         return planned.map { TemporaryCredentials(it.username, it.temporaryPassword) }

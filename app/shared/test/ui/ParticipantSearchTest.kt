@@ -1,6 +1,8 @@
 package com.usuallycoding.opensecretsanta.ui
 
 import com.usuallycoding.opensecretsanta.ui.admin.AdminPair
+import com.usuallycoding.opensecretsanta.ui.admin.ManagedUser
+import com.usuallycoding.opensecretsanta.ui.admin.filterUsers
 import com.usuallycoding.opensecretsanta.ui.admin.AdminParticipant
 import com.usuallycoding.opensecretsanta.ui.admin.filterPairs
 import com.usuallycoding.opensecretsanta.ui.admin.filterParticipants
@@ -85,5 +87,20 @@ class ParticipantSearchTest {
     @Test
     fun aBlankSearchShowsEveryPair() {
         assertEquals(pairs.size, shown(" ").size)
+    }
+
+    private val managed = listOf(
+        ManagedUser("alice", "Alice Smith", null, null, null, null, mustChangePassword = false, temporaryPassword = null),
+        ManagedUser("bob", "Bob Brown", null, null, null, null, mustChangePassword = false, temporaryPassword = null),
+        ManagedUser("erin", null, null, null, null, null, mustChangePassword = true, temporaryPassword = "T", canDelete = true),
+    )
+
+    @Test
+    fun usersAreFoundByUsernameOrFullNameWordsInAnyOrder() {
+        assertEquals(listOf("alice"), filterUsers(managed, "ali").map { it.username })
+        assertEquals(listOf("bob"), filterUsers(managed, "brown").map { it.username })
+        assertEquals(listOf("bob"), filterUsers(managed, "brown bob").map { it.username })
+        assertEquals(emptyList(), filterUsers(managed, "zzz").map { it.username })
+        assertEquals(listOf("alice", "bob", "erin"), filterUsers(managed, " ").map { it.username })
     }
 }

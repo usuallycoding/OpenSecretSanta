@@ -526,6 +526,8 @@ class FakeAdminUsers(val me: String = "admin") {
         var deliveryInfo: String? = null,
         var mustChange: Boolean = false,
         var temporary: String? = null,
+        /** The server would accept deleting this user: one the administrator created that is in no group. */
+        var deletable: Boolean = false,
     )
 
     private val rows = mutableListOf(Row(me))
@@ -543,6 +545,15 @@ class FakeAdminUsers(val me: String = "admin") {
             managed += username
         }
 
+    /** A user the administrator created who is in no group, so the administrator may delete them. */
+    fun addUnassigned(username: String, fullName: String? = null): Row =
+        add(username, fullName).also { it.deletable = true }
+
+    /** The user joined a group behind the screen's back: still managed, no longer deletable. */
+    fun joinsAGroup(username: String) {
+        row(username).deletable = false
+    }
+
     /** A user that exists but is not the administrator's to manage. */
     fun addOutsider(username: String): Row = Row(username).also { rows += it }
 
@@ -556,6 +567,8 @@ class FakeAdminUsers(val me: String = "admin") {
         row(username).apply { mustChange = false; temporary = null }
     }
 
+    fun failNextDeleteWith(status: HttpStatusCode, code: String, message: String = "refused") = failNextResetWith(status, code, message)
+
     fun failNextResetWith(status: HttpStatusCode, code: String, message: String = "refused") {
         failures += status to """{"code":"$code","message":"$message"}"""
     }
@@ -563,6 +576,7 @@ class FakeAdminUsers(val me: String = "admin") {
     private fun dto(row: Row) = ManagedUserDto(
         AccountDto(row.username, row.fullName, row.email, row.phone, row.address, row.deliveryInfo, row.username == me, row.mustChange),
         row.temporary,
+        row.deletable,
     )
 
     /** The answer to a request under `/admin/users`, or null when the request is about something else. */
@@ -577,6 +591,13 @@ class FakeAdminUsers(val me: String = "admin") {
             ?: return HttpStatusCode.NotFound to """{"code":"not_found","message":"User not found."}"""
         return when {
             method == "GET" && !reset -> HttpStatusCode.OK to Json.encodeToString(dto(row))
+            method == "DELETE" && !reset -> {
+                failures.removeFirstOrNull()?.let { return it }
+                if (!row.deletable) return HttpStatusCode.Conflict to """{"code":"invalid_state","message":"Only an account you created that is in no group can be deleted."}"""
+                rows.remove(row)
+                managed -= row.username
+                HttpStatusCode.NoContent to ""
+            }
             method == "POST" && reset -> {
                 failures.removeFirstOrNull()?.let { return it }
                 row.temporary = "NewTemp-${row.username}-${++resets}"

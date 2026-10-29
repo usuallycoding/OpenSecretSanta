@@ -269,6 +269,15 @@ object Strings {
     const val NOTICE_RESET_FAILED = "The password could not be reset. Please try again."
     const val USER_NO_PROFILE = "This person has not added any details yet."
     const val USER_GONE = "This user is no longer available."
+    const val ADMIN_SEARCH_USERS = "Search users"
+    const val USERS_NO_MATCH = "No user matches your search."
+    const val USER_NOT_IN_GROUP = "Not in any group"
+    const val USER_DELETE = "Delete user"
+    const val USER_DELETE_TITLE = "Delete this user?"
+    fun deleteUserBody(username: String) =
+        "$username is in no group. The account cannot be brought back, and its devices and notification settings are removed too."
+    const val NOTICE_DELETE_FAILED = "The user could not be deleted. Please try again."
+    const val NOTICE_DELETE_REFUSED = "This user can no longer be deleted: they are in a group now."
     /** The label above the pairs, with how many people the draw is for: "Who gives to whom (4 participants)". */
     fun adminDraw(participants: Int) = "Who gives to whom ($participants participants)"
     const val ADMIN_DRAW_FAILED = "The draw could not be loaded."

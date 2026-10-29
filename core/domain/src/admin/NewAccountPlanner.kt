@@ -20,7 +20,7 @@ class NewAccountPlanner(
     private val secretBox: SecretBox,
     private val generator: TempPasswordGenerator,
 ) {
-    fun plan(usernames: Collection<Username>, existing: Set<Username>): List<PlannedAccount> =
+    fun plan(usernames: Collection<Username>, existing: Set<Username>, createdBy: Username? = null): List<PlannedAccount> =
         usernames.distinct().filter { it !in existing }.map { username ->
             val temporaryPassword = generator.generate()
             PlannedAccount(
@@ -30,6 +30,7 @@ class NewAccountPlanner(
                     encryptedTempPassword = secretBox.encrypt(temporaryPassword),
                     mustChangePassword = true,
                     isAdmin = false,
+                    createdBy = createdBy,
                 ),
                 temporaryPassword = temporaryPassword,
             )

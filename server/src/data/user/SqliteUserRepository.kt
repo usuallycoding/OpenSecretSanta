@@ -69,6 +69,26 @@ class SqliteUserRepository(private val database: Database) : UserRepository {
         if (changed == 0) null else find(c, username)
     }
 
+    override fun deleteUnassigned(username: Username, createdBy: Username): Boolean = database.transaction { c ->
+        // Every statement repeats the eligibility, and the first one already holds the write lock, so a group that names the
+        // person meanwhile keeps the account whole. The person is in no group, so what is left of their wishlist is stale.
+        val eligible = "EXISTS (SELECT 1 FROM users u WHERE u.username = ? AND u.created_by = ? AND u.is_admin = 0 " +
+            "AND NOT EXISTS (SELECT 1 FROM group_participants p WHERE p.username = u.username))"
+        for (table in listOf("wishlist_items", "login_attempts")) {
+            c.prepareStatement("DELETE FROM $table WHERE username = ? AND $eligible").use { s ->
+                s.setString(1, username.value)
+                s.setString(2, username.value)
+                s.setString(3, createdBy.value)
+                s.executeUpdate()
+            }
+        }
+        c.prepareStatement("DELETE FROM users WHERE username = ? AND created_by = ? AND is_admin = 0 AND NOT EXISTS (SELECT 1 FROM group_participants p WHERE p.username = users.username)").use { s ->
+            s.setString(1, username.value)
+            s.setString(2, createdBy.value)
+            s.executeUpdate()
+        } == 1
+    }
+
     override fun replaceCredentials(
         username: Username,
         passwordHash: String,
@@ -119,8 +139,8 @@ class SqliteUserRepository(private val database: Database) : UserRepository {
 /** Inserts users on an existing connection so that callers can do it inside their own transaction. */
 internal fun insertUsers(connection: Connection, users: List<NewUser>) {
     connection.prepareStatement(
-        "INSERT INTO users (username, password_hash, temp_password_enc, must_change_password, is_admin) " +
-            "VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO users (username, password_hash, temp_password_enc, must_change_password, is_admin, created_by) " +
+            "VALUES (?, ?, ?, ?, ?, ?)",
     ).use { s ->
         users.forEach { user ->
             s.setString(1, user.username.value)
@@ -128,6 +148,7 @@ internal fun insertUsers(connection: Connection, users: List<NewUser>) {
             s.setBytes(3, user.encryptedTempPassword)
             s.setInt(4, if (user.mustChangePassword) 1 else 0)
             s.setInt(5, if (user.isAdmin) 1 else 0)
+            s.setString(6, user.createdBy?.value)
             s.executeUpdate()
         }
     }

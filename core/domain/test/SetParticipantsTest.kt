@@ -89,6 +89,17 @@ class SetParticipantsTest {
     }
 
     @Test
+    fun anAccountMadeByAddingSomeoneInPendingRecordsTheAdministratorThatMadeIt() {
+        users.add("alice")
+        val group = groups.seed(adminA.username, GroupState.PENDING, u("alice"))
+
+        set(adminA, group.id, listOf("alice", "dave"))
+
+        assertEquals(adminA.username, users.createdBy(u("dave")))
+        assertNull(users.createdBy(u("alice")))
+    }
+
+    @Test
     fun removingAPersonInPendingKeepsTheirAccount() {
         users.add("alice")
         users.add("bob")

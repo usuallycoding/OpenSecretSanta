@@ -24,7 +24,7 @@ class MoveToPending(
         val group = loadOwned(actor, id)
         group.requireCanMoveTo(GroupState.PENDING)
 
-        val planned = planner.plan(group.participants, existing = users.existing(group.participants))
+        val planned = planner.plan(group.participants, existing = users.existing(group.participants), createdBy = actor.username)
         val updated = groups.moveToPending(group.id, planned.map { it.newUser })
         return GroupChange(viewer(updated), planned.map { TemporaryCredentials(it.username, it.temporaryPassword) })
     }

@@ -6,6 +6,8 @@ class NewUser(
     val encryptedTempPassword: ByteArray?,
     val mustChangePassword: Boolean,
     val isAdmin: Boolean,
+    /** The administrator whose action created the account; none for the first administrator. */
+    val createdBy: Username? = null,
 )
 
 class UserCredentials(
@@ -29,6 +31,13 @@ interface UserRepository {
     fun insertAll(users: List<NewUser>)
 
     fun updateProfile(username: Username, profile: Profile): User?
+
+    /**
+     * Deletes the account of [username], with its devices, settings, login record and leftover wishlist items, only if
+     * [createdBy] created it, it is not an administrator and no group names it, all decided in the same transaction.
+     * Returns whether it was deleted.
+     */
+    fun deleteUnassigned(username: Username, createdBy: Username): Boolean
 
     /** Replaces the credentials and increments the user's token version; returns the updated user. */
     fun replaceCredentials(

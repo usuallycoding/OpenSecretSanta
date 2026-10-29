@@ -36,7 +36,7 @@ class SetParticipants(
         val participants = parseParticipants(rawParticipants)
 
         val planned = if (group.state == GroupState.PENDING) {
-            planner.plan(participants, existing = users.existing(participants))
+            planner.plan(participants, existing = users.existing(participants), createdBy = actor.username)
         } else {
             emptyList()
         }
