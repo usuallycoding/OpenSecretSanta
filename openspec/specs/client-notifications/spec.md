@@ -5,16 +5,16 @@ How a person controls push notifications in the Android and web apps: a Settings
 
 ## Requirements
 
-### Requirement: Notifications in the top-bar menu
-On Android and the web, the top-bar menu, in both the participant and the admin view, SHALL have a "Notifications" item that opens a bottom sheet. On iOS the item SHALL NOT be offered.
+### Requirement: Notifications in Settings
+On Android and the web, the Settings page, in both the participant and the admin view, SHALL have a "Notifications" row that opens a bottom sheet. On iOS the row SHALL NOT be offered.
 
 #### Scenario: Participant and admin
-- **WHEN** a participant or an administrator opens the menu on Android or the web
-- **THEN** it has a "Notifications" item that opens the sheet
+- **WHEN** a participant or an administrator opens Settings on Android or the web
+- **THEN** it has a "Notifications" row that opens the sheet
 
 #### Scenario: iOS
-- **WHEN** the menu is opened on iOS
-- **THEN** it has no "Notifications" item
+- **WHEN** Settings is opened on iOS
+- **THEN** it has no "Notifications" row
 
 ### Requirement: A switch for this device
 The sheet SHALL start with a switch for the current device. Turning it on SHALL ask for the system's notification permission (Android 13 and later, the browser) when it has not been granted, and when granted SHALL register the device with the server. Turning it off SHALL remove the device's registration. The switch SHALL show on only while the permission is granted and the device is registered.

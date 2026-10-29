@@ -25,7 +25,7 @@ The app SHALL draw with its own colour palette and typography on every platform,
 - **THEN** every screen uses the same palette, not Material's stock colours
 
 ### Requirement: Choosing the appearance
-The top-bar menu, in both the participant and the admin view, SHALL have an "Appearance" item that opens a bottom sheet with the choices "Follow device" (the default), "Light" and "Dark". Choosing one SHALL apply it at once, to every screen including the sign-in screen, and keep it until it is changed.
+The Settings page, in both the participant and the admin view, SHALL have an "Appearance" row that opens a bottom sheet with the choices "Follow device" (the default), "Light" and "Dark". Choosing one SHALL apply it at once, to every screen including the sign-in screen, and keep it until it is changed.
 
 #### Scenario: Choose dark
 - **WHEN** the person chooses "Dark" while the device is light
@@ -40,7 +40,7 @@ The top-bar menu, in both the participant and the admin view, SHALL have an "App
 - **THEN** the app shows whatever the device is set to
 
 #### Scenario: Both views
-- **WHEN** an administrator opens the menu in the admin view and in the participant view
+- **WHEN** an administrator opens Settings in the admin view and in the participant view
 - **THEN** "Appearance" is in both
 
 #### Scenario: Current choice shown
