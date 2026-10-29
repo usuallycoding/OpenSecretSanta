@@ -58,15 +58,28 @@ fun SheetTextField(
     trailingIcon: (@Composable () -> Unit)? = null,
 ) {
     var field by remember { mutableStateOf(TextFieldValue(value)) }
-    // what the caller says the text is changed behind the field's back (cleared, loaded): take it over, cursor at the end
+    // what this field has sent out and not yet seen come back: on a slow frame the caller's text is one or more keystrokes
+    // behind the field, and that older text is an echo to be ignored, not a change made behind the field's back
+    val sent = remember { ArrayDeque<String>() }
+    // what the caller says the text is changed behind the field's back (cleared, loaded, shortened): take it over, cursor at the end
     LaunchedEffect(value) {
-        if (field.text != value) field = TextFieldValue(value, TextRange(value.length))
+        when {
+            field.text == value -> sent.clear()
+            value in sent -> Unit
+            else -> {
+                sent.clear()
+                field = TextFieldValue(value, TextRange(value.length))
+            }
+        }
     }
     OutlinedTextField(
         value = field,
         onValueChange = {
             field = it
-            if (it.text != value) onValueChange(it.text)
+            if (it.text != value || sent.isNotEmpty()) {
+                sent.addLast(it.text)
+                onValueChange(it.text)
+            }
         },
         label = { Text(label) },
         singleLine = singleLine,

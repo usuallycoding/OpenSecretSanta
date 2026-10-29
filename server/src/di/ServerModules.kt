@@ -54,6 +54,8 @@ import com.usuallycoding.opensecretsanta.domain.wishlist.WishlistRepository
 import com.usuallycoding.opensecretsanta.domain.user.UserRepository
 import com.usuallycoding.opensecretsanta.domain.email.DisabledMailer
 import com.usuallycoding.opensecretsanta.domain.email.Mailer
+import com.usuallycoding.opensecretsanta.domain.announcement.Channels
+import com.usuallycoding.opensecretsanta.domain.announcement.SendAnnouncement
 import com.usuallycoding.opensecretsanta.domain.email.SendDrawEmails
 import com.usuallycoding.opensecretsanta.domain.notification.DeviceRepository
 import com.usuallycoding.opensecretsanta.domain.notification.DisabledPushSender
@@ -156,6 +158,8 @@ fun emailModule(mailer: Mailer? = null) = module {
         }
     }
     single { SendDrawEmails(get(), get(), get(), get<ServerConfig>().appUrl) }
+    single { SendAnnouncement(get(), get(), get(), get(), get<ServerConfig>().appUrl) }
+    single { Channels(get(), get()) }
 }
 
 /** Who is told what: the notifier decides, the dispatcher runs it off the request thread (a test passes its own executor and scheduler). */

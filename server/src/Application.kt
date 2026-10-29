@@ -11,6 +11,8 @@ import com.usuallycoding.opensecretsanta.server.data.db.MigrationRunner
 import com.usuallycoding.opensecretsanta.server.di.serverModules
 import com.usuallycoding.opensecretsanta.domain.admin.GetManagedUser
 import com.usuallycoding.opensecretsanta.domain.admin.SeedDefaultAdmin
+import com.usuallycoding.opensecretsanta.domain.announcement.Channels
+import com.usuallycoding.opensecretsanta.domain.announcement.SendAnnouncement
 import com.usuallycoding.opensecretsanta.domain.email.Mailer
 import com.usuallycoding.opensecretsanta.domain.notification.GetNotificationSettings
 import com.usuallycoding.opensecretsanta.domain.notification.PushSender
@@ -64,6 +66,7 @@ import com.usuallycoding.opensecretsanta.server.presentation.adminGroupRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.adminOversightRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.adminRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.giftVisibilityRoutes
+import com.usuallycoding.opensecretsanta.server.presentation.announcementRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.groupLifecycleRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.memberGroupRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.questionRoutes
@@ -141,7 +144,7 @@ fun Application.module(
 
         authenticate(ACCESS_AUTH) {
             install(PasswordChangeGate)
-            accountRoutes(get<ChangePassword>())
+            accountRoutes(get<ChangePassword>(), get<Channels>())
             profileRoutes(get<UpdateProfile>())
             adminRoutes(get<ListManagedUsers>(), get<GetManagedUser>(), get<ResetPassword>())
             adminGroupRoutes(
@@ -154,6 +157,7 @@ fun Application.module(
                 get<NotificationDispatcher>(),
             )
             groupLifecycleRoutes(get<MoveToPending>(), get<ActivateGroup>(), get<ArchiveGroup>(), get<ListAssignments>(), get<SendDrawEmails>(), get<NotificationDispatcher>())
+            announcementRoutes(get<SendAnnouncement>(), get<NotificationDispatcher>())
             memberGroupRoutes(get<ListMyGroups>(), get<GetMyGroup>())
             giftVisibilityRoutes(get<GetMyReceiver>(), get<GetMySanta>())
             questionRoutes(get<AskQuestion>(), get<ListMyQuestions>(), get<ListQuestionsFromMySanta>(), get<AnswerQuestion>(), get<NotificationDispatcher>())

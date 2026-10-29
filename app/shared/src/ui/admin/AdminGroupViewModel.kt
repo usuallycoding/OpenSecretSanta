@@ -97,6 +97,9 @@ class AdminGroupViewModel(
     /** Any group can be deleted; one with data of its own asks for a second confirmation first. */
     val canDelete: Boolean get() = current != null
 
+    /** A message to the participants can be sent while the group is Pending or Active. */
+    val canAnnounce: Boolean get() = current?.phase.let { it == AdminPhase.Pending || it == AdminPhase.Active }
+
     /** The next step for the state, or null when there is none (an Archived group). */
     val nextStep: AdminStep?
         get() = when (current?.phase) {

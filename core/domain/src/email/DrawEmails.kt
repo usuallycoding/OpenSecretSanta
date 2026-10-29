@@ -90,24 +90,42 @@ fun drawEmail(
         appendLine("The names for \"${oneLine(group.name)}\" have been drawn.")
         appendLine()
         appendLine("You are Secret Santa for: $receiverName")
-        val details = buildList {
-            group.description?.let { add(it) }
-            group.date?.let { date -> add("When: " + whenText(date, group.time)) }
-            if (group.date == null) group.time?.let { add("When: ${timeText(it)}") }
-            group.location?.let { add("Where: $it") }
-        }
-        if (details.isNotEmpty()) {
-            appendLine()
-            details.forEach { appendLine(it) }
-        }
-        if (appUrl != null) {
-            appendLine()
-            appendLine("Open the app: $appUrl")
-        }
+        appendDetailsAndLink(group, appUrl)
         appendLine()
         append("Keep it secret!")
     }
     return EmailMessage(to, "Your Secret Santa draw: ${oneLine(group.name)}", text)
+}
+
+/** The email that gives [message], written by the group's owner, to [to]: the draw email's layout without the draw. */
+fun announcementEmail(to: String, recipient: Username, group: GroupDetails, title: String, message: String, appUrl: String?): EmailMessage {
+    val text = buildString {
+        appendLine("Hi ${recipient.value},")
+        appendLine()
+        appendLine(message)
+        appendDetailsAndLink(group, appUrl)
+        appendLine()
+        append("Keep it secret!")
+    }
+    return EmailMessage(to, "${oneLine(title)}: ${oneLine(group.name)}", text)
+}
+
+/** The group's description, when and where, if set, and then the link to the app, each block after an empty line. */
+private fun StringBuilder.appendDetailsAndLink(group: GroupDetails, appUrl: String?) {
+    val details = buildList {
+        group.description?.let { add(it) }
+        group.date?.let { date -> add("When: " + whenText(date, group.time)) }
+        if (group.date == null) group.time?.let { add("When: ${timeText(it)}") }
+        group.location?.let { add("Where: $it") }
+    }
+    if (details.isNotEmpty()) {
+        appendLine()
+        details.forEach { appendLine(it) }
+    }
+    if (appUrl != null) {
+        appendLine()
+        appendLine("Open the app: $appUrl")
+    }
 }
 
 private val MONTHS = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
@@ -120,4 +138,4 @@ private fun whenText(date: LocalDate, time: LocalTime?): String {
 private fun timeText(time: LocalTime): String = "${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}"
 
 /** A group name goes into a subject line: line breaks are replaced so that it stays one line. */
-private fun oneLine(text: String): String = text.replace(Regex("[\\r\\n]+"), " ")
+internal fun oneLine(text: String): String = text.replace(Regex("[\\r\\n]+"), " ")

@@ -65,6 +65,29 @@ data class EmailSummaryDto(
     val noAddress: Int,
 )
 
+/** An announcement to a group's participants: [email] and [push] say how to send it, and at least one must be true. */
+@Serializable
+data class AnnouncementRequest(
+    val title: String,
+    val body: String,
+    val email: Boolean = false,
+    val push: Boolean = false,
+)
+
+/** How the push notifications of an announcement went: for how many people one was queued, and how many others could not be told. */
+@Serializable
+data class PushSummaryDto(
+    val reached: Int,
+    val notReached: Int,
+)
+
+/** What became of an announcement; a summary is there only for a channel that was used. */
+@Serializable
+data class AnnouncementResponse(
+    val emails: EmailSummaryDto? = null,
+    val push: PushSummaryDto? = null,
+)
+
 /**
  * The group after a change, plus the accounts the change created (empty when it created none). Only the answer to an
  * activation carries [emails], and only when email is configured.

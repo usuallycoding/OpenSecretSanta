@@ -13,7 +13,7 @@ object Strings {
     const val NOTIFICATIONS_THIS_DEVICE = "Notifications on this device"
     const val NOTIFICATIONS_THIS_DEVICE_NOTE = "Get a notification here when something happens"
     const val NOTIFICATIONS_ANNOUNCEMENTS = "Announcements"
-    const val NOTIFICATIONS_ANNOUNCEMENTS_NOTE = "Being added to a group and the names being drawn"
+    const val NOTIFICATIONS_ANNOUNCEMENTS_NOTE = "Messages from the organiser, being added to a group and the names being drawn"
     const val NOTIFICATIONS_WISHLIST = "Wishlist changes"
     const val NOTIFICATIONS_WISHLIST_NOTE = "The person you give to changes their wishlist"
     const val NOTIFICATIONS_QUESTIONS = "Questions from your Santa"
@@ -87,6 +87,30 @@ object Strings {
             if (noAddress > 0) add(if (noAddress == 1) "1 has no email address" else "$noAddress have no email address")
         }
         return "Emails sent to $sent of $total participants. ${problems.joinToString(", ")}."
+    }
+    const val ANNOUNCE_BUTTON = "Send announcement"
+    const val ANNOUNCE_TITLE_LABEL = "Title"
+    const val ANNOUNCE_MESSAGE_LABEL = "Message"
+    const val ANNOUNCE_SEND_AS = "Send as"
+    const val ANNOUNCE_EMAIL = "Email"
+    const val ANNOUNCE_PUSH = "Push notification"
+    const val ANNOUNCE_EMAIL_OFF = "Email is not set up on this server"
+    const val ANNOUNCE_PUSH_OFF = "Push notifications are not set up on this server"
+    const val ANNOUNCE_PUSH_CUT = "Push notifications show only the first 300 characters of the message."
+    const val ANNOUNCE_SEND = "Send"
+    const val ANNOUNCE_CONFIRM_TITLE = "Send this announcement?"
+    const val ANNOUNCE_CLOSE = "Close"
+    const val ANNOUNCE_CANCEL = "Cancel"
+    fun announceSubject(title: String, group: String) = "${title.trim()}: $group"
+    fun announceCount(length: Int, max: Int) = "$length/$max"
+    fun announceConfirm(group: String, email: Boolean, push: Boolean): String {
+        val ways = listOfNotNull("email".takeIf { email }, "a push notification".takeIf { push }).joinToString(" and ")
+        return "The participants of \"$group\" will be sent this as $ways. It cannot be taken back."
+    }
+    fun announcePushSummary(reached: Int, notReached: Int): String {
+        val total = reached + notReached
+        if (notReached == 0) return if (reached == 1) "Push notification sent to 1 participant." else "Push notification sent to all $total participants."
+        return "Push notification sent to $reached of $total participants. $notReached ${if (notReached == 1) "has" else "have"} notifications off or no device."
     }
     const val PROFILE_INCOMPLETE = "Add your name and address so a gift can reach you."
     const val SAVE = "Save"

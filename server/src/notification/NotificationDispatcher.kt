@@ -3,6 +3,7 @@ package com.usuallycoding.opensecretsanta.server.notification
 import com.usuallycoding.opensecretsanta.domain.auth.Clock
 import com.usuallycoding.opensecretsanta.domain.group.Group
 import com.usuallycoding.opensecretsanta.domain.notification.Notifier
+import com.usuallycoding.opensecretsanta.domain.notification.PushPlan
 import com.usuallycoding.opensecretsanta.domain.user.Username
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Executor
@@ -59,6 +60,9 @@ class NotificationDispatcher(
         run { notifier.groupVisible(group, recipients, actor) }
 
     fun groupDrawn(group: Group, actor: Username) = run { notifier.groupDrawn(group, actor) }
+
+    /** Sends the push notifications of an announcement, already planned and counted by the caller. */
+    fun announce(plan: PushPlan) = run { notifier.send(plan) }
 
     fun questionAsked(groupId: Long, santa: Username) = run { notifier.questionAsked(groupId, santa) }
 

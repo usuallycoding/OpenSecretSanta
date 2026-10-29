@@ -4,6 +4,8 @@ import com.usuallycoding.opensecretsanta.contract.AccountDto
 import com.usuallycoding.opensecretsanta.contract.AdminGroupDto
 import com.usuallycoding.opensecretsanta.contract.AdminQuestionThreadDto
 import com.usuallycoding.opensecretsanta.contract.AnswerRequest
+import com.usuallycoding.opensecretsanta.contract.AnnouncementRequest
+import com.usuallycoding.opensecretsanta.contract.AnnouncementResponse
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.AskQuestionRequest
 import com.usuallycoding.opensecretsanta.contract.AssignmentDto
@@ -193,6 +195,10 @@ class ApiClient(
 
     suspend fun archive(id: Long): ApiResult<GroupChangeResponse> =
         call(HttpMethod.Post, ApiRoutes.adminGroupArchive(id))
+
+    /** Sends a Pending or Active group's participants a message of the owner's, by email, push notification or both. */
+    suspend fun announce(id: Long, request: AnnouncementRequest): ApiResult<AnnouncementResponse> =
+        call(HttpMethod.Post, ApiRoutes.adminGroupAnnouncements(id), body = request)
 
     // --- administrator: oversight (owner only, read-only) --------------------------------------
 

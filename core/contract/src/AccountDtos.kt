@@ -12,6 +12,9 @@ data class AccountDto(
     val deliveryInfo: String? = null,
     val isAdmin: Boolean,
     val mustChangePassword: Boolean,
+    /** Whether the server can send email, and whether it can send push notifications; false when it is not set up. */
+    val emailAvailable: Boolean = false,
+    val pushAvailable: Boolean = false,
 )
 
 /** Replaces all editable fields. [username] may be sent back unchanged but must never differ. */

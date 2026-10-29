@@ -30,6 +30,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -64,10 +69,17 @@ fun AdminGroupScreen(
     val state by viewModel.data.collectAsState()
     val draw by viewModel.draw.collectAsState()
     val ui by viewModel.ui.collectAsState()
+    // each opening of the announcement sheet starts empty: a new key gives it a new view model
+    var announcing by remember { mutableStateOf(false) }
+    var announceKey by remember { mutableStateOf(0) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
     LaunchedEffect(ui.deleted) { if (ui.deleted) onDeleted() }
     // Back closes an open sheet before it leaves the screen, on the platforms whose back is not already the sheet's own
     SheetBackHandler(enabled = ui.sheet != null) { viewModel.dismissSheet() }
+    SheetBackHandler(enabled = announcing) {
+        announcing = false
+        announceKey++
+    }
 
     if (state.isGone()) {
         Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
@@ -101,12 +113,20 @@ fun AdminGroupScreen(
                 loading = state.loading,
                 onRefresh = { viewModel.refresh() },
                 modifier = Modifier.weight(1f),
-                header = { LoadSection(state, onRetry = { viewModel.refresh() }) { group -> Header(group, viewModel, ui.busy, onEdit) } },
+                header = { LoadSection(state, onRetry = { viewModel.refresh() }) { group -> Header(group, viewModel, ui.busy, onEdit) { announcing = true } } },
                 footer = { state.value?.let { group -> People(group, viewModel, draw) } },
             )
         }
     }
     ui.participants?.let { ParticipantsSheet(it, viewModel) }
+    if (announcing) {
+        val name = state.value?.name.orEmpty()
+        val announcement = koinViewModel<AnnouncementViewModel>(key = "announce-${viewModel.groupId}-$announceKey") { parametersOf(viewModel.groupId, name) }
+        AnnouncementSheet(announcement) {
+            announcing = false
+            announceKey++
+        }
+    }
     ui.sheet?.let { GroupSheetHost(it, viewModel.groupId, viewModel.me, draw, viewModel::dismissSheet) }
     ui.confirming?.let { step -> StepDialog(step, state.value?.name.orEmpty(), viewModel) }
     ui.confirmingDelete?.let { impact -> DeleteImpactDialog(impact, viewModel) }
@@ -137,7 +157,7 @@ private fun AdminStep.label() = when (this) {
 /** The group's details and, in one row, everything that can be done with it: edit, the next step and (a Draft) delete. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Header(group: AdminGroup, viewModel: AdminGroupViewModel, busy: Boolean, onEdit: () -> Unit) {
+private fun Header(group: AdminGroup, viewModel: AdminGroupViewModel, busy: Boolean, onEdit: () -> Unit, onAnnounce: () -> Unit) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ReadOnlyText(group.name, style = MaterialTheme.typography.headlineSmall, label = Strings.GROUP_NAME, maxLines = 1, copy = false)
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -152,6 +172,9 @@ private fun Header(group: AdminGroup, viewModel: AdminGroupViewModel, busy: Bool
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             if (viewModel.canEditDetails) {
                 OutlinedButton(onClick = onEdit) { Text(Strings.ADMIN_EDIT_DETAILS) }
+            }
+            if (viewModel.canAnnounce) {
+                OutlinedButton(onClick = onAnnounce) { Text(Strings.ANNOUNCE_BUTTON) }
             }
             if (step != null) {
                 Button(onClick = { viewModel.ask(step) }, enabled = !busy && !blocked) { Text(step.label()) }

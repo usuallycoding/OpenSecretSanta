@@ -64,11 +64,38 @@ class Notifier(
             deliver(NotificationCategory.ANSWERS, listOf(santa), groupId, NotificationTexts.questionAnswered(name(group)))
         }
 
+    /** Whether a push service is set up at all. */
+    val available: Boolean get() = sender.enabled
+
+    /**
+     * Works out the push notifications of an announcement to the participants of [group] other than [author]: one for
+     * each device of everyone who has the announcements switch on. Nothing is sent; see [send].
+     */
+    fun planAnnouncement(group: Group, title: String, text: String, author: Username): PushPlan {
+        val others = group.participants.filter { it != author }
+        if (!available || others.isEmpty()) return PushPlan(emptyList(), reached = 0, notReached = others.size)
+        val wanting = settings.findAll(others).filterValues { it.allows(NotificationCategory.ANNOUNCEMENTS) }.keys
+        val owned = devices.devicesOf(wanting)
+        val body = cut(text)
+        val heading = "${oneLine(title)}: ${oneLine(group.details.name)}"
+        val messages = owned.map { PushMessage(it.token, NotificationCategory.ANNOUNCEMENTS, group.id, heading, body) }
+        val reached = owned.map { it.username }.toSet().size
+        return PushPlan(messages, reached = reached, notReached = others.size - reached)
+    }
+
+    /** Sends a plan's messages and forgets devices the push service says are gone; never throws. */
+    fun send(plan: PushPlan) = attempt { dispatch(plan.messages) }
+
+    private fun cut(text: String): String = if (text.length <= PUSH_TEXT_LIMIT) text else text.take(PUSH_TEXT_LIMIT).trimEnd() + "\u2026"
+
     private fun deliver(category: NotificationCategory, recipients: List<Username>, groupId: Long, body: String) {
         if (!sender.enabled || recipients.isEmpty()) return
         val wanting = settings.findAll(recipients).filterValues { it.allows(category) }.keys
-        val messages = devices.devicesOf(wanting).map { PushMessage(it.token, category, groupId, NotificationTexts.TITLE, body) }
-        if (messages.isEmpty()) return
+        dispatch(devices.devicesOf(wanting).map { PushMessage(it.token, category, groupId, NotificationTexts.TITLE, body) })
+    }
+
+    private fun dispatch(messages: List<PushMessage>) {
+        if (!sender.enabled || messages.isEmpty()) return
         val results = sender.send(messages)
         if (results.size != messages.size) return
         val gone = messages.zip(results).filter { it.second == PushResult.InvalidToken }.map { it.first.token }
@@ -78,6 +105,8 @@ class Notifier(
     /** A group name goes onto a lock screen on one line. */
     private fun name(group: Group): String = "\"" + group.details.name.replace(Regex("[\\r\\n]+"), " ") + "\""
 
+    private fun oneLine(text: String): String = text.replace(Regex("[\\r\\n]+"), " ")
+
     private inline fun attempt(block: () -> Unit) {
         try {
             block()
@@ -85,4 +114,12 @@ class Notifier(
             // nobody is told; the action that led here is already stored
         }
     }
+
+    companion object {
+        /** Push messages are data messages, which Firebase limits to about 4KB: the text is cut well short of that. */
+        const val PUSH_TEXT_LIMIT = 300
+    }
 }
+
+/** The push notifications of an announcement: the messages to send, how many people they are for and how many others cannot be told. */
+class PushPlan(val messages: List<PushMessage>, val reached: Int, val notReached: Int)

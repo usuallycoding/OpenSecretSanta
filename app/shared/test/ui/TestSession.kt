@@ -1,6 +1,9 @@
 package com.usuallycoding.opensecretsanta.ui
 
+import com.usuallycoding.opensecretsanta.contract.AnnouncementRequest
+import com.usuallycoding.opensecretsanta.contract.AnnouncementResponse
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
+import com.usuallycoding.opensecretsanta.contract.PushSummaryDto
 import com.usuallycoding.opensecretsanta.contract.EmailSummaryDto
 import com.usuallycoding.opensecretsanta.contract.ErrorResponse
 import com.usuallycoding.opensecretsanta.contract.DeletionImpactDto
@@ -76,6 +79,9 @@ class ScriptedServer {
     /** The notification switches and registered devices as the server keeps and answers them. */
     val notifications = FakeNotifications()
 
+    /** Announcements to a group, as the server answers them. */
+    val announcements = FakeAnnouncements()
+
     /** What the person's receiver keeps, as the receiver's list endpoint returns it (no ids). */
     var receiverWishlist: List<SharedWishlistItemDto> = emptyList()
     var receiverWishlistAnswer: Pair<HttpStatusCode, String>? = null
@@ -111,6 +117,7 @@ class ScriptedServer {
                 oversight.answer(request.method.value, path)?.let { return@MockEngine json(it.first, it.second) }
                 adminGroups.confirmed = request.url.parameters["confirm"] == "true"
                 adminGroups.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
+                announcements.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 gift.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 notifications.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 val wishlistAnswer = wishlist.answer(request.method.value, path, bodies.last())
@@ -648,6 +655,27 @@ class FakeAdminOversight(private val groups: FakeAdminGroups) {
  * name all four, devices keyed by their token (a token registered again belongs to the latest caller), and an answer
  * to the settings read that says whether push is available at all. A test can queue a failure for the next save.
  */
+/** The announcement route: it keeps what it was sent and answers with a summary of each channel asked for, or with a queued failure. */
+class FakeAnnouncements {
+    val requests = mutableListOf<AnnouncementRequest>()
+    var emails = EmailSummaryDto(sent = 4, failed = 0, noAddress = 0)
+    var push = PushSummaryDto(reached = 3, notReached = 1)
+    private val failures = ArrayDeque<Pair<HttpStatusCode, String>>()
+
+    fun failNextWith(status: HttpStatusCode, code: String, message: String, field: String? = null) {
+        failures += status to """{"code":"$code","message":"$message"${if (field != null) ""","field":"$field"""" else ""}}"""
+    }
+
+    fun answer(method: String, path: String, body: String): Pair<HttpStatusCode, String>? {
+        if (method != "POST" || !Regex("/admin/groups/\\d+/announcements").matches(path)) return null
+        return failures.removeFirstOrNull() ?: run {
+            val request = Json.decodeFromString<AnnouncementRequest>(body)
+            requests += request
+            HttpStatusCode.OK to Json.encodeToString(AnnouncementResponse(emails.takeIf { request.email }, push.takeIf { request.push }))
+        }
+    }
+}
+
 class FakeNotifications {
     var available = true
     var settings = NotificationSettingsRequest(announcements = true, wishlist = true, questions = true, answers = true)
