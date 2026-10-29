@@ -14,7 +14,13 @@
 - [x] 3.1 Add the `image:` lines to `docker-compose.yml` and `IMAGE_TAG` to `.env.example`; check `docker compose config` and that `up --build` still builds
 - [x] 3.2 Add the Raspberry Pi section to the README: the files to copy, `docker compose pull && docker compose up -d`, updating, rolling back with `IMAGE_TAG`, making the packages public once, and what the images do not contain
 
-## 4. Verify
+## 4. A compose file for hosts without the repository (found when Portainer could not build)
 
-- [x] 4.1 `openspec validate publish-docker-images --strict`
-- [ ] 4.2 The person pushes, watches the first run on GitHub, makes the two packages public, and runs the stack on the Pi
+- [x] 4.1 Add `docker-compose.images.yml` (the same services with `image:` only and `SECRETS_DIR` for the key folder) and `SECRETS_DIR` to `.env.example`
+- [x] 4.2 Check it against the published images: pull, start under a throw-away project name, healthy, `config.json` follows `PUBLIC_SERVER_URL`, then remove that project
+- [x] 4.3 Update the README's Pi section (use this file, Portainer, `SECRETS_DIR`)
+
+## 5. Verify
+
+- [x] 5.1 `openspec validate publish-docker-images --strict`
+- [x] 5.2 The person pushes, watches the first run on GitHub, makes the two packages public, and runs the stack on the Pi

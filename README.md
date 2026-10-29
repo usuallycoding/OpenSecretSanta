@@ -119,17 +119,21 @@ Compose stops and names the variable when a required one is missing, and the ser
 GitHub Actions builds the server and web images on every push to `main` and publishes them for `linux/arm64` (a Raspberry Pi with a 64-bit OS) and `linux/amd64` as `ghcr.io/usuallycoding/opensecretsanta-server` and `ghcr.io/usuallycoding/opensecretsanta-web`. A machine only needs Docker and three things from this repository and your own settings, so nothing has to be carried over on a USB stick and no toolchain is installed:
 
 ```
-docker-compose.yml     the file in this repository
-.env                   your settings, made from .env.example
-secrets/               only if you use push: the Firebase service-account key file
+docker-compose.images.yml   the file in this repository that has no build in it
+.env                        your settings, made from .env.example
+secrets/                    only if you use push: the Firebase service-account key file
 ```
 
 ```
-docker compose pull          # fetches the published images
-docker compose up -d         # starts (or restarts) the stack on them
+docker compose -f docker-compose.images.yml pull     # fetches the published images
+docker compose -f docker-compose.images.yml up -d    # starts (or restarts) the stack on them
 ```
 
-Run the same two commands to update: the data volume is kept and a database migration, if there is one, runs when the server starts. `IMAGE_TAG` in `.env` picks the image: `latest` is the newest `main`, a commit (for example `0e3f2a1`) or a version tag (`1.2.0`, or `1.2` for its newest fix) pins one, so putting an earlier one there and running the two commands again rolls back. Push a tag such as `v1.2.0` to publish a version.
+Use `docker-compose.images.yml` there, not `docker-compose.yml`: the latter also has a `build:` for each service, which needs the whole repository next to it. (Adding `COMPOSE_FILE=docker-compose.images.yml` to `.env` saves typing `-f`.)
+
+In Portainer, create a stack with the web editor, paste the contents of `docker-compose.images.yml`, and add the variables of your `.env` as the stack's environment variables (or load the file with "Load variables from .env file"). Portainer runs the stack from a folder of its own, so for push set `SECRETS_DIR` to the full path of the folder on the Pi that holds the key file (for example `/home/pi/santa/secrets`); without push nothing else is needed.
+
+Run the same two commands to update (in Portainer, "Pull and redeploy" on the stack): the data volume is kept and a database migration, if there is one, runs when the server starts. `IMAGE_TAG` in `.env` picks the image: `latest` is the newest `main`, a commit (for example `0e3f2a1`) or a version tag (`1.2.0`, or `1.2` for its newest fix) pins one, so putting an earlier one there and running the two commands again rolls back. Push a tag such as `v1.2.0` to publish a version.
 
 The images contain no `.env`, no key and no database, and the web image reads its server address when it starts, so `PUBLIC_SERVER_URL` and `PUBLIC_WEB_ORIGIN` in `.env` are all it needs to be reached at the Pi's address (for example `http://raspberrypi.local:8081` and `http://raspberrypi.local:8080`).
 
