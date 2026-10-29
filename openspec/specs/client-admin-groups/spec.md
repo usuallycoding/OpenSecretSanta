@@ -71,7 +71,7 @@ While a group is Draft, Pending or Active the administrator SHALL be able to ope
 - **THEN** there is no way to edit its details
 
 ### Requirement: Group detail shows who takes part
-Choosing a group SHALL open its detail, loaded with `GET /admin/groups/{id}`, showing its name on one row with an ellipsis when it is longer (choosing a name that was cut opens a dialog with the whole name), its details, its state with a sentence on what that state means for the owner, the actions of the group, and at the end who takes part. For a Draft group that is the participants as chips; for a Pending group it is the participants as rows; for an Active or Archived group it is the pair list of `client-admin-oversight`, which replaces the participants list. In a Pending group choosing a participant's username SHALL open that person's user sheet of `client-admin-oversight`, and each row SHALL end with a gift icon, named "Read wishlist" for assistive technology, that opens the participant's wishlist. The people SHALL be shown in a box at the end of the page that scrolls inside itself and fills all the height left below the details and the actions, with a minimum height; when the details and actions leave less room than that, they SHALL scroll above it. The chips of a Draft group SHALL wrap onto as many lines as needed and SHALL NOT be tappable.
+Choosing a group SHALL open its detail, loaded with `GET /admin/groups/{id}`, showing its name on one row with an ellipsis when it is longer (choosing a name that was cut opens a dialog with the whole name), its details, its state with a sentence on what that state means for the owner, the actions of the group, and at the end who takes part. For a Draft group that is the participants as chips; for a Pending group it is the participants as rows; for an Active or Archived group it is the pair list of `client-admin-oversight`, which replaces the participants list. In a Pending group choosing a participant's username SHALL open that person's user sheet of `client-admin-oversight`, and each row SHALL end with a gift icon, named "Read wishlist" for assistive technology, that opens the participant's wishlist. The whole page SHALL scroll as one: the details, the actions, the search field and the people move together, and no area of the page scrolls inside itself. The chips of a Draft group SHALL wrap onto as many lines as needed and SHALL NOT be tappable.
 
 #### Scenario: Group not available
 - **WHEN** the server answers that the group does not exist for this administrator
@@ -91,7 +91,7 @@ Choosing a group SHALL open its detail, loaded with `GET /admin/groups/{id}`, sh
 
 #### Scenario: Many participants
 - **WHEN** a Pending group has 13 participants
-- **THEN** the participants are in a box that fills the rest of the page and scrolls inside itself, and the buttons above it stay in view
+- **THEN** the page grows and scrolls as one, the buttons above the list scroll away with it, and no area scrolls inside the page
 
 #### Scenario: A long name
 - **WHEN** the group's name is longer than one row and the administrator chooses it
