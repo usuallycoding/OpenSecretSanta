@@ -54,7 +54,7 @@ internal fun usernameLabel(name: String, isMe: Boolean, incomplete: Boolean): St
  * that person's sheet, the pair link between them opens the pair's sheet. Nothing here changes anything.
  */
 @Composable
-internal fun ColumnScope.PairList(draw: DrawState, onRetry: () -> Unit, onUser: (String) -> Unit, onPair: (AdminPair) -> Unit) {
+internal fun ColumnScope.PairList(draw: DrawState, query: String, onRetry: () -> Unit, onUser: (String) -> Unit, onPair: (AdminPair) -> Unit) {
     when (draw) {
         DrawState.None -> Unit
         DrawState.Failed -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -63,8 +63,10 @@ internal fun ColumnScope.PairList(draw: DrawState, onRetry: () -> Unit, onUser: 
         }
         is DrawState.Pairs -> {
             Text(Strings.ADMIN_DRAW, style = MaterialTheme.typography.titleMedium)
+            val shown = filterPairs(draw.pairs, query)
             ScrollingBox {
-                for (pair in draw.pairs) {
+                if (shown.isEmpty()) Text(Strings.ADMIN_NO_PERSON_MATCH, style = MaterialTheme.typography.bodyMedium)
+                for (pair in shown) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         TextButton(onClick = { onUser(pair.santa) }, modifier = Modifier.weight(1f)) {
                             Text(usernameLabel(pair.santa, pair.santaIsMe, pair.santaIncomplete), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)

@@ -44,7 +44,7 @@ fun GroupView.toDto() = AdminGroupDto(
     date = group.details.date?.toString(),
     time = group.details.time?.toString(),
     state = group.state.storedName,
-    participants = participants.map { ParticipantDto(it.username.value, it.hasAccount, it.profileComplete) },
+    participants = participants.map { ParticipantDto(it.username.value, it.hasAccount, it.profileComplete, it.fullName) },
 )
 
 fun GroupChange.toDto() = GroupChangeResponse(

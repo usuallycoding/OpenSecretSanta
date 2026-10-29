@@ -1,5 +1,8 @@
 package com.usuallycoding.opensecretsanta.ui.admin
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.usuallycoding.opensecretsanta.contract.GroupChangeResponse
 import com.usuallycoding.opensecretsanta.data.api.ApiClient
@@ -47,6 +50,21 @@ class AdminGroupViewModel(
     val draw: StateFlow<DrawState> = _draw.asStateFlow()
 
     private val current: AdminGroup? get() = loader.state.value.value
+
+    // Compose state, not a flow: a text field that keeps its own copy of what is typed takes the text it is given back after
+    // every keystroke, and a flow delivers it a frame late, so letters typed meanwhile were taken away again
+    private var typedSearch by mutableStateOf("")
+
+    /** What the owner typed to find a person in the group, exactly as typed. It only narrows what is shown. */
+    val search: String get() = typedSearch
+
+    fun setSearch(text: String) {
+        typedSearch = text
+    }
+
+    fun clearSearch() {
+        typedSearch = ""
+    }
 
     fun refresh(): Job = loader.refresh()
 

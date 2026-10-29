@@ -16,6 +16,9 @@ data class AdminPair(
     /** The person's profile lacks a name or an address, so a gift cannot yet be posted to them. */
     val santaIncomplete: Boolean = false,
     val receiverIncomplete: Boolean = false,
+    /** What the owner can search each side by besides the username. */
+    val santaFullName: String? = null,
+    val receiverFullName: String? = null,
 )
 
 /** The draw on a group's detail: absent while the group has no draw, otherwise the pairs or the reason they are missing. */
@@ -27,7 +30,8 @@ sealed interface DrawState {
 
 internal fun AssignmentDto.toPair(me: String, participants: List<AdminParticipant>): AdminPair {
     val incomplete = participants.filter { !it.profileComplete }.map { it.username }.toSet()
-    return AdminPair(santa, receiver, santa == me, receiver == me, santa in incomplete, receiver in incomplete)
+    val names = participants.associate { it.username to it.fullName }
+    return AdminPair(santa, receiver, santa == me, receiver == me, santa in incomplete, receiver in incomplete, names[santa], names[receiver])
 }
 
 /** One item of a participant's list as the owner reads it; [changed] is set only when it was edited after it was added. */

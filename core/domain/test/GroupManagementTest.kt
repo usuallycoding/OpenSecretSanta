@@ -121,6 +121,17 @@ class GroupManagementTest {
     }
 
     @Test
+    fun viewCarriesFullNamesWhereThereAreAny() {
+        users.add("alice").also { users.updateProfile(it, Profile(fullName = "Alice Brown")) }
+        users.add("bob")
+        val group = groups.seed(adminA.username, GroupState.PENDING, u("alice"), u("bob"), u("carol-new"))
+
+        val names = get(adminA, group.id).participants.associate { it.username.value to it.fullName }
+
+        assertEquals(mapOf("alice" to "Alice Brown", "bob" to null, "carol-new" to null), names)
+    }
+
+    @Test
     fun profileNeedsBothNameAndAddressToBeComplete() {
         assertFalse(Profile(fullName = "A").isComplete)
         assertFalse(Profile(address = "x").isComplete)

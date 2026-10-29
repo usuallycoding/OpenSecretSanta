@@ -35,6 +35,8 @@ data class ParticipantDto(
     val hasAccount: Boolean,
     /** True when the account has both a full name and an address. */
     val profileComplete: Boolean,
+    /** The account's full name, when it has one: what the owner can search a group's people by. */
+    val fullName: String? = null,
 )
 
 /** [state] is one of `draft`, `pending`, `active`, `archived`. */

@@ -195,8 +195,10 @@ private fun Header(group: AdminGroup, viewModel: AdminGroupViewModel, busy: Bool
 @Composable
 private fun ColumnScope.People(group: AdminGroup, viewModel: AdminGroupViewModel, draw: DrawState) {
     if (viewModel.canReadDraw) {
+        if ((draw as? DrawState.Pairs)?.pairs?.isNotEmpty() == true) ParticipantSearchField(viewModel)
         PairList(
             draw,
+            viewModel.search,
             onRetry = { viewModel.refresh() },
             onUser = viewModel::openUserSheet,
             onPair = { viewModel.openPairSheet(it.santa, it.receiver) },
@@ -215,8 +217,11 @@ private fun ColumnScope.People(group: AdminGroup, viewModel: AdminGroupViewModel
     }
     val legend = Strings.ADMIN_MARK_LEGEND.takeIf { group.participants.any { it.marked() } }
     if (viewModel.canReadPendingWishlists) {
+        ParticipantSearchField(viewModel)
+        val shown = filterParticipants(group.participants, viewModel.search)
         ScrollingBox {
-            for (participant in group.participants) {
+            if (shown.isEmpty()) Text(Strings.ADMIN_NO_PERSON_MATCH, style = MaterialTheme.typography.bodyMedium)
+            for (participant in shown) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     TextButton(
                         onClick = { viewModel.openUserSheet(participant.username) },

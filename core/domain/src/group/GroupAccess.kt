@@ -7,7 +7,7 @@ import com.usuallycoding.opensecretsanta.domain.user.UserRepository
 import com.usuallycoding.opensecretsanta.domain.user.Username
 
 /** One participant as the owner sees them. */
-class ParticipantStatus(val username: Username, val hasAccount: Boolean, val profileComplete: Boolean)
+class ParticipantStatus(val username: Username, val hasAccount: Boolean, val profileComplete: Boolean, val fullName: String? = null)
 
 /** A group together with what the owner needs to know about each participant. */
 class GroupView(val group: Group, val participants: List<ParticipantStatus>)
@@ -29,7 +29,7 @@ class GroupViewer(private val users: UserRepository) {
             group = group,
             participants = group.participants.map { username ->
                 val account = accounts[username]
-                ParticipantStatus(username, hasAccount = account != null, profileComplete = account?.profile?.isComplete == true)
+                ParticipantStatus(username, hasAccount = account != null, profileComplete = account?.profile?.isComplete == true, fullName = account?.profile?.fullName)
             },
         )
     }

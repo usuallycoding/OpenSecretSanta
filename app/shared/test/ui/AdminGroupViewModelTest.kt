@@ -514,4 +514,28 @@ class AdminGroupViewModelTest {
 
         assertFalse("Temp-" in model.data.value.toString())
     }
+
+    // --- searching the people ------------------------------------------------------------------------------
+
+    @Test
+    fun theSearchStartsEmptyIsKeptAsTypedAndClears() = runTest {
+        val vm = viewModel(fake.add("Party", state = "pending", participants = four))
+        assertEquals("", vm.search)
+
+        vm.setSearch("  Ali ")
+        assertEquals("  Ali ", vm.search)
+
+        vm.clearSearch()
+        assertEquals("", vm.search)
+    }
+
+    @Test
+    fun searchingNeverChangesTheLoadedGroupOrItsCount() = runTest {
+        val vm = viewModel(fake.add("Party", state = "pending", participants = four))
+
+        vm.setSearch("alice")
+
+        assertEquals(four, vm.names())
+        assertEquals(4, vm.data.value.value!!.participants.size)
+    }
 }

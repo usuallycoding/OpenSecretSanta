@@ -184,6 +184,19 @@ class GroupRoutesTest {
     }
 
     @Test
+    fun viewCarriesFullNamesWhereThereAreAny() = testApplication {
+        startApp()
+        admins()
+        fx.users.updateProfile(fx.addUser("alice"), Profile(fullName = "Alice Brown"))
+        fx.addUser("bob")
+        val group = client.createGroup(fx.token("admin-a"), CreateGroupRequest("P", participants = listOf("alice", "bob", "carol-new")))
+
+        val view = Json.decodeFromString<AdminGroupDto>(client.getAs(ApiRoutes.adminGroup(group.id), fx.token("admin-a")).bodyAsText())
+
+        assertEquals(mapOf("alice" to "Alice Brown", "bob" to null, "carol-new" to null), view.participants.associate { it.username to it.fullName })
+    }
+
+    @Test
     fun otherAdminsAndUnknownOrNonNumericIdsGetNotFoundOnEveryRoute() = testApplication {
         startApp()
         admins()

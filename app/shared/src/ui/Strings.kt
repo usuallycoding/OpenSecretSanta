@@ -66,6 +66,9 @@ object Strings {
 
     fun participantCount(count: Int) = if (count == 1) "1 participant" else "$count participants"
 
+    const val ADMIN_SEARCH_PEOPLE = "Search participants"
+    const val ADMIN_SEARCH_CLEAR = "Clear search"
+    const val ADMIN_NO_PERSON_MATCH = "No participant matches your search."
     const val GROUPS_SEARCH = "Search groups"
     const val GROUPS_SEARCH_CLEAR = "Clear search"
     const val GROUPS_NO_MATCH = "No group matches your search."
