@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change admin-oversight. Update Purpose after archive.
+What the owner of a group can read about it on the server: each participant's wishlist, every question thread and the whole draw, only for the owner, never writing and leaving no trace that participants can see.
 
 ## Requirements
 

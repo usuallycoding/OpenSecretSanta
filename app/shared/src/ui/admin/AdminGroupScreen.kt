@@ -24,7 +24,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
+import com.usuallycoding.opensecretsanta.ui.form.SheetBackHandler
+import com.usuallycoding.opensecretsanta.ui.form.rememberAppSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -33,7 +34,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.backhandler.BackHandler
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.domain.group.ActivateGroup
@@ -67,7 +67,7 @@ fun AdminGroupScreen(
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
     LaunchedEffect(ui.deleted) { if (ui.deleted) onDeleted() }
     // Back closes an open sheet before it leaves the screen, on the platforms whose back is not already the sheet's own
-    BackHandler(enabled = ui.sheet != null) { viewModel.dismissSheet() }
+    SheetBackHandler(enabled = ui.sheet != null) { viewModel.dismissSheet() }
 
     if (state.isGone()) {
         Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
@@ -262,7 +262,7 @@ private fun StepDialog(step: AdminStep, groupName: String, viewModel: AdminGroup
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ParticipantsSheet(editor: ParticipantsEditor, viewModel: AdminGroupViewModel) {
-    ModalBottomSheet(onDismissRequest = viewModel::dismissParticipants, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    ModalBottomSheet(onDismissRequest = viewModel::dismissParticipants, sheetState = rememberAppSheetState()) {
         FormColumn(
             Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),

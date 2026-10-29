@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change participant-groups-and-profile. Update Purpose after archive.
+How a participant finds and opens the groups they are in: the Groups tab with each group's state, date, place and size, and a group's page with its details and participants.
 
 ## Requirements
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change admin-users. Update Purpose after archive.
+How an administrator looks after the people they manage in the app: listing users, reading their details and temporary passwords, resetting a password, with no way to make anyone an administrator.
 
 ## Requirements
 

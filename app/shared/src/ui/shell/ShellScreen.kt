@@ -46,7 +46,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.backhandler.BackHandler
+import com.usuallycoding.opensecretsanta.ui.form.SheetBackHandler
 import com.usuallycoding.opensecretsanta.ui.password.ChangePasswordSheet
 import com.usuallycoding.opensecretsanta.ui.password.ChangePasswordViewModel
 import com.usuallycoding.opensecretsanta.data.settings.AppearanceSettings
@@ -122,8 +122,8 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
     var changingPassword by remember { mutableStateOf(false) }
     var choosingAppearance by remember { mutableStateOf(false) }
     // Back closes the sheet before it leaves the screen, on the platforms whose back is not already the sheet's own
-    BackHandler(enabled = changingPassword) { changingPassword = false }
-    BackHandler(enabled = choosingAppearance) { choosingAppearance = false }
+    SheetBackHandler(enabled = changingPassword) { changingPassword = false }
+    SheetBackHandler(enabled = choosingAppearance) { choosingAppearance = false }
     // One standard width for the bars, content and buttons; on a wider window the rest is plain background
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.TopCenter) {
         Scaffold(

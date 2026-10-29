@@ -17,7 +17,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
+import com.usuallycoding.opensecretsanta.ui.form.rememberAppSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,7 +37,7 @@ internal fun ItemSheetHost(viewModel: WishlistViewModel) {
     if (editor != null) {
         ModalBottomSheet(
             onDismissRequest = viewModel::dismissEditor,
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            sheetState = rememberAppSheetState(),
         ) {
             FormColumn(
                 Modifier.fillMaxWidth(),

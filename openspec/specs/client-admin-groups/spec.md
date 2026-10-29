@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change admin-groups. Update Purpose after archive.
+How an administrator manages their own groups in the app: listing, creating, editing, duplicating, deleting and moving a group through its states, with its participants, the draw, the temporary passwords it creates and who was emailed.
 
 ## Requirements
 

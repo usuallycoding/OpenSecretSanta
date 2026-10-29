@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change participant-receiver-and-questions. Update Purpose after archive.
+How a participant asks their receiver questions anonymously, reads the answers, and answers the questions their own Santa has asked, without revealing who the Santa is.
 
 ## Requirements
 

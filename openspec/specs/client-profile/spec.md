@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change participant-groups-and-profile. Update Purpose after archive.
+How a person keeps their own profile in the app: the Profile tab, saving name, email, phone, address and delivery information, what is checked and why the name and address matter.
 
 ## Requirements
 

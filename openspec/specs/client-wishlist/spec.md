@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change participant-wishlists. Update Purpose after archive.
+How a participant keeps their wishlist for a group in the app: adding, editing, deleting and reordering items, with links, while the group allows it and read-only once it is archived.
 
 ## Requirements
 

@@ -2,6 +2,7 @@ package com.usuallycoding.opensecretsanta.ui
 
 import com.usuallycoding.opensecretsanta.contract.ReorderWishlistRequest
 import com.usuallycoding.opensecretsanta.contract.SharedWishlistItemDto
+import com.usuallycoding.opensecretsanta.contract.WishlistItemDto
 import com.usuallycoding.opensecretsanta.contract.WishlistItemRequest
 import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.data.api.ApiResult
@@ -119,7 +120,7 @@ class WishlistApiTest {
 
         assertEquals(ApiResult.Failure(ApiError.Rejected(409, "invalid_state", "The wishlist can no longer be changed.")), result)
         assertEquals(listOf("Socks"), server.wishlist.titles)
-        assertEquals(listOf("Socks"), (success(api.wishlist(1)) as List<com.usuallycoding.opensecretsanta.contract.WishlistItemDto>).map { it.title }) // still readable
+        assertEquals(listOf("Socks"), (success(api.wishlist(1)) as List<*>).filterIsInstance<WishlistItemDto>().map { it.title }) // still readable
     }
 
     @Test
@@ -147,7 +148,7 @@ class WishlistApiTest {
             SharedWishlistItemDto("Book", null, null, "2026-12-01T11:00:00Z", "2026-12-01T11:00:00Z"),
         )
 
-        val items = success(api.receiverWishlist(1)) as List<SharedWishlistItemDto>
+        val items = (success(api.receiverWishlist(1)) as List<*>).filterIsInstance<SharedWishlistItemDto>()
 
         assertEquals(listOf("Gloves", "Book"), items.map { it.title })
         assertEquals("GET /groups/1/receiver/wishlist", server.calls.last())

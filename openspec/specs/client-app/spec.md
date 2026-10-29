@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change client-foundation. Update Purpose after archive.
+The app's shared foundation on Android, iOS and the web: the server address, signing in and out, keeping the session, the two views by role, navigation and web addresses, how text, sheets and forms behave, and changing your own password.
 
 ## Requirements
 

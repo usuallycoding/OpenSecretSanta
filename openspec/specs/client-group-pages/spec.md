@@ -1,7 +1,7 @@
 # client-group-pages Specification
 
 ## Purpose
-TBD - created by archiving change group-pair-pages. Update Purpose after archive.
+What a participant sees of a group they are in: the pair rows, the sheets with their own and their receiver's details, and the Gifter and Receiver pages with their wishlists and questions.
 
 ## Requirements
 

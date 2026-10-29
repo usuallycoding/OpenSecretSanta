@@ -2,6 +2,7 @@ package com.usuallycoding.opensecretsanta.ui
 
 import com.usuallycoding.opensecretsanta.ui.form.CopyAction
 import com.usuallycoding.opensecretsanta.ui.form.CopyStatus
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -9,6 +10,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class CopyActionTest {
     @Test
     fun aCopyWritesTheWholeTextShowsCopiedAndGoesBackToIdle() = runTest {

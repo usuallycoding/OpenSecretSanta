@@ -1,7 +1,7 @@
 # docker-deployment Specification
 
 ## Purpose
-TBD - created by archiving change docker-compose-deploy. Update Purpose after archive.
+How the server and the web app are built and run with one Docker Compose command: settings from an uncommitted .env, the web app pointed at the server at start, persistent data and a checked, unprivileged server container.
 
 ## Requirements
 

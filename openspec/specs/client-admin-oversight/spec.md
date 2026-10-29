@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change admin-oversight-screens. Update Purpose after archive.
+What an owner reads in the app about a group they run: the draw as pairs, a participant's wishlist, user and pair sheets and the question threads, read-only and never recorded.
 
 ## Requirements
 
