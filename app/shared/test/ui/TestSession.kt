@@ -32,6 +32,10 @@ import com.usuallycoding.opensecretsanta.contract.GroupDetailsRequest
 import com.usuallycoding.opensecretsanta.contract.ParticipantDto
 import com.usuallycoding.opensecretsanta.contract.ParticipantsRequest
 import com.usuallycoding.opensecretsanta.contract.AskQuestionRequest
+import com.usuallycoding.opensecretsanta.contract.NotificationSettingsDto
+import com.usuallycoding.opensecretsanta.contract.NotificationSettingsRequest
+import com.usuallycoding.opensecretsanta.contract.RegisterDeviceRequest
+import com.usuallycoding.opensecretsanta.contract.RemoveDeviceRequest
 import com.usuallycoding.opensecretsanta.contract.QuestionDto
 import com.usuallycoding.opensecretsanta.contract.ReceiverDto
 import com.usuallycoding.opensecretsanta.contract.ReorderWishlistRequest
@@ -69,6 +73,9 @@ class ScriptedServer {
     /** The receiver, the two question threads and the reveal as the server keeps and answers them. */
     val gift = FakeGift()
 
+    /** The notification switches and registered devices as the server keeps and answers them. */
+    val notifications = FakeNotifications()
+
     /** What the person's receiver keeps, as the receiver's list endpoint returns it (no ids). */
     var receiverWishlist: List<SharedWishlistItemDto> = emptyList()
     var receiverWishlistAnswer: Pair<HttpStatusCode, String>? = null
@@ -105,6 +112,7 @@ class ScriptedServer {
                 adminGroups.confirmed = request.url.parameters["confirm"] == "true"
                 adminGroups.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 gift.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
+                notifications.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 val wishlistAnswer = wishlist.answer(request.method.value, path, bodies.last())
                 if (wishlistAnswer != null) return@MockEngine json(wishlistAnswer.first, wishlistAnswer.second)
                 if (path.endsWith("/receiver/wishlist")) {
@@ -125,14 +133,14 @@ class ScriptedServer {
     lateinit var api: ApiClient
         private set
 
-    fun session(): SessionManager {
+    fun session(beforeSignOut: com.usuallycoding.opensecretsanta.data.session.SignOutHook? = null): SessionManager {
         lateinit var created: SessionManager
         val api = ApiClient(createHttpClient(engine), "https://api.example.org", object : AuthContext {
             override val token get() = created.token
             override fun rejected(error: ApiError) = created.rejected(error)
         })
         this.api = api
-        created = SessionManager(lazyOf(api), MemoryTokenStore(), CoroutineScope(Dispatchers.Unconfined))
+        created = SessionManager(lazyOf(api), MemoryTokenStore(), CoroutineScope(Dispatchers.Unconfined), beforeSignOut)
         return created
     }
 }
@@ -632,5 +640,45 @@ class FakeAdminOversight(private val groups: FakeAdminGroups) {
                 }
             }
         }
+    }
+}
+
+/**
+ * The notification routes with the server's behavior: four switches that are all on until changed, a save that must
+ * name all four, devices keyed by their token (a token registered again belongs to the latest caller), and an answer
+ * to the settings read that says whether push is available at all. A test can queue a failure for the next save.
+ */
+class FakeNotifications {
+    var available = true
+    var settings = NotificationSettingsRequest(announcements = true, wishlist = true, questions = true, answers = true)
+
+    /** Token to platform, for the devices the server knows. */
+    val devices = linkedMapOf<String, String>()
+
+    private val failures = ArrayDeque<Pair<HttpStatusCode, String>>()
+
+    fun failNextSaveWith(status: HttpStatusCode, code: String = "internal_error", message: String = "refused") {
+        failures += status to """{"code":"$code","message":"$message"}"""
+    }
+
+    private fun dto() = NotificationSettingsDto(available, settings.announcements, settings.wishlist, settings.questions, settings.answers)
+
+    fun answer(method: String, path: String, body: String): Pair<HttpStatusCode, String>? = when {
+        path == ApiRoutes.NOTIFICATIONS && method == "GET" -> HttpStatusCode.OK to Json.encodeToString(dto())
+        path == ApiRoutes.NOTIFICATIONS && method == "PUT" ->
+            failures.removeFirstOrNull() ?: run {
+                settings = Json.decodeFromString<NotificationSettingsRequest>(body)
+                HttpStatusCode.OK to Json.encodeToString(dto())
+            }
+        path == ApiRoutes.NOTIFICATION_DEVICES && method == "PUT" -> {
+            val request = Json.decodeFromString<RegisterDeviceRequest>(body)
+            devices[request.token] = request.platform
+            HttpStatusCode.NoContent to ""
+        }
+        path == ApiRoutes.NOTIFICATION_DEVICES_REMOVE && method == "POST" -> {
+            devices.remove(Json.decodeFromString<RemoveDeviceRequest>(body).token)
+            HttpStatusCode.NoContent to ""
+        }
+        else -> null
     }
 }

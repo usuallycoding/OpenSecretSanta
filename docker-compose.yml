@@ -20,10 +20,14 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-}
       APP_URL: ${APP_URL:-}
+      # optional: push notifications. FCM_KEY_FILE is the name of the service-account key inside ./secrets
+      FCM_SERVICE_ACCOUNT_FILE: ${FCM_KEY_FILE:+/run/push-secrets/${FCM_KEY_FILE}}
     ports:
       - "${SERVER_PORT:-8081}:8080"
     volumes:
       - data:/data
+      # only the server sees the push key, and only for reading; it is in no image
+      - ./secrets:/run/push-secrets:ro
 
   web:
     build:
@@ -32,6 +36,12 @@ services:
     restart: unless-stopped
     environment:
       PUBLIC_SERVER_URL: ${PUBLIC_SERVER_URL:-http://localhost:${SERVER_PORT:-8081}}
+      # optional: push notifications in the browser (public settings of the Firebase web app, none of them secret)
+      PUBLIC_FIREBASE_API_KEY: ${PUBLIC_FIREBASE_API_KEY:-}
+      PUBLIC_FIREBASE_PROJECT_ID: ${PUBLIC_FIREBASE_PROJECT_ID:-}
+      PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${PUBLIC_FIREBASE_MESSAGING_SENDER_ID:-}
+      PUBLIC_FIREBASE_APP_ID: ${PUBLIC_FIREBASE_APP_ID:-}
+      PUBLIC_FIREBASE_VAPID_KEY: ${PUBLIC_FIREBASE_VAPID_KEY:-}
     ports:
       - "${WEB_PORT:-8080}:80"
     depends_on:

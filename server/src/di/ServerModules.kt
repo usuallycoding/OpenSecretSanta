@@ -55,6 +55,20 @@ import com.usuallycoding.opensecretsanta.domain.user.UserRepository
 import com.usuallycoding.opensecretsanta.domain.email.DisabledMailer
 import com.usuallycoding.opensecretsanta.domain.email.Mailer
 import com.usuallycoding.opensecretsanta.domain.email.SendDrawEmails
+import com.usuallycoding.opensecretsanta.domain.notification.DeviceRepository
+import com.usuallycoding.opensecretsanta.domain.notification.DisabledPushSender
+import com.usuallycoding.opensecretsanta.domain.notification.GetNotificationSettings
+import com.usuallycoding.opensecretsanta.domain.notification.NotificationSettingsRepository
+import com.usuallycoding.opensecretsanta.domain.notification.Notifier
+import com.usuallycoding.opensecretsanta.domain.notification.PushSender
+import com.usuallycoding.opensecretsanta.server.notification.NotificationDispatcher
+import com.usuallycoding.opensecretsanta.server.notification.Scheduler
+import com.usuallycoding.opensecretsanta.server.notification.ThreadScheduler
+import com.usuallycoding.opensecretsanta.server.notification.daemonSingleThreadExecutor
+import java.util.concurrent.Executor
+import com.usuallycoding.opensecretsanta.domain.notification.RegisterDevice
+import com.usuallycoding.opensecretsanta.domain.notification.UnregisterDevice
+import com.usuallycoding.opensecretsanta.domain.notification.UpdateNotificationSettings
 import com.usuallycoding.opensecretsanta.server.config.ServerConfig
 import com.usuallycoding.opensecretsanta.server.data.email.ResendMailer
 import com.usuallycoding.opensecretsanta.server.data.auth.SqliteLoginAttemptTracker
@@ -63,6 +77,9 @@ import com.usuallycoding.opensecretsanta.server.data.db.Database
 import com.usuallycoding.opensecretsanta.server.data.db.Migration
 import com.usuallycoding.opensecretsanta.server.data.db.MigrationRunner
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteGroupMembershipRepository
+import com.usuallycoding.opensecretsanta.server.data.notification.SqliteDeviceRepository
+import com.usuallycoding.opensecretsanta.server.data.notification.SqliteNotificationSettingsRepository
+import com.usuallycoding.opensecretsanta.server.data.push.FcmPushSender
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteGroupRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteQuestionRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteWishlistRepository
@@ -107,6 +124,23 @@ val repositoryModule = module {
     single<GroupRepository> { SqliteGroupRepository(get()) }
     single<QuestionRepository> { SqliteQuestionRepository(get()) }
     single<WishlistRepository> { SqliteWishlistRepository(get()) }
+    single<DeviceRepository> { SqliteDeviceRepository(get()) }
+    single<NotificationSettingsRepository> { SqliteNotificationSettingsRepository(get()) }
+}
+
+/** The sender is FCM when a service-account key is configured and a stand-in (a test's sender) when one is given. */
+fun pushModule(sender: PushSender? = null) = module {
+    single<PushSender> {
+        val config = get<ServerConfig>()
+        val credentials = config.fcm
+        if (sender != null) {
+            sender
+        } else if (credentials != null) {
+            FcmPushSender(credentials, baseUrl = config.fcmApiUrl ?: FcmPushSender.DEFAULT_BASE_URL)
+        } else {
+            DisabledPushSender
+        }
+    }
 }
 
 /** The mailer is Resend when the settings are there and a stand-in (a test's mailer) when one is given. */
@@ -122,6 +156,14 @@ fun emailModule(mailer: Mailer? = null) = module {
         }
     }
     single { SendDrawEmails(get(), get(), get(), get<ServerConfig>().appUrl) }
+}
+
+/** Who is told what: the notifier decides, the dispatcher runs it off the request thread (a test passes its own executor and scheduler). */
+fun notificationModule(executor: Executor? = null, scheduler: Scheduler? = null) = module {
+    single { Notifier(get(), get(), get(), get()) }
+    single<Executor> { executor ?: daemonSingleThreadExecutor() }
+    single<Scheduler> { scheduler ?: ThreadScheduler() }
+    single { NotificationDispatcher(get(), get(), get(), get()) }
 }
 
 val useCaseModule = module {
@@ -169,6 +211,11 @@ val useCaseModule = module {
 
     single { GetParticipantWishlist(get(), get()) }
     single { ListQuestionThreads(get(), get(), get()) }
+
+    single { GetNotificationSettings(get(), get()) }
+    single { UpdateNotificationSettings(get(), get()) }
+    single { RegisterDevice(get(), get()) }
+    single { UnregisterDevice(get()) }
 }
 
 val presentationModule = module {
@@ -181,6 +228,9 @@ fun serverModules(
     clock: Clock = SystemClock,
     shuffler: Shuffler = SecureShuffler(),
     mailer: Mailer? = null,
+    pushSender: PushSender? = null,
+    notificationExecutor: Executor? = null,
+    notificationScheduler: Scheduler? = null,
 ) = listOf(
     configModule(config),
     clockModule(clock),
@@ -189,6 +239,8 @@ fun serverModules(
     shufflerModule(shuffler),
     repositoryModule,
     emailModule(mailer),
+    pushModule(pushSender),
+    notificationModule(notificationExecutor, notificationScheduler),
     useCaseModule,
     presentationModule,
 )

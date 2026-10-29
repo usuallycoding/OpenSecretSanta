@@ -46,7 +46,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import androidx.compose.ui.ExperimentalComposeUiApi
+import com.usuallycoding.opensecretsanta.data.push.PushRegistration
 import com.usuallycoding.opensecretsanta.ui.form.SheetBackHandler
+import com.usuallycoding.opensecretsanta.ui.notifications.NotificationsSheet
+import com.usuallycoding.opensecretsanta.ui.notifications.NotificationsViewModel
 import com.usuallycoding.opensecretsanta.ui.password.ChangePasswordSheet
 import com.usuallycoding.opensecretsanta.ui.password.ChangePasswordViewModel
 import com.usuallycoding.opensecretsanta.data.settings.AppearanceSettings
@@ -121,9 +124,14 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
     val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     var changingPassword by remember { mutableStateOf(false) }
     var choosingAppearance by remember { mutableStateOf(false) }
+    var choosingNotifications by remember { mutableStateOf(false) }
+    val push = koinInject<PushRegistration>()
+    // a device that had notifications on tells the server its current token, which may have changed
+    LaunchedEffect(Unit) { push.resume() }
     // Back closes the sheet before it leaves the screen, on the platforms whose back is not already the sheet's own
     SheetBackHandler(enabled = changingPassword) { changingPassword = false }
     SheetBackHandler(enabled = choosingAppearance) { choosingAppearance = false }
+    SheetBackHandler(enabled = choosingNotifications) { choosingNotifications = false }
     // One standard width for the bars, content and buttons; on a wider window the rest is plain background
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.TopCenter) {
         Scaffold(
@@ -138,7 +146,14 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                             }
                         }
                     },
-                    actions = { ShellMenu(viewModel, view, onAppearance = { choosingAppearance = true }, onChangePassword = { changingPassword = true }) },
+                    actions = {
+                        ShellMenu(
+                            viewModel, view,
+                            onAppearance = { choosingAppearance = true },
+                            onNotifications = if (push.isOffered) ({ choosingNotifications = true }) else null,
+                            onChangePassword = { changingPassword = true },
+                        )
+                    },
                 )
             },
             // The tabs stay while a group is open, so switching tabs and coming back finds the group as it was left.
@@ -233,6 +248,9 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
         if (choosingAppearance) {
             AppearanceSheet(koinInject<AppearanceSettings>(), onDismiss = { choosingAppearance = false })
         }
+        if (choosingNotifications) {
+            NotificationsSheet(koinViewModel<NotificationsViewModel>(key = "notifications-sheet"), onDismiss = { choosingNotifications = false })
+        }
         if (changingPassword) {
             ChangePasswordSheet(koinViewModel<ChangePasswordViewModel>(key = "change-password-sheet"), onDismiss = { changingPassword = false })
         }
@@ -256,9 +274,12 @@ private fun titleOf(view: AppView, destination: NavDestination?): String = when 
     else -> Strings.TITLE_GROUPS
 }
 
-/** The menu at the right of the bar: the view switch (administrators only), appearance, change password and sign out. */
+/**
+ * The menu at the right of the bar: the view switch (administrators only), appearance, notifications (only where the
+ * platform has them: [onNotifications] is null on iOS), change password and sign out.
+ */
 @Composable
-private fun ShellMenu(viewModel: ShellViewModel, view: AppView, onAppearance: () -> Unit, onChangePassword: () -> Unit) {
+private fun ShellMenu(viewModel: ShellViewModel, view: AppView, onAppearance: () -> Unit, onNotifications: (() -> Unit)?, onChangePassword: () -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { open = true }) {
@@ -275,6 +296,9 @@ private fun ShellMenu(viewModel: ShellViewModel, view: AppView, onAppearance: ()
                 )
             }
             DropdownMenuItem(text = { Text(Strings.APPEARANCE) }, onClick = { open = false; onAppearance() })
+            if (onNotifications != null) {
+                DropdownMenuItem(text = { Text(Strings.NOTIFICATIONS) }, onClick = { open = false; onNotifications() })
+            }
             DropdownMenuItem(text = { Text(Strings.CHANGE_PASSWORD) }, onClick = { open = false; onChangePassword() })
             DropdownMenuItem(text = { Text(Strings.SIGN_OUT) }, onClick = { open = false; viewModel.signOut() })
         }

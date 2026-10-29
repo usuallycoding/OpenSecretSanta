@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.server.presentation
 
+import com.usuallycoding.opensecretsanta.server.notification.NotificationDispatcher
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.AssignmentDto
 import com.usuallycoding.opensecretsanta.contract.EmailSummaryDto
@@ -27,14 +28,18 @@ fun Route.groupLifecycleRoutes(
     archive: ArchiveGroup,
     listAssignments: ListAssignments,
     sendDrawEmails: SendDrawEmails,
+    notifications: NotificationDispatcher,
 ) {
     post(ApiRoutes.ADMIN_GROUP_PENDING) {
         val actor = call.currentUser()
-        call.respond(blocking { moveToPending(actor, call.groupId()) }.toDto())
+        val change = blocking { moveToPending(actor, call.groupId()) }
+        notifications.groupVisible(change.view.group, change.view.group.participants, actor.username)
+        call.respond(change.toDto())
     }
     post(ApiRoutes.ADMIN_GROUP_ACTIVATE) {
         val actor = call.currentUser()
         val view = blocking { activate(actor, call.groupId()) }
+        notifications.groupDrawn(view.group, actor.username)
         // the draw is stored: whatever happens to the emails cannot undo it
         val emails = blocking {
             try {

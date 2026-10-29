@@ -1,3 +1,10 @@
 {
-  "baseUrl": "http://localhost:8081"
+  "baseUrl": "http://localhost:8081",
+  "firebase": {
+    "apiKey": "AIzaSyBcLnz0rz_LK7fxghrIB0DpVbc-jRJqRxQ",
+    "projectId": "open-secret-santa",
+    "messagingSenderId": "459889704923",
+    "appId": "1:459889704923:web:4eb038aee2d25037ef31fe",
+    "vapidKey": "BDi1JKFGurN5wJReJRjzAzeeEAkz1NT2WM3Glihz_liSQqbxxtX49_UfiKvqOysYk0CQSrQnFHleXLHn6aNG8wE"
+  }
 }

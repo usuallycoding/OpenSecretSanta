@@ -7,6 +7,7 @@ import com.usuallycoding.opensecretsanta.data.api.ApiResult
 import com.usuallycoding.opensecretsanta.data.api.createHttpClient
 import com.usuallycoding.opensecretsanta.data.session.Account
 import com.usuallycoding.opensecretsanta.data.session.SessionManager
+import com.usuallycoding.opensecretsanta.data.session.SignOutHook
 import com.usuallycoding.opensecretsanta.data.session.SessionState
 import com.usuallycoding.opensecretsanta.data.session.SignedOutReason
 import com.usuallycoding.opensecretsanta.data.session.TokenStore
@@ -329,4 +330,62 @@ class SessionManagerTest {
         assertEquals(listOf("POST /auth/login", "GET /me Bearer t1"), server.calls)
         assertEquals(HttpMethod.Post.value, "POST")
     }
+    // --- sign-out hook ---
+
+    private fun sessionWith(waitMillis: Long = 4_000, hook: SignOutHook): SessionManager {
+        lateinit var created: SessionManager
+        val api = ApiClient(createHttpClient(server.engine), "https://api.example.org", object : com.usuallycoding.opensecretsanta.data.api.AuthContext {
+            override val token get() = created.token
+            override fun rejected(error: ApiError) = created.rejected(error)
+        })
+        created = SessionManager(lazyOf(api), store, CoroutineScope(Dispatchers.Unconfined), hook, waitMillis)
+        session = created
+        return created
+    }
+
+    @Test
+    fun theHookRunsWhileTheTokenStillWorksAndThenTheSessionEnds() = runTest {
+        server.accountFor = { if (it == "t1") account() else null }
+        var tokenSeenByHook: String? = null
+        var stateSeenByHook: SessionState? = null
+        val manager = sessionWith { tokenSeenByHook = session.token; stateSeenByHook = session.state.value }
+        manager.signIn("alice", "pw")
+
+        manager.signOut()
+
+        assertEquals("t1", tokenSeenByHook)
+        assertEquals(SessionState.SignedIn(alice), stateSeenByHook)
+        assertEquals(SessionState.SignedOut(), manager.state.value)
+        assertNull(manager.token)
+    }
+
+    @Test
+    fun aHookThatNeverFinishesDoesNotKeepThePersonSignedIn() = runTest {
+        server.accountFor = { account() }
+        val manager = sessionWith(waitMillis = 50) { kotlinx.coroutines.awaitCancellation() }
+        manager.signIn("alice", "pw")
+
+        manager.signOut()
+        // the wait is on the clock, which `runTest` would skip over
+        kotlinx.coroutines.withContext(Dispatchers.Default) {
+            for (i in 0 until 100) {
+                if (manager.state.value is SessionState.SignedOut) break
+                kotlinx.coroutines.delay(20)
+            }
+        }
+
+        assertEquals(SessionState.SignedOut(), manager.state.value)
+    }
+
+    @Test
+    fun aHookThatThrowsDoesNotKeepThePersonSignedIn() = runTest {
+        server.accountFor = { account() }
+        val manager = sessionWith { throw IllegalStateException("push service exploded") }
+        manager.signIn("alice", "pw")
+
+        manager.signOut()
+
+        assertEquals(SessionState.SignedOut(), manager.state.value)
+    }
+
 }

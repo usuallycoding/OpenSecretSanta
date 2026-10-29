@@ -4,6 +4,9 @@ import com.usuallycoding.opensecretsanta.data.BackendConfig
 import com.usuallycoding.opensecretsanta.data.api.ApiClient
 import com.usuallycoding.opensecretsanta.data.api.AuthContext
 import com.usuallycoding.opensecretsanta.data.api.createHttpClient
+import com.usuallycoding.opensecretsanta.data.push.PushDevice
+import com.usuallycoding.opensecretsanta.data.push.PushRegistration
+import com.usuallycoding.opensecretsanta.data.push.UnsupportedPushDevice
 import com.usuallycoding.opensecretsanta.data.session.MemoryTokenStore
 import com.usuallycoding.opensecretsanta.data.settings.AppearanceSettings
 import com.usuallycoding.opensecretsanta.data.settings.MemorySettingsStore
@@ -15,6 +18,7 @@ import com.usuallycoding.opensecretsanta.ui.groups.MyDetailsViewModel
 import com.usuallycoding.opensecretsanta.ui.groups.PairViewModel
 import com.usuallycoding.opensecretsanta.ui.groups.GroupsViewModel
 import com.usuallycoding.opensecretsanta.ui.login.LoginViewModel
+import com.usuallycoding.opensecretsanta.ui.notifications.NotificationsViewModel
 import com.usuallycoding.opensecretsanta.ui.password.ChangePasswordViewModel
 import com.usuallycoding.opensecretsanta.ui.profile.ProfileViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupFormViewModel
@@ -40,14 +44,16 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.koin.mp.KoinPlatform
 
-fun appModules(baseUrl: String): List<Module> = listOf(
+fun appModules(baseUrl: String, pushDevice: PushDevice = UnsupportedPushDevice): List<Module> = listOf(
     module {
         single { BackendConfig(baseUrl) }
         single { createHttpClient() }
         single { AppearanceSettings(get()) }
         // The session and the client need each other (one holds the token, the other sends it), so the
         // session only looks the client up when it first needs it.
-        single { SessionManager(api = lazy { get<ApiClient>() }, store = get()) } bind AuthContext::class
+        single<PushDevice> { pushDevice }
+        single { PushRegistration(device = get(), api = lazy { get<ApiClient>() }, settings = get()) }
+        single { SessionManager(api = lazy { get<ApiClient>() }, store = get(), beforeSignOut = get<PushRegistration>()) } bind AuthContext::class
         single { ApiClient(http = get(), baseUrl = get<BackendConfig>().baseUrl, auth = get()) }
 
         // Each view model owns its scope, which the lifecycle library cancels when the view model is cleared.
@@ -56,6 +62,7 @@ fun appModules(baseUrl: String): List<Module> = listOf(
         viewModel { (account: com.usuallycoding.opensecretsanta.data.session.Account) -> ShellViewModel(account, get(), viewModelScope()) }
         viewModel { GroupsViewModel(get(), viewModelScope()) }
         viewModel { ProfileViewModel(get(), viewModelScope()) }
+        viewModel { NotificationsViewModel(get(), get(), viewModelScope()) }
         viewModel { (groupId: Long) -> WishlistViewModel(groupId, get(), viewModelScope()) }
         viewModel { AdminGroupsViewModel(get(), viewModelScope()) }
         viewModel { AdminUsersViewModel(get(), viewModelScope()) }
@@ -90,9 +97,10 @@ fun settingsStoreModule(store: () -> SettingsStore): Module = module { single<Se
 fun initKoin(
     baseUrl: String,
     platformModules: List<Module> = listOf(tokenStoreModule { MemoryTokenStore() }, settingsStoreModule { MemorySettingsStore() }),
+    pushDevice: PushDevice = UnsupportedPushDevice,
 ) {
     if (KoinPlatform.getKoinOrNull() != null) return
     startKoin {
-        modules(appModules(baseUrl) + platformModules)
+        modules(appModules(baseUrl, pushDevice) + platformModules)
     }
 }

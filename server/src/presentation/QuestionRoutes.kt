@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.server.presentation
 
+import com.usuallycoding.opensecretsanta.server.notification.NotificationDispatcher
 import com.usuallycoding.opensecretsanta.contract.AnswerRequest
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.AskQuestionRequest
@@ -36,6 +37,7 @@ fun Route.questionRoutes(
     listMine: ListMyQuestions,
     listFromSanta: ListQuestionsFromMySanta,
     answer: AnswerQuestion,
+    notifications: NotificationDispatcher,
 ) {
     get(ApiRoutes.GROUP_RECEIVER_QUESTIONS) {
         val user = call.currentUser()
@@ -45,7 +47,9 @@ fun Route.questionRoutes(
         val user = call.currentUser()
         val groupId = call.groupId()
         val request = call.receive<AskQuestionRequest>()
-        call.respond(HttpStatusCode.Created, blocking { ask(user, groupId, request.text) }.toDto())
+        val asked = blocking { ask(user, groupId, request.text) }
+        notifications.questionAsked(groupId, user.username)
+        call.respond(HttpStatusCode.Created, asked.toDto())
     }
     get(ApiRoutes.GROUP_SANTA_QUESTIONS) {
         val user = call.currentUser()
@@ -56,6 +60,8 @@ fun Route.questionRoutes(
         val groupId = call.groupId()
         val number = call.parameters["number"]?.toIntOrNull() ?: throw DomainException.NotFound("Question not found.")
         val request = call.receive<AnswerRequest>()
-        call.respond(blocking { answer(user, groupId, number, request.text) }.toDto())
+        val answered = blocking { answer(user, groupId, number, request.text) }
+        notifications.questionAnswered(groupId, user.username)
+        call.respond(answered.toDto())
     }
 }

@@ -31,8 +31,8 @@ class WishlistMigrationTest {
         sql("INSERT INTO wishlist_items (group_id, username, position, title, created_at, updated_at) VALUES ($group, '$owner', $position, '$title', 1, 1)")
 
     @Test
-    fun schemaVersionIsSix() {
-        assertEquals(6, database.schemaVersion())
+    fun schemaVersionIsLatest() {
+        assertEquals(7, database.schemaVersion())
     }
 
     @Test

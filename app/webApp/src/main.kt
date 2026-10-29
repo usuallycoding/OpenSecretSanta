@@ -5,9 +5,11 @@ import androidx.compose.ui.window.ComposeViewport
 import androidx.navigation.ExperimentalBrowserHistoryApi
 import androidx.navigation.NavController
 import androidx.navigation.bindToBrowserNavigation
+import com.usuallycoding.opensecretsanta.data.push.WebPushDevice
 import com.usuallycoding.opensecretsanta.data.session.webTokenStore
 import com.usuallycoding.opensecretsanta.data.settings.BrowserSettingsStore
 import com.usuallycoding.opensecretsanta.data.web.resolveBaseUrl
+import com.usuallycoding.opensecretsanta.data.web.resolveFirebaseConfig
 import com.usuallycoding.opensecretsanta.di.initKoin
 import com.usuallycoding.opensecretsanta.di.settingsStoreModule
 import com.usuallycoding.opensecretsanta.di.tokenStoreModule
@@ -73,9 +75,11 @@ private suspend fun followAddresses(navController: NavController, isAdmin: Boole
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     MainScope().launch {
+        val configText = readConfigText()
         initKoin(
-            baseUrl = resolveBaseUrl(readConfigText(), window.location.origin),
+            baseUrl = resolveBaseUrl(configText, window.location.origin),
             platformModules = listOf(tokenStoreModule { webTokenStore() }, settingsStoreModule { BrowserSettingsStore() }),
+            pushDevice = WebPushDevice(resolveFirebaseConfig(configText)),
         )
         ComposeViewport {
             // The back button and the address bar follow the screens the participant moves between.

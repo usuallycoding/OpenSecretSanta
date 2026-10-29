@@ -2,7 +2,10 @@ product: android/app
 
 dependencies:
   - //app/shared
+  - //core/contract
   - $libs.koin.core
+  - bom: com.google.firebase:firebase-bom:35.1.0
+  - com.google.firebase:firebase-messaging
   - $libs.androidx.activity.compose
   - $libs.androidx.lifecycle.runtime.compose
   - $compose.foundation

@@ -12,6 +12,15 @@ import com.usuallycoding.opensecretsanta.server.di.serverModules
 import com.usuallycoding.opensecretsanta.domain.admin.GetManagedUser
 import com.usuallycoding.opensecretsanta.domain.admin.SeedDefaultAdmin
 import com.usuallycoding.opensecretsanta.domain.email.Mailer
+import com.usuallycoding.opensecretsanta.domain.notification.GetNotificationSettings
+import com.usuallycoding.opensecretsanta.domain.notification.PushSender
+import com.usuallycoding.opensecretsanta.domain.notification.RegisterDevice
+import com.usuallycoding.opensecretsanta.domain.notification.UnregisterDevice
+import com.usuallycoding.opensecretsanta.domain.notification.UpdateNotificationSettings
+import com.usuallycoding.opensecretsanta.server.presentation.notificationRoutes
+import com.usuallycoding.opensecretsanta.server.notification.NotificationDispatcher
+import com.usuallycoding.opensecretsanta.server.notification.Scheduler
+import java.util.concurrent.Executor
 import com.usuallycoding.opensecretsanta.domain.email.SendDrawEmails
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 import com.usuallycoding.opensecretsanta.domain.admin.ListManagedUsers
@@ -104,9 +113,12 @@ fun Application.module(
     clock: Clock = SystemClock,
     shuffler: Shuffler = SecureShuffler(),
     mailer: Mailer? = null,
+    pushSender: PushSender? = null,
+    notificationExecutor: Executor? = null,
+    notificationScheduler: Scheduler? = null,
 ) {
     install(Koin) {
-        modules(serverModules(config, migrations, clock, shuffler, mailer))
+        modules(serverModules(config, migrations, clock, shuffler, mailer, pushSender, notificationExecutor, notificationScheduler))
     }
     install(ContentNegotiation) { json() }
     if (config.corsAllowedOrigins.isNotEmpty()) install(CORS) { allowConfiguredOrigins(config.corsAllowedOrigins) }
@@ -139,13 +151,15 @@ fun Application.module(
                 get<UpdateGroupDetails>(),
                 get<SetParticipants>(),
                 get<DeleteGroup>(),
+                get<NotificationDispatcher>(),
             )
-            groupLifecycleRoutes(get<MoveToPending>(), get<ActivateGroup>(), get<ArchiveGroup>(), get<ListAssignments>(), get<SendDrawEmails>())
+            groupLifecycleRoutes(get<MoveToPending>(), get<ActivateGroup>(), get<ArchiveGroup>(), get<ListAssignments>(), get<SendDrawEmails>(), get<NotificationDispatcher>())
             memberGroupRoutes(get<ListMyGroups>(), get<GetMyGroup>())
             giftVisibilityRoutes(get<GetMyReceiver>(), get<GetMySanta>())
-            questionRoutes(get<AskQuestion>(), get<ListMyQuestions>(), get<ListQuestionsFromMySanta>(), get<AnswerQuestion>())
-            wishlistRoutes(get<GetMyWishlist>(), get<AddWishlistItem>(), get<UpdateWishlistItem>(), get<DeleteWishlistItem>(), get<ReorderWishlist>())
+            questionRoutes(get<AskQuestion>(), get<ListMyQuestions>(), get<ListQuestionsFromMySanta>(), get<AnswerQuestion>(), get<NotificationDispatcher>())
+            wishlistRoutes(get<GetMyWishlist>(), get<AddWishlistItem>(), get<UpdateWishlistItem>(), get<DeleteWishlistItem>(), get<ReorderWishlist>(), get<NotificationDispatcher>())
             receiverWishlistRoutes(get<GetReceiverWishlist>())
+            notificationRoutes(get<GetNotificationSettings>(), get<UpdateNotificationSettings>(), get<RegisterDevice>(), get<UnregisterDevice>())
             adminOversightRoutes(get<GetParticipantWishlist>(), get<ListQuestionThreads>())
         }
     }

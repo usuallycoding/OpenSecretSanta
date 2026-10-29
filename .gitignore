@@ -26,3 +26,5 @@ xcuserdata
 local.properties
 *.jfr
 .claude/settings.local.json
+/secrets/
+/app/androidApp/google-services.json

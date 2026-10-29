@@ -5,9 +5,17 @@ import com.usuallycoding.opensecretsanta.domain.admin.TemporaryCredentials
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 import com.usuallycoding.opensecretsanta.domain.user.User
 import com.usuallycoding.opensecretsanta.domain.user.UserRepository
+import com.usuallycoding.opensecretsanta.domain.user.Username
 
-/** The outcome of a step that may create accounts: the group, and the credentials of any new ones. */
-class GroupChange(val view: GroupView, val createdAccounts: List<TemporaryCredentials>)
+/**
+ * The outcome of a step that may create accounts: the group, and the credentials of any new ones. [added] are the
+ * participants who have just been added to a group that people can already see (Pending), the only ones to tell.
+ */
+class GroupChange(
+    val view: GroupView,
+    val createdAccounts: List<TemporaryCredentials>,
+    val added: List<Username> = emptyList(),
+)
 
 /**
  * Replaces a group's participant list. In Draft the list is just names; in Pending every name
@@ -33,6 +41,7 @@ class SetParticipants(
             emptyList()
         }
         val updated = groups.replaceParticipants(group.id, participants, planned.map { it.newUser })
-        return GroupChange(viewer(updated), planned.map { TemporaryCredentials(it.username, it.temporaryPassword) })
+        val added = if (group.state == GroupState.PENDING) participants.filter { it !in group.participants } else emptyList()
+        return GroupChange(viewer(updated), planned.map { TemporaryCredentials(it.username, it.temporaryPassword) }, added)
     }
 }

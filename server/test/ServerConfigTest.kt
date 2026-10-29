@@ -172,4 +172,52 @@ class ServerConfigTest {
         }
         assertEquals(true, "santa@example.org" in printed)
     }
+    // --- push ---
+
+    @Test
+    fun pushIsOffByDefaultAndOnWithAServiceAccountKey() {
+        val off = ServerConfig.fromEnv(envWith())
+        assertNull(off.fcm)
+        assertEquals(false, off.pushEnabled)
+
+        val (file, _) = writeServiceAccountKey(projectId = "my-santa")
+        val on = ServerConfig.fromEnv(envWith("FCM_SERVICE_ACCOUNT_FILE" to " $file "))
+        assertEquals(true, on.pushEnabled)
+        assertEquals("my-santa", on.fcm?.projectId)
+        assertEquals("push@my-santa.iam.gserviceaccount.com", on.fcm?.clientEmail)
+    }
+
+    @Test
+    fun aBlankKeyFileCountsAsUnset() {
+        assertEquals(false, ServerConfig.fromEnv(envWith("FCM_SERVICE_ACCOUNT_FILE" to "  ")).pushEnabled)
+    }
+
+    @Test
+    fun aKeyFileThatIsMissingOrWrongNamesTheVariable() {
+        val dir = java.nio.file.Files.createTempDirectory("santa-fcm-bad")
+        val notJson = dir.resolve("a.json").also { java.nio.file.Files.writeString(it, "hello") }
+        val noKey = dir.resolve("b.json").also { java.nio.file.Files.writeString(it, """{"type":"service_account","project_id":"p"}""") }
+        val wrongType = writeServiceAccountKey(type = "authorized_user").first
+        val badKey = dir.resolve("c.json").also {
+            java.nio.file.Files.writeString(it, """{"type":"service_account","project_id":"p","client_email":"e@p","token_uri":"https://x","private_key":"-----BEGIN PRIVATE KEY-----\nAAAA\n-----END PRIVATE KEY-----"}""")
+        }
+        val plainHttp = writeServiceAccountKey(tokenUri = "http://evil.example.org/token").first
+
+        for (bad in listOf(dir.resolve("missing.json"), notJson, noKey, wrongType, badKey, plainHttp)) {
+            assertEquals("FCM_SERVICE_ACCOUNT_FILE", failingVariable(envWith("FCM_SERVICE_ACCOUNT_FILE" to bad.toString())), bad.toString())
+        }
+    }
+
+    @Test
+    fun theKeyIsNeverPrinted() {
+        val (file, pair) = writeServiceAccountKey()
+        val config = ServerConfig.fromEnv(envWith("FCM_SERVICE_ACCOUNT_FILE" to file.toString()))
+
+        val everything = config.toString() + config.fcm.toString()
+
+        assertEquals(false, Base64.getEncoder().encodeToString(pair.private.encoded).take(40) in everything)
+        assertEquals(false, "PRIVATE KEY" in everything)
+        assertEquals(true, "pushEnabled=true" in everything)
+    }
+
 }

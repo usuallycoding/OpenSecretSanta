@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.server.presentation
 
+import com.usuallycoding.opensecretsanta.server.notification.NotificationDispatcher
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.ReorderWishlistRequest
 import com.usuallycoding.opensecretsanta.contract.SharedWishlistItemDto
@@ -42,6 +43,7 @@ fun Route.wishlistRoutes(
     updateItem: UpdateWishlistItem,
     deleteItem: DeleteWishlistItem,
     reorder: ReorderWishlist,
+    notifications: NotificationDispatcher,
 ) {
     get(ApiRoutes.GROUP_WISHLIST) {
         val user = call.currentUser()
@@ -51,20 +53,25 @@ fun Route.wishlistRoutes(
         val user = call.currentUser()
         val groupId = call.groupId()
         val request = call.receive<WishlistItemRequest>()
-        call.respond(HttpStatusCode.Created, blocking { addItem(user, groupId, request.title, request.note, request.url) }.toDto())
+        val item = blocking { addItem(user, groupId, request.title, request.note, request.url) }
+        notifications.wishlistChanged(groupId, user.username)
+        call.respond(HttpStatusCode.Created, item.toDto())
     }
     put(ApiRoutes.GROUP_WISHLIST_ITEM) {
         val user = call.currentUser()
         val groupId = call.groupId()
         val itemId = call.itemId()
         val request = call.receive<WishlistItemRequest>()
-        call.respond(blocking { updateItem(user, groupId, itemId, request.title, request.note, request.url) }.toDto())
+        val item = blocking { updateItem(user, groupId, itemId, request.title, request.note, request.url) }
+        notifications.wishlistChanged(groupId, user.username)
+        call.respond(item.toDto())
     }
     delete(ApiRoutes.GROUP_WISHLIST_ITEM) {
         val user = call.currentUser()
         val groupId = call.groupId()
         val itemId = call.itemId()
         blocking { deleteItem(user, groupId, itemId) }
+        notifications.wishlistChanged(groupId, user.username)
         call.respond(HttpStatusCode.NoContent)
     }
     put(ApiRoutes.GROUP_WISHLIST_ORDER) {

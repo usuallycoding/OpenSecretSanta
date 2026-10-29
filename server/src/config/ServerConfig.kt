@@ -29,16 +29,22 @@ data class ServerConfig(
     val appUrl: String? = null,
     /** Where Resend is; only changed to point the server at a stand-in during tests. */
     val resendApiUrl: String? = null,
+    /** The Firebase service-account key; with it the server sends push notifications, and without it none. */
+    val fcm: FcmCredentials? = null,
+    /** Where the FCM API is; only changed to point the server at a stand-in during tests. */
+    val fcmApiUrl: String? = null,
 ) {
     fun encryptionKeyBytes(): ByteArray = Base64.getDecoder().decode(dataEncryptionKey.trim())
 
     /** Email is on only with both an API key and a sender. */
     val emailEnabled: Boolean get() = resendApiKey != null && emailFrom != null
 
+    val pushEnabled: Boolean get() = fcm != null
+
     /** The secrets are never printed, so that the configuration can be logged without leaking them. */
     override fun toString(): String =
         "ServerConfig(dbPath=$dbPath, port=$port, adminUsername=$adminUsername, corsAllowedOrigins=$corsAllowedOrigins, " +
-            "emailEnabled=$emailEnabled, emailFrom=$emailFrom, appUrl=$appUrl, secrets=hidden)"
+            "emailEnabled=$emailEnabled, emailFrom=$emailFrom, appUrl=$appUrl, pushEnabled=$pushEnabled, secrets=hidden)"
 
     companion object {
         const val DEFAULT_DB_PATH = "opensecretsanta.db"
@@ -59,6 +65,8 @@ data class ServerConfig(
             emailFrom = parseEmailFrom(env["EMAIL_FROM"], keySet = !env["RESEND_API_KEY"].isNullOrBlank()),
             appUrl = parseAppUrl(env["APP_URL"]),
             resendApiUrl = env["RESEND_API_URL"]?.takeIf { it.isNotBlank() }?.trim(),
+            fcm = env[FcmCredentials.VARIABLE]?.takeIf { it.isNotBlank() }?.let { FcmCredentials.load(it.trim()) },
+            fcmApiUrl = env["FCM_API_URL"]?.takeIf { it.isNotBlank() }?.trim(),
         )
 
         private val ORIGIN = Regex("(https?)://([A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?)(:[0-9]{1,5})?")

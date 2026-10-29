@@ -11,6 +11,10 @@ object ApiRoutes {
     const val ME = "/me"
     const val ME_PASSWORD = "/me/password"
 
+    const val NOTIFICATIONS = "/notifications"
+    const val NOTIFICATION_DEVICES = "/notifications/devices"
+    const val NOTIFICATION_DEVICES_REMOVE = "/notifications/devices/remove"
+
     const val ADMIN_USERS = "/admin/users"
     const val ADMIN_USER = "/admin/users/{username}"
     const val ADMIN_USER_RESET_PASSWORD = "/admin/users/{username}/reset-password"

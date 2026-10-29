@@ -5,3 +5,4 @@ V003__groups_membership.sql
 V004__groups.sql
 V005__questions.sql
 V006__wishlist.sql
+V007__notifications.sql

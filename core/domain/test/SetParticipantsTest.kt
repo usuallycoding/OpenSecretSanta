@@ -157,4 +157,30 @@ class SetParticipantsTest {
         assertNull(users.find(u("dave")))
         assertEquals(emptyList(), names(group.id))
     }
+    // --- who is told ---
+
+    @Test
+    fun inDraftNobodyIsReportedAsAdded() {
+        val group = groups.seed(adminA.username, GroupState.DRAFT, u("alice"))
+
+        assertEquals(emptyList(), set(adminA, group.id, listOf("alice", "bob-b")).added)
+    }
+
+    @Test
+    fun inPendingOnlyThePeopleNotThereBeforeAreReportedAsAdded() {
+        users.add("alice")
+        val group = groups.seed(adminA.username, GroupState.PENDING, u("alice"), u("bob-b"))
+
+        val change = set(adminA, group.id, listOf("alice", "carol", "dave"))
+
+        assertEquals(listOf(u("carol"), u("dave")), change.added)
+    }
+
+    @Test
+    fun aPendingListWithNobodyNewReportsNoOneAdded() {
+        val group = groups.seed(adminA.username, GroupState.PENDING, u("alice"), u("bob-b"))
+
+        assertEquals(emptyList(), set(adminA, group.id, listOf("bob-b", "alice")).added)
+    }
+
 }

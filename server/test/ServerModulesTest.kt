@@ -31,6 +31,10 @@ import com.usuallycoding.opensecretsanta.domain.wishlist.GetReceiverWishlist
 import com.usuallycoding.opensecretsanta.domain.wishlist.ReorderWishlist
 import com.usuallycoding.opensecretsanta.domain.wishlist.UpdateWishlistItem
 import com.usuallycoding.opensecretsanta.domain.wishlist.WishlistRepository
+import com.usuallycoding.opensecretsanta.domain.notification.DisabledPushSender
+import com.usuallycoding.opensecretsanta.domain.notification.PushSender
+import com.usuallycoding.opensecretsanta.server.config.FcmCredentials
+import com.usuallycoding.opensecretsanta.server.data.push.FcmPushSender
 import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
@@ -73,4 +77,19 @@ class ServerModulesTest {
             app.close()
         }
     }
+    @Test
+    fun theSenderIsFcmOnlyWithAServiceAccountKey() {
+        val without = koinApplication { modules(serverModules(testConfig(), migrations = emptyList())) }
+        val with = koinApplication {
+            modules(serverModules(testConfig().copy(fcm = FcmCredentials.load(writeServiceAccountKey().first.toString())), migrations = emptyList()))
+        }
+        try {
+            assertEquals(DisabledPushSender, without.koin.get<PushSender>())
+            assertTrue(with.koin.get<PushSender>() is FcmPushSender)
+        } finally {
+            without.close()
+            with.close()
+        }
+    }
+
 }

@@ -36,12 +36,31 @@ The server reads its configuration from environment variables and refuses to sta
 | `EMAIL_FROM`          | with `RESEND_API_KEY`     | -                    | The sender, `santa@mail.example.org` or `Name <santa@mail.example.org>`, on a domain verified at Resend |
 | `APP_URL`             | no                        | -                    | Where the web app is, linked from the emails (`https://app.example.org`) |
 | `RESEND_API_URL`      | no                        | `https://api.resend.com` | Only for tests: points the server at a stand-in for Resend |
+| `FCM_SERVICE_ACCOUNT_FILE` | no                   | -                    | Path to a Firebase service-account key (JSON); with it the server sends push notifications to Android and web (see below), without it none |
+| `FCM_API_URL`         | no                        | `https://fcm.googleapis.com` | Only for tests: points the server at a stand-in for FCM |
 
 #### Emails when the names are drawn
 
 When the owner draws a group's names the server can email every participant who has an email address on their profile: the group's details, that the names have been drawn and who they are Secret Santa for (their own receiver only; no postal details are in the email, and the subject does not name the receiver). It uses [Resend](https://resend.com), is off unless `RESEND_API_KEY` and `EMAIL_FROM` are both set, and never decides whether the draw happens: the group is Active even when no email can be sent, and the owner's page says how many went out (`Emails sent to 8 of 11 participants. 1 failed, 2 have no email address.`). Participants see on their Profile tab that their email is used for this.
 
 To set it up, add a domain to Resend (a subdomain such as `mail.example.org` keeps its DNS records apart from any mail you already receive on the main domain), create the DNS records Resend lists (DKIM, SPF and MX, normally TXT and MX records named `resend._domainkey.mail`, `send.mail` and `send.mail`) at your DNS provider, wait for the domain to show as verified, create an API key with sending access to that domain and put it in `RESEND_API_KEY`, with a sender on the domain in `EMAIL_FROM`. The free plan allows 100 emails a day and 3,000 a month with one domain; an email that does not go out because the limit is reached is counted as failed and not retried. The key is never logged or returned by the API.
+
+#### Push notifications
+
+Android and the web app can notify people when something happens to them: they are added to a group or its names are drawn (**announcements**), the person they give to changes their wishlist (**wishlist**), their Santa asks them a question (**questions**) or the person they give to answers one (**answers**). Each person chooses which of the four they want, and which devices, in **Notifications** in the top-bar menu. The texts name only the group, never a Santa, a question, an answer or a wishlist item, because they can be read on a locked screen. iOS is not supported (it needs a paid Apple developer account).
+
+Push goes through [Firebase Cloud Messaging](https://firebase.google.com/docs/cloud-messaging) (free, no billing needed). It is off unless the server has a service-account key; a notification that cannot be sent never affects the action that caused it.
+
+To set it up:
+
+1. In the [Firebase console](https://console.firebase.google.com) create a project (Analytics is not needed).
+2. **Android:** add an Android app with the package name `com.usuallycoding.opensecretsanta` and put the `google-services.json` it offers in `app/androidApp/`. The build applies Google's plugin to it by itself. The file holds public client settings; it is git-ignored here so that each checkout uses its own project.
+3. **Web:** add a web app and note the `apiKey`, `projectId`, `messagingSenderId` and `appId` of its config. Under *Project settings, Cloud Messaging, Web Push certificates* generate a key pair and note the public key.
+4. **Server:** under *Project settings, Service accounts* generate a private key. This JSON file is a secret: it can send push messages as your project. Keep it in the git-ignored `secrets/` folder, never inside `app/webApp/resources` (which is served to every visitor).
+5. Put the settings in `.env` (see `.env.example`): `FCM_KEY_FILE` is the name of the key file inside `secrets/`, and `PUBLIC_FIREBASE_API_KEY`, `PUBLIC_FIREBASE_PROJECT_ID`, `PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `PUBLIC_FIREBASE_APP_ID` and `PUBLIC_FIREBASE_VAPID_KEY` are the public web settings. Without `FCM_KEY_FILE` the server runs with push off and the sheet says notifications are not available.
+6. Restrict the API keys in the Google Cloud console to your app and your web address once you have a real domain.
+
+Browsers allow push only on `https://` addresses and on `localhost`, so the web side works on localhost as it is and needs TLS in front of a real address. Run on its own (`./kotlin run -m server`), the server takes the key from `FCM_SERVICE_ACCOUNT_FILE=secrets/<file>.json`.
 
 Generate the encryption key once and keep it with your other secrets. Losing it makes stored temporary passwords unreadable (an admin can simply reset them), and rotating it has the same effect:
 

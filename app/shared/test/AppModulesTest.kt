@@ -12,6 +12,7 @@ import com.usuallycoding.opensecretsanta.ui.admin.AdminUsersViewModel
 import com.usuallycoding.opensecretsanta.ui.gift.ReceiverViewModel
 import com.usuallycoding.opensecretsanta.ui.gift.SantaQuestionsViewModel
 import com.usuallycoding.opensecretsanta.ui.gift.SantaRevealViewModel
+import com.usuallycoding.opensecretsanta.ui.notifications.NotificationsViewModel
 import com.usuallycoding.opensecretsanta.ui.wishlist.ReceiverWishlistViewModel
 import com.usuallycoding.opensecretsanta.ui.wishlist.WishlistViewModel
 import org.koin.core.parameter.parametersOf
@@ -77,9 +78,20 @@ class AppModulesTest {
             assertNull(koin.get<AdminGroupFormViewModel> { parametersOf(AdminGroupFormViewModel.NEW_GROUP) }.groupId)
             assertNotNull(koin.get<AdminGroupsViewModel>())
             assertNotNull(koin.get<AdminUsersViewModel>())
+            assertNotNull(koin.get<NotificationsViewModel>())
             assertEquals("alice", koin.get<AdminUserViewModel> { parametersOf("alice", "carol") }.username)
         } finally {
             Dispatchers.resetMain()
         }
     }
+    @Test
+    fun theHostsPushDeviceIsTheOneTheRegistrationUsesAndSignOutHasItsHook() {
+        initKoin(baseUrl = "http://example.test:8080", pushDevice = com.usuallycoding.opensecretsanta.data.push.UnsupportedPushDevice)
+        val koin = KoinPlatform.getKoin()
+
+        assertSame(com.usuallycoding.opensecretsanta.data.push.UnsupportedPushDevice, koin.get<com.usuallycoding.opensecretsanta.data.push.PushDevice>())
+        assertEquals(false, koin.get<com.usuallycoding.opensecretsanta.data.push.PushRegistration>().isSupported)
+        assertNotNull(koin.get<com.usuallycoding.opensecretsanta.data.session.SessionManager>())
+    }
+
 }

@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.server.presentation
 
+import com.usuallycoding.opensecretsanta.server.notification.NotificationDispatcher
 import com.usuallycoding.opensecretsanta.contract.AdminGroupDto
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.CreateGroupRequest
@@ -73,6 +74,7 @@ fun Route.adminGroupRoutes(
     updateDetails: UpdateGroupDetails,
     setParticipants: SetParticipants,
     deleteGroup: DeleteGroup,
+    notifications: NotificationDispatcher,
 ) {
     post(ApiRoutes.ADMIN_GROUPS) {
         val actor = call.currentUser()
@@ -98,7 +100,10 @@ fun Route.adminGroupRoutes(
         val actor = call.currentUser()
         val id = call.groupId()
         val request = call.receive<ParticipantsRequest>()
-        call.respond(blocking { setParticipants(actor, id, request.participants) }.toDto())
+        val change = blocking { setParticipants(actor, id, request.participants) }
+        // only people who can now see the group are told: Draft is not visible to participants
+        if (change.added.isNotEmpty()) notifications.groupVisible(change.view.group, change.added, actor.username)
+        call.respond(change.toDto())
     }
     delete(ApiRoutes.ADMIN_GROUP) {
         val actor = call.currentUser()

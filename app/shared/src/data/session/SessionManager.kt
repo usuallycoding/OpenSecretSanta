@@ -13,6 +13,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+
+/** Something that must happen while the person is still signed in, just before they sign out. It may take a moment but never fails. */
+fun interface SignOutHook {
+    suspend fun beforeSignOut()
+}
 
 /**
  * The one place that knows who is signed in. It keeps the token in memory (so a broken store never
@@ -24,6 +30,8 @@ class SessionManager(
     private val api: Lazy<ApiClient>,
     private val store: TokenStore,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+    private val beforeSignOut: SignOutHook? = null,
+    private val signOutWaitMillis: Long = SIGN_OUT_WAIT_MILLIS,
 ) : AuthContext {
     private val _state = MutableStateFlow<SessionState>(SessionState.Loading)
     val state: StateFlow<SessionState> = _state.asStateFlow()
@@ -92,7 +100,18 @@ class SessionManager(
         }
     }
 
-    fun signOut() = dropSession(reason = null)
+    /** Signs out; [beforeSignOut] gets a short while first (while the token still works), then the session ends whatever came of it. */
+    fun signOut() {
+        val hook = beforeSignOut
+        if (hook == null) {
+            dropSession(reason = null)
+            return
+        }
+        scope.launch {
+            withTimeoutOrNull(signOutWaitMillis) { safely { hook.beforeSignOut() } }
+            dropSession(reason = null)
+        }
+    }
 
     override fun rejected(error: ApiError) {
         when (error) {
@@ -129,4 +148,9 @@ class SessionManager(
         } catch (_: Throwable) { // a failing store must never end a session, whatever it throws
             null
         }
+
+    private companion object {
+        /** The most a hook may hold the sign-out up, however slow the network. */
+        const val SIGN_OUT_WAIT_MILLIS = 4_000L
+    }
 }

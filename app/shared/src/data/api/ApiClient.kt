@@ -17,10 +17,14 @@ import com.usuallycoding.opensecretsanta.contract.LoginRequest
 import com.usuallycoding.opensecretsanta.contract.LoginResponse
 import com.usuallycoding.opensecretsanta.contract.ManagedUserDto
 import com.usuallycoding.opensecretsanta.contract.MemberGroupDto
+import com.usuallycoding.opensecretsanta.contract.NotificationSettingsDto
+import com.usuallycoding.opensecretsanta.contract.NotificationSettingsRequest
 import com.usuallycoding.opensecretsanta.contract.ParticipantsRequest
 import com.usuallycoding.opensecretsanta.contract.ProfileUpdateRequest
 import com.usuallycoding.opensecretsanta.contract.QuestionDto
 import com.usuallycoding.opensecretsanta.contract.ReceiverDto
+import com.usuallycoding.opensecretsanta.contract.RegisterDeviceRequest
+import com.usuallycoding.opensecretsanta.contract.RemoveDeviceRequest
 import com.usuallycoding.opensecretsanta.contract.ReorderWishlistRequest
 import com.usuallycoding.opensecretsanta.contract.ResetPasswordResponse
 import com.usuallycoding.opensecretsanta.contract.SantaRevealDto
@@ -135,6 +139,23 @@ class ApiClient(
 
     /** Who the person's Santa was; the server only answers once the group is archived. */
     suspend fun santa(groupId: Long): ApiResult<SantaRevealDto> = call(HttpMethod.Get, ApiRoutes.groupSanta(groupId))
+
+    // --- notifications ---------------------------------------------------------------------------
+
+    /** The person's four switches, and whether the server can send push at all. */
+    suspend fun notificationSettings(): ApiResult<NotificationSettingsDto> = call(HttpMethod.Get, ApiRoutes.NOTIFICATIONS)
+
+    /** Replaces all four switches; the answer is what the server saved. */
+    suspend fun saveNotificationSettings(request: NotificationSettingsRequest): ApiResult<NotificationSettingsDto> =
+        call(HttpMethod.Put, ApiRoutes.NOTIFICATIONS, body = request)
+
+    /** Tells the server this device's push token belongs to the signed-in person; [platform] is `android` or `web`. */
+    suspend fun registerDevice(token: String, platform: String): ApiResult<Unit> =
+        call(HttpMethod.Put, ApiRoutes.NOTIFICATION_DEVICES, body = RegisterDeviceRequest(token, platform))
+
+    /** Removes this device's push token; the server answers 204 whether or not it knew it. */
+    suspend fun removeDevice(token: String): ApiResult<Unit> =
+        call(HttpMethod.Post, ApiRoutes.NOTIFICATION_DEVICES_REMOVE, body = RemoveDeviceRequest(token))
 
     // --- administrator: groups --------------------------------------------------------------
 
