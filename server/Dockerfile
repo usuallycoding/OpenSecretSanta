@@ -1,7 +1,9 @@
 # syntax=docker/dockerfile:1
 # Build context: the repository root (docker-compose.yml sets it).
 
-FROM eclipse-temurin:21-jdk AS build
+# The build runs on the machine that builds (its output does not depend on the CPU), so a multi-platform image
+# needs no emulated Kotlin build; only the final stage is made for each target platform.
+FROM --platform=$BUILDPLATFORM eclipse-temurin:21-jdk AS build
 WORKDIR /src
 COPY . .
 # The cache mount keeps the Kotlin toolchain and the downloaded dependencies between builds.

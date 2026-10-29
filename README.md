@@ -114,7 +114,28 @@ The first build downloads the Kotlin toolchain and the dependencies and takes se
 
 Compose stops and names the variable when a required one is missing, and the server container exits naming a variable it finds invalid. The database lives in the named volume `data`, so removing or rebuilding the containers keeps your users and groups (`docker compose down -v` deletes it). To back it up, copy the file out with `docker compose cp server:/data/opensecretsanta.db .`; to start from an existing database, copy it in the same way (to `server:/data/opensecretsanta.db`), give the file to the server's user with `docker compose exec -u root server chown santa /data/opensecretsanta.db`, and restart the server. The server runs as an unprivileged user and has a healthcheck on `/health`; the web container starts once it is healthy.
 
-Things this setup does not do. It does not provide TLS: a browser refuses an `https` page that calls an `http` server, and the Android and iOS apps only accept plain `http` for development hosts, so a deployment that is not just for your own network puts TLS in front of both services and sets the two public addresses to `https`. The login limit keys on the client's address, which with Docker Desktop is the same for everyone, so it is shared by all clients there. The images are built for the machine's own architecture, and there is no hot reload; use `./kotlin run` for development.
+#### Run on a Raspberry Pi (or any machine) without building
+
+GitHub Actions builds the server and web images on every push to `main` and publishes them for `linux/arm64` (a Raspberry Pi with a 64-bit OS) and `linux/amd64` as `ghcr.io/usuallycoding/opensecretsanta-server` and `ghcr.io/usuallycoding/opensecretsanta-web`. A machine only needs Docker and three things from this repository and your own settings, so nothing has to be carried over on a USB stick and no toolchain is installed:
+
+```
+docker-compose.yml     the file in this repository
+.env                   your settings, made from .env.example
+secrets/               only if you use push: the Firebase service-account key file
+```
+
+```
+docker compose pull          # fetches the published images
+docker compose up -d         # starts (or restarts) the stack on them
+```
+
+Run the same two commands to update: the data volume is kept and a database migration, if there is one, runs when the server starts. `IMAGE_TAG` in `.env` picks the image: `latest` is the newest `main`, a commit (for example `0e3f2a1`) or a version tag (`1.2.0`, or `1.2` for its newest fix) pins one, so putting an earlier one there and running the two commands again rolls back. Push a tag such as `v1.2.0` to publish a version.
+
+The images contain no `.env`, no key and no database, and the web image reads its server address when it starts, so `PUBLIC_SERVER_URL` and `PUBLIC_WEB_ORIGIN` in `.env` are all it needs to be reached at the Pi's address (for example `http://raspberrypi.local:8081` and `http://raspberrypi.local:8080`).
+
+One thing is done once by hand: GitHub creates a new package as private, so after the first run of the workflow open each of the two packages under your profile's Packages, then Package settings, and change its visibility to public. Until then the Pi would have to run `docker login ghcr.io` first.
+
+Things this setup does not do. It does not provide TLS: a browser refuses an `https` page that calls an `http` server, and the Android and iOS apps only accept plain `http` for development hosts, so a deployment that is not just for your own network puts TLS in front of both services and sets the two public addresses to `https`. The login limit keys on the client's address, which with Docker Desktop is the same for everyone, so it is shared by all clients there. `docker compose up --build` builds the images for the machine's own architecture, and there is no hot reload; use `./kotlin run` for development.
 
 ### Groups and their lifecycle
 
