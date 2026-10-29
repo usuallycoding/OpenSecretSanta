@@ -40,7 +40,7 @@ The sheet SHALL start with a switch for the current device. Turning it on SHALL 
 - **THEN** no permission is asked for until the person turns the switch on
 
 ### Requirement: Four toggles
-Below the device switch the sheet SHALL show one toggle each for announcements (added to a group, names drawn), wishlist changes, questions from your Santa and answers from your receiver, each with a short description. A toggle SHALL show the server's current value, SHALL save at once when changed, and SHALL be disabled while the device switch is off.
+Below the device switch the sheet SHALL show one toggle each for announcements (messages from the organiser, being added to a group, names drawn), wishlist changes, questions from your Santa and answers from your receiver, each with a short description. A toggle SHALL show the server's current value, SHALL save at once when changed, and SHALL be disabled while the device switch is off.
 
 #### Scenario: Shows the saved choices
 - **WHEN** the person has turned "questions" off earlier and opens the sheet

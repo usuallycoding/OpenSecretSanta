@@ -40,11 +40,15 @@ The system SHALL NOT allow a user's username to change after creation.
 - **THEN** the response is 400 and nothing is changed
 
 ### Requirement: Read own account
-The server SHALL expose `GET /me` returning the caller's username, profile fields, admin flag and whether a password change is required.
+The server SHALL expose `GET /me` returning the caller's username, profile fields, admin flag and whether a password change is required, and whether the server can send email and push notifications.
 
 #### Scenario: Own account returned
 - **WHEN** an authenticated user requests `GET /me`
-- **THEN** the response contains their own fields, `isAdmin` and `mustChangePassword`
+- **THEN** the response contains their own fields, `isAdmin`, `mustChangePassword`, `emailAvailable` and `pushAvailable`
+
+#### Scenario: What the server can send
+- **WHEN** the server has an email key configured and no push key
+- **THEN** `emailAvailable` is true and `pushAvailable` is false, whoever asks
 
 ### Requirement: Edit own profile
 The server SHALL expose `PUT /me` letting an authenticated user replace their full name, email, phone number, address and delivery information, any of which may be cleared. A provided email SHALL be a syntactically valid address and each text field SHALL be at most 500 characters.
