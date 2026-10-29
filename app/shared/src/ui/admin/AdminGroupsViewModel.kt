@@ -7,6 +7,8 @@ import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.data.api.ApiResult
 import com.usuallycoding.opensecretsanta.data.api.map
 import com.usuallycoding.opensecretsanta.domain.group.GroupDetails
+import com.usuallycoding.opensecretsanta.ui.groups.GroupListFilter
+import com.usuallycoding.opensecretsanta.ui.groups.adminStateChips
 import com.usuallycoding.opensecretsanta.ui.load.LoadState
 import com.usuallycoding.opensecretsanta.ui.load.Loader
 import com.usuallycoding.opensecretsanta.ui.load.loadMessage
@@ -32,7 +34,10 @@ fun copyName(name: String): String {
     return if (full.length <= limit) full else full.take(limit - 1) + "…"
 }
 
-/** The administrator's own groups, in the order the server returns them, and the copying of one of them. */
+/**
+ * The administrator's own groups, in the order the server returns them (newest first), the search and chips that narrow
+ * them, and the copying of one of them.
+ */
 class AdminGroupsViewModel(
     private val api: ApiClient,
     private val scope: CoroutineScope,
@@ -42,6 +47,9 @@ class AdminGroupsViewModel(
     private val _created = MutableStateFlow<Long?>(null)
 
     val state: StateFlow<LoadState<List<AdminGroup>>> = loader.state
+
+    /** What the administrator searched for and which states they chose; the screen applies it to the loaded groups. */
+    val filter = GroupListFilter(adminStateChips)
 
     /** The copy being offered; null when there is none. */
     val duplicate: StateFlow<DuplicateUi?> = _duplicate.asStateFlow()

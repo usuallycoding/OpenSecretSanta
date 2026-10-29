@@ -178,4 +178,25 @@ class AdminGroupsViewModelTest {
 
         assertNull(model.created.value)
     }
+    @Test
+    fun theChipsAreEveryStateIncludingDraft() = runTest {
+        assertEquals(listOf("draft", "pending", "active", "archived"), viewModel().filter.chips.map { it.key })
+    }
+
+    @Test
+    fun theSearchAndTheChipsSurviveAReloadAndNarrowTheLoadedGroups() = runTest {
+        server.adminGroups.add("Office party", state = "active")
+        server.adminGroups.add("Office lunch")
+        server.adminGroups.add("Hiking trip", state = "active")
+        val model = viewModel()
+        model.filter.setQuery("office")
+        model.filter.toggle("draft")
+
+        model.refresh().join()
+
+        assertEquals("office", model.filter.query)
+        assertEquals(listOf("Office lunch"), model.filter.apply(model.state.value.value!!).map { it.name })
+        assertEquals(3, model.state.value.value!!.size, "the loaded list itself is whole")
+    }
+
 }

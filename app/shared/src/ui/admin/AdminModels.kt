@@ -3,6 +3,7 @@ package com.usuallycoding.opensecretsanta.ui.admin
 import com.usuallycoding.opensecretsanta.contract.AdminGroupDto
 import com.usuallycoding.opensecretsanta.contract.DeletionImpactDto
 import com.usuallycoding.opensecretsanta.contract.EmailSummaryDto
+import com.usuallycoding.opensecretsanta.ui.groups.GroupListItem
 import com.usuallycoding.opensecretsanta.ui.groups.GroupStateInfo
 import com.usuallycoding.opensecretsanta.ui.groups.formatWhen
 import com.usuallycoding.opensecretsanta.ui.groups.groupStateInfo
@@ -23,15 +24,16 @@ data class AdminParticipant(val username: String, val hasAccount: Boolean, val p
 
 data class AdminGroup(
     val id: Long,
-    val name: String,
-    val description: String?,
+    override val name: String,
+    override val description: String?,
     val location: String?,
     val date: String?,
     val time: String?,
     val phase: AdminPhase,
+    override val stateKey: String,
     val state: GroupStateInfo,
     val participants: List<AdminParticipant>,
-) {
+) : GroupListItem {
     val whenText: String? get() = formatWhen(date, time)
 }
 
@@ -43,6 +45,7 @@ internal fun AdminGroupDto.toGroup() = AdminGroup(
     date = date?.takeIf { it.isNotBlank() },
     time = time?.takeIf { it.isNotBlank() },
     phase = adminPhase(state),
+    stateKey = state.lowercase(),
     state = groupStateInfo(state),
     participants = participants.map { AdminParticipant(it.username, it.hasAccount, it.profileComplete) },
 )

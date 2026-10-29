@@ -40,16 +40,18 @@ class SqliteGroupRepository(private val database: Database) : GroupRepository {
 
     override fun find(id: Long): Group? = database.connection().use { load(it, id) }
 
+    /** Newest first: by the time of creation, and within one second by the later `id`, which is never reused. */
     override fun findOwnedBy(owner: Username): List<Group> = database.connection().use { c ->
-        loadAll(c, c.prepareStatement("SELECT id FROM groups WHERE owner_username = ? ORDER BY id")) { it.setString(1, owner.value) }
+        loadAll(c, c.prepareStatement("SELECT id FROM groups WHERE owner_username = ? ORDER BY created_at DESC, id DESC")) { it.setString(1, owner.value) }
     }
 
+    /** Newest first, like [findOwnedBy]. */
     override fun findVisibleTo(username: Username): List<Group> = database.connection().use { c ->
         loadAll(
             c,
             c.prepareStatement(
                 "SELECT g.id FROM groups g JOIN group_participants p ON p.group_id = g.id " +
-                    "WHERE p.username = ? AND g.state <> 'draft' ORDER BY g.id",
+                    "WHERE p.username = ? AND g.state <> 'draft' ORDER BY g.created_at DESC, g.id DESC",
             ),
         ) { it.setString(1, username.value) }
     }

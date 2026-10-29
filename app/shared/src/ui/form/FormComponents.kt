@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.OutlinedTextField
@@ -53,6 +54,8 @@ fun SheetTextField(
     error: String? = null,
     hint: String? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    trailingIcon: (@Composable () -> Unit)? = null,
 ) {
     var field by remember { mutableStateOf(TextFieldValue(value)) }
     // what the caller says the text is changed behind the field's back (cleared, loaded): take it over, cursor at the end
@@ -71,7 +74,9 @@ fun SheetTextField(
         maxLines = maxLines,
         isError = error != null,
         supportingText = (error ?: hint)?.let { { Text(it) } },
+        trailingIcon = trailingIcon,
         keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions,
         modifier = modifier.fillMaxWidth(),
     )
 }

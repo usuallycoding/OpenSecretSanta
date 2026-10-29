@@ -98,14 +98,68 @@ class SqliteGroupRepositoryTest {
     }
 
     @Test
-    fun ownedGroupsAreListedInCreationOrderAndOnlyForTheirOwner() {
+    fun ownedGroupsAreListedNewestFirstAndOnlyForTheirOwner() {
         users.insertAll(listOf(NewUser(u("other-admin"), "h", null, false, true)))
         val first = draft(name = "First")
         groups.create(u("other-admin"), GroupDetails("Not mine"), emptyList())
         val second = draft(name = "Second")
 
-        assertEquals(listOf(first.id, second.id), groups.findOwnedBy(owner).map { it.id })
+        assertEquals(listOf(second.id, first.id), groups.findOwnedBy(owner).map { it.id })
         assertEquals(1, groups.findOwnedBy(u("other-admin")).size)
+    }
+
+    private fun createdAt(group: Long, time: String) = database.connection().use { c ->
+        c.createStatement().use { it.execute("UPDATE groups SET created_at = '$time' WHERE id = $group") }
+    }
+
+    @Test
+    fun theTimeOfCreationDecidesTheOrderNotTheId() {
+        val earlier = draft(name = "Earlier")
+        val later = draft(name = "Later")
+        createdAt(earlier.id, "2026-02-01 09:00:00")
+        createdAt(later.id, "2026-01-01 09:00:00")
+
+        assertEquals(listOf(earlier.id, later.id), groups.findOwnedBy(owner).map { it.id })
+    }
+
+    @Test
+    fun groupsCreatedInTheSameSecondComeLastCreatedFirst() {
+        val a = draft(name = "A")
+        val b = draft(name = "B")
+        val c = draft(name = "C")
+        listOf(a, b, c).forEach { createdAt(it.id, "2026-03-01 12:00:00") }
+
+        assertEquals(listOf(c.id, b.id, a.id), groups.findOwnedBy(owner).map { it.id })
+    }
+
+    @Test
+    fun groupsParticipantsSeeAreNewestFirstToo() {
+        users.insertAll(listOf(newUser("alice")))
+        val old = draft("alice", name = "Old").also { groups.moveToPending(it.id, emptyList()) }
+        val middle = draft("alice", name = "Middle").also { groups.moveToPending(it.id, emptyList()) }
+        val new = draft("alice", name = "New").also { groups.moveToPending(it.id, emptyList()) }
+        createdAt(old.id, "2026-01-01 00:00:00")
+        createdAt(middle.id, "2026-02-01 00:00:00")
+        createdAt(new.id, "2026-03-01 00:00:00")
+
+        assertEquals(listOf(new.id, middle.id, old.id), groups.findVisibleTo(u("alice")).map { it.id })
+    }
+
+    @Test
+    fun changingAGroupNeverMovesItInTheList() {
+        users.insertAll(listOf("alice", "bob", "carol").map(::newUser))
+        val oldest = draft("alice", "bob", "carol", name = "Oldest")
+        val newest = draft("alice", name = "Newest")
+        createdAt(oldest.id, "2026-01-01 00:00:00")
+        createdAt(newest.id, "2026-02-01 00:00:00")
+
+        groups.updateDetails(oldest.id, GroupDetails("Oldest, renamed"))
+        groups.replaceParticipants(oldest.id, listOf(u("alice"), u("bob"), u("carol")), emptyList())
+        groups.moveToPending(oldest.id, emptyList())
+        groups.activate(oldest.id, ring("alice", "bob", "carol"))
+        groups.archive(oldest.id)
+
+        assertEquals(listOf(newest.id, oldest.id), groups.findOwnedBy(owner).map { it.id })
     }
 
     @Test

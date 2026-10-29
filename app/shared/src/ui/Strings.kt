@@ -66,6 +66,10 @@ object Strings {
 
     fun participantCount(count: Int) = if (count == 1) "1 participant" else "$count participants"
 
+    const val GROUPS_SEARCH = "Search groups"
+    const val GROUPS_SEARCH_CLEAR = "Clear search"
+    const val GROUPS_NO_MATCH = "No group matches your search."
+    const val GROUPS_NO_MATCH_CLEAR = "Clear search and filters"
     const val GROUPS_EMPTY_TITLE = "You are not in any group yet."
     const val GROUPS_EMPTY_BODY = "An organiser adds people to a group by username. Once you are added, it shows up here."
     const val GROUP_GONE = "This group is no longer available."

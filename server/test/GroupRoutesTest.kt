@@ -163,7 +163,7 @@ class GroupRoutesTest {
 
         val list = Json.decodeFromString<List<AdminGroupDto>>(client.getAs(ApiRoutes.ADMIN_GROUPS, fx.token("admin-a")).bodyAsText())
 
-        assertEquals(listOf("A one", "A two"), list.map { it.name })
+        assertEquals(listOf("A two", "A one"), list.map { it.name }, "newest first")
     }
 
     @Test

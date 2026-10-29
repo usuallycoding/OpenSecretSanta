@@ -349,4 +349,59 @@ class GroupLifecycleRoutesTest {
 
         assertEquals(setOf("alice", "bob", "carol", "latecomer"), client.assignments(group.id).map { it.santa }.toSet())
     }
+    // --- newest first ---
+
+    private suspend fun HttpClient.ownedIds(): List<Long> =
+        Json.decodeFromString<List<AdminGroupDto>>(getAs(ApiRoutes.ADMIN_GROUPS, fx.token("admin-a")).bodyAsText()).map { it.id }
+
+    private suspend fun HttpClient.visibleIds(user: String): List<Long> =
+        Json.decodeFromString<List<MemberGroupDto>>(getAs(ApiRoutes.GROUPS, fx.token(user)).bodyAsText()).map { it.id }
+
+    @Test
+    fun aGroupMadeLaterIsFirstInTheAdministratorsList() = testApplication {
+        startApp()
+        setup()
+        people("alice")
+        val first = client.draft("alice")
+        val second = client.draft("alice") // as a duplicate of the first would be
+
+        assertEquals(listOf(second.id, first.id), client.ownedIds())
+    }
+
+    @Test
+    fun participantsSeeTheNewestGroupFirstAndOnlyTheCreationTimeDecides() = testApplication {
+        startApp()
+        setup()
+        people("alice")
+        val old = client.draft("alice")
+        val middle = client.draft("alice")
+        val new = client.draft("alice")
+        for (group in listOf(old, middle, new)) client.change(ApiRoutes.adminGroupPending(group.id))
+        fx.sql("UPDATE groups SET created_at = '2026-01-01 00:00:00' WHERE id = ${old.id}")
+        fx.sql("UPDATE groups SET created_at = '2026-02-01 00:00:00' WHERE id = ${middle.id}")
+        fx.sql("UPDATE groups SET created_at = '2026-03-01 00:00:00' WHERE id = ${new.id}")
+
+        assertEquals(listOf(new.id, middle.id, old.id), client.visibleIds("alice"))
+    }
+
+    @Test
+    fun editingMovingAndDrawingTheOldestGroupLeavesItLast() = testApplication {
+        startApp()
+        setup()
+        people("alice", "bob", "carol", "dave")
+        val oldest = client.draft("alice", "bob", "carol", "dave")
+        val newest = client.draft("alice", "bob", "carol", "dave")
+        fx.sql("UPDATE groups SET created_at = '2026-01-01 00:00:00' WHERE id = ${oldest.id}")
+        fx.sql("UPDATE groups SET created_at = '2026-02-01 00:00:00' WHERE id = ${newest.id}")
+
+        val renamed = client.send("PUT", ApiRoutes.adminGroup(oldest.id), fx.token("admin-a"), GroupDetailsRequest("Renamed"))
+        assertEquals(HttpStatusCode.OK, renamed.status, renamed.bodyAsText())
+        client.change(ApiRoutes.adminGroupPending(oldest.id))
+        client.change(ApiRoutes.adminGroupActivate(oldest.id))
+
+        assertEquals(listOf(newest.id, oldest.id), client.ownedIds())
+        client.change(ApiRoutes.adminGroupPending(newest.id))
+        assertEquals(listOf(newest.id, oldest.id), client.visibleIds("alice"))
+    }
+
 }

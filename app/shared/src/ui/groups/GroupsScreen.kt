@@ -39,12 +39,21 @@ fun GroupsScreen(viewModel: GroupsViewModel, onOpen: (Long) -> Unit) {
                 if (groups.isEmpty()) {
                     EmptyGroups()
                 } else {
-                    LazyColumn(
-                        Modifier.fillMaxWidth(),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        items(groups, key = { it.id }) { group -> GroupCard(group) { onOpen(group.id) } }
+                    val shown = viewModel.filter.shown(groups)
+                    // the search and the chips stay where they are while the list under them scrolls
+                    Column(Modifier.fillMaxSize()) {
+                        GroupSearchBar(viewModel.filter)
+                        if (shown.isEmpty()) {
+                            NoMatchingGroups(onClear = viewModel.filter::clear)
+                        } else {
+                            LazyColumn(
+                                Modifier.fillMaxWidth(),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                items(shown, key = { it.id }) { group -> GroupCard(group) { onOpen(group.id) } }
+                            }
+                        }
                     }
                 }
             }

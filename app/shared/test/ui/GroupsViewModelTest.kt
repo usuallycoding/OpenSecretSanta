@@ -14,10 +14,10 @@ import kotlin.test.assertTrue
 class GroupsViewModelTest {
     private val server = ScriptedServer().also { it.session() }
 
-    private fun group(id: Int, name: String, state: String = "active", date: String? = "2026-12-24", time: String? = "18:30", location: String? = "Town Hall", participants: Int = 4): String {
+    private fun group(id: Int, name: String, state: String = "active", date: String? = "2026-12-24", time: String? = "18:30", location: String? = "Town Hall", participants: Int = 4, description: String? = "Bring snacks"): String {
         fun field(key: String, value: String?) = if (value == null) "" else ""","$key":"$value""""
         val names = (1..participants).joinToString(",") { "\"user$it\"" }
-        return """{"id":$id,"name":"$name","state":"$state"${field("date", date)}${field("time", time)}${field("location", location)},"participants":[$names]}"""
+        return """{"id":$id,"name":"$name","state":"$state"${field("description", description)}${field("date", date)}${field("time", time)}${field("location", location)},"participants":[$names]}"""
     }
 
     private fun answer(vararg groups: String) {
@@ -34,7 +34,7 @@ class GroupsViewModelTest {
         val rows = viewModel().state.value.value!!
 
         assertEquals(
-            listOf(GroupRow(7, "Office party", GroupStateInfo("Active", "The names have been drawn."), "24 Dec 2026, 18:30", "Town Hall", 4)),
+            listOf(GroupRow(7, "Office party", "Bring snacks", "active", GroupStateInfo("Active", "The names have been drawn."), "24 Dec 2026, 18:30", "Town Hall", 4)),
             rows,
         )
     }
@@ -115,4 +115,45 @@ class GroupsViewModelTest {
         assertEquals("Office party", model.state.value.value!!.single().name)
         assertEquals(ApiError.Network, model.state.value.error)
     }
+    @Test
+    fun theChipsAreThoseAParticipantCanSee() = runTest {
+        assertEquals(listOf("pending", "active", "archived"), viewModel().filter.chips.map { it.key })
+    }
+
+    @Test
+    fun theSearchAndTheChipsSurviveAReload() = runTest {
+        answer(group(1, "Office party", state = "pending"), group(2, "Book club"))
+        val model = viewModel()
+        model.filter.setQuery("office")
+        model.filter.toggle("pending")
+
+        answer(group(3, "Office lunch", state = "pending"), group(1, "Office party", state = "pending"), group(2, "Book club"))
+        model.refresh().join()
+
+        assertEquals("office", model.filter.query)
+        assertEquals(setOf("pending"), model.filter.states)
+        assertEquals(listOf("Office lunch", "Office party"), model.filter.apply(model.state.value.value!!).map { it.name })
+    }
+
+    @Test
+    fun theFilterNeverChangesTheLoadedList() = runTest {
+        answer(group(1, "Zebra", state = "archived"), group(2, "Apple", state = "pending"))
+        val model = viewModel()
+
+        model.filter.setQuery("apple")
+        model.filter.toggle("pending")
+
+        assertEquals(listOf("Zebra", "Apple"), model.state.value.value!!.map { it.name })
+        assertEquals(listOf("Apple"), model.filter.apply(model.state.value.value!!).map { it.name })
+    }
+
+    @Test
+    fun theDescriptionOfAGroupIsKeptSoThatItCanBeSearched() = runTest {
+        answer(group(1, "Office party", description = "Bring snacks"), group(2, "Book club", description = null))
+        val model = viewModel()
+        model.filter.setQuery("snacks")
+
+        assertEquals(listOf("Office party"), model.filter.apply(model.state.value.value!!).map { it.name })
+    }
+
 }

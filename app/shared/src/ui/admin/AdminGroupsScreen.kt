@@ -30,6 +30,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.groups.GroupSearchBar
+import com.usuallycoding.opensecretsanta.ui.groups.NoMatchingGroups
+import com.usuallycoding.opensecretsanta.ui.groups.shown
 import com.usuallycoding.opensecretsanta.ui.load.LoadContent
 import com.usuallycoding.opensecretsanta.ui.load.ScrollableMessage
 import androidx.compose.ui.text.style.TextOverflow
@@ -59,12 +62,21 @@ fun AdminGroupsScreen(viewModel: AdminGroupsViewModel, onOpen: (Long) -> Unit, o
                 if (groups.isEmpty()) {
                     ScrollableMessage(Strings.ADMIN_NO_GROUPS)
                 } else {
-                    LazyColumn(
-                        Modifier.fillMaxWidth(),
-                        contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp + FAB_CLEARANCE),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        items(groups, key = { it.id }) { group -> GroupCard(group, onDuplicate = { viewModel.askDuplicate(group) }) { onOpen(group.id) } }
+                    val shown = viewModel.filter.shown(groups)
+                    // the search and the chips stay where they are while the list under them scrolls
+                    Column(Modifier.fillMaxSize()) {
+                        GroupSearchBar(viewModel.filter)
+                        if (shown.isEmpty()) {
+                            NoMatchingGroups(onClear = viewModel.filter::clear)
+                        } else {
+                            LazyColumn(
+                                Modifier.fillMaxWidth(),
+                                contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp + FAB_CLEARANCE),
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                items(shown, key = { it.id }) { group -> GroupCard(group, onDuplicate = { viewModel.askDuplicate(group) }) { onOpen(group.id) } }
+                            }
+                        }
                     }
                 }
             }
