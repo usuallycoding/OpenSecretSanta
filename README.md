@@ -265,7 +265,7 @@ Run it with `./kotlin run -m androidApp`, `./kotlin run -m iosApp --platform=ios
 
 | Platform | Session is kept | Server address |
 |----------|-----------------|----------------|
-| Android  | Yes, encrypted with a key in the Android Keystore (excluded from backups) | `http://10.0.2.2:8080` (the emulator's alias for this machine), set in `OpenSecretSantaApplication.kt` |
+| Android  | Yes, encrypted with a key in the Android Keystore (excluded from backups) | a debug build: `http://10.0.2.2:8080` (the emulator's alias for this machine), `DEVELOPMENT_SERVER` in `ServerAddress.kt`; a release build always `https://santa-api.plm360.org` |
 | iOS      | Yes, in the Keychain (this device only)                                   | `http://localhost:8080`, set in `ViewController.kt` |
 | Web      | With "Stay signed in" ticked (the default): `localStorage`, so closing and reopening the tab or the browser keeps you signed in until the token (7 days) is no longer accepted; unticked: the tab's `sessionStorage`, so a refresh keeps you signed in and closing the tab signs you out | `baseUrl` in `config.json` next to the app, else the page's own origin |
 
@@ -287,7 +287,39 @@ adb shell pm revoke com.usuallycoding.opensecretsanta android.permission.ACCESS_
 adb shell pm clear-permission-flags com.usuallycoding.opensecretsanta android.permission.ACCESS_LOCAL_NETWORK user-set user-fixed
 ```
 
-A physical device needs your machine's LAN address instead of `10.0.2.2`.
+A physical device needs your machine's LAN address instead of `10.0.2.2`: change `DEVELOPMENT_SERVER` in `app/androidApp/src/ServerAddress.kt` (and allow that address in `app/androidApp/res/xml/network_security_config.xml`). Only debug builds use it.
+
+#### Distribute the Android app to testers
+
+`scripts/distribute-android.sh` builds a signed release APK and sends it to a [Firebase App Distribution](https://firebase.google.com/docs/app-distribution) tester group. It runs on your own machine and nothing of it is stored on GitHub: the key, its passwords and the Firebase files stay on your disk, in places git ignores.
+
+```
+scripts/distribute-android.sh --notes "What changed"      # to the group dincolo
+scripts/distribute-android.sh --version 1.4.0 --group beta
+scripts/distribute-android.sh --no-upload                 # build and sign only, and print the APK's path
+```
+
+Every run also leaves the signed APK at `build/distribution/opensecretsanta-<version>-<code>.apk`, with or without `--no-upload`, and prints its path as the last line, so you can send it to someone by hand (it installs like any APK once "install unknown apps" is allowed for the app that opens it). The version name is `--version` (default: `git describe`) and the version code is the minutes since 1970, so every upload is newer than the one before. The notes default to the last commit's subject. The script stops before building when something it needs is missing, says what, and leaves your working tree as it found it (it refuses to start if `app/androidApp/module.yaml` has uncommitted changes, because it edits that file for the build and puts it back). A release build always talks to `https://santa-api.plm360.org`.
+
+Set it up once:
+
+1. **A release key**, which you must back up (an APK signed with another key cannot be installed over this one; testers would have to uninstall first):
+   ```
+   keytool -genkeypair -v -keystore secrets/android-release.keystore -alias release -keyalg RSA -keysize 4096 -validity 10000
+   ```
+2. **Its passwords**, in `secrets/android-signing.properties`:
+   ```
+   storePassword=...
+   keyAlias=release
+   keyPassword=...
+   ```
+3. **`app/androidApp/google-services.json`**, downloaded from the Firebase console (Project settings, Your apps, the Android app). Git ignores it, and `secrets/` and any `*.keystore` too.
+4. **Firebase access**, either of two:
+   - `npx firebase-tools login` once, with a Google account that may use App Distribution in the project (nothing is stored in this repository), or
+   - a service-account key in `secrets/firebase-service-account.json`, for an account with the role "Firebase App Distribution Admin"; the script uses it when the file exists.
+5. **The tester group**: open the project's App Distribution page, then Testers & Groups. The script wants the group's *alias* (under the group's name, normally the name in lower case, such as `dincolo`), not the display name. Testers get an email invitation the first time.
+
+Node is needed for the upload (`npx firebase-tools`), and the Android SDK build-tools for `apksigner`, which the script finds under `ANDROID_HOME` or the usual SDK folders.
 
 ### Testing
 

@@ -1,6 +1,7 @@
 package com.usuallycoding.opensecretsanta
 
 import android.app.Application
+import android.content.pm.ApplicationInfo
 import com.usuallycoding.opensecretsanta.data.session.AndroidTokenStore
 import com.usuallycoding.opensecretsanta.data.settings.AndroidSettingsStore
 import com.usuallycoding.opensecretsanta.di.initKoin
@@ -17,9 +18,9 @@ class OpenSecretSantaApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannels(this)
-        // 10.0.2.2 is the emulator's alias for the development machine's localhost.
+        val debuggable = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
         initKoin(
-            baseUrl = "http://10.0.2.2:8080",
+            baseUrl = serverAddress(debuggable),
             platformModules = listOf(tokenStoreModule { AndroidTokenStore(this) }, settingsStoreModule { AndroidSettingsStore(this) }),
             pushDevice = AndroidPushDevice(notificationPermission),
         )
