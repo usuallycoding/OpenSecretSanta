@@ -321,6 +321,22 @@ Set it up once:
 
 Node is needed for the upload (`npx firebase-tools`), and the Android SDK build-tools for `apksigner`, which the script finds under `ANDROID_HOME` or the usual SDK folders.
 
+#### The app's icons
+
+The icons of all three platforms are made from one drawing, `assets/secret-santa-icon.svg`, by `scripts/generate-icons.sh`, which writes them in place:
+
+- **Android:** the launcher icons (`ic_launcher.png` rounded and `ic_launcher_round.png`, at the five densities) and the adaptive icon (`drawable-nodpi/ic_launcher_foreground.png` on the solid colour of `drawable/ic_launcher_background.xml`).
+- **iOS:** `AppIcon.appiconset/app-icon-1024.png`, 1024×1024 without transparency, as the App Store needs.
+- **Web:** `favicon.ico`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png` and `manifest.webmanifest` in `app/webApp/resources/` (`index.html` links them).
+
+```
+scripts/generate-icons.sh                          # from assets/secret-santa-icon.svg, on the app's light theme colour
+scripts/generate-icons.sh --background "#8F4C38"   # another background colour
+scripts/generate-icons.sh --source other.svg       # another drawing
+```
+
+To change the artwork, replace the SVG and run the script, then commit what it wrote: the results are in the repository, so building the apps and the Docker images needs neither the script nor its tools. The script needs `rsvg-convert` and ImageMagick (`brew install librsvg imagemagick`), stops before changing anything when one is missing, and gives the same files when run again. The hat is transparent in the drawing, so the script puts it on the background colour wherever a platform wants an opaque icon. The current SVG holds a bitmap (614×680 pixels) rather than vector paths: it is sharp at the 1024 canvas, and a true vector drawing would allow bigger or crisper icons. The status-bar notification icon (`drawable/ic_notification.xml`) is a plain white shape and is not made by the script.
+
 ### Testing
 
 Run the project's tests with `./kotlin test`, or `./kotlin test -m <module>` for a single module.
