@@ -16,7 +16,7 @@ Use the run configurations provided by the run widget in your IDE's toolbar. You
 
 - Android app: `./kotlin run -m androidApp`
 - iOS app: `./kotlin run -m iosApp`
-- Web app: `./kotlin run -m webApp`
+- Web app: `docker compose up --build`, which also starts the server (see [Run with Docker](#run-with-docker))
 - Server: `./kotlin run -m server`
 
 ### Server configuration
@@ -261,7 +261,7 @@ The web addresses are the part after the `#`, so the web host needs nothing spec
 | `#/admin/groups`, `#/admin/groups/new`, `#/admin/groups/{id}`, `#/admin/groups/{id}/edit` | the administrator's groups, a new group, a group, its details |
 | `#/admin/users`, `#/admin/users/{username}` | the users, one user |
 
-Run it with `./kotlin run -m androidApp`, `./kotlin run -m iosApp --platform=iosSimulatorArm64 -d <simulator id>` or `./kotlin run -m webApp` (the web dev server listens on `http://localhost:8080`).
+Run it with `./kotlin run -m androidApp` or `./kotlin run -m iosApp --platform=iosSimulatorArm64 -d <simulator id>`; the web app runs with `docker compose up --build` and is on `http://localhost:8080` (`WEB_PORT` changes the port).
 
 | Platform | Session is kept | Server address |
 |----------|-----------------|----------------|
@@ -271,7 +271,7 @@ Run it with `./kotlin run -m androidApp`, `./kotlin run -m iosApp --platform=ios
 
 On the web the token is in `localStorage` ("Stay signed in" ticked on the sign-in screen, the default) or in the tab's `sessionStorage` (unticked), in one of them at a time and never in a cookie; signing out removes it from both. A script running on the page can read it, which is why a shared computer should use the unticked box and sign out; the app draws to a canvas and builds no HTML from what people type, which keeps that exposure small. If the web app is served to people you do not trust to keep scripts off the page, serve it with a Content-Security-Policy; an httpOnly cookie (which the server would have to issue and read) would take the exposure away and is the stronger design for later.
 
-The web app reads `config.json` every time it starts, so one build works against any server. The sample in `app/webApp/resources/config.json` points at `http://localhost:8081`, because the web dev server already uses 8080. When the web app is served from a different origin than the server, list that origin in the server's `CORS_ALLOWED_ORIGINS`:
+The web app reads `config.json` every time it starts, so one build works against any server. The repository has no `config.json`: under docker compose the web container writes it from `PUBLIC_SERVER_URL` each time it starts, and a web app served without one talks to its own origin. When the web app is served from a different origin than the server, list that origin in the server's `CORS_ALLOWED_ORIGINS`:
 
 ```
 PORT=8081 CORS_ALLOWED_ORIGINS=http://localhost:8080 ... ./kotlin run -m server
