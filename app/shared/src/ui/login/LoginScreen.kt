@@ -21,6 +21,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.usuallycoding.opensecretsanta.APP_VERSION
 import com.usuallycoding.opensecretsanta.getPlatform
 import androidx.compose.ui.semantics.Role
 import androidx.compose.material3.Checkbox
@@ -72,6 +73,7 @@ fun LoginScreen(viewModel: LoginViewModel, sessionEnded: Boolean) {
         Button(onClick = viewModel::submit, enabled = state.canSubmit, modifier = Modifier.fillMaxWidth()) {
             Text(if (state.inProgress) Strings.SIGNING_IN else Strings.SIGN_IN)
         }
+        Text(Strings.version(APP_VERSION), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

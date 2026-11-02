@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.usuallycoding.opensecretsanta.APP_VERSION
 import com.usuallycoding.opensecretsanta.data.push.PushRegistration
 import com.usuallycoding.opensecretsanta.data.settings.AppearanceSettings
 import com.usuallycoding.opensecretsanta.ui.Strings
@@ -62,6 +63,12 @@ fun SettingsScreen(onSignOut: () -> Unit) {
         SettingsRow(Strings.CHANGE_PASSWORD) { changingPassword = true }
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
         SettingsRow(Strings.SIGN_OUT, chevron = false, onClick = onSignOut)
+        Text(
+            Strings.version(APP_VERSION),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+        )
     }
 
     if (choosingAppearance) AppearanceSheet(appearanceSettings, onDismiss = { choosingAppearance = false })

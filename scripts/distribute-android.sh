@@ -3,6 +3,8 @@
 #
 #   scripts/distribute-android.sh [--notes "What changed"] [--version 1.4.0] [--group dincolo] [--no-upload]
 #
+# The version is --version, or else APP_VERSION in app/shared/src/AppVersion.kt, the number the app shows; edit that line to release.
+#
 # The signed APK is kept at build/distribution/opensecretsanta-<version>-<code>.apk whether or not it is uploaded (its path
 # is printed last), so it can also be sent to someone by hand.
 #
@@ -24,6 +26,7 @@ signing_properties=$secrets_dir/android-signing.properties
 google_services=app/androidApp/google-services.json
 module_file=app/androidApp/module.yaml
 module_properties=app/androidApp/keystore.properties
+app_version_file=app/shared/src/AppVersion.kt
 apk_dir=build/tasks/_androidApp_buildAndroidRelease
 service_account=$secrets_dir/firebase-service-account.json
 
@@ -89,7 +92,10 @@ fi
 [ ! -e "$module_properties" ] || die "$module_properties exists; remove it (this script writes and removes its own)"
 
 if [ -z "$version" ]; then
-  version=$(git describe --tags --always --dirty)
+  [ -f "$app_version_file" ] || die "$app_version_file is missing; pass --version"
+  [ "$(grep -cE '^const val APP_VERSION = ' "$app_version_file")" = 1 ] || die "$app_version_file must have exactly one line 'const val APP_VERSION = \"...\"'"
+  version=$(sed -n 's/^const val APP_VERSION = "\(.*\)"[[:space:]]*$/\1/p' "$app_version_file")
+  [ -n "$version" ] || die "could not read APP_VERSION from $app_version_file"
 fi
 case $version in *[!A-Za-z0-9._+-]*|'') die "the version may only hold letters, digits and . _ + - (got: $version)" ;; esac
 version_code=$(( $(date +%s) / 60 ))

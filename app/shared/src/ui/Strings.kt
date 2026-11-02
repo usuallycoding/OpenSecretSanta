@@ -8,6 +8,7 @@ object Strings {
     const val PASSWORD = "Password"
     const val SIGN_IN = "Sign in"
     const val SIGN_OUT = "Sign out"
+    fun version(value: String) = "Version $value"
     const val APPEARANCE = "Appearance"
     const val NOTIFICATIONS = "Notifications"
     const val NOTIFICATIONS_THIS_DEVICE = "Notifications on this device"
