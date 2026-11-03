@@ -95,6 +95,8 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
     LaunchedEffect(navController) { onNavigationReady(navController, viewModel.account.isAdmin) }
     val destination = navController.currentBackStackEntryAsState().value?.destination
     val participant = view == AppView.Participant
+    // the Gifter and Receiver pages are named after what they load, so they tell the bar their title
+    var pageTitle by remember { mutableStateOf<String?>(null) }
     // below a group (its detail or one of its wishlists) there is a way back
     val onGroup = if (participant) destination?.belowGroups() == true else destination?.belowAdminGroups() == true
     // the first view is the one the NavHost starts on; a later switch opens the other view's first screen
@@ -125,7 +127,7 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
             modifier = Modifier.widthIn(max = MAX_CONTENT_WIDTH).fillMaxSize(),
             topBar = {
                 TopAppBar(
-                    title = { Text(titleOf(view, destination)) },
+                    title = { Text(titleOf(view, destination, pageTitle)) },
                     navigationIcon = {
                         if (onGroup) {
                             IconButton(onClick = { navController.popBackStack() }) {
@@ -176,6 +178,7 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                                 koinViewModel<ReceiverWishlistViewModel>(key = "receiver-wishlist-$groupId") { parametersOf(groupId) },
                                 koinViewModel<ReceiverViewModel>(key = "receiver-$groupId") { parametersOf(groupId) },
                                 onBack = { navController.popBackStack() },
+                                onTitle = { pageTitle = it },
                             )
                         }
                         composable<ReceiverRoute> { entry ->
@@ -184,6 +187,7 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                                 groupId,
                                 koinViewModel<WishlistViewModel>(key = "wishlist-$groupId") { parametersOf(groupId) },
                                 onBack = { navController.popBackStack() },
+                                onTitle = { pageTitle = it },
                             )
                         }
                         composable<ProfileRoute> { ProfileScreen(koinViewModel()) }
@@ -242,7 +246,7 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
 /** The widest the signed-in app gets: the bars, the content and the floating buttons share it. */
 private val MAX_CONTENT_WIDTH = 640.dp
 
-private fun titleOf(view: AppView, destination: NavDestination?): String = when {
+private fun titleOf(view: AppView, destination: NavDestination?, pageTitle: String?): String = when {
     destination?.hasRoute<SettingsRoute>() == true -> Strings.TITLE_SETTINGS
     destination?.hasRoute<AdminUserRoute>() == true -> Strings.ADMIN_USER
     destination?.hasRoute<AdminUsersRoute>() == true -> Strings.ADMIN_TAB_USERS
@@ -251,8 +255,8 @@ private fun titleOf(view: AppView, destination: NavDestination?): String = when 
     destination?.hasRoute<AdminGroupRoute>() == true -> Strings.ADMIN_GROUP
     view == AppView.Admin -> Strings.ADMIN_GROUPS
     destination?.hasRoute<GroupRoute>() == true -> Strings.TITLE_GROUP
-    destination?.hasRoute<GifterRoute>() == true -> Strings.TITLE_GIFTER
-    destination?.hasRoute<ReceiverRoute>() == true -> Strings.TITLE_RECEIVER
+    destination?.hasRoute<GifterRoute>() == true -> pageTitle ?: Strings.givingTo(null)
+    destination?.hasRoute<ReceiverRoute>() == true -> pageTitle ?: Strings.TITLE_YOUR_WISHLIST
     destination?.hasRoute<ProfileRoute>() == true -> Strings.TITLE_PROFILE
     else -> Strings.TITLE_GROUPS
 }

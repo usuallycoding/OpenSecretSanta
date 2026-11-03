@@ -82,6 +82,15 @@ object Strings {
 
     const val PROFILE_WHY = "A Santa uses your name and address to post your gift, and also sees your email. Your email is used to send you your draw when a group you are in is drawn."
 
+    /** The Gifter page's title: "Giving to bob", or "Giving to ..." until the receiver's username is known. */
+    fun givingTo(receiver: String?): String = "Giving to ${receiver ?: "..."}"
+
+    /** The Gifter page's first tab: "bob's Wishlist", or plain "Wishlist" until the receiver's username is known. */
+    fun receiverWishlistTab(receiver: String?): String = if (receiver == null) TAB_WISHLIST else "$receiver's Wishlist"
+
+    /** The Gifter page's second tab: "Questions for bob", or plain "Questions" until the receiver's username is known. */
+    fun receiverQuestionsTab(receiver: String?): String = if (receiver == null) TAB_QUESTIONS else "Questions for $receiver"
+
     /** What the owner is told after "Draw the names" about the emails: "Emails sent to 8 of 11 participants. 1 failed, 2 have no email address." */
     fun emailSummary(sent: Int, failed: Int, noAddress: Int): String {
         val total = sent + failed + noAddress
@@ -160,6 +169,10 @@ object Strings {
     const val SECRET_SANTA = "Secret Santa"
     const val TAB_WISHLIST = "Wishlist"
     const val TAB_QUESTIONS = "Questions"
+    const val TITLE_RECEIVING = "Receiving from Secret Santa"
+    const val TITLE_YOUR_WISHLIST = "Your Wishlist"
+    const val TAB_YOUR_WISHLIST = "Your Wishlist"
+    const val TAB_RESPOND = "Respond to Secret Santa"
     const val COPY = "Copy"
     const val COPIED = "Copied"
     const val COPY_FAILED = "Could not copy"

@@ -14,7 +14,9 @@ import kotlinx.coroutines.flow.drop
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.layout.Box
@@ -39,7 +41,7 @@ import org.koin.core.parameter.parametersOf
  * tab the questions their Santa asked. Nothing on it says who the Santa is.
  */
 @Composable
-fun ReceiverPage(groupId: Long, wishlist: WishlistViewModel, onBack: () -> Unit) {
+fun ReceiverPage(groupId: Long, wishlist: WishlistViewModel, onBack: () -> Unit, onTitle: (String?) -> Unit) {
     val wishlistState by wishlist.data.collectAsState()
     val phase = wishlistState.value?.phase
     // the questions exist once the names are drawn: the tab, and the request behind it, only then
@@ -49,6 +51,7 @@ fun ReceiverPage(groupId: Long, wishlist: WishlistViewModel, onBack: () -> Unit)
         null
     }
     val questionsState = questions?.data?.collectAsState()?.value
+    PageTitle(if (questions == null) Strings.TITLE_YOUR_WISHLIST else Strings.TITLE_RECEIVING, onTitle)
 
     if (wishlistState.isGone() || questionsState?.isGone() == true) {
         GroupGone(onBack)
@@ -62,6 +65,8 @@ fun ReceiverPage(groupId: Long, wishlist: WishlistViewModel, onBack: () -> Unit)
         return
     }
     TabbedPages(
+        Strings.TAB_YOUR_WISHLIST,
+        Strings.TAB_RESPOND,
         onShown = { page -> if (page == 0) wishlist.refresh() else questions.refresh() },
     ) { page ->
         if (page == 0) {
@@ -80,15 +85,20 @@ fun ReceiverPage(groupId: Long, wishlist: WishlistViewModel, onBack: () -> Unit)
  * person's own questions to the receiver with the answers in the other.
  */
 @Composable
-fun GifterPage(wishlist: ReceiverWishlistViewModel, questions: ReceiverViewModel, onBack: () -> Unit) {
+fun GifterPage(wishlist: ReceiverWishlistViewModel, questions: ReceiverViewModel, onBack: () -> Unit, onTitle: (String?) -> Unit) {
     val wishlistState by wishlist.state.collectAsState()
     val questionsState by questions.data.collectAsState()
+    // the receiver's name, once it is known; a failed refresh keeps the name that was loaded before
+    val receiver = questionsState.value?.receiver?.username
+    PageTitle(Strings.givingTo(receiver), onTitle)
 
     if (wishlistState.isGone() || questionsState.isGone()) {
         GroupGone(onBack)
         return
     }
     TabbedPages(
+        Strings.receiverWishlistTab(receiver),
+        Strings.receiverQuestionsTab(receiver),
         onShown = { page -> if (page == 0) wishlist.refresh() else questions.refresh() },
     ) { page ->
         if (page == 0) {
@@ -102,12 +112,21 @@ fun GifterPage(wishlist: ReceiverWishlistViewModel, questions: ReceiverViewModel
     }
 }
 
+/** Tells the top bar the page's title while the page is shown, and takes it back when the page is left. */
+@Composable
+private fun PageTitle(title: String, onTitle: (String?) -> Unit) {
+    val latest by rememberUpdatedState(onTitle)
+    LaunchedEffect(title) { latest(title) }
+    DisposableEffect(Unit) { onDispose { latest(null) } }
+}
+
 /**
- * The Wishlist and Questions tabs of the two pages: a tab row and the content of the shown tab, which can be changed by choosing
- * a tab or by swiping the content sideways. [onShown] reloads a tab when it is shown (a tab that was left may be stale).
+ * The two tabs of the two pages, labelled [first] and [second]: a tab row and the content of the shown tab, which can be changed
+ * by choosing a tab or by swiping the content sideways. A label that is too long for its tab ends in an ellipsis. [onShown]
+ * reloads a tab when it is shown (a tab that was left may be stale).
  */
 @Composable
-private fun TabbedPages(onShown: (Int) -> Unit, page: @Composable (Int) -> Unit) {
+private fun TabbedPages(first: String, second: String, onShown: (Int) -> Unit, page: @Composable (Int) -> Unit) {
     val pager = rememberPagerState { 2 }
     val scope = rememberCoroutineScope()
     val latestOnShown by rememberUpdatedState(onShown)
@@ -116,9 +135,12 @@ private fun TabbedPages(onShown: (Int) -> Unit, page: @Composable (Int) -> Unit)
     }
     Column(Modifier.fillMaxSize()) {
         PrimaryTabRow(selectedTabIndex = pager.currentPage) {
-            Tab(selected = pager.currentPage == 0, onClick = { scope.launch { pager.animateScrollToPage(0) } }, text = { Text(Strings.TAB_WISHLIST) })
-            Tab(selected = pager.currentPage == 1, onClick = { scope.launch { pager.animateScrollToPage(1) } }, text = { Text(Strings.TAB_QUESTIONS) })
+            Tab(selected = pager.currentPage == 0, onClick = { scope.launch { pager.animateScrollToPage(0) } }, text = { TabLabel(first) })
+            Tab(selected = pager.currentPage == 1, onClick = { scope.launch { pager.animateScrollToPage(1) } }, text = { TabLabel(second) })
         }
         HorizontalPager(pager, Modifier.weight(1f), beyondViewportPageCount = 1) { index -> page(index) }
     }
 }
+
+@Composable
+private fun TabLabel(label: String) = Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis)
