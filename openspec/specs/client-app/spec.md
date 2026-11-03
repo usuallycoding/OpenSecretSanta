@@ -351,8 +351,9 @@ In the web app each screen SHALL have a short, readable address after the `#` (f
 #### Scenario: The tab is where the page opens
 - **WHEN** the person switches tabs on a page
 - **THEN** the address stays as it was, and a name for the wishlist tab such as `#/groups/2/receiver/wishlist` names no screen
+
 ### Requirement: Opening a web address
-In the web app, opening or refreshing an address, or typing one into the address bar while signed in, SHALL show the screen it names. An address that names no screen SHALL show the first screen of the person's view. An address of an admin screen opened by someone who is not an administrator SHALL show the first screen. When the person is signed out, the sign-in screen SHALL be shown and, after signing in, the screen the address names.
+In the web app, opening or refreshing an address, or typing one into the address bar while signed in, SHALL show the screen it names. An address that names no screen SHALL show the first screen of the person's view. An address of an admin screen opened by someone who is not an administrator SHALL show the first screen. When the person is signed out, the sign-in screen SHALL be shown and, after signing in, the screen the address names. After a refresh every tab of the view SHALL work as it does without one.
 
 #### Scenario: Refresh
 - **WHEN** a signed-in person refreshes the page on `#/groups/2/receiver`
@@ -377,6 +378,22 @@ In the web app, opening or refreshing an address, or typing one into the address
 #### Scenario: Old address
 - **WHEN** a person opens an address in the old form that contains the names of the app's classes
 - **THEN** the first screen is shown
+
+#### Scenario: Groups tab after refreshing another tab
+- **WHEN** a signed-in person refreshes the page on `#/profile` or `#/settings` and chooses the Groups tab
+- **THEN** the groups list is shown and its address is `#/groups`
+
+#### Scenario: Other tabs after a refresh
+- **WHEN** a signed-in person refreshes the page on `#/profile` and chooses the Settings tab, then the Profile tab, then the Groups tab
+- **THEN** each tab is shown as it is when no refresh has happened
+
+#### Scenario: The admin view after a refresh
+- **WHEN** an administrator refreshes the page on `#/admin/users` and chooses the Groups tab
+- **THEN** the administrator's groups are shown and its address is `#/admin/groups`
+
+#### Scenario: Back after a refresh
+- **WHEN** a signed-in person refreshes the page on `#/profile` and goes back
+- **THEN** the Groups tab is shown first, as it is without a refresh
 
 ### Requirement: Long read-only text is cut and opens in full
 Read-only text that people wrote (a wishlist note and link, a question and its answer, a group's description, and a user's or receiver's profile fields) SHALL show at most three lines, with an ellipsis when there is more; a wishlist item's title SHALL show on one row, with an ellipsis when it is longer, wherever the item is shown. Choosing text that was cut SHALL open a dialog with its full text, which scrolls when it is long and can be closed. Text that is not cut SHALL do nothing when chosen.
