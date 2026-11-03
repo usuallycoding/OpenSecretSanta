@@ -47,6 +47,35 @@ class AppearanceSettingsTest {
     }
 
     @Test
+    fun theSnowIsOffByDefault() {
+        assertEquals(false, AppearanceSettings(MemorySettingsStore()).appearance.value.snow)
+    }
+
+    @Test
+    fun theSnowSwitchIsStoredAndReadBack() {
+        val store = MemorySettingsStore()
+        val settings = AppearanceSettings(store)
+
+        settings.setSnow(true)
+        assertEquals(true, settings.appearance.value.snow)
+        assertEquals(true, AppearanceSettings(store).appearance.value.snow)
+
+        settings.setSnow(false)
+        assertEquals(false, AppearanceSettings(store).appearance.value.snow)
+    }
+
+    @Test
+    fun theSnowDoesNotChangeTheOtherChoices() {
+        val settings = AppearanceSettings(MemorySettingsStore())
+        settings.setMode(ThemeMode.Dark)
+        settings.setDynamicColor(true)
+
+        settings.setSnow(true)
+
+        assertEquals(Appearance(ThemeMode.Dark, dynamicColor = true, snow = true), settings.appearance.value)
+    }
+
+    @Test
     fun aChangeShowsAtOnceAndTheOtherChoiceIsKept() {
         val settings = AppearanceSettings(MemorySettingsStore())
         settings.setDynamicColor(true)
@@ -61,6 +90,7 @@ class AppearanceSettingsTest {
         val store = MemorySettingsStore().apply {
             put("appearance.mode", "Sepia")
             put("appearance.dynamic", "maybe")
+            put("appearance.snow", "sometimes")
         }
 
         assertEquals(Appearance(), AppearanceSettings(store).appearance.value)
@@ -77,7 +107,10 @@ class AppearanceSettingsTest {
 
         settings.setMode(ThemeMode.Dark)
 
+        settings.setSnow(true)
+
         assertEquals(ThemeMode.Dark, settings.appearance.value.mode)
+        assertEquals(true, settings.appearance.value.snow)
         assertEquals(Appearance(), AppearanceSettings(broken).appearance.value)
     }
 }

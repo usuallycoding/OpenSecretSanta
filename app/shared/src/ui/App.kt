@@ -24,6 +24,7 @@ import com.usuallycoding.opensecretsanta.ui.login.LoginScreen
 import com.usuallycoding.opensecretsanta.ui.password.ChangePasswordScreen
 import com.usuallycoding.opensecretsanta.ui.shell.ShellScreen
 import com.usuallycoding.opensecretsanta.ui.shell.ShellViewModel
+import com.usuallycoding.opensecretsanta.ui.snow.SnowOverlay
 import com.usuallycoding.opensecretsanta.data.settings.AppearanceSettings
 import com.usuallycoding.opensecretsanta.ui.theme.AppTheme
 import org.koin.compose.koinInject
@@ -44,7 +45,11 @@ fun App(
     val settings = koinInject<AppearanceSettings>()
     val appearance by settings.appearance.collectAsState()
     AppTheme(appearance) {
-        gate { AppContent(onNavigationReady) }
+        // the snow is drawn over every screen, the sign-in ones too, and lets every touch through
+        Box(Modifier.fillMaxSize()) {
+            gate { AppContent(onNavigationReady) }
+            if (appearance.snow) SnowOverlay()
+        }
     }
 }
 

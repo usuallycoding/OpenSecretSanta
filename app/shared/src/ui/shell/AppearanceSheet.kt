@@ -26,7 +26,7 @@ import com.usuallycoding.opensecretsanta.ui.theme.dynamicColorSupported
 
 /**
  * The sheet where the person chooses how the app looks: follow the device, light or dark and, where the platform has
- * it (Android 12 and later), the wallpaper's colours. A choice applies at once; there is nothing to save.
+ * it (Android 12 and later), the wallpaper's colours, and snow over the app. A choice applies at once; there is nothing to save.
  */
 @Composable
 fun AppearanceSheet(settings: AppearanceSettings, onDismiss: () -> Unit) {
@@ -39,18 +39,24 @@ fun AppearanceSheet(settings: AppearanceSettings, onDismiss: () -> Unit) {
             ModeRow(Strings.THEME_DARK, appearance.mode == ThemeMode.Dark) { settings.setMode(ThemeMode.Dark) }
         }
         if (dynamicColorSupported) {
-            Row(
-                Modifier.fillMaxWidth().toggleable(appearance.dynamicColor, role = Role.Switch, onValueChange = settings::setDynamicColor).padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(Strings.DYNAMIC_COLORS, style = MaterialTheme.typography.bodyLarge)
-                    Text(Strings.DYNAMIC_COLORS_NOTE, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Switch(checked = appearance.dynamicColor, onCheckedChange = null)
-            }
+            SwitchRow(Strings.DYNAMIC_COLORS, Strings.DYNAMIC_COLORS_NOTE, appearance.dynamicColor, settings::setDynamicColor)
         }
+        SwitchRow(Strings.SNOW, Strings.SNOW_NOTE, appearance.snow, settings::setSnow)
+    }
+}
+
+@Composable
+private fun SwitchRow(title: String, note: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().toggleable(checked, role = Role.Switch, onValueChange = onChange).padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(note, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(checked = checked, onCheckedChange = null)
     }
 }
 

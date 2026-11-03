@@ -31,6 +31,8 @@ object Strings {
     const val THEME_DARK = "Dark"
     const val DYNAMIC_COLORS = "Dynamic colours"
     const val DYNAMIC_COLORS_NOTE = "Use the colours of your wallpaper"
+    const val SNOW = "Make it snow"
+    const val SNOW_NOTE = "Let snow fall over the app"
     const val SIGNING_IN = "Signing in..."
     const val STAY_SIGNED_IN = "Stay signed in"
 
