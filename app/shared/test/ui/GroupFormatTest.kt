@@ -6,6 +6,7 @@ import com.usuallycoding.opensecretsanta.ui.groups.formatWhen
 import com.usuallycoding.opensecretsanta.ui.groups.groupPhase
 import com.usuallycoding.opensecretsanta.ui.groups.groupStateInfo
 import com.usuallycoding.opensecretsanta.ui.groups.isMe
+import com.usuallycoding.opensecretsanta.ui.groups.labelledLine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -17,6 +18,13 @@ class GroupFormatTest {
     fun aDateAndATimeAreReadable() {
         assertEquals("24 Dec 2026, 18:30", formatWhen("2026-12-24", "18:30"))
         assertEquals("5 Jan 2027, 09:05", formatWhen("2027-01-05", "9:05"))
+    }
+
+    @Test
+    fun theInformationLinesAreLabelledWithADash() {
+        assertEquals("When? - 24 Dec 2026, 18:30", labelledLine(Strings.WHEN_LABEL, formatWhen("2026-12-24", "18:30")!!))
+        assertEquals("When? - 24 Dec 2026", labelledLine(Strings.WHEN_LABEL, formatWhen("2026-12-24", null)!!))
+        assertEquals("Where? - Grandma's house", labelledLine(Strings.WHERE_LABEL, "Grandma's house"))
     }
 
     @Test

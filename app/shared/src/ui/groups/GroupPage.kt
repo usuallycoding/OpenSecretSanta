@@ -89,9 +89,7 @@ private fun Header(group: GroupDetail) {
             Text(group.state.label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             group.state.note?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
         }
-        group.description?.let { ReadOnlyText(it, style = MaterialTheme.typography.bodyLarge, label = Strings.DESCRIPTION_LABEL) }
-        group.whenText?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
-        group.location?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
+        GroupInfoCard(group.description, group.whenText, group.location)
     }
 }
 

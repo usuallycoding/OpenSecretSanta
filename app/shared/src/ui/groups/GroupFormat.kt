@@ -99,3 +99,6 @@ private fun lastSundayAtOneUtc(year: Int, month: Int): Instant {
     val sunday = lastDay.minus(DatePeriod(days = lastDay.dayOfWeek.isoDayNumber % 7))
     return LocalDateTime(sunday, LocalTime(1, 0)).toInstant(TimeZone.UTC)
 }
+
+/** A line of the group's information card: its label, " - ", then its value, for example `When? - 24 Dec 2026, 18:30`. */
+fun labelledLine(label: String, value: String): String = "$label - $value"

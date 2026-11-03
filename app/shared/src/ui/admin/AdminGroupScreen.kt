@@ -43,6 +43,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.domain.group.ActivateGroup
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.groups.GroupInfoCard
 import com.usuallycoding.opensecretsanta.ui.form.FormColumn
 import com.usuallycoding.opensecretsanta.ui.form.SheetTextField
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
@@ -161,9 +162,7 @@ private fun Header(group: AdminGroup, viewModel: AdminGroupViewModel, busy: Bool
             Text(group.state.label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             group.phase.note()?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
         }
-        group.description?.let { ReadOnlyText(it, style = MaterialTheme.typography.bodyLarge, label = Strings.DESCRIPTION_LABEL) }
-        group.whenText?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
-        group.location?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
+        GroupInfoCard(group.description, group.whenText, group.location)
         val step = viewModel.nextStep
         val blocked = viewModel.drawNeedsMorePeople
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {

@@ -219,6 +219,8 @@ object Strings {
     const val ADMIN_NO_GROUPS = "You do not have any group yet. Use the + button to create one."
     const val NEW_GROUP = "New group"
     const val GROUP_NAME = "Name"
+    const val WHEN_LABEL = "When?"
+    const val WHERE_LABEL = "Where?"
     const val GROUP_DESCRIPTION = "Description (optional)"
     const val GROUP_LOCATION = "Location (optional)"
     const val GROUP_DATE = "Date (optional)"
