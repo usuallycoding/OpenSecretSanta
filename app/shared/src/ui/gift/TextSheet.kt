@@ -10,13 +10,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import com.usuallycoding.opensecretsanta.ui.form.rememberAppSheetState
+import com.usuallycoding.opensecretsanta.ui.form.AppBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -25,7 +23,6 @@ import com.usuallycoding.opensecretsanta.ui.form.FormColumn
 import com.usuallycoding.opensecretsanta.ui.form.MultiLineTextField
 
 /** The bottom sheet for writing a question or an answer: one multi-line field, Cancel and Save. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun TextSheet(
     title: String,
@@ -35,7 +32,7 @@ internal fun TextSheet(
     onSave: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberAppSheetState()) {
+    AppBottomSheet(onDismissRequest = onDismiss) {
         FormColumn(
             Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),

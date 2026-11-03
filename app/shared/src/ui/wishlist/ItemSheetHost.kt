@@ -11,13 +11,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import com.usuallycoding.opensecretsanta.ui.form.rememberAppSheetState
+import com.usuallycoding.opensecretsanta.ui.form.AppBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -29,16 +27,12 @@ import com.usuallycoding.opensecretsanta.ui.form.MultiLineTextField
 import com.usuallycoding.opensecretsanta.ui.form.SheetTextField
 
 /** The bottom sheet for adding and editing an item, and the confirmation before an item is deleted. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ItemSheetHost(viewModel: WishlistViewModel) {
     val ui by viewModel.ui.collectAsState()
     val editor = ui.editor
     if (editor != null) {
-        ModalBottomSheet(
-            onDismissRequest = viewModel::dismissEditor,
-            sheetState = rememberAppSheetState(),
-        ) {
+        AppBottomSheet(onDismissRequest = viewModel::dismissEditor) {
             FormColumn(
                 Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),

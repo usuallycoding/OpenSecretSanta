@@ -17,15 +17,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import com.usuallycoding.opensecretsanta.ui.form.SheetBackHandler
-import com.usuallycoding.opensecretsanta.ui.form.rememberAppSheetState
+import com.usuallycoding.opensecretsanta.ui.form.AppBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -283,10 +281,9 @@ private fun StepDialog(step: AdminStep, groupName: String, viewModel: AdminGroup
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ParticipantsSheet(editor: ParticipantsEditor, viewModel: AdminGroupViewModel) {
-    ModalBottomSheet(onDismissRequest = viewModel::dismissParticipants, sheetState = rememberAppSheetState()) {
+    AppBottomSheet(onDismissRequest = viewModel::dismissParticipants) {
         FormColumn(
             Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
