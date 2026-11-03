@@ -15,15 +15,9 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -75,49 +69,13 @@ fun AppBottomSheet(onDismissRequest: () -> Unit, content: @Composable ColumnScop
             hider.hide = { focus.clearFocus(); keyboard?.hide() }
             keyboardOpen = imeShown
         }
-        Column(Modifier.fillMaxWidth().hideKeyboardOnLooseDrag({ keyboardOpen }, hider)) { content() }
-    }
-}
-
-/**
- * Hides the keyboard when the person drags a finger, in any direction, and nothing used the drag: a field that scrolls or
- * selects its text and a button consume it, so only a drag that would otherwise do nothing counts. A form's own scrolling
- * consumes every vertical drag, even when there is nothing to scroll, so a vertical drag is judged by what is left of it:
- * when the content could not scroll that far the rest reaches the nested-scroll hook here, and the keyboard goes.
- * Both only watch; neither consumes anything.
- */
-@Composable
-private fun Modifier.hideKeyboardOnLooseDrag(keyboardOpen: () -> Boolean, hider: KeyboardHider): Modifier {
-    val open by rememberUpdatedState(keyboardOpen)
-    val connection = remember(hider) {
-        object : NestedScrollConnection {
-            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-                if (source == NestedScrollSource.UserInput && available.y != 0f && open()) hider.hide()
-                return Offset.Zero
-            }
-        }
-    }
-    return nestedScroll(connection).watchLooseDrags(keyboardOpen, hider)
-}
-
-private fun Modifier.watchLooseDrags(keyboardOpen: () -> Boolean, hider: KeyboardHider): Modifier = pointerInput(hider) {
-    awaitPointerEventScope {
-        var origin: Offset? = null
-        var hidden = false
-        while (true) {
-            val event = awaitPointerEvent(PointerEventPass.Final)
-            val change = event.changes.firstOrNull() ?: continue
-            if (event.changes.none { it.pressed }) {
-                origin = null
-                hidden = false
-                continue
-            }
-            val start = origin ?: change.position.also { origin = it }
-            if (!hidden && keyboardOpen() && event.changes.none { it.isConsumed } && (change.position - start).getDistance() > viewConfiguration.touchSlop) {
-                hider.hide()
-                hidden = true
-            }
-        }
+        // a drag nothing used hides the keyboard; a form's own scrolling uses every vertical drag, even with nothing to scroll,
+        // so vertical drags are judged by what is left of them, which is what the hook counts
+        val tracker = remember { GestureTracker() }
+        val connection = remember { scrollHook(countConsumed = false) { if (keyboardOpen) hider.hide() } }
+        Column(
+            Modifier.fillMaxWidth().nestedScroll(connection).watchGestures(tracker, onDrag = { if (keyboardOpen) hider.hide() }, onTap = null),
+        ) { content() }
     }
 }
 

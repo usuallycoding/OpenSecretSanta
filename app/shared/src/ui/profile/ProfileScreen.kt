@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.form.touchesOfAField
 import com.usuallycoding.opensecretsanta.ui.form.FormColumn
 import com.usuallycoding.opensecretsanta.ui.form.MultiLineTextField
 import com.usuallycoding.opensecretsanta.ui.load.LoadContent
@@ -100,7 +101,7 @@ private fun Field(
         isError = error != null,
         supportingText = error?.let { { Text(it) } },
         singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().touchesOfAField(),
         keyboardOptions = KeyboardOptions(keyboardType = keyboard, imeAction = ime),
     )
 }

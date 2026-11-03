@@ -90,7 +90,7 @@ fun SheetTextField(
         trailingIcon = trailingIcon,
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().touchesOfAField(),
     )
 }
 

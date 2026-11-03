@@ -26,6 +26,7 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Row
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.form.touchesOfAField
 import com.usuallycoding.opensecretsanta.ui.form.PasswordField
 
 @Composable
@@ -44,7 +45,7 @@ fun LoginScreen(viewModel: LoginViewModel, sessionEnded: Boolean) {
             onValueChange = viewModel::onUsernameChange,
             label = { Text(Strings.USERNAME) },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().touchesOfAField(),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
         )
         PasswordField(Strings.PASSWORD, state.password, viewModel::onPasswordChange, null, ImeAction.Done, onDone = { viewModel.submit() })

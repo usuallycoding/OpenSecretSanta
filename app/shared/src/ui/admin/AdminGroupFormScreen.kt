@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.form.touchesOfAField
 import com.usuallycoding.opensecretsanta.ui.form.FormColumn
 import com.usuallycoding.opensecretsanta.ui.form.MultiLineTextField
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
@@ -85,6 +86,6 @@ private fun Field(label: String, value: String, error: String?, singleLine: Bool
         singleLine = singleLine,
         isError = error != null,
         supportingText = error?.let { { Text(it) } },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().touchesOfAField(),
     )
 }
