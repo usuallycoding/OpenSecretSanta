@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -18,8 +17,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.usuallycoding.opensecretsanta.APP_VERSION
 import com.usuallycoding.opensecretsanta.getPlatform
@@ -29,6 +26,7 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Row
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.form.PasswordField
 
 @Composable
 fun LoginScreen(viewModel: LoginViewModel, sessionEnded: Boolean) {
@@ -49,16 +47,7 @@ fun LoginScreen(viewModel: LoginViewModel, sessionEnded: Boolean) {
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
         )
-        OutlinedTextField(
-            value = state.password,
-            onValueChange = viewModel::onPasswordChange,
-            label = { Text(Strings.PASSWORD) },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { viewModel.submit() }),
-        )
+        PasswordField(Strings.PASSWORD, state.password, viewModel::onPasswordChange, null, ImeAction.Done, onDone = { viewModel.submit() })
         if (getPlatform().canChooseToStaySignedIn) {
             Row(
                 Modifier.fillMaxWidth().toggleable(state.staySignedIn, role = Role.Checkbox, onValueChange = viewModel::onStaySignedInChange),

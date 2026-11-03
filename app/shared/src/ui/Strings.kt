@@ -6,6 +6,8 @@ object Strings {
 
     const val USERNAME = "Username"
     const val PASSWORD = "Password"
+    const val SHOW_PASSWORD = "Show password"
+    const val HIDE_PASSWORD = "Hide password"
     const val SIGN_IN = "Sign in"
     const val SIGN_OUT = "Sign out"
     fun version(value: String) = "Version $value"

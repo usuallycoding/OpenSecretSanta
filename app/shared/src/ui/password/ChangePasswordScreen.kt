@@ -4,12 +4,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -17,10 +14,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.form.PasswordField
 
 @Composable
 fun ChangePasswordScreen(viewModel: ChangePasswordViewModel, onSignOut: () -> Unit) {
@@ -41,27 +37,4 @@ fun ChangePasswordScreen(viewModel: ChangePasswordViewModel, onSignOut: () -> Un
         }
         OutlinedButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) { Text(Strings.SIGN_OUT) }
     }
-}
-
-@Composable
-internal fun PasswordField(
-    label: String,
-    value: String,
-    onChange: (String) -> Unit,
-    error: String?,
-    ime: ImeAction,
-    onDone: () -> Unit = {},
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onChange,
-        label = { Text(label) },
-        singleLine = true,
-        isError = error != null,
-        supportingText = error?.let { { Text(it) } },
-        visualTransformation = PasswordVisualTransformation(),
-        modifier = Modifier.fillMaxWidth(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ime),
-        keyboardActions = KeyboardActions(onDone = { onDone() }),
-    )
 }
