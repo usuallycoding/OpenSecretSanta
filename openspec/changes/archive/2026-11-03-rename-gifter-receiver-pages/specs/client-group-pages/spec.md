@@ -77,5 +77,5 @@ The Gifter page, the one for the relationship in which the person gives, SHALL o
 - **THEN** the tab label stays on one line with an ellipsis, and a screen reader announces the whole label
 
 #### Scenario: Swiping
-- **WHEN** the person swipes the Wishlist tab's content to the left
-- **THEN** the Questions tab is shown and the tab row marks it
+- **WHEN** the person swipes the first tab's content to the left
+- **THEN** the second tab is shown and the tab row marks it
