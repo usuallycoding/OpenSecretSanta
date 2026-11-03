@@ -14,7 +14,9 @@ import com.usuallycoding.opensecretsanta.di.initKoin
 import com.usuallycoding.opensecretsanta.di.settingsStoreModule
 import com.usuallycoding.opensecretsanta.di.tokenStoreModule
 import com.usuallycoding.opensecretsanta.ui.App
+import com.usuallycoding.opensecretsanta.ui.navigation.TabScreens
 import com.usuallycoding.opensecretsanta.ui.navigation.WebAddresses
+import com.usuallycoding.opensecretsanta.ui.shell.openTab
 import kotlinx.browser.window
 import kotlinx.coroutines.await
 import kotlinx.coroutines.awaitCancellation
@@ -56,7 +58,8 @@ private suspend fun followAddresses(navController: NavController, isAdmin: Boole
     coroutineScope {
         fun show(fragment: String) {
             val route = WebAddresses.routeOf(fragment, isAdmin) ?: return
-            navController.navigate(route) { launchSingleTop = true }
+            // a tab is opened the way the tab bar opens it; any other screen is simply shown
+            if (TabScreens.isTab(route)) navController.openTab(route, TabScreens.rootOf(navController)) else navController.navigate(route) { launchSingleTop = true }
         }
         // before the binding looks at the back stack, so that a refresh finds the history entry as it was
         openedWith?.let { show(it) }

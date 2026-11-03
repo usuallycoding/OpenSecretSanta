@@ -339,8 +339,8 @@ private fun NavController.openView(route: Any) = navigate(route) {
     launchSingleTop = true
 }
 
-/** Opens a tab, keeping each tab's own place; [root] is the first screen of the view the tab belongs to. */
-private fun NavController.openTab(route: Any, root: Any = GroupsRoute) = navigate(route) {
+/** Opens a tab, keeping each tab's own place; [root] is the first screen of the view the tab belongs to. Also used by the web host for an address that names a tab. */
+fun NavController.openTab(route: Any, root: Any = GroupsRoute) = navigate(route) {
     popUpTo(root) { saveState = true }
     launchSingleTop = true
     restoreState = true
