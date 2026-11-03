@@ -91,6 +91,7 @@ private fun ReceiverDetails(receiver: ReceiverInfo) {
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 DetailField(Strings.RECEIVER_NAME, receiver.fullName)
+                DetailField(Strings.RECEIVER_EMAIL, receiver.email)
                 DetailField(Strings.RECEIVER_ADDRESS, receiver.address)
                 DetailField(Strings.RECEIVER_PHONE, receiver.phone)
                 DetailField(Strings.RECEIVER_DELIVERY, receiver.deliveryInfo)

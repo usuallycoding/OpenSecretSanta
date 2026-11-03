@@ -6,6 +6,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 
 class GiftDtoSerializationTest {
     private val json = Json
@@ -43,14 +44,22 @@ class GiftDtoSerializationTest {
 
     @Test
     fun receiverDetailsExposeOnlyWhatIsNeededToPostAGift() {
-        assertEquals(setOf("username", "fullName", "address", "phone", "deliveryInfo"), keys(ReceiverDto("bob")))
+        assertEquals(setOf("username", "fullName", "address", "phone", "deliveryInfo", "email"), keys(ReceiverDto("bob")))
     }
 
     @Test
-    fun receiverDetailsHaveNoEmailOrCredentialFields() {
-        val text = withDefaults.encodeToString(ReceiverDto("bob", "Bob", "addr", "123", "info"))
+    fun receiverDetailsHaveNoCredentialFields() {
+        val text = withDefaults.encodeToString(ReceiverDto("bob", "Bob", "addr", "123", "info", "bob@example.com"))
 
-        for (forbidden in listOf("email", "password", "hash", "isAdmin", "token")) assertFalse(text.contains(forbidden, ignoreCase = true), forbidden)
+        for (forbidden in listOf("password", "hash", "isAdmin", "token")) assertFalse(text.contains(forbidden, ignoreCase = true), forbidden)
+    }
+
+    @Test
+    fun aReceiverWithoutAnEmailFieldStillDecodes() {
+        val receiver = Json.decodeFromString<ReceiverDto>("""{"username":"bob","fullName":"Bob"}""")
+
+        assertEquals(ReceiverDto("bob", "Bob"), receiver)
+        assertNull(receiver.email)
     }
 
     @Test

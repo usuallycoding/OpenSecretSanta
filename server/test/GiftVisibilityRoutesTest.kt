@@ -55,7 +55,7 @@ class GiftVisibilityRoutesTest {
 
         assertEquals(HttpStatusCode.OK, response.status)
         assertEquals(
-            ReceiverDto("bob", "Bob Builder", "2 Side St", "555-0102", "Leave at the back door"),
+            ReceiverDto("bob", "Bob Builder", "2 Side St", "555-0102", "Leave at the back door", "bob@example.com"),
             Json.decodeFromString<ReceiverDto>(response.bodyAsText()),
         )
     }
@@ -71,16 +71,17 @@ class GiftVisibilityRoutesTest {
     }
 
     @Test
-    fun unsetFieldsAreEmptyAndThereIsNoEmailOrCredentialData() = testApplication {
+    fun unsetFieldsAreEmptyAndThereIsNoCredentialData() = testApplication {
         startApp()
         val id = world("active")
 
         val body = client.getAs(ApiRoutes.groupReceiver(id.toLong()), fx.token("dave")).bodyAsText() // dave -> alice (no delivery info)
 
         val keys = Json.parseToJsonElement(body).jsonObject.keys
-        assertEquals(setOf("username", "fullName", "address", "phone", "deliveryInfo"), keys)
+        assertEquals(setOf("username", "fullName", "address", "phone", "deliveryInfo", "email"), keys)
         assertEquals(null, Json.decodeFromString<ReceiverDto>(body).deliveryInfo)
-        for (forbidden in listOf("bob@example.com", "email", "hash", "password", "isAdmin")) assertFalse(body.contains(forbidden, ignoreCase = true), forbidden)
+        assertEquals(null, Json.decodeFromString<ReceiverDto>(body).email)
+        for (forbidden in listOf("bob@example.com", "hash", "password", "isAdmin")) assertFalse(body.contains(forbidden, ignoreCase = true), forbidden)
     }
 
     @Test
@@ -93,6 +94,7 @@ class GiftVisibilityRoutesTest {
 
         assertEquals("99 New Road", receiver.address)
         assertEquals(null, receiver.phone)
+        assertEquals(null, receiver.email)
     }
 
     @Test

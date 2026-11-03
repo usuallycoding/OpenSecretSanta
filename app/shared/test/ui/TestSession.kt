@@ -253,7 +253,7 @@ class FakeWishlist {
 class FakeGift {
     /** `pending`, `active` or `archived`, as the group's state. */
     var state = "active"
-    var receiver = ReceiverDto("bob", "Bob Builder", "1 Main Street", "555-0100", "Ring twice")
+    var receiver = ReceiverDto("bob", "Bob Builder", "1 Main Street", "555-0100", "Ring twice", "bob@example.com")
     var santa = SantaRevealDto("carol", "Carol Santos")
 
     private val asked = mutableListOf<QuestionDto>()

@@ -26,8 +26,9 @@ data class ReceiverInfo(
     val address: String?,
     val phone: String?,
     val deliveryInfo: String?,
+    val email: String? = null,
 ) {
-    val hasPostalDetails: Boolean get() = listOf(fullName, address, phone, deliveryInfo).any { it != null }
+    val hasPostalDetails: Boolean get() = listOf(fullName, email, address, phone, deliveryInfo).any { it != null }
 }
 
 /** The receiver, the questions the person asked and the group's phase, read together. */
@@ -63,7 +64,7 @@ internal fun QuestionDto.toQuestion() = Question(
 
 internal fun ReceiverDto.toInfo() = ReceiverInfo(
     username,
-    fullName.clean(), address.clean(), phone.clean(), deliveryInfo.clean(),
+    fullName.clean(), address.clean(), phone.clean(), deliveryInfo.clean(), email.clean(),
 )
 
 private fun String?.clean(): String? = this?.trim()?.ifEmpty { null }

@@ -29,6 +29,7 @@ class GetMyReceiver(
             address = account.profile.address,
             phone = account.profile.phone,
             deliveryInfo = account.profile.deliveryInfo,
+            email = account.profile.email,
         )
     }
 }

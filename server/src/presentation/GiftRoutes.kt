@@ -17,7 +17,7 @@ fun Route.giftVisibilityRoutes(getReceiver: GetMyReceiver, getSanta: GetMySanta)
     get(ApiRoutes.GROUP_RECEIVER) {
         val user = call.currentUser()
         val details = blocking { getReceiver(user, call.groupId()) }
-        call.respond(ReceiverDto(details.username.value, details.fullName, details.address, details.phone, details.deliveryInfo))
+        call.respond(ReceiverDto(details.username.value, details.fullName, details.address, details.phone, details.deliveryInfo, details.email))
     }
     get(ApiRoutes.GROUP_SANTA) {
         val user = call.currentUser()

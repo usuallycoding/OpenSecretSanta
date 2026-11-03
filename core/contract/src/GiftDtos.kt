@@ -10,6 +10,7 @@ data class ReceiverDto(
     val address: String? = null,
     val phone: String? = null,
     val deliveryInfo: String? = null,
+    val email: String? = null,
 )
 
 /** Who gave a participant their gift, available only once the group is archived. */

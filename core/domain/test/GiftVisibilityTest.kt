@@ -58,6 +58,7 @@ class GiftVisibilityTest {
 
         assertEquals("bob", details.username.value)
         assertEquals("Bob Builder", details.fullName)
+        assertEquals("bob@example.com", details.email)
         assertEquals("2 Side St", details.address)
         assertEquals("555-0102", details.phone)
         assertEquals("Leave at the back door", details.deliveryInfo)
@@ -88,13 +89,13 @@ class GiftVisibilityTest {
         assertEquals("Alice Archer", details.fullName)
         assertNull(details.phone)
         assertNull(details.deliveryInfo)
+        assertNull(details.email)
     }
 
     @Test
-    fun theDetailsHaveNoEmailAndNoCredentials() {
+    fun theDetailsHaveNoCredentials() {
         val fields = receiverOf(user("alice"), activeGroup()).toString()
 
-        assertFalse(fields.contains("bob@example.com"))
         assertFalse(fields.contains("hash", ignoreCase = true))
     }
 

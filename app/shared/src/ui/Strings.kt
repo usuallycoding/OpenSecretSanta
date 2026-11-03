@@ -80,7 +80,7 @@ object Strings {
     const val GROUP_PARTICIPANTS = "Participants"
     const val YOU = "you"
 
-    const val PROFILE_WHY = "A Santa uses your name and address to post your gift. Your email is used to send you your draw when a group you are in is drawn."
+    const val PROFILE_WHY = "A Santa uses your name and address to post your gift, and also sees your email. Your email is used to send you your draw when a group you are in is drawn."
 
     /** What the owner is told after "Draw the names" about the emails: "Emails sent to 8 of 11 participants. 1 failed, 2 have no email address." */
     fun emailSummary(sent: Int, failed: Int, noAddress: Int): String {
@@ -125,6 +125,7 @@ object Strings {
 
 
     const val RECEIVER_NAME = "Name"
+    const val RECEIVER_EMAIL = "Email"
     const val RECEIVER_ADDRESS = "Address"
     const val RECEIVER_PHONE = "Phone"
     const val RECEIVER_DELIVERY = "Delivery information"

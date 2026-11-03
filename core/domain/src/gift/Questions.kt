@@ -35,6 +35,7 @@ data class ReceiverDetails(
     val address: String?,
     val phone: String?,
     val deliveryInfo: String?,
+    val email: String? = null,
 )
 
 /** What a receiver may learn about their Santa once the group is archived, and nothing more. */

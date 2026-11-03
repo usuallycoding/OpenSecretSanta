@@ -23,7 +23,7 @@ class GiftApiTest {
     fun theReceiverComesBackWithTheirPostalDetails() = runTest {
         val receiver = success(api.receiver(1))
 
-        assertEquals(ReceiverDto("bob", "Bob Builder", "1 Main Street", "555-0100", "Ring twice"), receiver)
+        assertEquals(ReceiverDto("bob", "Bob Builder", "1 Main Street", "555-0100", "Ring twice", "bob@example.com"), receiver)
         assertEquals(listOf("GET /groups/1/receiver"), server.calls)
     }
 

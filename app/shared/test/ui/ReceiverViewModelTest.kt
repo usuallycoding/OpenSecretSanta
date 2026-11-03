@@ -43,6 +43,27 @@ class ReceiverViewModelTest {
         assertEquals("1 Main Street", receiver.address)
         assertEquals("555-0100", receiver.phone)
         assertEquals("Ring twice", receiver.deliveryInfo)
+        assertEquals("bob@example.com", receiver.email)
+        assertTrue(receiver.hasPostalDetails)
+    }
+
+    @Test
+    fun aBlankEmailIsLeftOut() = runTest {
+        server.gift.receiver = ReceiverDto("bob", email = "  ")
+
+        val receiver = viewModel().data.value.value!!.receiver
+
+        assertNull(receiver.email)
+        assertFalse(receiver.hasPostalDetails)
+    }
+
+    @Test
+    fun anEmailAloneCountsAsPostalDetails() = runTest {
+        server.gift.receiver = ReceiverDto("bob", email = "bob@example.com")
+
+        val receiver = viewModel().data.value.value!!.receiver
+
+        assertEquals("bob@example.com", receiver.email)
         assertTrue(receiver.hasPostalDetails)
     }
 

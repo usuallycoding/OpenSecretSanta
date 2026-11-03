@@ -33,5 +33,6 @@ class EmailSummaryTextTest {
     fun theProfileNoteSaysWhatTheEmailIsFor() {
         assertTrue("email" in Strings.PROFILE_WHY && "draw" in Strings.PROFILE_WHY)
         assertTrue(Strings.PROFILE_WHY.startsWith("A Santa uses your name and address"))
+        assertTrue("also sees your email" in Strings.PROFILE_WHY)
     }
 }
