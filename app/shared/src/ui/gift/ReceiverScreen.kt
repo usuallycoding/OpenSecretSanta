@@ -28,8 +28,6 @@ import com.usuallycoding.opensecretsanta.domain.gift.QuestionLimits
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.groups.GroupPhase
 import com.usuallycoding.opensecretsanta.ui.load.LoadSection
-import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
-import com.usuallycoding.opensecretsanta.ui.form.TimesLine
 import androidx.compose.foundation.layout.BoxScope
 import com.usuallycoding.opensecretsanta.ui.form.AppFab
 import com.usuallycoding.opensecretsanta.ui.form.QuestionIcon
@@ -92,14 +90,7 @@ private fun QuestionsHeader(data: ReceiverData, viewModel: ReceiverViewModel) {
 internal fun QuestionCard(question: Question, action: (@Composable () -> Unit)? = null) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            ReadOnlyText("${question.number}. ${question.text}", style = MaterialTheme.typography.titleSmall, label = Strings.QUESTION_LABEL)
-            TimesLine(Strings.asked(question.asked))
-            if (question.answer != null) {
-                ReadOnlyText(question.answer, style = MaterialTheme.typography.bodyMedium, label = Strings.ANSWER)
-                TimesLine(question.answered?.let(Strings::answered), question.answerChanged?.let(Strings::answerChanged))
-            } else {
-                Text(Strings.NOT_ANSWERED, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            QuestionThread(question.number, question.text, question.asked, question.answer, question.answered, question.answerChanged)
             action?.invoke()
         }
     }
