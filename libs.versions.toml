@@ -5,7 +5,7 @@ androidx-lifecycle = "2.11.0"
 androidx-navigation = "2.10.0"
 compose-material-icons = "1.7.3"
 # the Compose Multiplatform release Amper builds with; the back handler is not on the compile classpath by itself
-compose-ui-backhandler = "1.12.1"
+compose-ui-backhandler = "1.12.2"
 androidx-navigationevent = "1.1.2"
 koin = "4.2.2"
 sqlite-jdbc = "3.53.4.0"

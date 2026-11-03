@@ -6,4 +6,6 @@ dependencies:
   - $compose.ui
 
 settings:
-  compose: enabled
+  compose:
+    enabled: true
+    version: 1.12.2

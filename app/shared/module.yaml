@@ -41,6 +41,7 @@ settings:
     serialization: json
   compose:
     enabled: true
+    version: 1.12.2
     resources:
       packageName: com.usuallycoding.opensecretsanta.resources
       # Generate public accessors so other modules (and previews) can use Res.*

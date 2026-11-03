@@ -14,7 +14,9 @@ dependencies:
   - $compose.uiTooling
 
 settings:
-  compose: enabled
+  compose:
+    enabled: true
+    version: 1.12.2
   android:
     namespace: com.usuallycoding.opensecretsanta
     applicationId: com.usuallycoding.opensecretsanta
