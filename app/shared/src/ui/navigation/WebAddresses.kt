@@ -16,8 +16,8 @@ object WebAddresses {
     fun addressOf(route: Any): String? = when (route) {
         GroupsRoute -> "#/groups"
         is GroupRoute -> "#/groups/${route.id}"
-        is GifterRoute -> "#/groups/${route.groupId}/gifter"
-        is ReceiverRoute -> "#/groups/${route.groupId}/receiver"
+        is GifterRoute -> "#/groups/${route.groupId}/gifter" + tabSuffix(route.questions)
+        is ReceiverRoute -> "#/groups/${route.groupId}/receiver" + tabSuffix(route.questions)
         ProfileRoute -> "#/profile"
         SettingsRoute -> "#/settings"
         AdminGroupsRoute -> "#/admin/groups"
@@ -28,6 +28,9 @@ object WebAddresses {
         is AdminUserRoute -> "#/admin/users/${route.username}"
         else -> null
     }
+
+    /** The wishlist tab is the default and has no suffix; the address names the tab a page opens on, not the one it is on. */
+    private fun tabSuffix(questions: Boolean) = if (questions) "/questions" else ""
 
     /**
      * The screen an address names, or null when it names none, or names an admin screen to someone
@@ -50,7 +53,9 @@ object WebAddresses {
         return when (parts.drop(1)) {
             emptyList<String>() -> GroupRoute(id)
             listOf("gifter") -> GifterRoute(id)
+            listOf("gifter", "questions") -> GifterRoute(id, questions = true)
             listOf("receiver") -> ReceiverRoute(id)
+            listOf("receiver", "questions") -> ReceiverRoute(id, questions = true)
             else -> null
         }
     }

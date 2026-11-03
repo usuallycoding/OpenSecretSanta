@@ -59,7 +59,18 @@
         registration.showNotification(data.title || 'Open Secret Santa', {
             body: data.body,
             tag: (data.category || 'message') + ':' + (data.groupId || ''),
-            data: { groupId: data.groupId || '' }
+            data: { groupId: data.groupId || '', category: data.category || '' }
+        });
+    }
+
+    // The worker tells an open page where a tapped notification goes. Setting the address is what the app already follows
+    // when an address is typed, so nothing else has to know about notifications.
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('message', function (event) {
+            var message = event.data;
+            if (message && message.type === 'oss-open' && typeof message.address === 'string' && message.address.indexOf('#/') === 0) {
+                window.location.hash = message.address;
+            }
         });
     }
 

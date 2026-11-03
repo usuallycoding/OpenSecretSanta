@@ -173,21 +173,25 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                             )
                         }
                         composable<GifterRoute> { entry ->
-                            val groupId = entry.toRoute<GifterRoute>().groupId
+                            val route = entry.toRoute<GifterRoute>()
+                            val groupId = route.groupId
                             GifterPage(
                                 koinViewModel<ReceiverWishlistViewModel>(key = "receiver-wishlist-$groupId") { parametersOf(groupId) },
                                 koinViewModel<ReceiverViewModel>(key = "receiver-$groupId") { parametersOf(groupId) },
                                 onBack = { navController.popBackStack() },
                                 onTitle = { pageTitle = it },
+                                tab = route.tab,
                             )
                         }
                         composable<ReceiverRoute> { entry ->
-                            val groupId = entry.toRoute<ReceiverRoute>().groupId
+                            val route = entry.toRoute<ReceiverRoute>()
+                            val groupId = route.groupId
                             ReceiverPage(
                                 groupId,
                                 koinViewModel<WishlistViewModel>(key = "wishlist-$groupId") { parametersOf(groupId) },
                                 onBack = { navController.popBackStack() },
                                 onTitle = { pageTitle = it },
+                                tab = route.tab,
                             )
                         }
                         composable<ProfileRoute> { ProfileScreen(koinViewModel()) }

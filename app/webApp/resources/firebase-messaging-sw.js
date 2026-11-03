@@ -24,23 +24,43 @@ firebase.messaging().onBackgroundMessage(function (payload) {
         body: data.body,
         // a newer notification of a kind for a group replaces the older one
         tag: (data.category || 'message') + ':' + (data.groupId || ''),
-        data: { groupId: data.groupId || '' }
+        data: { groupId: data.groupId || '', category: data.category || '' }
     });
 });
 
+// The page a notification opens, by its kind: a question is answered on the Receiver page, an answer and a wishlist are read
+// on the Gifter page, and anything else opens the group. The app has the same mapping (NotificationTarget); these are its addresses.
+function addressOf(groupId, category) {
+    if (!groupId) return '#/groups';
+    const group = '#/groups/' + groupId;
+    switch (category) {
+        case 'questions': return group + '/receiver/questions';
+        case 'answers': return group + '/gifter/questions';
+        case 'wishlist': return group + '/gifter';
+        default: return group;
+    }
+}
+
+// A new version of this worker takes over at once, so that a tap is never handled by an older copy of the code below, and
+// pages that were open before it existed are controlled by it.
+self.addEventListener('install', function () { self.skipWaiting(); });
+self.addEventListener('activate', function (event) { event.waitUntil(self.clients.claim()); });
+
 self.addEventListener('notificationclick', function (event) {
     event.notification.close();
-    const groupId = event.notification.data && event.notification.data.groupId;
+    const notified = event.notification.data || {};
     // the app's addresses are after the '#'
+    const address = addressOf(notified.groupId, notified.category);
     const target = new URL(self.registration.scope);
-    target.hash = groupId ? '#/groups/' + groupId : '#/groups';
+    target.hash = address;
     event.waitUntil(
         self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (windows) {
             for (const page of windows) {
                 if (page.url.startsWith(self.registration.scope)) {
-                    return page.focus().then(function (focused) {
-                        return focused && focused.navigate ? focused.navigate(target.href) : focused;
-                    });
+                    // The page moves itself (push.js): WindowClient.navigate() only works on a page this worker controls, and a
+                    // page opened before the worker was installed is not one.
+                    page.postMessage({ type: 'oss-open', address: address });
+                    return page.focus().catch(function () { return page; });
                 }
             }
             return self.clients.openWindow(target.href);

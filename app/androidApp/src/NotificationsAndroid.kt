@@ -22,6 +22,9 @@ private enum class Channel(val id: String, val title: String) {
 /** The extra that carries the group a tapped notification is about. */
 const val EXTRA_GROUP_ID = "com.usuallycoding.opensecretsanta.GROUP_ID"
 
+/** The extra that carries the kind of notification it was, which decides the page it opens. */
+const val EXTRA_CATEGORY = "com.usuallycoding.opensecretsanta.CATEGORY"
+
 /** Creates the four channels (Android 8 and later); doing it again changes nothing. */
 fun createNotificationChannels(context: Context) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
@@ -42,7 +45,10 @@ fun showNotification(context: Context, data: Map<String, String>) {
     val id = (groupId ?: 0L).hashCode()
     val open = Intent(context, MainActivity::class.java)
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        .apply { if (groupId != null) putExtra(EXTRA_GROUP_ID, groupId) }
+        .apply {
+            if (groupId != null) putExtra(EXTRA_GROUP_ID, groupId)
+            putExtra(EXTRA_CATEGORY, channel.id)
+        }
     val tap = PendingIntent.getActivity(context, id * 4 + channel.ordinal, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
     val notification = NotificationCompat.Builder(context, channel.id)

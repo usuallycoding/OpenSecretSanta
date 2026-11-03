@@ -16,13 +16,23 @@ data object ProfileRoute
 @Serializable
 data object SettingsRoute
 
-/** The page for the relationship in which the person gives: the receiver's list and the person's questions to them. */
-@Serializable
-data class GifterRoute(val groupId: Long)
+/** Which of a page's two tabs it opens on: the wishlist, which is the default, or the questions. */
+enum class PageTab { Wishlist, Questions }
 
-/** The page for the relationship in which the person receives: their own list and the questions from their Santa. */
+/**
+ * The page for the relationship in which the person gives: the receiver's list and the person's questions to them. It opens on its
+ * questions tab when [questions] is set. A route's arguments must be plain values: Navigation on the web and iOS cannot carry an enum.
+ */
 @Serializable
-data class ReceiverRoute(val groupId: Long)
+data class GifterRoute(val groupId: Long, val questions: Boolean = false) {
+    val tab: PageTab get() = if (questions) PageTab.Questions else PageTab.Wishlist
+}
+
+/** The page for the relationship in which the person receives: their own list and the questions from their Santa. See [GifterRoute]. */
+@Serializable
+data class ReceiverRoute(val groupId: Long, val questions: Boolean = false) {
+    val tab: PageTab get() = if (questions) PageTab.Questions else PageTab.Wishlist
+}
 
 /** The administrator's own groups: the first screen of the admin view. */
 @Serializable

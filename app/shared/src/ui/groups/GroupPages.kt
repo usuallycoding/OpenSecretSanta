@@ -29,6 +29,7 @@ import com.usuallycoding.opensecretsanta.ui.gift.ReceiverViewModel
 import com.usuallycoding.opensecretsanta.ui.gift.SantaQuestionsSection
 import com.usuallycoding.opensecretsanta.ui.gift.SantaQuestionsViewModel
 import com.usuallycoding.opensecretsanta.ui.load.PullPage
+import com.usuallycoding.opensecretsanta.ui.navigation.PageTab
 import com.usuallycoding.opensecretsanta.ui.wishlist.ReceiverWishlistSection
 import com.usuallycoding.opensecretsanta.ui.wishlist.ReceiverWishlistViewModel
 import com.usuallycoding.opensecretsanta.ui.wishlist.WishlistSection
@@ -41,7 +42,7 @@ import org.koin.core.parameter.parametersOf
  * tab the questions their Santa asked. Nothing on it says who the Santa is.
  */
 @Composable
-fun ReceiverPage(groupId: Long, wishlist: WishlistViewModel, onBack: () -> Unit, onTitle: (String?) -> Unit) {
+fun ReceiverPage(groupId: Long, wishlist: WishlistViewModel, onBack: () -> Unit, onTitle: (String?) -> Unit, tab: PageTab = PageTab.Wishlist) {
     val wishlistState by wishlist.data.collectAsState()
     val phase = wishlistState.value?.phase
     // the questions exist once the names are drawn: the tab, and the request behind it, only then
@@ -67,6 +68,7 @@ fun ReceiverPage(groupId: Long, wishlist: WishlistViewModel, onBack: () -> Unit,
     TabbedPages(
         Strings.TAB_YOUR_WISHLIST,
         Strings.TAB_RESPOND,
+        tab,
         onShown = { page -> if (page == 0) wishlist.refresh() else questions.refresh() },
     ) { page ->
         if (page == 0) {
@@ -85,7 +87,7 @@ fun ReceiverPage(groupId: Long, wishlist: WishlistViewModel, onBack: () -> Unit,
  * person's own questions to the receiver with the answers in the other.
  */
 @Composable
-fun GifterPage(wishlist: ReceiverWishlistViewModel, questions: ReceiverViewModel, onBack: () -> Unit, onTitle: (String?) -> Unit) {
+fun GifterPage(wishlist: ReceiverWishlistViewModel, questions: ReceiverViewModel, onBack: () -> Unit, onTitle: (String?) -> Unit, tab: PageTab = PageTab.Wishlist) {
     val wishlistState by wishlist.state.collectAsState()
     val questionsState by questions.data.collectAsState()
     // the receiver's name, once it is known; a failed refresh keeps the name that was loaded before
@@ -99,6 +101,7 @@ fun GifterPage(wishlist: ReceiverWishlistViewModel, questions: ReceiverViewModel
     TabbedPages(
         Strings.receiverWishlistTab(receiver),
         Strings.receiverQuestionsTab(receiver),
+        tab,
         onShown = { page -> if (page == 0) wishlist.refresh() else questions.refresh() },
     ) { page ->
         if (page == 0) {
@@ -122,12 +125,12 @@ private fun PageTitle(title: String, onTitle: (String?) -> Unit) {
 
 /**
  * The two tabs of the two pages, labelled [first] and [second]: a tab row and the content of the shown tab, which can be changed
- * by choosing a tab or by swiping the content sideways. A label that is too long for its tab ends in an ellipsis. [onShown]
+ * by choosing a tab or by swiping the content sideways; the page opens on [opensOn]. A label that is too long for its tab ends in an ellipsis. [onShown]
  * reloads a tab when it is shown (a tab that was left may be stale).
  */
 @Composable
-private fun TabbedPages(first: String, second: String, onShown: (Int) -> Unit, page: @Composable (Int) -> Unit) {
-    val pager = rememberPagerState { 2 }
+private fun TabbedPages(first: String, second: String, opensOn: PageTab, onShown: (Int) -> Unit, page: @Composable (Int) -> Unit) {
+    val pager = rememberPagerState(initialPage = opensOn.ordinal) { 2 }
     val scope = rememberCoroutineScope()
     val latestOnShown by rememberUpdatedState(onShown)
     LaunchedEffect(pager) {
