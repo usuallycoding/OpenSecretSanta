@@ -145,6 +145,25 @@ The Gifter page, the one for the relationship in which the person gives, SHALL o
 - **WHEN** the person swipes the first tab's content to the left
 - **THEN** the second tab is shown and the tab row marks it
 
+### Requirement: Pages can open on a tab
+The Receiver and Gifter pages SHALL be able to open on either of their two tabs, the wishlist tab by default. A page that has no tabs, the Receiver page of a Pending group, SHALL show its wishlist whichever tab was asked for. Opening on a tab SHALL NOT change what the tab shows or how it loads.
+
+#### Scenario: Opens on the questions tab
+- **WHEN** the Receiver page is opened on its questions tab in an Active group
+- **THEN** the "Respond to Secret Santa" tab is shown and its questions load
+
+#### Scenario: Default tab
+- **WHEN** a page is opened without a tab
+- **THEN** its wishlist tab is shown
+
+#### Scenario: Pending group
+- **WHEN** the Receiver page is opened on its questions tab while the group is Pending
+- **THEN** the page shows the wishlist and no tabs
+
+#### Scenario: Other tab still works
+- **WHEN** a page opened on its questions tab is swiped to its wishlist tab
+- **THEN** the wishlist tab shows and loads as it does when it is opened first
+
 ### Requirement: Page loading and refreshing
 Each tab of the Gifter and Receiver pages SHALL load on its own, show that it is loading, and show a message with "Try again" when the server cannot be reached or answers with an error, without affecting the other tab or what it already showed. Pulling a tab down (on Android and iOS) SHALL reload that tab, and returning to the app and showing a tab, by choosing it or by swiping to it, SHALL reload what the tab shows, as "Pulling a screen refreshes it" and "The web has no refresh control" describe.
 

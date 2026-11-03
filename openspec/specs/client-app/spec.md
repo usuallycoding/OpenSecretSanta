@@ -326,7 +326,7 @@ On the web a screen SHALL offer no refresh control, because the browser's own re
 - **THEN** the same screen is shown with current data and the person is still signed in
 
 ### Requirement: Readable web addresses
-In the web app each screen SHALL have a short, readable address after the `#` (for example `#/groups/2` for a group, `#/groups/2/gifter` and `#/groups/2/receiver` for its Gifter and Receiver pages, `#/profile`, `#/settings`, `#/admin/groups/2` and `#/admin/users/alice`), and the address bar SHALL follow the screens as the person moves between them. The addresses SHALL NOT contain the names of the app's classes. Bottom sheets SHALL NOT be part of the address.
+In the web app each screen SHALL have a short, readable address after the `#` (for example `#/groups/2` for a group, `#/groups/2/gifter` and `#/groups/2/receiver` for its Gifter and Receiver pages, `#/profile`, `#/settings`, `#/admin/groups/2` and `#/admin/users/alice`), and the address bar SHALL follow the screens as the person moves between them. A page that opens on its questions tab SHALL have the address of the page followed by `/questions`. The addresses SHALL NOT contain the names of the app's classes. Bottom sheets SHALL NOT be part of the address.
 
 #### Scenario: A group
 - **WHEN** a signed-in person opens a group in the web app
@@ -344,6 +344,13 @@ In the web app each screen SHALL have a short, readable address after the `#` (f
 - **WHEN** a bottom sheet is open on a group's screen in the web app
 - **THEN** the address is still the group's address
 
+#### Scenario: A page on its questions tab
+- **WHEN** a signed-in person opens `#/groups/2/receiver/questions` or `#/groups/2/gifter/questions`
+- **THEN** that page of group 2 opens on its questions tab
+
+#### Scenario: The tab is where the page opens
+- **WHEN** the person switches tabs on a page
+- **THEN** the address stays as it was, and a name for the wishlist tab such as `#/groups/2/receiver/wishlist` names no screen
 ### Requirement: Opening a web address
 In the web app, opening or refreshing an address, or typing one into the address bar while signed in, SHALL show the screen it names. An address that names no screen SHALL show the first screen of the person's view. An address of an admin screen opened by someone who is not an administrator SHALL show the first screen. When the person is signed out, the sign-in screen SHALL be shown and, after signing in, the screen the address names.
 
