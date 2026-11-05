@@ -4,6 +4,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -34,6 +36,7 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.usuallycoding.opensecretsanta.ui.Strings
@@ -49,6 +52,9 @@ internal val CopyIcon: ImageVector by lazy {
     ).build()
 }
 
+/** The side of the copy icon, which a centered text makes room for on the other side so that the text stays in the middle. */
+private val CopyButtonSize = 36.dp
+
 /** The copy icon: puts [text], all of it, on the clipboard, then shows a check mark for a moment, or that it failed. */
 @Composable
 fun CopyButton(text: String, modifier: Modifier = Modifier) {
@@ -62,7 +68,7 @@ fun CopyButton(text: String, modifier: Modifier = Modifier) {
         })
     }
     val status by action.status.collectAsState()
-    IconButton(onClick = { scope.launch { action.copy(text) } }, modifier = modifier.size(36.dp)) {
+    IconButton(onClick = { scope.launch { action.copy(text) } }, modifier = modifier.size(CopyButtonSize)) {
         when (status) {
             CopyStatus.Idle -> Icon(CopyIcon, contentDescription = Strings.COPY, modifier = Modifier.size(18.dp))
             CopyStatus.Copied -> Icon(Icons.Filled.Check, contentDescription = Strings.COPIED, modifier = Modifier.size(18.dp))
@@ -74,7 +80,7 @@ fun CopyButton(text: String, modifier: Modifier = Modifier) {
 /**
  * Read-only text with a copy icon at its end (unless [copy] is false). It shows at most [maxLines] lines; when it was cut,
  * choosing it opens a dialog with the whole text ([label] is the dialog's title), and when it was not,
- * choosing it does nothing.
+ * choosing it does nothing. With [centered] the text is in the middle of the width, as far from the start as the icon is from the end.
  */
 @Composable
 fun ReadOnlyText(
@@ -85,6 +91,7 @@ fun ReadOnlyText(
     label: String? = null,
     maxLines: Int = MULTILINE_MAX_ROWS,
     copy: Boolean = true,
+    centered: Boolean = false,
 ) {
     var cut by remember(text) { mutableStateOf(false) }
     // when the text is cut at the end of a line (a line break, not the line's width) the platform adds no
@@ -92,11 +99,13 @@ fun ReadOnlyText(
     var shown by remember(text) { mutableStateOf(text) }
     var open by remember { mutableStateOf(false) }
     Row(modifier, verticalAlignment = Alignment.Top) {
+        if (centered && copy) Spacer(Modifier.width(CopyButtonSize))
         Text(
             shown,
             style = style,
             color = color,
             maxLines = maxLines,
+            textAlign = if (centered) TextAlign.Center else null,
             overflow = TextOverflow.Ellipsis,
             onTextLayout = { result: TextLayoutResult ->
                 if (!cut && result.hasVisualOverflow) {

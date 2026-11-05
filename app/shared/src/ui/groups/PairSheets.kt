@@ -27,9 +27,9 @@ import org.koin.core.parameter.parametersOf
 
 /** The sheet that is open on a group page. Each loads what it shows and offers "Try again" when that fails. */
 @Composable
-internal fun PairSheets(sheet: PairSheet, groupId: Long, pair: PairViewModel?, onDismiss: () -> Unit) {
+internal fun PairSheets(sheet: PairSheet, groupId: Long, pair: PairViewModel?, onDismiss: () -> Unit, onEditProfile: () -> Unit) {
     when (sheet) {
-        PairSheet.Me -> MySheet(onDismiss)
+        PairSheet.Me -> MySheet(onDismiss, onEditProfile)
         PairSheet.Receiver -> if (pair != null) ReceiverSheet(pair, onDismiss)
         PairSheet.Santa -> SantaSheet(groupId, onDismiss)
     }
@@ -45,13 +45,13 @@ private fun Unavailable(message: String, onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun MySheet(onDismiss: () -> Unit) {
+private fun MySheet(onDismiss: () -> Unit, onEditProfile: () -> Unit) {
     val viewModel = koinViewModel<MyDetailsViewModel>(key = "my-details")
     val state by viewModel.details.collectAsState()
     LaunchedEffect(viewModel) { viewModel.refresh() }
     SheetFrame(onDismiss) {
         LoadSection(state, onRetry = { viewModel.refresh() }) { details ->
-            ReadOnlyText(details.username, style = MaterialTheme.typography.headlineSmall, label = Strings.USERNAME)
+            ReadOnlyText(details.username, style = MaterialTheme.typography.headlineSmall, label = Strings.USERNAME, centered = true)
             if (details.hasProfile) {
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -65,6 +65,8 @@ private fun MySheet(onDismiss: () -> Unit) {
             } else {
                 Text(Strings.USER_NO_PROFILE, style = MaterialTheme.typography.bodyMedium)
             }
+            // the sheet closes first, so it does not stay over the tab it leads to
+            Button(onClick = { onDismiss(); onEditProfile() }, modifier = Modifier.fillMaxWidth()) { Text(Strings.EDIT_DELIVERY_INFO) }
         }
     }
 }
@@ -84,7 +86,7 @@ private fun ReceiverSheet(pair: PairViewModel, onDismiss: () -> Unit) {
 /** Where to post the gift: the username and whatever the receiver has set. */
 @Composable
 private fun ReceiverDetails(receiver: ReceiverInfo) {
-    ReadOnlyText(receiver.username, style = MaterialTheme.typography.headlineSmall, label = Strings.USERNAME)
+    ReadOnlyText(receiver.username, style = MaterialTheme.typography.headlineSmall, label = Strings.USERNAME, centered = true)
     if (!receiver.hasPostalDetails) {
         Text(Strings.NO_POSTAL_DETAILS, style = MaterialTheme.typography.bodyMedium)
     } else {

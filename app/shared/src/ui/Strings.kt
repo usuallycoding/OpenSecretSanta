@@ -140,6 +140,7 @@ object Strings {
     const val TELL_YOUR_SANTA = "Tell your santa what you want and let them know you!"
     const val YOUR_STUFF = "Your stuff:"
     const val DELIVERY_INFO = "Delivery Info"
+    const val EDIT_DELIVERY_INFO = "Edit Delivery Info"
     const val SEE_WISHLIST = "See Wishlist"
     const val ASK_QUESTIONS = "Ask Questions"
     const val EDIT_WISHLIST = "Edit Wishlist"

@@ -39,6 +39,7 @@ fun GroupPage(
     onBack: () -> Unit,
     onOpenGifter: (questions: Boolean) -> Unit,
     onOpenReceiver: (questions: Boolean) -> Unit,
+    onEditProfile: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
@@ -67,7 +68,7 @@ fun GroupPage(
             }
         }
     }
-    sheet?.let { PairSheets(it, viewModel.groupId, pair, onDismiss = { sheet = null }) }
+    sheet?.let { PairSheets(it, viewModel.groupId, pair, onDismiss = { sheet = null }, onEditProfile = onEditProfile) }
 }
 
 /** What a screen of a group says when the server answers that the group does not exist (any more, for this person). */

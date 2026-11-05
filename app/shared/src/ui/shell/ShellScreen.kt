@@ -169,6 +169,7 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                                 onBack = { navController.popBackStack() },
                                 onOpenGifter = { questions -> navController.navigate(GifterRoute(groupId, questions)) },
                                 onOpenReceiver = { questions -> navController.navigate(ReceiverRoute(groupId, questions)) },
+                                onEditProfile = { navController.openTab(ProfileRoute) },
                             )
                         }
                         composable<GifterRoute> { entry ->
