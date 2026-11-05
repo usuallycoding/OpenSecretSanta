@@ -383,11 +383,11 @@ When no participant or pair matches, the page SHALL say so in place of the list 
 - **THEN** it has a control that empties it and shows everyone again
 
 ### Requirement: Admin group details are shown in a card
-On the admin group screen the group's description, date and time, location and budget SHALL be shown in the same card, with the same "When? - ", "Where? - " and "Budget? - " lines, as `client-groups` describes for the group page, below the name and the state with its note. The actions of the group (edit, announce, the next step and delete) SHALL be below the card and SHALL NOT be in it.
+On the admin group screen the group's description SHALL be shown above the card, and the date and time, location and budget in the card, with the same icons, as `client-groups` describes for the group page, below the name and the state with its note. The actions of the group (edit, announce, the next step and delete) SHALL be below the card and SHALL NOT be in it.
 
 #### Scenario: Details in the card
 - **WHEN** an administrator opens a group that has a description, a date and time, a location and a budget
-- **THEN** the card shows the description, "When? - " with the date and time, "Where? - " with the location and "Budget? - " with the budget and its currency
+- **THEN** the description is above the card, and the card shows the calendar icon with the date and time, the map pin icon with the location and the bank icon with the budget and its currency
 
 #### Scenario: Actions stay below
 - **WHEN** the screen shows the card and the group has actions
