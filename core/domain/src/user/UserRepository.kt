@@ -30,8 +30,6 @@ interface UserRepository {
     /** Inserts all users or none. */
     fun insertAll(users: List<NewUser>)
 
-    fun updateProfile(username: Username, profile: Profile): User?
-
     /**
      * Deletes the account of [username], with its devices, settings, login record and leftover wishlist items, only if
      * [createdBy] created it, it is not an administrator and no group names it, all decided in the same transaction.

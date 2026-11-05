@@ -88,7 +88,7 @@ internal fun UserDialogs(viewModel: AdminUserViewModel, ui: AdminUserUi) {
     ui.created?.let { PasswordsDialog(Strings.RESET_DONE_TITLE, Strings.RESET_DONE_BODY, listOf(it), viewModel::dismissCreated) }
 }
 
-/** A user's profile, their temporary password while it is temporary, and the reset: the Users tab and the group sheet show the same thing. */
+/** A user's username, their temporary password while it is temporary, and the reset: the Users tab and the group sheet show the same thing. */
 @Composable
 internal fun UserDetail(user: ManagedUser, viewModel: AdminUserViewModel, busy: Boolean) {
     Column(
@@ -96,19 +96,6 @@ internal fun UserDetail(user: ManagedUser, viewModel: AdminUserViewModel, busy: 
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         ReadOnlyText(user.username, style = MaterialTheme.typography.headlineSmall, label = Strings.USERNAME)
-        if (listOf(user.fullName, user.email, user.phone, user.address, user.deliveryInfo).any { it != null }) {
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Field(Strings.USER_FIELD_NAME, user.fullName)
-                    Field(Strings.USER_FIELD_EMAIL, user.email)
-                    Field(Strings.RECEIVER_PHONE, user.phone)
-                    Field(Strings.RECEIVER_ADDRESS, user.address)
-                    Field(Strings.RECEIVER_DELIVERY, user.deliveryInfo)
-                }
-            }
-        } else {
-            Text(Strings.USER_NO_PROFILE, style = MaterialTheme.typography.bodyMedium)
-        }
         user.temporaryPassword?.let { password ->
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(Strings.USER_TEMPORARY_PASSWORD, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -119,14 +106,5 @@ internal fun UserDetail(user: ManagedUser, viewModel: AdminUserViewModel, busy: 
         if (viewModel.canReset) {
             OutlinedButton(onClick = viewModel::askReset, enabled = !busy) { Text(Strings.RESET_PASSWORD) }
         }
-    }
-}
-
-@Composable
-private fun Field(label: String, value: String?) {
-    if (value == null) return
-    Column {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        ReadOnlyText(value, style = MaterialTheme.typography.bodyLarge, label = label)
     }
 }

@@ -15,7 +15,7 @@ import com.usuallycoding.opensecretsanta.domain.notification.NotificationCategor
 import com.usuallycoding.opensecretsanta.domain.notification.PushMessage
 import com.usuallycoding.opensecretsanta.domain.notification.PushResult
 import com.usuallycoding.opensecretsanta.domain.notification.PushSender
-import com.usuallycoding.opensecretsanta.domain.user.Profile
+import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfo
 import com.usuallycoding.opensecretsanta.domain.user.Username
 import com.usuallycoding.opensecretsanta.server.data.notification.SqliteDeviceRepository
 import io.ktor.client.HttpClient
@@ -94,7 +94,6 @@ class AnnouncementRoutesTest {
         fx.addUser("admin", admin = true)
         names.forEach {
             fx.addUser(it)
-            fx.users.updateProfile(Username.parse(it), Profile(fullName = "$it Smith", email = "$it@example.org", phone = "+40 123", address = "1 Main St", deliveryInfo = "Ring twice"))
             devices.register(Username.parse(it), "$it-phone", DevicePlatform.ANDROID, 1)
         }
     }
@@ -102,6 +101,10 @@ class AnnouncementRoutesTest {
     private suspend fun HttpClient.group(pending: Boolean = true): AdminGroupDto {
         val created = send("POST", ApiRoutes.ADMIN_GROUPS, fx.token("admin"), CreateGroupRequest("Party", description = "Bring snacks", participants = names))
         val group = Json.decodeFromString<AdminGroupDto>(created.bodyAsText())
+        // what each person told this group
+        names.forEach {
+            fx.deliveryInfos.save(group.id, Username.parse(it), DeliveryInfo(fullName = "$it Smith", email = "$it@example.org", phone = "+40 123", address = "1 Main St", deliveryInfo = "Ring twice"))
+        }
         if (pending) assertEquals(HttpStatusCode.OK, send<Unit>("POST", ApiRoutes.adminGroupPending(group.id), fx.token("admin")).status)
         sender.sent.clear() // going Pending told everyone already
         return group

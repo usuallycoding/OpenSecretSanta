@@ -27,9 +27,9 @@ import org.koin.core.parameter.parametersOf
 
 /** The sheet that is open on a group page. Each loads what it shows and offers "Try again" when that fails. */
 @Composable
-internal fun PairSheets(sheet: PairSheet, groupId: Long, pair: PairViewModel?, onDismiss: () -> Unit, onEditProfile: () -> Unit) {
+internal fun PairSheets(sheet: PairSheet, groupId: Long, me: String, pair: PairViewModel?, editable: Boolean, onDismiss: () -> Unit, onEditDeliveryInfo: () -> Unit) {
     when (sheet) {
-        PairSheet.Me -> MySheet(onDismiss, onEditProfile)
+        PairSheet.Me -> MySheet(groupId, me, editable, onDismiss, onEditDeliveryInfo)
         PairSheet.Receiver -> if (pair != null) ReceiverSheet(pair, onDismiss)
         PairSheet.Santa -> SantaSheet(groupId, onDismiss)
     }
@@ -45,8 +45,8 @@ private fun Unavailable(message: String, onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun MySheet(onDismiss: () -> Unit, onEditProfile: () -> Unit) {
-    val viewModel = koinViewModel<MyDetailsViewModel>(key = "my-details")
+private fun MySheet(groupId: Long, me: String, editable: Boolean, onDismiss: () -> Unit, onEditDeliveryInfo: () -> Unit) {
+    val viewModel = koinViewModel<MyDetailsViewModel>(key = "my-details-$groupId") { parametersOf(groupId, me) }
     val state by viewModel.details.collectAsState()
     LaunchedEffect(viewModel) { viewModel.refresh() }
     SheetFrame(onDismiss) {
@@ -66,7 +66,7 @@ private fun MySheet(onDismiss: () -> Unit, onEditProfile: () -> Unit) {
                 Text(Strings.USER_NO_PROFILE, style = MaterialTheme.typography.bodyMedium)
             }
             // the sheet closes first, so it does not stay over the tab it leads to
-            Button(onClick = { onDismiss(); onEditProfile() }, modifier = Modifier.fillMaxWidth()) { Text(Strings.EDIT_DELIVERY_INFO) }
+            if (editable) Button(onClick = { onDismiss(); onEditDeliveryInfo() }, modifier = Modifier.fillMaxWidth()) { Text(Strings.EDIT_DELIVERY_INFO) }
         }
     }
 }

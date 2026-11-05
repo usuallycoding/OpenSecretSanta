@@ -3,7 +3,6 @@ package com.usuallycoding.opensecretsanta.data.session
 /** Who is signed in. Admin status and the password rule come from the server, never from the token. */
 data class Account(
     val username: String,
-    val fullName: String?,
     val isAdmin: Boolean,
 )
 

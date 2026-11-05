@@ -1,10 +1,10 @@
 package com.usuallycoding.opensecretsanta.ui
 
-import com.usuallycoding.opensecretsanta.contract.ProfileUpdateRequest
+import com.usuallycoding.opensecretsanta.contract.DeliveryInfoDto
 import com.usuallycoding.opensecretsanta.ui.load.loadMessage
-import com.usuallycoding.opensecretsanta.ui.profile.ProfileField
-import com.usuallycoding.opensecretsanta.ui.profile.ProfileForm
-import com.usuallycoding.opensecretsanta.ui.profile.ProfileViewModel
+import com.usuallycoding.opensecretsanta.ui.delivery.DeliveryField
+import com.usuallycoding.opensecretsanta.ui.delivery.DeliveryForm
+import com.usuallycoding.opensecretsanta.ui.delivery.DeliveryInfoViewModel
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -14,7 +14,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class ProfileViewModelTest {
+class DeliveryInfoViewModelTest {
     private val server = ScriptedServer().also { it.session() }
 
     private fun account(
@@ -25,17 +25,17 @@ class ProfileViewModelTest {
         deliveryInfo: String? = "Back door",
     ): String {
         fun field(key: String, value: String?) = if (value == null) "" else ""","$key":"$value""""
-        return """{"username":"alice","isAdmin":false,"mustChangePassword":false${field("fullName", fullName)}${field("email", email)}${field("phone", phone)}${field("address", address)}${field("deliveryInfo", deliveryInfo)}}"""
+        return "{" + listOf(field("fullName", fullName), field("email", email), field("phone", phone), field("address", address), field("deliveryInfo", deliveryInfo)).filter { it.isNotEmpty() }.joinToString(",") { it.removePrefix(",") } + "}"
     }
 
     private fun serverHas(json: String) {
-        server.accountBody = { json }
+        server.deliveryInfoBody = json
     }
 
     /** The first load runs on the client's own threads, so wait for it before looking at the state. */
-    private suspend fun viewModel() = ProfileViewModel(server.api, immediateScope()).also { it.refresh().join() }
+    private suspend fun viewModel() = DeliveryInfoViewModel(1, server.api, immediateScope()).also { it.refresh().join() }
 
-    private val full = ProfileForm("Alice Archer", "alice@example.org", "555-0101", "1 Main St", "Back door")
+    private val full = DeliveryForm("Alice Archer", "alice@example.org", "555-0101", "1 Main St", "Back door")
 
     private fun putBodies() = server.bodies.filterIndexed { index, _ -> server.calls[index].startsWith("PUT") }
 
@@ -45,7 +45,6 @@ class ProfileViewModelTest {
 
         val ui = viewModel().ui.value
 
-        assertEquals("alice", ui.username)
         assertEquals(full, ui.form)
         assertEquals(full, ui.saved)
         assertFalse(ui.dirty)
@@ -58,7 +57,7 @@ class ProfileViewModelTest {
 
         val ui = viewModel().ui.value
 
-        assertEquals(ProfileForm(), ui.form)
+        assertEquals(DeliveryForm(), ui.form)
         assertFalse(ui.form.hasNameAndAddress)
         assertFalse(ui.canSave)
     }
@@ -77,9 +76,9 @@ class ProfileViewModelTest {
     fun aChangeCanBeSavedAndBecomesTheNewStartingPoint() = runTest {
         serverHas(account())
         val model = viewModel()
-        model.edit(ProfileField.Address, "2 Side Street")
+        model.edit(DeliveryField.Address, "2 Side Street")
         assertTrue(model.ui.value.canSave)
-        server.profileAnswer = HttpStatusCode.OK to account(address = "2 Side Street")
+        server.deliveryInfoAnswer = HttpStatusCode.OK to account(address = "2 Side Street")
 
         model.save()?.join()
 
@@ -89,8 +88,8 @@ class ProfileViewModelTest {
         assertTrue(ui.justSaved)
         assertFalse(ui.saving)
         assertEquals(
-            ProfileUpdateRequest("alice", "Alice Archer", "alice@example.org", "555-0101", "2 Side Street", "Back door"),
-            Json.decodeFromString<ProfileUpdateRequest>(putBodies().single()),
+            DeliveryInfoDto("Alice Archer", "alice@example.org", "555-0101", "2 Side Street", "Back door"),
+            Json.decodeFromString<DeliveryInfoDto>(putBodies().single()),
         )
     }
 
@@ -98,12 +97,12 @@ class ProfileViewModelTest {
     fun aClearedFieldIsSentAsClearedNotAsBlankText() = runTest {
         serverHas(account())
         val model = viewModel()
-        model.edit(ProfileField.Phone, "   ")
-        server.profileAnswer = HttpStatusCode.OK to account(phone = null)
+        model.edit(DeliveryField.Phone, "   ")
+        server.deliveryInfoAnswer = HttpStatusCode.OK to account(phone = null)
 
         model.save()?.join()
 
-        assertNull(Json.decodeFromString<ProfileUpdateRequest>(putBodies().single()).phone)
+        assertNull(Json.decodeFromString<DeliveryInfoDto>(putBodies().single()).phone)
         assertEquals("", model.ui.value.form.phone)
         assertFalse(model.ui.value.canSave)
     }
@@ -112,11 +111,11 @@ class ProfileViewModelTest {
     fun anInvalidEmailIsShownNextToItsFieldAndNothingIsSent() = runTest {
         serverHas(account())
         val model = viewModel()
-        model.edit(ProfileField.Email, "not-an-email")
+        model.edit(DeliveryField.Email, "not-an-email")
 
         assertNull(model.save())
 
-        assertEquals("Email is not a valid address.", model.ui.value.errors.fields[ProfileField.Email])
+        assertEquals("Email is not a valid address.", model.ui.value.errors.fields[DeliveryField.Email])
         assertTrue(putBodies().isEmpty())
         assertEquals("not-an-email", model.ui.value.form.email) // the edit is kept
     }
@@ -125,11 +124,11 @@ class ProfileViewModelTest {
     fun aTooLongFieldNamesTheLimitWithItsLabelAndNothingIsSent() = runTest {
         serverHas(account())
         val model = viewModel()
-        model.edit(ProfileField.DeliveryInfo, "x".repeat(501))
+        model.edit(DeliveryField.DeliveryInfo, "x".repeat(501))
 
         assertNull(model.save())
 
-        assertEquals("Delivery information must be at most 500 characters long.", model.ui.value.errors.fields[ProfileField.DeliveryInfo])
+        assertEquals("Delivery information must be at most 500 characters long.", model.ui.value.errors.fields[DeliveryField.DeliveryInfo])
         assertTrue(putBodies().isEmpty())
     }
 
@@ -137,13 +136,13 @@ class ProfileViewModelTest {
     fun aValidationErrorFromTheServerLandsOnItsFieldAndKeepsTheEdits() = runTest {
         serverHas(account())
         val model = viewModel()
-        model.edit(ProfileField.FullName, "Alice Q. Archer")
-        server.profileAnswer = HttpStatusCode.BadRequest to """{"code":"validation_failed","message":"fullName must be at most 500 characters long.","field":"fullName"}"""
+        model.edit(DeliveryField.FullName, "Alice Q. Archer")
+        server.deliveryInfoAnswer = HttpStatusCode.BadRequest to """{"code":"validation_failed","message":"fullName must be at most 500 characters long.","field":"fullName"}"""
 
         model.save()?.join()
 
         val ui = model.ui.value
-        assertEquals("Full name must be at most 500 characters long.", ui.errors.fields[ProfileField.FullName])
+        assertEquals("Full name must be at most 500 characters long.", ui.errors.fields[DeliveryField.FullName])
         assertEquals("Alice Q. Archer", ui.form.fullName)
         assertTrue(ui.canSave)
         assertFalse(ui.saving)
@@ -153,7 +152,7 @@ class ProfileViewModelTest {
     fun anUnreachableServerIsExplainedAndTheEditsAreKept() = runTest {
         serverHas(account())
         val model = viewModel()
-        model.edit(ProfileField.Address, "2 Side Street")
+        model.edit(DeliveryField.Address, "2 Side Street")
         server.unreachable = true
 
         model.save()?.join()
@@ -169,11 +168,11 @@ class ProfileViewModelTest {
     fun editingAFieldClearsItsErrorAndTheSavedNotice() = runTest {
         serverHas(account())
         val model = viewModel()
-        model.edit(ProfileField.Email, "nope")
+        model.edit(DeliveryField.Email, "nope")
         model.save()
-        assertEquals("Email is not a valid address.", model.ui.value.errors.fields[ProfileField.Email])
+        assertEquals("Email is not a valid address.", model.ui.value.errors.fields[DeliveryField.Email])
 
-        model.edit(ProfileField.Email, "alice@example.org")
+        model.edit(DeliveryField.Email, "alice@example.org")
 
         assertTrue(model.ui.value.errors.fields.isEmpty())
     }
@@ -182,7 +181,7 @@ class ProfileViewModelTest {
     fun aReloadNeverReplacesWhatThePersonTyped() = runTest {
         serverHas(account())
         val model = viewModel()
-        model.edit(ProfileField.FullName, "Typed by me")
+        model.edit(DeliveryField.FullName, "Typed by me")
         serverHas(account(fullName = "Changed elsewhere", address = "9 New Road"))
 
         model.refresh().join()
@@ -212,7 +211,7 @@ class ProfileViewModelTest {
         val model = viewModel()
         assertFalse(model.ui.value.form.hasNameAndAddress)
 
-        model.edit(ProfileField.Address, "1 Main St")
+        model.edit(DeliveryField.Address, "1 Main St")
 
         assertTrue(model.ui.value.form.hasNameAndAddress)
     }
@@ -229,5 +228,44 @@ class ProfileViewModelTest {
         model.refresh().join()
 
         assertEquals(full, model.ui.value.form)
+    }
+
+    @Test
+    fun aGroupThatClosedForEditsIsSaidSoAndTheEditsAreKept() = runTest {
+        serverHas(account())
+        val model = viewModel()
+        model.edit(DeliveryField.Address, "2 Side Street")
+        server.deliveryInfoAnswer = HttpStatusCode.Conflict to """{"code":"invalid_state","message":"closed"}"""
+
+        model.save()?.join()
+
+        val ui = model.ui.value
+        assertEquals(Strings.GROUP_CLOSED_FOR_EDITS, ui.errors.general)
+        assertEquals("2 Side Street", ui.form.address)
+        assertFalse(ui.justSaved)
+    }
+
+    @Test
+    fun aGroupThatIsGoneIsSaidSo() = runTest {
+        serverHas(account())
+        val model = viewModel()
+        model.edit(DeliveryField.Address, "2 Side Street")
+        server.deliveryInfoAnswer = HttpStatusCode.NotFound to """{"code":"not_found","message":"Group not found."}"""
+
+        model.save()?.join()
+
+        assertEquals(Strings.GROUP_GONE, model.ui.value.errors.general)
+    }
+
+    @Test
+    fun theDetailsAreReadAndSavedForThatGroupOnly() = runTest {
+        serverHas(account())
+        val model = viewModel()
+        model.edit(DeliveryField.Address, "2 Side Street")
+
+        model.save()?.join()
+
+        assertTrue(server.calls.contains("GET /groups/1/delivery-info"))
+        assertTrue(server.calls.contains("PUT /groups/1/delivery-info"))
     }
 }

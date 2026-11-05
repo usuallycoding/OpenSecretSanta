@@ -30,9 +30,9 @@ class EmailSummaryTextTest {
     }
 
     @Test
-    fun theProfileNoteSaysWhatTheEmailIsFor() {
-        assertTrue("email" in Strings.PROFILE_WHY && "draw" in Strings.PROFILE_WHY)
-        assertTrue(Strings.PROFILE_WHY.startsWith("A Santa uses your name and address"))
-        assertTrue("also sees your email" in Strings.PROFILE_WHY)
+    fun theDeliveryInfoNoteSaysWhatTheEmailIsFor() {
+        assertTrue("email" in Strings.DELIVERY_WHY && "draw" in Strings.DELIVERY_WHY)
+        assertTrue(Strings.DELIVERY_WHY.startsWith("A Santa uses your name and address"))
+        assertTrue("also sees your email" in Strings.DELIVERY_WHY)
     }
 }

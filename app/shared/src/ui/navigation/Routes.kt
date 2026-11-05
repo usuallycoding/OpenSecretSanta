@@ -9,8 +9,9 @@ data object GroupsRoute
 @Serializable
 data class GroupRoute(val id: Long)
 
+/** The page where the person edits what they tell one group about where and how a gift can reach them. */
 @Serializable
-data object ProfileRoute
+data class DeliveryInfoRoute(val groupId: Long)
 
 /** The settings page: appearance, notifications, changing the password and signing out. Both views share it, and it belongs to neither. */
 @Serializable

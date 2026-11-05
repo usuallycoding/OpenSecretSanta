@@ -136,7 +136,7 @@ class SessionManager(
     }
 
     private fun AccountDto.toState(): SessionState {
-        val account = Account(username, fullName, isAdmin)
+        val account = Account(username, isAdmin)
         return if (mustChangePassword) SessionState.PasswordChangeRequired(account) else SessionState.SignedIn(account)
     }
 

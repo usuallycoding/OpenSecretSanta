@@ -118,14 +118,9 @@ data class AdminGroupUi(
     val deleted: Boolean = false,
 )
 
-/** A user the administrator manages, with the profile fields they have set and whether they still have a temporary password. */
+/** A user the administrator manages, and whether they still have a temporary password. */
 data class ManagedUser(
     val username: String,
-    val fullName: String?,
-    val email: String?,
-    val phone: String?,
-    val address: String?,
-    val deliveryInfo: String?,
     val mustChangePassword: Boolean,
     /** What the server returns while the password is still the temporary one; null once the person changed it. */
     val temporaryPassword: String?,
@@ -135,11 +130,6 @@ data class ManagedUser(
 
 internal fun com.usuallycoding.opensecretsanta.contract.ManagedUserDto.toManagedUser() = ManagedUser(
     username = user.username,
-    fullName = user.fullName?.trim()?.ifEmpty { null },
-    email = user.email?.trim()?.ifEmpty { null },
-    phone = user.phone?.trim()?.ifEmpty { null },
-    address = user.address?.trim()?.ifEmpty { null },
-    deliveryInfo = user.deliveryInfo?.trim()?.ifEmpty { null },
     mustChangePassword = user.mustChangePassword,
     temporaryPassword = temporaryPassword,
     canDelete = canDelete,

@@ -209,7 +209,8 @@ private fun ColumnScope.People(group: AdminGroup, viewModel: AdminGroupViewModel
         Text(Strings.ADMIN_NO_PARTICIPANTS, style = MaterialTheme.typography.bodyMedium)
         return
     }
-    val legend = Strings.ADMIN_MARK_LEGEND.takeIf { group.participants.any { it.marked() } }
+    val draft = group.phase == AdminPhase.Draft
+    val legend = Strings.ADMIN_MARK_LEGEND.takeIf { group.participants.any { it.marked(draft) } }
     if (viewModel.canReadPendingWishlists) {
         ParticipantSearchField(viewModel)
         val shown = filterParticipants(group.participants, viewModel.search)
@@ -222,7 +223,7 @@ private fun ColumnScope.People(group: AdminGroup, viewModel: AdminGroupViewModel
                         enabled = participant.hasAccount,
                         modifier = Modifier.weight(1f),
                     ) {
-                        Text(participant.label(), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+                        Text(participant.label(draft), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
                     }
                     IconButton(onClick = { viewModel.openWishlistSheet(participant.username) }, enabled = participant.hasAccount) {
                         Icon(GiftIcon, contentDescription = Strings.ADMIN_OPEN_WISHLIST)
@@ -232,14 +233,17 @@ private fun ColumnScope.People(group: AdminGroup, viewModel: AdminGroupViewModel
             if (legend != null) Text(legend, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     } else {
-        ParticipantChips(group.participants.map { ParticipantChip(it.label()) }, legend)
+        ParticipantChips(group.participants.map { ParticipantChip(it.label(draft)) }, legend)
     }
 }
 
-/** A participant without an account, or whose profile lacks a name or an address, is followed by one `*`. */
-private fun AdminParticipant.marked() = !hasAccount || !profileComplete
+/**
+ * A participant without an account, or in a Pending group one whose delivery info lacks a name or an address, is followed by
+ * one `*`. In a Draft nobody can have filled it in yet, so only the missing account is marked.
+ */
+internal fun AdminParticipant.marked(draft: Boolean) = !hasAccount || (!draft && !profileComplete)
 
-private fun AdminParticipant.label() = if (marked()) "$username *" else username
+private fun AdminParticipant.label(draft: Boolean) = if (marked(draft)) "$username *" else username
 
 /** The second confirmation of a deletion, once the server has said what else would go: the data of the group, for good. */
 @Composable

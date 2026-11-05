@@ -12,7 +12,7 @@ import com.usuallycoding.opensecretsanta.domain.group.GroupViewer
 import com.usuallycoding.opensecretsanta.domain.group.ListOwnedGroups
 import com.usuallycoding.opensecretsanta.domain.group.OwnedGroupLoader
 import com.usuallycoding.opensecretsanta.domain.group.UpdateGroupDetails
-import com.usuallycoding.opensecretsanta.domain.user.Profile
+import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfo
 import com.usuallycoding.opensecretsanta.domain.user.Username
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -24,7 +24,8 @@ import kotlin.test.assertTrue
 class GroupManagementTest {
     private val users = InMemoryUsers()
     private val groups = InMemoryGroups(users)
-    private val viewer = GroupViewer(users)
+    private val infos = FakeDeliveryInfos()
+    private val viewer = GroupViewer(users, infos)
     private val loader = OwnedGroupLoader(groups)
 
     private val adminA = users.add("admin-a", admin = true).let { users.userNamed("admin-a") }
@@ -106,10 +107,12 @@ class GroupManagementTest {
     }
 
     @Test
-    fun viewFlagsAccountsAndProfileCompleteness() {
-        users.add("alice").also { users.updateProfile(it, Profile(fullName = "Alice B", address = "1 Main St")) }
-        users.add("bob").also { users.updateProfile(it, Profile(fullName = "Bob", phone = "123")) }
+    fun viewFlagsAccountsAndDeliveryInfoCompleteness() {
+        users.add("alice")
+        users.add("bob")
         val group = groups.seed(adminA.username, GroupState.PENDING, u("alice"), u("bob"), u("carol-new"))
+        infos.save(group.id, u("alice"), DeliveryInfo(fullName = "Alice B", address = "1 Main St"))
+        infos.save(group.id, u("bob"), DeliveryInfo(fullName = "Bob", phone = "123"))
 
         val participants = get(adminA, group.id).participants.associateBy { it.username.value }
 
@@ -122,9 +125,10 @@ class GroupManagementTest {
 
     @Test
     fun viewCarriesFullNamesWhereThereAreAny() {
-        users.add("alice").also { users.updateProfile(it, Profile(fullName = "Alice Brown")) }
+        users.add("alice")
         users.add("bob")
         val group = groups.seed(adminA.username, GroupState.PENDING, u("alice"), u("bob"), u("carol-new"))
+        infos.save(group.id, u("alice"), DeliveryInfo(fullName = "Alice Brown"))
 
         val names = get(adminA, group.id).participants.associate { it.username.value to it.fullName }
 
@@ -132,11 +136,22 @@ class GroupManagementTest {
     }
 
     @Test
-    fun profileNeedsBothNameAndAddressToBeComplete() {
-        assertFalse(Profile(fullName = "A").isComplete)
-        assertFalse(Profile(address = "x").isComplete)
-        assertFalse(Profile(phone = "1", deliveryInfo = "d").isComplete)
-        assertTrue(Profile(fullName = "A", address = "x").isComplete)
+    fun deliveryInfoNeedsBothNameAndAddressToBeComplete() {
+        assertFalse(DeliveryInfo(fullName = "A").isComplete)
+        assertFalse(DeliveryInfo(address = "x").isComplete)
+        assertFalse(DeliveryInfo(phone = "1", deliveryInfo = "d").isComplete)
+        assertTrue(DeliveryInfo(fullName = "A", address = "x").isComplete)
+    }
+
+    @Test
+    fun aDraftsParticipantsHaveNoDeliveryInfo() {
+        users.add("alice")
+        val group = groups.seed(adminA.username, GroupState.DRAFT, u("alice"))
+
+        val alice = get(adminA, group.id).participants.single()
+
+        assertFalse(alice.profileComplete)
+        assertNull(alice.fullName)
     }
 
     // --- edit ---

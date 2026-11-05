@@ -14,7 +14,7 @@ import com.usuallycoding.opensecretsanta.domain.group.ListMyGroups
 import com.usuallycoding.opensecretsanta.domain.group.MoveToPending
 import com.usuallycoding.opensecretsanta.domain.group.OwnedGroupLoader
 import com.usuallycoding.opensecretsanta.domain.group.UpdateGroupDetails
-import com.usuallycoding.opensecretsanta.domain.user.Profile
+import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfo
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -24,7 +24,8 @@ import kotlin.test.assertTrue
 class LifecycleTest {
     private val users = InMemoryUsers()
     private val groups = InMemoryGroups(users)
-    private val viewer = GroupViewer(users)
+    private val infos = FakeDeliveryInfos()
+    private val viewer = GroupViewer(users, infos)
     private val loader = OwnedGroupLoader(groups)
     private val adminA = users.add("admin-a", admin = true).let { users.userNamed("admin-a") }
     private val adminB = users.add("admin-b", admin = true).let { users.userNamed("admin-b") }
@@ -152,10 +153,11 @@ class LifecycleTest {
     }
 
     @Test
-    fun incompleteProfilesDoNotPreventActivationButAreFlagged() {
-        users.add("alice").also { users.updateProfile(it, Profile(fullName = "Alice", address = "1 Main St")) }
+    fun incompleteDeliveryInfoDoesNotPreventActivationButIsFlagged() {
+        users.add("alice")
         users.add("bob-b")
         val group = group(GroupState.PENDING, "alice", "bob-b", "carol", "dave")
+        infos.save(group.id, u("alice"), DeliveryInfo(fullName = "Alice", address = "1 Main St"))
 
         val view = activate(adminA, group.id)
 

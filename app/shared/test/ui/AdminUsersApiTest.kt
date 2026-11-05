@@ -21,14 +21,14 @@ class AdminUsersApiTest {
 
     @Test
     fun theManagedUsersAreListedWithTheAdministratorAndNoOutsiders() = runTest {
-        fake.add("alice", fullName = "Alice Anders")
+        fake.add("alice")
         fake.add("dave", temporary = "Temp-dave-1")
         fake.addOutsider("zed")
 
         val users = success(api.adminUsers())
 
         assertEquals(listOf("admin", "alice", "dave"), users.map { it.user.username })
-        assertEquals("Alice Anders", users[1].user.fullName)
+        assertEquals("alice", users[1].user.username)
         assertEquals("GET /admin/users", server.calls.last())
     }
 

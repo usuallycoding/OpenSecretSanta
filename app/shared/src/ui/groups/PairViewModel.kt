@@ -1,7 +1,7 @@
 package com.usuallycoding.opensecretsanta.ui.groups
 
 import androidx.lifecycle.ViewModel
-import com.usuallycoding.opensecretsanta.contract.AccountDto
+import com.usuallycoding.opensecretsanta.contract.DeliveryInfoDto
 import com.usuallycoding.opensecretsanta.data.api.ApiClient
 import com.usuallycoding.opensecretsanta.data.api.map
 import com.usuallycoding.opensecretsanta.ui.gift.ReceiverInfo
@@ -42,14 +42,16 @@ data class MyDetails(
 
 private fun String?.clean(): String? = this?.trim()?.ifEmpty { null }
 
-internal fun AccountDto.toDetails() = MyDetails(username, fullName.clean(), email.clean(), phone.clean(), address.clean(), deliveryInfo.clean())
+internal fun DeliveryInfoDto.toDetails(username: String) = MyDetails(username, fullName.clean(), email.clean(), phone.clean(), address.clean(), deliveryInfo.clean())
 
-/** Loads the person's own details when their sheet is opened. */
+/** Loads the person's own delivery info for the group when their sheet is opened. */
 class MyDetailsViewModel(
+    groupId: Long,
+    me: String,
     api: ApiClient,
     scope: CoroutineScope,
 ) : ViewModel(scope) {
-    private val loader = Loader(scope) { api.account().map { it.toDetails() } }
+    private val loader = Loader(scope) { api.deliveryInfo(groupId).map { it.toDetails(me) } }
 
     val details: StateFlow<LoadState<MyDetails>> = loader.state
 

@@ -1,4 +1,4 @@
-package com.usuallycoding.opensecretsanta.ui.profile
+package com.usuallycoding.opensecretsanta.ui.delivery
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -30,40 +30,36 @@ import com.usuallycoding.opensecretsanta.ui.form.FormColumn
 import com.usuallycoding.opensecretsanta.ui.form.MultiLineTextField
 import com.usuallycoding.opensecretsanta.ui.load.LoadContent
 
-/** The Profile tab: the person's own details, which a Santa uses to post their gift. */
+/** The page for one group's delivery info: the person's details, which a Santa uses to post their gift. */
 @Composable
-fun ProfileScreen(viewModel: ProfileViewModel) {
+fun DeliveryInfoScreen(viewModel: DeliveryInfoViewModel) {
     val load by viewModel.load.collectAsState()
     val ui by viewModel.ui.collectAsState()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         LoadContent(load, onRetry = { viewModel.refresh() }, modifier = Modifier.fillMaxSize()) {
-            ProfileForm(ui, viewModel)
+            DeliveryForm(ui, viewModel)
         }
     }
 }
 
 @Composable
-private fun ProfileForm(ui: ProfileUiState, viewModel: ProfileViewModel) {
+private fun DeliveryForm(ui: DeliveryUiState, viewModel: DeliveryInfoViewModel) {
     FormColumn(
         Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(Strings.USERNAME, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(ui.username, style = MaterialTheme.typography.titleMedium)
-        }
-        Text(Strings.PROFILE_WHY, style = MaterialTheme.typography.bodyMedium)
+        Text(Strings.DELIVERY_WHY, style = MaterialTheme.typography.bodyMedium)
         if (!ui.form.hasNameAndAddress) {
-            Text(Strings.PROFILE_INCOMPLETE, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+            Text(Strings.DELIVERY_INCOMPLETE, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
         }
-        Field(ui, viewModel, ProfileField.FullName, ui.form.fullName, KeyboardType.Text, ImeAction.Next)
-        Field(ui, viewModel, ProfileField.Email, ui.form.email, KeyboardType.Email, ImeAction.Next)
-        Field(ui, viewModel, ProfileField.Phone, ui.form.phone, KeyboardType.Phone, ImeAction.Next)
-        MultiLineField(ui, viewModel, ProfileField.Address, ui.form.address)
-        MultiLineField(ui, viewModel, ProfileField.DeliveryInfo, ui.form.deliveryInfo)
+        Field(ui, viewModel, DeliveryField.FullName, ui.form.fullName, KeyboardType.Text, ImeAction.Next)
+        Field(ui, viewModel, DeliveryField.Email, ui.form.email, KeyboardType.Email, ImeAction.Next)
+        Field(ui, viewModel, DeliveryField.Phone, ui.form.phone, KeyboardType.Phone, ImeAction.Next)
+        MultiLineField(ui, viewModel, DeliveryField.Address, ui.form.address)
+        MultiLineField(ui, viewModel, DeliveryField.DeliveryInfo, ui.form.deliveryInfo)
         ui.errors.general?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         Button(onClick = { viewModel.save() }, enabled = ui.canSave, modifier = Modifier.fillMaxWidth()) {
             Text(if (ui.saving) Strings.SAVING else Strings.SAVE)
@@ -74,7 +70,7 @@ private fun ProfileForm(ui: ProfileUiState, viewModel: ProfileViewModel) {
 
 /** The address and the delivery information take several lines: Return starts a new line, six rows at most. */
 @Composable
-private fun MultiLineField(ui: ProfileUiState, viewModel: ProfileViewModel, field: ProfileField, value: String) {
+private fun MultiLineField(ui: DeliveryUiState, viewModel: DeliveryInfoViewModel, field: DeliveryField, value: String) {
     MultiLineTextField(
         value = value,
         onValueChange = { viewModel.edit(field, it) },
@@ -86,9 +82,9 @@ private fun MultiLineField(ui: ProfileUiState, viewModel: ProfileViewModel, fiel
 
 @Composable
 private fun Field(
-    ui: ProfileUiState,
-    viewModel: ProfileViewModel,
-    field: ProfileField,
+    ui: DeliveryUiState,
+    viewModel: DeliveryInfoViewModel,
+    field: DeliveryField,
     value: String,
     keyboard: KeyboardType,
     ime: ImeAction,

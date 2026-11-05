@@ -8,7 +8,7 @@ import com.usuallycoding.opensecretsanta.contract.EmailSummaryDto
 import com.usuallycoding.opensecretsanta.contract.GroupChangeResponse
 import com.usuallycoding.opensecretsanta.domain.email.EmailMessage
 import com.usuallycoding.opensecretsanta.domain.email.Mailer
-import com.usuallycoding.opensecretsanta.domain.user.Profile
+import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfo
 import com.usuallycoding.opensecretsanta.domain.user.Username
 import io.ktor.client.HttpClient
 import io.ktor.client.request.header
@@ -48,6 +48,7 @@ class DrawEmailRoutesTest {
     }
 
     private val fx = TestFixtures()
+    private val emails = mutableSetOf<String>()
 
     private fun ApplicationTestBuilder.startApp(mailer: Mailer? = null) = application { module(fx.config, mailer = mailer) }
 
@@ -65,6 +66,8 @@ class DrawEmailRoutesTest {
     private suspend fun HttpClient.pending(vararg names: String): AdminGroupDto {
         val created = send("POST", ApiRoutes.ADMIN_GROUPS, fx.token("admin"), CreateGroupRequest("Party", description = "Bring snacks", location = "HQ", participants = names.toList()))
         val group = Json.decodeFromString<AdminGroupDto>(created.bodyAsText())
+        // the email each person told this group
+        names.filter { it in emails }.forEach { fx.deliveryInfos.save(group.id, Username.parse(it), DeliveryInfo(email = "$it@example.org")) }
         assertEquals(HttpStatusCode.OK, send("POST", ApiRoutes.adminGroupPending(group.id), fx.token("admin")).status)
         return group
     }
@@ -78,7 +81,7 @@ class DrawEmailRoutesTest {
     private fun setup(vararg withEmail: String, without: List<String> = emptyList()) {
         fx.addUser("admin", admin = true)
         (withEmail.toList() + without).forEach { fx.addUser(it) }
-        withEmail.forEach { fx.users.updateProfile(Username.parse(it), Profile(email = "$it@example.org")) }
+        emails += withEmail
     }
 
     private fun state(id: Long) = fx.database.connection().use { c ->

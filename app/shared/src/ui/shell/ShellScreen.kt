@@ -73,11 +73,12 @@ import com.usuallycoding.opensecretsanta.ui.navigation.AdminUsersRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.GifterRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.GroupRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.GroupsRoute
-import com.usuallycoding.opensecretsanta.ui.navigation.ProfileRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.DeliveryInfoRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.ReceiverRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.SettingsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.isAdminScreen
-import com.usuallycoding.opensecretsanta.ui.profile.ProfileScreen
+import com.usuallycoding.opensecretsanta.ui.delivery.DeliveryInfoScreen
+import com.usuallycoding.opensecretsanta.ui.delivery.DeliveryInfoViewModel
 import com.usuallycoding.opensecretsanta.ui.settings.SettingsScreen
 import com.usuallycoding.opensecretsanta.ui.wishlist.ReceiverWishlistViewModel
 import com.usuallycoding.opensecretsanta.ui.wishlist.WishlistViewModel
@@ -166,10 +167,11 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                             val groupId = entry.toRoute<GroupRoute>().id
                             GroupPage(
                                 koinViewModel<GroupDetailViewModel>(key = "group-$groupId") { parametersOf(groupId, viewModel.account.username) },
+                                me = viewModel.account.username,
                                 onBack = { navController.popBackStack() },
                                 onOpenGifter = { questions -> navController.navigate(GifterRoute(groupId, questions)) },
                                 onOpenReceiver = { questions -> navController.navigate(ReceiverRoute(groupId, questions)) },
-                                onEditProfile = { navController.openTab(ProfileRoute) },
+                                onEditDeliveryInfo = { navController.navigate(DeliveryInfoRoute(groupId)) },
                             )
                         }
                         composable<GifterRoute> { entry ->
@@ -194,7 +196,10 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                                 tab = route.tab,
                             )
                         }
-                        composable<ProfileRoute> { ProfileScreen(koinViewModel()) }
+                        composable<DeliveryInfoRoute> { entry ->
+                            val groupId = entry.toRoute<DeliveryInfoRoute>().groupId
+                            DeliveryInfoScreen(koinViewModel<DeliveryInfoViewModel>(key = "delivery-info-$groupId") { parametersOf(groupId) })
+                        }
                         composable<SettingsRoute> { SettingsScreen(onSignOut = viewModel::signOut) }
                         // stand-ins until the admin screens arrive
                         composable<AdminGroupsRoute> {
@@ -261,15 +266,14 @@ private fun titleOf(view: AppView, destination: NavDestination?, pageTitle: Stri
     destination?.hasRoute<GroupRoute>() == true -> Strings.TITLE_GROUP
     destination?.hasRoute<GifterRoute>() == true -> pageTitle ?: Strings.givingTo(null)
     destination?.hasRoute<ReceiverRoute>() == true -> pageTitle ?: Strings.TITLE_YOUR_WISHLIST
-    destination?.hasRoute<ProfileRoute>() == true -> Strings.TITLE_PROFILE
+    destination?.hasRoute<DeliveryInfoRoute>() == true -> Strings.TITLE_DELIVERY_INFO
     else -> Strings.TITLE_GROUPS
 }
 
-/** Groups, Profile and Settings. Each tab keeps its own place: switching away and back restores it. */
+/** Groups and Settings. Each tab keeps its own place: switching away and back restores it. */
 @Composable
 private fun TabBar(navController: NavController, destination: NavDestination?) {
     val onGroups = destination?.hierarchy?.any { it.hasRoute<GroupsRoute>() || it.belowGroups() } == true
-    val onProfile = destination?.hierarchy?.any { it.hasRoute<ProfileRoute>() } == true
     val onSettings = destination?.hierarchy?.any { it.hasRoute<SettingsRoute>() } == true
     NavigationBar {
         NavigationBarItem(
@@ -277,12 +281,6 @@ private fun TabBar(navController: NavController, destination: NavDestination?) {
             onClick = { navController.openTab(GroupsRoute) },
             icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
             label = { Text(Strings.TITLE_GROUPS) },
-        )
-        NavigationBarItem(
-            selected = onProfile,
-            onClick = { navController.openTab(ProfileRoute) },
-            icon = { Icon(Icons.Filled.Person, contentDescription = null) },
-            label = { Text(Strings.TITLE_PROFILE) },
         )
         NavigationBarItem(
             selected = onSettings,
@@ -301,7 +299,7 @@ private fun NavDestination.ownView(): AppView? = when {
 }
 
 private fun NavDestination.belowGroups(): Boolean =
-    hasRoute<GroupRoute>() || hasRoute<GifterRoute>() || hasRoute<ReceiverRoute>()
+    hasRoute<GroupRoute>() || hasRoute<GifterRoute>() || hasRoute<ReceiverRoute>() || hasRoute<DeliveryInfoRoute>()
 
 private fun NavDestination.belowAdminGroups(): Boolean =
     hasRoute<AdminGroupNewRoute>() || hasRoute<AdminGroupRoute>() || hasRoute<AdminGroupEditRoute>() || hasRoute<AdminUserRoute>()

@@ -10,7 +10,7 @@ import com.usuallycoding.opensecretsanta.domain.group.GroupState
 import com.usuallycoding.opensecretsanta.domain.group.GroupViewer
 import com.usuallycoding.opensecretsanta.domain.group.OwnedGroupLoader
 import com.usuallycoding.opensecretsanta.domain.group.ParticipantGroupLoader
-import com.usuallycoding.opensecretsanta.domain.user.Profile
+import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfo
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -21,8 +21,9 @@ class GiftVisibilityTest {
     private val users = InMemoryUsers()
     private val groups = InMemoryGroups(users)
     private val loader = ParticipantGroupLoader(groups)
-    private val receiverOf = GetMyReceiver(loader, groups, users)
-    private val santaOf = GetMySanta(loader, groups, users)
+    private val infos = FakeDeliveryInfos()
+    private val receiverOf = GetMyReceiver(loader, groups, infos)
+    private val santaOf = GetMySanta(loader, groups, infos)
 
     private val admin = users.add("admin-a", admin = true).let { users.userNamed("admin-a") }
 
@@ -31,8 +32,12 @@ class GiftVisibilityTest {
 
     init {
         for (name in names) users.add(name)
-        users.updateProfile(u("bob"), Profile("Bob Builder", "bob@example.com", "555-0102", "2 Side St", "Leave at the back door"))
-        users.updateProfile(u("alice"), Profile(fullName = "Alice Archer", address = "1 Main St"))
+    }
+
+    /** What the people told group [id]: bob everything, alice a name and an address, the others nothing. */
+    private fun fill(id: Long) {
+        infos.save(id, u("bob"), DeliveryInfo("Bob Builder", "bob@example.com", "555-0102", "2 Side St", "Leave at the back door"))
+        infos.save(id, u("alice"), DeliveryInfo(fullName = "Alice Archer", address = "1 Main St"))
     }
 
     private fun user(name: String) = users.userNamed(name)
@@ -42,11 +47,12 @@ class GiftVisibilityTest {
 
     private fun activeGroup(): Long {
         val g = group(GroupState.PENDING, *names.toTypedArray())
-        ActivateGroup(OwnedGroupLoader(groups), groups, AssignmentPlanner(IdentityShuffler()), GroupViewer(users))(admin, g.id)
+        ActivateGroup(OwnedGroupLoader(groups), groups, AssignmentPlanner(IdentityShuffler()), GroupViewer(users, infos))(admin, g.id)
+        fill(g.id)
         return g.id
     }
 
-    private fun archive(id: Long) = ArchiveGroup(OwnedGroupLoader(groups), groups, GroupViewer(users))(admin, id)
+    private fun archive(id: Long) = ArchiveGroup(OwnedGroupLoader(groups), groups, GroupViewer(users, infos))(admin, id)
 
     // --- receiver ---
 
@@ -74,9 +80,31 @@ class GiftVisibilityTest {
     @Test
     fun detailsAreLive() {
         val id = activeGroup()
-        users.updateProfile(u("bob"), Profile(fullName = "Bob Builder", address = "99 New Road"))
+        infos.save(id, u("bob"), DeliveryInfo(fullName = "Bob Builder", address = "99 New Road"))
 
         assertEquals("99 New Road", receiverOf(user("alice"), id).address)
+    }
+
+    @Test
+    fun eachGroupHasItsOwnDetailsForTheSamePerson() {
+        val first = activeGroup()
+        val second = activeGroup()
+        infos.save(second, u("bob"), DeliveryInfo(fullName = "Robert at work", address = "5 Office Park"))
+
+        assertEquals("2 Side St", receiverOf(user("alice"), first).address)
+        assertEquals("5 Office Park", receiverOf(user("alice"), second).address)
+        assertNull(receiverOf(user("alice"), second).email)
+    }
+
+    @Test
+    fun aReceiverWhoSavedNothingHasEmptyDetails() {
+        val id = activeGroup()
+
+        val details = receiverOf(user("bob"), id) // bob's receiver is carol, who saved nothing
+
+        assertEquals("carol", details.username.value)
+        assertNull(details.fullName)
+        assertNull(details.address)
     }
 
     @Test

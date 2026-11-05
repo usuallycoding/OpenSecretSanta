@@ -22,7 +22,7 @@ import com.usuallycoding.opensecretsanta.contract.MemberGroupDto
 import com.usuallycoding.opensecretsanta.contract.NotificationSettingsDto
 import com.usuallycoding.opensecretsanta.contract.NotificationSettingsRequest
 import com.usuallycoding.opensecretsanta.contract.ParticipantsRequest
-import com.usuallycoding.opensecretsanta.contract.ProfileUpdateRequest
+import com.usuallycoding.opensecretsanta.contract.DeliveryInfoDto
 import com.usuallycoding.opensecretsanta.contract.QuestionDto
 import com.usuallycoding.opensecretsanta.contract.ReceiverDto
 import com.usuallycoding.opensecretsanta.contract.RegisterDeviceRequest
@@ -97,9 +97,12 @@ class ApiClient(
 
     suspend fun group(id: Long): ApiResult<MemberGroupDto> = call(HttpMethod.Get, ApiRoutes.group(id))
 
-    /** Replaces all five profile fields; a field left out is cleared. */
-    suspend fun updateProfile(request: ProfileUpdateRequest): ApiResult<AccountDto> =
-        call(HttpMethod.Put, ApiRoutes.ME, body = request)
+    /** What the person told the group about where and how a gift can reach them. */
+    suspend fun deliveryInfo(groupId: Long): ApiResult<DeliveryInfoDto> = call(HttpMethod.Get, ApiRoutes.groupDeliveryInfo(groupId))
+
+    /** Replaces all five fields for the group; a field left out is cleared. */
+    suspend fun updateDeliveryInfo(groupId: Long, request: DeliveryInfoDto): ApiResult<DeliveryInfoDto> =
+        call(HttpMethod.Put, ApiRoutes.groupDeliveryInfo(groupId), body = request)
 
     suspend fun wishlist(groupId: Long): ApiResult<List<WishlistItemDto>> = call(HttpMethod.Get, ApiRoutes.groupWishlist(groupId))
 

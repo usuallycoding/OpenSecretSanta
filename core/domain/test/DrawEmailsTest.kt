@@ -7,7 +7,7 @@ import com.usuallycoding.opensecretsanta.domain.email.SendDrawEmails
 import com.usuallycoding.opensecretsanta.domain.group.Assignment
 import com.usuallycoding.opensecretsanta.domain.group.GroupDetails
 import com.usuallycoding.opensecretsanta.domain.group.GroupState
-import com.usuallycoding.opensecretsanta.domain.user.Profile
+import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfo
 import com.usuallycoding.opensecretsanta.domain.user.Username
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -34,12 +34,15 @@ class DrawEmailsTest {
     private val users = InMemoryUsers()
     private val groups = InMemoryGroups(users)
     private val owner = users.add("boss", admin = true)
+    private val infos = FakeDeliveryInfos()
+    private val told = mutableMapOf<String, DeliveryInfo>()
 
     private fun u(name: String) = Username.parse(name)
 
     private fun person(name: String, email: String? = "$name@example.org", fullName: String? = null, address: String? = null) {
         users.add(name)
-        users.updateProfile(u(name), Profile(fullName = fullName, email = email, phone = "+40 123", address = address, deliveryInfo = "Ring twice"))
+        // what the person tells the group, saved once the group exists
+        told[name] = DeliveryInfo(fullName = fullName, email = email, phone = "+40 123", address = address, deliveryInfo = "Ring twice")
     }
 
     /** alice -> bob -> carol -> dave -> alice. */
@@ -50,11 +53,12 @@ class DrawEmailsTest {
             groups.find(seeded.id)!!
         }
         groups.assign(group.id, names.indices.map { Assignment(names[it], names[(it + 1) % names.size]) })
+        told.forEach { (name, info) -> infos.save(group.id, u(name), info) }
         return group
     }
 
     private fun send(mailer: Mailer, appUrl: String? = null, group: com.usuallycoding.opensecretsanta.domain.group.Group = drawn()) =
-        SendDrawEmails(users, groups, mailer, appUrl)(group)
+        SendDrawEmails(infos, groups, mailer, appUrl)(group)
 
     @Test
     fun eachPersonGetsTheirOwnReceiverAndNobodyElses() {

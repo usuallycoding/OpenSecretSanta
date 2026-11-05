@@ -1,10 +1,9 @@
 package com.usuallycoding.opensecretsanta.domain.email
 
+import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfoRepository
 import com.usuallycoding.opensecretsanta.domain.group.Group
 import com.usuallycoding.opensecretsanta.domain.group.GroupDetails
 import com.usuallycoding.opensecretsanta.domain.group.GroupRepository
-import com.usuallycoding.opensecretsanta.domain.user.User
-import com.usuallycoding.opensecretsanta.domain.user.UserRepository
 import com.usuallycoding.opensecretsanta.domain.user.Username
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -34,26 +33,26 @@ object DisabledMailer : Mailer {
 }
 
 /**
- * Emails every participant of a freshly drawn group, who has an address, the group's details and who they are Secret Santa
+ * Emails every participant of a freshly drawn group, who set an email in their delivery info for it, the group's details and who they are Secret Santa
  * for, and nothing else: no other person's receiver and none of the receiver's postal details. It runs after the draw
  * is stored and never throws, so that the draw cannot depend on it; null means that email is off.
  */
 class SendDrawEmails(
-    private val users: UserRepository,
+    private val deliveryInfos: DeliveryInfoRepository,
     private val groups: GroupRepository,
     private val mailer: Mailer,
     private val appUrl: String? = null,
 ) {
     operator fun invoke(group: Group): EmailSummary? {
         if (!mailer.enabled) return null
-        val accounts = users.findAll(group.participants).associateBy { it.username }
+        val infos = deliveryInfos.findAll(group.id, group.participants)
         val receivers = groups.assignments(group.id).associate { it.santa to it.receiver }
 
         var noAddress = 0
         var unbuilt = 0
         val messages = ArrayList<EmailMessage>()
         for (participant in group.participants) {
-            val email = accounts[participant]?.profile?.email
+            val email = infos[participant]?.email
             if (email == null) {
                 noAddress++
                 continue
@@ -63,7 +62,7 @@ class SendDrawEmails(
                 unbuilt++
                 continue
             }
-            messages += drawEmail(email, participant, group.id, group.details, receiver, accounts[receiver], appUrl)
+            messages += drawEmail(email, participant, group.id, group.details, receiver, infos[receiver]?.fullName, appUrl)
         }
         val results = try {
             mailer.send(messages).let { if (it.size == messages.size) it else messages.map { false } }
@@ -74,17 +73,17 @@ class SendDrawEmails(
     }
 }
 
-/** The email that tells [santa] who they give to; [receiverAccount] only supplies the receiver's full name. */
+/** The email that tells [santa] who they give to; [receiverFullName] is the receiver's full name in the group, when they set one. */
 fun drawEmail(
     to: String,
     santa: Username,
     groupId: Long,
     group: GroupDetails,
     receiver: Username,
-    receiverAccount: User?,
+    receiverFullName: String?,
     appUrl: String?,
 ): EmailMessage {
-    val receiverName = receiverAccount?.profile?.fullName?.let { "${receiver.value} ($it)" } ?: receiver.value
+    val receiverName = receiverFullName?.let { "${receiver.value} ($it)" } ?: receiver.value
     val text = buildString {
         appendLine("Hi ${santa.value},")
         appendLine()

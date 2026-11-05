@@ -4,9 +4,9 @@ import com.usuallycoding.opensecretsanta.contract.AccountDto
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.ChangePasswordRequest
 import com.usuallycoding.opensecretsanta.contract.ChangePasswordResponse
+import com.usuallycoding.opensecretsanta.contract.DeliveryInfoDto
 import com.usuallycoding.opensecretsanta.contract.ErrorResponse
 import com.usuallycoding.opensecretsanta.contract.LoginRequest
-import com.usuallycoding.opensecretsanta.contract.ProfileUpdateRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -58,17 +58,13 @@ class AccountRoutesTest {
     // --- GET /me ---
 
     @Test
-    fun getMeReturnsOwnAccount() = testApplication {
+    fun getMeReturnsOwnAccountWithoutAnyPersonalDetails() = testApplication {
         startApp()
         fx.addUser("alice", admin = true)
-        fx.users.updateProfile(
-            com.usuallycoding.opensecretsanta.domain.user.Username.parse("alice"),
-            com.usuallycoding.opensecretsanta.domain.user.Profile("Alice B", "a@b.co", "123", "1 Main St", "Ring twice"),
-        )
 
         val me = client.me(fx.token("alice"))
 
-        assertEquals(AccountDto("alice", "Alice B", "a@b.co", "123", "1 Main St", "Ring twice", isAdmin = true, mustChangePassword = false), me)
+        assertEquals(AccountDto("alice", isAdmin = true, mustChangePassword = false), me)
     }
 
     @Test
@@ -79,6 +75,16 @@ class AccountRoutesTest {
         val body = client.getAs(ApiRoutes.ME, fx.token("alice")).bodyAsText()
 
         for (forbidden in listOf("hash", "secret-password", "TempPass0001", "\$2a\$")) assertFalse(body.contains(forbidden), forbidden)
+    }
+
+    @Test
+    fun getMeHasNoNameEmailPhoneAddressOrDeliveryInfo() = testApplication {
+        startApp()
+        fx.addUser("alice")
+
+        val body = client.getAs(ApiRoutes.ME, fx.token("alice")).bodyAsText()
+
+        for (gone in listOf("fullName", "email\"", "phone", "address", "deliveryInfo")) assertFalse(body.contains(gone), gone)
     }
 
     @Test
@@ -93,80 +99,15 @@ class AccountRoutesTest {
     // --- PUT /me ---
 
     @Test
-    fun profileUpdateIsVisibleOnTheNextRead() = testApplication {
+    fun theProfileCanNoLongerBeEditedOnTheAccount() = testApplication {
         startApp()
         fx.addUser("alice")
         val token = fx.token("alice")
 
-        val response = client.putJson(ApiRoutes.ME, token, ProfileUpdateRequest(fullName = "Alice B", email = "a@b.co", phone = "123", address = "1 Main St", deliveryInfo = "Ring twice"))
+        val response = client.putJson(ApiRoutes.ME, token, mapOf("fullName" to "Alice B", "username" to "mallory"))
 
-        assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals("Alice B", client.me(token).fullName)
-        assertEquals("Ring twice", client.me(token).deliveryInfo)
-    }
-
-    @Test
-    fun nullOrBlankFieldsAreCleared() = testApplication {
-        startApp()
-        fx.addUser("alice")
-        val token = fx.token("alice")
-        client.putJson(ApiRoutes.ME, token, ProfileUpdateRequest(fullName = "Alice", phone = "123"))
-
-        client.putJson(ApiRoutes.ME, token, ProfileUpdateRequest(fullName = "Alice", phone = "   "))
-
-        assertNull(client.me(token).phone)
-        assertEquals("Alice", client.me(token).fullName)
-    }
-
-    @Test
-    fun invalidEmailIsRejectedAndProfileUnchanged() = testApplication {
-        startApp()
-        fx.addUser("alice")
-        val token = fx.token("alice")
-        client.putJson(ApiRoutes.ME, token, ProfileUpdateRequest(fullName = "Before"))
-
-        val response = client.putJson(ApiRoutes.ME, token, ProfileUpdateRequest(fullName = "After", email = "not-an-email"))
-
-        assertEquals(HttpStatusCode.BadRequest, response.status)
-        assertEquals("email", error(response.bodyAsText()).field)
-        assertEquals("Before", client.me(token).fullName)
-    }
-
-    @Test
-    fun usernameChangeIsRejectedButSameUsernameIsFine() = testApplication {
-        startApp()
-        fx.addUser("alice")
-        val token = fx.token("alice")
-
-        val rejected = client.putJson(ApiRoutes.ME, token, ProfileUpdateRequest(username = "mallory", fullName = "X"))
-        val accepted = client.putJson(ApiRoutes.ME, token, ProfileUpdateRequest(username = "Alice", fullName = "Y"))
-
-        assertEquals(HttpStatusCode.BadRequest, rejected.status)
-        assertEquals("username", error(rejected.bodyAsText()).field)
-        assertEquals(HttpStatusCode.OK, accepted.status)
+        assertEquals(HttpStatusCode.MethodNotAllowed, response.status)
         assertEquals("alice", client.me(token).username)
-    }
-
-    @Test
-    fun updatingTouchesOnlyTheCallersRecord() = testApplication {
-        startApp()
-        fx.addUser("alice")
-        fx.addUser("bob")
-
-        client.putJson(ApiRoutes.ME, fx.token("alice"), ProfileUpdateRequest(fullName = "Alice only"))
-
-        assertNull(client.me(fx.token("bob")).fullName)
-    }
-
-    @Test
-    fun profileEditIsBlockedWhileThePasswordIsTemporary() = testApplication {
-        startApp()
-        fx.addUser("alice", mustChange = true)
-
-        val response = client.putJson(ApiRoutes.ME, fx.token("alice"), ProfileUpdateRequest(fullName = "X"))
-
-        assertEquals(HttpStatusCode.Forbidden, response.status)
-        assertEquals("password_change_required", error(response.bodyAsText()).code)
     }
 
     // --- PUT /me/password ---
@@ -199,7 +140,9 @@ class AccountRoutesTest {
         assertNull(fx.users.credentials(alice)!!.encryptedTempPassword)
         val newToken = Json.decodeFromString<ChangePasswordResponse>(response.bodyAsText()).token
         assertFalse(client.me(newToken).mustChangePassword)
-        assertEquals(HttpStatusCode.OK, client.putJson(ApiRoutes.ME, newToken, ProfileUpdateRequest(fullName = "Now allowed")).status)
+        fx.addUser("boss", admin = true)
+        val groupId = fx.addGroup("boss", "alice", state = "pending")
+        assertEquals(HttpStatusCode.OK, client.putJson(ApiRoutes.groupDeliveryInfo(groupId.toLong()), newToken, DeliveryInfoDto(fullName = "Now allowed")).status)
     }
 
     @Test

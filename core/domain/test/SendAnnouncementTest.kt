@@ -14,7 +14,7 @@ import com.usuallycoding.opensecretsanta.domain.notification.DevicePlatform
 import com.usuallycoding.opensecretsanta.domain.notification.NotificationCategory
 import com.usuallycoding.opensecretsanta.domain.notification.NotificationSettings
 import com.usuallycoding.opensecretsanta.domain.notification.Notifier
-import com.usuallycoding.opensecretsanta.domain.user.Profile
+import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfo
 import com.usuallycoding.opensecretsanta.domain.user.Username
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -46,16 +46,14 @@ class SendAnnouncementTest {
     private val sender = RecordingPushSender()
     private val notifier = Notifier(settings, devices, sender, groups)
     private val mailer = AnnouncementMailer()
+    private val infos = FakeDeliveryInfos()
     private val owner = users.add("boss", admin = true).let { users.userNamed("boss") }
     private val names = listOf("alice", "bob", "carol", "dave")
 
     private fun u(name: String) = Username.parse(name)
 
     init {
-        for (name in names) {
-            users.add(name)
-            users.updateProfile(u(name), Profile(fullName = null, email = "$name@example.org", phone = null, address = null, deliveryInfo = null))
-        }
+        for (name in names) users.add(name)
     }
 
     private fun announce(
@@ -66,11 +64,13 @@ class SendAnnouncementTest {
         push: Boolean = false,
         appUrl: String? = "https://santa.example",
         actor: com.usuallycoding.opensecretsanta.domain.user.User = owner,
-    ) = SendAnnouncement(OwnedGroupLoader(groups), users, mailer, notifier, appUrl)(actor, group.id, title, body, email, push)
+    ) = SendAnnouncement(OwnedGroupLoader(groups), infos, mailer, notifier, appUrl)(actor, group.id, title, body, email, push)
 
     private fun group(state: GroupState, details: GroupDetails = GroupDetails("Office Party")): Group {
         val seeded = groups.seed(owner.username, state, *names.map(::u).toTypedArray())
         groups.setDetails(seeded.id, details)
+        // everyone has told the group an email, as the people of a real group would have
+        names.forEach { infos.save(seeded.id, u(it), DeliveryInfo(email = "$it@example.org")) }
         return groups.find(seeded.id)!!
     }
 
@@ -179,10 +179,24 @@ class SendAnnouncementTest {
 
     @Test
     fun eachEmailGoesToOnePersonAndPeopleWithoutAnAddressAreCounted() {
-        users.updateProfile(u("carol"), Profile(fullName = null, email = null, phone = null, address = null, deliveryInfo = null))
-        val summary = announce(group(GroupState.PENDING)).emails
+        val g = group(GroupState.PENDING)
+        infos.save(g.id, u("carol"), DeliveryInfo())
+        val summary = announce(g).emails
         assertEquals(EmailSummary(sent = 3, failed = 0, noAddress = 1), summary)
         assertEquals(listOf("alice@example.org", "bob@example.org", "dave@example.org"), mailer.sent.map { it.to }.sorted())
+    }
+
+    @Test
+    fun theEmailAddressIsTheOneThePersonGaveThatGroup() {
+        val first = group(GroupState.PENDING)
+        val second = group(GroupState.PENDING)
+        infos.save(second.id, u("bob"), DeliveryInfo(email = "bob.work@example.org"))
+
+        announce(first)
+        announce(second)
+
+        assertTrue("bob.work@example.org" in mailer.sent.map { it.to })
+        assertEquals(1, mailer.sent.count { it.to == "bob@example.org" })
     }
 
     @Test

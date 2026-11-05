@@ -23,7 +23,7 @@ class SetParticipantsTest {
         groups,
         users,
         NewAccountPlanner(FakeHasher(), FakeSecretBox(), SequenceTempPasswords()),
-        GroupViewer(users),
+        GroupViewer(users, FakeDeliveryInfos()),
     )
 
     private fun names(group: Long) = groups.find(group)!!.participants.map { it.value }

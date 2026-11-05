@@ -43,7 +43,10 @@ import com.usuallycoding.opensecretsanta.domain.group.ParticipantGroupLoader
 import com.usuallycoding.opensecretsanta.domain.group.SetParticipants
 import com.usuallycoding.opensecretsanta.domain.group.Shuffler
 import com.usuallycoding.opensecretsanta.domain.group.UpdateGroupDetails
-import com.usuallycoding.opensecretsanta.domain.user.UpdateProfile
+import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfoRepository
+import com.usuallycoding.opensecretsanta.domain.delivery.GetMyDeliveryInfo
+import com.usuallycoding.opensecretsanta.domain.delivery.UpdateMyDeliveryInfo
+import com.usuallycoding.opensecretsanta.server.data.delivery.SqliteDeliveryInfoRepository
 import com.usuallycoding.opensecretsanta.domain.wishlist.AddWishlistItem
 import com.usuallycoding.opensecretsanta.domain.wishlist.DeleteWishlistItem
 import com.usuallycoding.opensecretsanta.domain.wishlist.GetMyWishlist
@@ -127,6 +130,7 @@ val repositoryModule = module {
     single<GroupRepository> { SqliteGroupRepository(get()) }
     single<QuestionRepository> { SqliteQuestionRepository(get()) }
     single<WishlistRepository> { SqliteWishlistRepository(get()) }
+    single<DeliveryInfoRepository> { SqliteDeliveryInfoRepository(get()) }
     single<DeviceRepository> { SqliteDeviceRepository(get()) }
     single<NotificationSettingsRepository> { SqliteNotificationSettingsRepository(get()) }
 }
@@ -175,7 +179,6 @@ val useCaseModule = module {
     single { AccessPolicy(get()) }
     single { Login(get(), get(), get(), get(), get()) }
     single { ChangePassword(get(), get(), get()) }
-    single { UpdateProfile(get()) }
     single { ListManagedUsers(get(), get(), get()) }
     single { GetManagedUser(get(), get(), get()) }
     single { ResetPassword(get(), get(), get(), get(), get(), get()) }
@@ -185,7 +188,7 @@ val useCaseModule = module {
     single { SeedDefaultAdmin(get(), get()) }
 
     single { OwnedGroupLoader(get()) }
-    single { GroupViewer(get()) }
+    single { GroupViewer(get(), get()) }
     single { AssignmentPlanner(get()) }
     single { CreateGroup(get(), get()) }
     single { UpdateGroupDetails(get(), get(), get()) }
@@ -208,6 +211,8 @@ val useCaseModule = module {
     single { ListQuestionsFromMySanta(get(), get()) }
     single { AnswerQuestion(get(), get(), get()) }
 
+    single { GetMyDeliveryInfo(get(), get()) }
+    single { UpdateMyDeliveryInfo(get(), get()) }
     single { GetMyWishlist(get(), get()) }
     single { AddWishlistItem(get(), get(), get()) }
     single { UpdateWishlistItem(get(), get(), get()) }

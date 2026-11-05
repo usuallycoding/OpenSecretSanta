@@ -1,6 +1,7 @@
 package com.usuallycoding.opensecretsanta.domain.group
 
 import com.usuallycoding.opensecretsanta.domain.admin.requireAdmin
+import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfoRepository
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 import com.usuallycoding.opensecretsanta.domain.user.User
 import com.usuallycoding.opensecretsanta.domain.user.UserRepository
@@ -22,14 +23,16 @@ class OwnedGroupLoader(private val groups: GroupRepository) {
     }
 }
 
-class GroupViewer(private val users: UserRepository) {
+class GroupViewer(private val users: UserRepository, private val deliveryInfos: DeliveryInfoRepository) {
     operator fun invoke(group: Group): GroupView {
         val accounts = users.findAll(group.participants).associateBy { it.username }
+        val infos = deliveryInfos.findAll(group.id, group.participants)
         return GroupView(
             group = group,
             participants = group.participants.map { username ->
                 val account = accounts[username]
-                ParticipantStatus(username, hasAccount = account != null, profileComplete = account?.profile?.isComplete == true, fullName = account?.profile?.fullName)
+                val info = infos[username]
+                ParticipantStatus(username, hasAccount = account != null, profileComplete = info?.isComplete == true, fullName = info?.fullName)
             },
         )
     }

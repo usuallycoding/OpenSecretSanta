@@ -13,7 +13,7 @@ data class AdminPair(
     val receiver: String,
     val santaIsMe: Boolean,
     val receiverIsMe: Boolean,
-    /** The person's profile lacks a name or an address, so a gift cannot yet be posted to them. */
+    /** The person's delivery info for the group lacks a name or an address, so a gift cannot yet be posted to them. */
     val santaIncomplete: Boolean = false,
     val receiverIncomplete: Boolean = false,
     /** What the owner can search each side by besides the username. */

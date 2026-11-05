@@ -24,6 +24,8 @@ import com.usuallycoding.opensecretsanta.server.presentation.notificationRoutes
 import com.usuallycoding.opensecretsanta.server.notification.NotificationDispatcher
 import com.usuallycoding.opensecretsanta.server.notification.Scheduler
 import java.util.concurrent.Executor
+import com.usuallycoding.opensecretsanta.domain.delivery.GetMyDeliveryInfo
+import com.usuallycoding.opensecretsanta.domain.delivery.UpdateMyDeliveryInfo
 import com.usuallycoding.opensecretsanta.domain.email.SendDrawEmails
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 import com.usuallycoding.opensecretsanta.domain.admin.ListManagedUsers
@@ -50,7 +52,6 @@ import com.usuallycoding.opensecretsanta.domain.group.MoveToPending
 import com.usuallycoding.opensecretsanta.domain.group.SetParticipants
 import com.usuallycoding.opensecretsanta.domain.group.Shuffler
 import com.usuallycoding.opensecretsanta.domain.group.UpdateGroupDetails
-import com.usuallycoding.opensecretsanta.domain.user.UpdateProfile
 import com.usuallycoding.opensecretsanta.domain.wishlist.AddWishlistItem
 import com.usuallycoding.opensecretsanta.domain.wishlist.DeleteWishlistItem
 import com.usuallycoding.opensecretsanta.domain.wishlist.GetMyWishlist
@@ -73,7 +74,7 @@ import com.usuallycoding.opensecretsanta.server.presentation.memberGroupRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.questionRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.receiverWishlistRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.wishlistRoutes
-import com.usuallycoding.opensecretsanta.server.presentation.profileRoutes
+import com.usuallycoding.opensecretsanta.server.presentation.deliveryInfoRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.authRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.registerLoginLimit
 import com.usuallycoding.opensecretsanta.server.presentation.healthRoutes
@@ -146,7 +147,7 @@ fun Application.module(
         authenticate(ACCESS_AUTH) {
             install(PasswordChangeGate)
             accountRoutes(get<ChangePassword>(), get<Channels>())
-            profileRoutes(get<UpdateProfile>())
+            deliveryInfoRoutes(get<GetMyDeliveryInfo>(), get<UpdateMyDeliveryInfo>())
             adminRoutes(get<ListManagedUsers>(), get<GetManagedUser>(), get<ResetPassword>(), get<DeleteUser>())
             adminGroupRoutes(
                 get<CreateGroup>(),

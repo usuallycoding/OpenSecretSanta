@@ -6,6 +6,7 @@ import com.usuallycoding.opensecretsanta.server.config.ServerConfig
 import com.usuallycoding.opensecretsanta.server.data.db.ClasspathMigrations
 import com.usuallycoding.opensecretsanta.server.data.db.Database
 import com.usuallycoding.opensecretsanta.server.data.db.MigrationRunner
+import com.usuallycoding.opensecretsanta.server.data.delivery.SqliteDeliveryInfoRepository
 import com.usuallycoding.opensecretsanta.server.data.user.SqliteUserRepository
 import com.usuallycoding.opensecretsanta.server.security.AesGcmSecretBox
 import com.usuallycoding.opensecretsanta.server.security.BcryptPasswordHasher
@@ -46,6 +47,7 @@ fun envWith(vararg extra: Pair<String, String>): Map<String, String> =
 class TestFixtures(val config: ServerConfig = testConfig()) {
     val database = Database(config.dbPath).also { MigrationRunner(it, ClasspathMigrations.load()).migrate() }
     val users = SqliteUserRepository(database)
+    val deliveryInfos = SqliteDeliveryInfoRepository(database)
     private val hasher = BcryptPasswordHasher(TEST_PASSWORD_COST)
     private val secretBox = AesGcmSecretBox(config.encryptionKeyBytes())
     private val tokens = JwtTokenService(config.jwtSecret, SystemClock)

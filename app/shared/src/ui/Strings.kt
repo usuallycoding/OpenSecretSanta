@@ -84,7 +84,7 @@ object Strings {
     const val GROUP_PARTICIPANTS = "Participants"
     const val YOU = "you"
 
-    const val PROFILE_WHY = "A Santa uses your name and address to post your gift, and also sees your email. Your email is used to send you your draw when a group you are in is drawn."
+    const val DELIVERY_WHY = "A Santa uses your name and address to post your gift, and also sees your email. Your email is used to send you your draw when this group is drawn."
 
     /** The Gifter page's title: "Giving to bob", or "Giving to ..." until the receiver's username is known. */
     fun givingTo(receiver: String?): String = "Giving to ${receiver ?: "..."}"
@@ -129,7 +129,7 @@ object Strings {
         if (notReached == 0) return if (reached == 1) "Push notification sent to 1 participant." else "Push notification sent to all $total participants."
         return "Push notification sent to $reached of $total participants. $notReached ${if (notReached == 1) "has" else "have"} notifications off or no device."
     }
-    const val PROFILE_INCOMPLETE = "Add your name and address so a gift can reach you."
+    const val DELIVERY_INCOMPLETE = "Add your name and address so a gift can reach you."
     const val SAVE = "Save"
     const val SAVING = "Saving..."
     const val SAVED = "Saved."
@@ -223,7 +223,7 @@ object Strings {
 
     const val TITLE_GROUPS = "Groups"
     const val TITLE_GROUP = "Group"
-    const val TITLE_PROFILE = "Profile"
+    const val TITLE_DELIVERY_INFO = "Delivery Info"
     const val TITLE_SETTINGS = "Settings"
     const val TITLE_ADMIN = "Admin"
     const val ADMIN_NO_GROUPS = "You do not have any group yet. Use the + button to create one."
@@ -247,7 +247,7 @@ object Strings {
     const val ADMIN_USERNAME = "Username"
     const val ADMIN_ADD = "Add"
     const val ADMIN_REMOVE = "Remove"
-    const val ADMIN_MARK_LEGEND = "* no account or profile incomplete"
+    const val ADMIN_MARK_LEGEND = "* no account or delivery info incomplete"
     const val ADMIN_NO_PARTICIPANTS = "Nobody has been added yet."
     const val ADMIN_STATE_DRAFT = "Draft"
     const val ADMIN_NOTE_DRAFT = "Being planned. Participants cannot see this group yet."
@@ -316,7 +316,7 @@ object Strings {
     /** The label above the pairs, with how many people the draw is for: "Who gives to whom (4 participants)". */
     fun adminDraw(participants: Int) = "Who gives to whom ($participants participants)"
     const val ADMIN_DRAW_FAILED = "The draw could not be loaded."
-    const val ADMIN_INCOMPLETE_LEGEND = "* profile incomplete"
+    const val ADMIN_INCOMPLETE_LEGEND = "* delivery info incomplete"
     const val ADMIN_SHEET_CLOSE = "Close"
     const val ADMIN_QUESTIONS_TITLE = "Questions"
     const val ADMIN_YOU = "you"

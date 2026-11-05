@@ -1,20 +1,20 @@
 package com.usuallycoding.opensecretsanta.domain.gift
 
+import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfoRepository
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 import com.usuallycoding.opensecretsanta.domain.group.GroupRepository
 import com.usuallycoding.opensecretsanta.domain.group.GroupState
 import com.usuallycoding.opensecretsanta.domain.group.ParticipantGroupLoader
 import com.usuallycoding.opensecretsanta.domain.user.User
-import com.usuallycoding.opensecretsanta.domain.user.UserRepository
 
 /**
  * A participant's own receiver, with the details a Santa needs to post a gift. Values are read at
- * the time of the request, so changes the receiver makes to their profile are seen straight away.
+ * the time of the request, so changes the receiver makes to their delivery info for the group are seen straight away.
  */
 class GetMyReceiver(
     private val loadParticipantGroup: ParticipantGroupLoader,
     private val groups: GroupRepository,
-    private val users: UserRepository,
+    private val deliveryInfos: DeliveryInfoRepository,
 ) {
     operator fun invoke(user: User, groupId: Long): ReceiverDetails {
         val group = loadParticipantGroup(user, groupId)
@@ -22,14 +22,14 @@ class GetMyReceiver(
             throw DomainException.InvalidState("Receivers are known once the group is active.")
         }
         val receiver = groups.receiverOf(group.id, user.username) ?: throw DomainException.NotFound("Group not found.")
-        val account = users.find(receiver) ?: error("Receiver $receiver of group ${group.id} has no account")
+        val info = deliveryInfos.find(group.id, receiver)
         return ReceiverDetails(
-            username = account.username,
-            fullName = account.profile.fullName,
-            address = account.profile.address,
-            phone = account.profile.phone,
-            deliveryInfo = account.profile.deliveryInfo,
-            email = account.profile.email,
+            username = receiver,
+            fullName = info.fullName,
+            address = info.address,
+            phone = info.phone,
+            deliveryInfo = info.deliveryInfo,
+            email = info.email,
         )
     }
 }
@@ -41,7 +41,7 @@ class GetMyReceiver(
 class GetMySanta(
     private val loadParticipantGroup: ParticipantGroupLoader,
     private val groups: GroupRepository,
-    private val users: UserRepository,
+    private val deliveryInfos: DeliveryInfoRepository,
 ) {
     operator fun invoke(user: User, groupId: Long): SantaReveal {
         val group = loadParticipantGroup(user, groupId)
@@ -49,7 +49,6 @@ class GetMySanta(
             throw DomainException.InvalidState("Your Santa is revealed once the group is archived.")
         }
         val santa = groups.santaOf(group.id, user.username) ?: throw DomainException.NotFound("Group not found.")
-        val account = users.find(santa) ?: error("Santa $santa of group ${group.id} has no account")
-        return SantaReveal(username = account.username, fullName = account.profile.fullName)
+        return SantaReveal(username = santa, fullName = deliveryInfos.find(group.id, santa).fullName)
     }
 }

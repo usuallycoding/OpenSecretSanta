@@ -30,7 +30,7 @@ class AdminUsersViewModelTest {
 
     @Test
     fun theManagedUsersAreListedInOrderWithTheirMarks() = runTest {
-        fake.add("alice", fullName = "Alice Anders")
+        fake.add("alice")
         fake.add("dave", temporary = "Temp-dave-1")
         fake.addOutsider("zed")
 
@@ -38,8 +38,6 @@ class AdminUsersViewModelTest {
 
         assertEquals(listOf("admin", "alice", "dave"), users.map { it.username })
         assertEquals(listOf(false, false, true), users.map { it.mustChangePassword })
-        assertEquals("Alice Anders", users[1].fullName)
-        assertNull(users[0].fullName)
     }
 
     @Test
@@ -67,16 +65,13 @@ class AdminUsersViewModelTest {
     // --- the detail ------------------------------------------------------------------------------
 
     @Test
-    fun fieldsTheUserHasNotSetAreNull() = runTest {
-        fake.add("alice", fullName = "Alice Anders").apply { address = "1 Main Street"; phone = "  " }
+    fun theDetailIsTheAccountOnlyWithNoPersonalDetails() = runTest {
+        fake.add("alice")
 
         val user = detail("alice").data.value.value!!
 
-        assertEquals("Alice Anders", user.fullName)
-        assertEquals("1 Main Street", user.address)
-        assertNull(user.phone)
-        assertNull(user.email)
-        assertNull(user.deliveryInfo)
+        assertEquals("alice", user.username)
+        assertNull(user.temporaryPassword)
     }
 
     @Test
@@ -221,7 +216,7 @@ class AdminUsersViewModelTest {
     @Test
     fun usersWhoCanBeDeletedAreMarkedAsSuch() = runTest {
         fake.add("alice")
-        fake.addUnassigned("erin", fullName = "Erin Typo")
+        fake.addUnassigned("erin")
 
         val users = list().state.value.value!!
 

@@ -14,7 +14,7 @@ class ShellViewModelTest {
     private val server = ScriptedServer()
     private val session = server.session()
 
-    private fun shell(admin: Boolean) = ShellViewModel(Account("alice", null, admin), session, immediateScope())
+    private fun shell(admin: Boolean) = ShellViewModel(Account("alice", isAdmin = admin), session, immediateScope())
 
     @Test
     fun anAdministratorStartsInTheAdminViewAndSwitchesBothWays() {

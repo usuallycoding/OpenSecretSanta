@@ -42,7 +42,7 @@ class ListQuestionThreadsTest {
 
     private fun activate(owner: User, vararg participants: String): Long {
         val g = groups.seed(owner.username, GroupState.PENDING, *participants.map { u(it) }.toTypedArray())
-        ActivateGroup(ownedLoader, groups, AssignmentPlanner(IdentityShuffler()), GroupViewer(users))(owner, g.id)
+        ActivateGroup(ownedLoader, groups, AssignmentPlanner(IdentityShuffler()), GroupViewer(users, FakeDeliveryInfos()))(owner, g.id)
         return g.id
     }
 
@@ -95,7 +95,7 @@ class ListQuestionThreadsTest {
     fun stillReadableOnceArchived() {
         val id = activeGroup()
         ask(user("alice"), id, "Size?")
-        ArchiveGroup(ownedLoader, groups, GroupViewer(users))(admin, id)
+        ArchiveGroup(ownedLoader, groups, GroupViewer(users, FakeDeliveryInfos()))(admin, id)
 
         assertEquals(listOf("Size?"), threads(admin, id).first().questions.map { it.text })
     }

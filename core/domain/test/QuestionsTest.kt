@@ -44,11 +44,11 @@ class QuestionsTest {
 
     private fun activeGroup(): Long {
         val g = groups.seed(admin.username, GroupState.PENDING, *names.map { u(it) }.toTypedArray())
-        ActivateGroup(OwnedGroupLoader(groups), groups, AssignmentPlanner(IdentityShuffler()), GroupViewer(users))(admin, g.id)
+        ActivateGroup(OwnedGroupLoader(groups), groups, AssignmentPlanner(IdentityShuffler()), GroupViewer(users, FakeDeliveryInfos()))(admin, g.id)
         return g.id
     }
 
-    private fun archive(id: Long) = ArchiveGroup(OwnedGroupLoader(groups), groups, GroupViewer(users))(admin, id)
+    private fun archive(id: Long) = ArchiveGroup(OwnedGroupLoader(groups), groups, GroupViewer(users, FakeDeliveryInfos()))(admin, id)
 
     // --- asking ---
 

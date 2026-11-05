@@ -79,7 +79,7 @@ private class FakeServer {
 }
 
 private fun account(name: String = "alice", admin: Boolean = false, must: Boolean = false) =
-    """{"username":"$name","fullName":"Full $name","isAdmin":$admin,"mustChangePassword":$must}"""
+    """{"username":"$name","isAdmin":$admin,"mustChangePassword":$must}"""
 
 class SessionManagerTest {
     private val server = FakeServer()
@@ -97,7 +97,7 @@ class SessionManagerTest {
         return created
     }
 
-    private val alice = Account("alice", "Full alice", isAdmin = false)
+    private val alice = Account("alice", isAdmin = false)
 
     @Test
     fun startsLoading() {
@@ -174,7 +174,7 @@ class SessionManagerTest {
         val result = newSession().signIn("alice", "password1")
 
         assertEquals(ApiResult.Success(Unit), result)
-        assertEquals(SessionState.SignedIn(Account("alice", "Full alice", isAdmin = true)), session.state.value)
+        assertEquals(SessionState.SignedIn(Account("alice", isAdmin = true)), session.state.value)
         assertEquals("t1", store.stored)
         assertEquals("t1", session.token)
     }
@@ -283,7 +283,7 @@ class SessionManagerTest {
 
         session.signIn("bob", "password2")
 
-        assertEquals(SessionState.SignedIn(Account("bob", "Full bob", false)), session.state.value)
+        assertEquals(SessionState.SignedIn(Account("bob", isAdmin = false)), session.state.value)
         assertEquals("t9", store.stored)
     }
 

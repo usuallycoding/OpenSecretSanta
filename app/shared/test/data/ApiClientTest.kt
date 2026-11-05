@@ -270,40 +270,52 @@ class ApiClientTest {
     }
 
     @Test
-    fun theProfileIsSavedWithAllFieldsAndTheUnchangedUsername() = runTest {
+    fun theDeliveryInfoIsSavedForTheGroupWithAllFields() = runTest {
         val auth = FakeAuth(token = "t1")
-        val api = client(auth) { json(HttpStatusCode.OK, """{"username":"alice","fullName":"Alice Archer","address":"1 Main St","isAdmin":false,"mustChangePassword":false}""") }
-        val request = com.usuallycoding.opensecretsanta.contract.ProfileUpdateRequest(
-            username = "alice", fullName = "Alice Archer", email = "alice@example.org", phone = null, address = "1 Main St", deliveryInfo = "Back door",
+        val api = client(auth) { json(HttpStatusCode.OK, """{"fullName":"Alice Archer","address":"1 Main St"}""") }
+        val request = com.usuallycoding.opensecretsanta.contract.DeliveryInfoDto(
+            fullName = "Alice Archer", email = "alice@example.org", phone = null, address = "1 Main St", deliveryInfo = "Back door",
         )
 
-        val result = api.updateProfile(request)
+        val result = api.updateDeliveryInfo(7, request)
 
         assertTrue(result is ApiResult.Success)
         assertEquals("Alice Archer", result.value.fullName)
         assertEquals(HttpMethod.Put, requests.single().method)
-        assertEquals("https://api.example.org/me", requests.single().url.toString())
+        assertEquals("https://api.example.org/groups/7/delivery-info", requests.single().url.toString())
         assertEquals("Bearer t1", requests.single().headers[HttpHeaders.Authorization])
         // a cleared field (null) is left out of the body, which the server reads as cleared
-        assertEquals(request, kotlinx.serialization.json.Json.decodeFromString<com.usuallycoding.opensecretsanta.contract.ProfileUpdateRequest>(bodies.single()))
+        assertEquals(request, kotlinx.serialization.json.Json.decodeFromString<com.usuallycoding.opensecretsanta.contract.DeliveryInfoDto>(bodies.single()))
     }
 
     @Test
-    fun aProfileValidationErrorKeepsItsField() = runTest {
+    fun theDeliveryInfoOfAGroupIsRead() = runTest {
+        val api = client(FakeAuth("t1")) { json(HttpStatusCode.OK, """{"address":"1 Main St"}""") }
+
+        val result = api.deliveryInfo(7)
+
+        assertTrue(result is ApiResult.Success)
+        assertEquals("1 Main St", result.value.address)
+        assertEquals(HttpMethod.Get, requests.single().method)
+        assertEquals("https://api.example.org/groups/7/delivery-info", requests.single().url.toString())
+    }
+
+    @Test
+    fun aDeliveryInfoValidationErrorKeepsItsField() = runTest {
         val api = client(FakeAuth("t1")) { json(HttpStatusCode.BadRequest, error("validation_failed", "Email is not a valid address.", field = "email")) }
 
-        val result = api.updateProfile(com.usuallycoding.opensecretsanta.contract.ProfileUpdateRequest(username = "alice", email = "nope"))
+        val result = api.updateDeliveryInfo(7, com.usuallycoding.opensecretsanta.contract.DeliveryInfoDto(email = "nope"))
 
         assertEquals(ApiResult.Failure(ApiError.Validation("email", "Email is not a valid address.")), result)
     }
 
     @Test
-    fun noPasswordTravelsWithGroupsOrProfile() = runTest {
+    fun noPasswordTravelsWithGroupsOrDeliveryInfo() = runTest {
         val api = client(FakeAuth("t1")) { json(HttpStatusCode.OK, "[]") }
 
         api.groups()
         api.group(1)
-        api.updateProfile(com.usuallycoding.opensecretsanta.contract.ProfileUpdateRequest(username = "alice"))
+        api.updateDeliveryInfo(1, com.usuallycoding.opensecretsanta.contract.DeliveryInfoDto(fullName = "alice"))
 
         assertFalse(bodies.any { "password" in it.lowercase() })
     }

@@ -17,11 +17,6 @@ class DtoSerializationTest {
 
     private val account = AccountDto(
         username = "alice",
-        fullName = "Alice B",
-        email = "a@b.co",
-        phone = "123",
-        address = "1 Main St",
-        deliveryInfo = "Ring twice",
         isAdmin = false,
         mustChangePassword = true,
     )
@@ -45,9 +40,9 @@ class DtoSerializationTest {
     }
 
     @Test
-    fun profileUpdateRoundTripsAndToleratesMissingFields() {
-        roundTrip(ProfileUpdateRequest(username = "alice", fullName = "Alice", phone = null))
-        assertEquals(ProfileUpdateRequest(), json.decodeFromString<ProfileUpdateRequest>("{}"))
+    fun deliveryInfoRoundTripsAndToleratesMissingFields() {
+        roundTrip(DeliveryInfoDto(fullName = "Alice", email = "a@b.co", phone = null, address = "1 Main St", deliveryInfo = "Ring twice"))
+        assertEquals(DeliveryInfoDto(), json.decodeFromString<DeliveryInfoDto>("{}"))
     }
 
     @Test

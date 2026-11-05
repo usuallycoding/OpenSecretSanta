@@ -49,7 +49,7 @@ class LoginViewModelTest {
 
         model.submit()?.join()
 
-        assertEquals(SessionState.SignedIn(com.usuallycoding.opensecretsanta.data.session.Account("alice", null, false)), session.state.value)
+        assertEquals(SessionState.SignedIn(com.usuallycoding.opensecretsanta.data.session.Account("alice", isAdmin = false)), session.state.value)
         assertFalse(model.state.value.inProgress)
         assertNull(model.state.value.problem)
     }

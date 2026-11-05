@@ -9,7 +9,7 @@ import com.usuallycoding.opensecretsanta.contract.GroupChangeResponse
 import com.usuallycoding.opensecretsanta.contract.GroupDetailsRequest
 import com.usuallycoding.opensecretsanta.contract.LoginRequest
 import com.usuallycoding.opensecretsanta.contract.ParticipantsRequest
-import com.usuallycoding.opensecretsanta.domain.user.Profile
+import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfo
 import com.usuallycoding.opensecretsanta.domain.user.Username
 import io.ktor.client.HttpClient
 import io.ktor.client.request.header
@@ -198,10 +198,10 @@ class GroupRoutesTest {
     fun viewShowsParticipantFlags() = testApplication {
         startApp()
         admins()
-        val alice = fx.addUser("alice")
-        fx.users.updateProfile(alice, Profile(fullName = "Alice B", address = "1 Main St"))
+        fx.addUser("alice")
         fx.addUser("bob")
         val group = client.createGroup(fx.token("admin-a"), CreateGroupRequest("P", participants = listOf("alice", "bob", "carol-new")))
+        fx.deliveryInfos.save(group.id, Username.parse("alice"), DeliveryInfo(fullName = "Alice B", address = "1 Main St"))
 
         val view = Json.decodeFromString<AdminGroupDto>(client.getAs(ApiRoutes.adminGroup(group.id), fx.token("admin-a")).bodyAsText())
 
@@ -215,9 +215,10 @@ class GroupRoutesTest {
     fun viewCarriesFullNamesWhereThereAreAny() = testApplication {
         startApp()
         admins()
-        fx.users.updateProfile(fx.addUser("alice"), Profile(fullName = "Alice Brown"))
+        fx.addUser("alice")
         fx.addUser("bob")
         val group = client.createGroup(fx.token("admin-a"), CreateGroupRequest("P", participants = listOf("alice", "bob", "carol-new")))
+        fx.deliveryInfos.save(group.id, Username.parse("alice"), DeliveryInfo(fullName = "Alice Brown"))
 
         val view = Json.decodeFromString<AdminGroupDto>(client.getAs(ApiRoutes.adminGroup(group.id), fx.token("admin-a")).bodyAsText())
 

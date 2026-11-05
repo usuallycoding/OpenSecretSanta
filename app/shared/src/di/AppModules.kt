@@ -20,7 +20,7 @@ import com.usuallycoding.opensecretsanta.ui.groups.GroupsViewModel
 import com.usuallycoding.opensecretsanta.ui.login.LoginViewModel
 import com.usuallycoding.opensecretsanta.ui.notifications.NotificationsViewModel
 import com.usuallycoding.opensecretsanta.ui.password.ChangePasswordViewModel
-import com.usuallycoding.opensecretsanta.ui.profile.ProfileViewModel
+import com.usuallycoding.opensecretsanta.ui.delivery.DeliveryInfoViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupFormViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AnnouncementViewModel
@@ -62,7 +62,7 @@ fun appModules(baseUrl: String, pushDevice: PushDevice = UnsupportedPushDevice):
         viewModel { ChangePasswordViewModel(get(), viewModelScope()) }
         viewModel { (account: com.usuallycoding.opensecretsanta.data.session.Account) -> ShellViewModel(account, get(), viewModelScope()) }
         viewModel { GroupsViewModel(get(), viewModelScope()) }
-        viewModel { ProfileViewModel(get(), viewModelScope()) }
+        viewModel { (groupId: Long) -> DeliveryInfoViewModel(groupId, get(), viewModelScope()) }
         viewModel { NotificationsViewModel(get(), get(), viewModelScope()) }
         viewModel { (groupId: Long) -> WishlistViewModel(groupId, get(), viewModelScope()) }
         viewModel { AdminGroupsViewModel(get(), viewModelScope()) }
@@ -80,7 +80,7 @@ fun appModules(baseUrl: String, pushDevice: PushDevice = UnsupportedPushDevice):
         viewModel { (groupId: Long) -> ReceiverWishlistViewModel(groupId, get(), viewModelScope()) }
         viewModel { (groupId: Long, me: String) -> GroupDetailViewModel(groupId, me, get(), viewModelScope()) }
         viewModel { (groupId: Long) -> PairViewModel(groupId, get(), viewModelScope()) }
-        viewModel { MyDetailsViewModel(get(), viewModelScope()) }
+        viewModel { (groupId: Long, me: String) -> MyDetailsViewModel(groupId, me, get(), viewModelScope()) }
     },
 )
 

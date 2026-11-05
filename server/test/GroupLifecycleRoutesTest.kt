@@ -9,7 +9,7 @@ import com.usuallycoding.opensecretsanta.contract.GroupChangeResponse
 import com.usuallycoding.opensecretsanta.contract.GroupDetailsRequest
 import com.usuallycoding.opensecretsanta.contract.LoginRequest
 import com.usuallycoding.opensecretsanta.contract.MemberGroupDto
-import com.usuallycoding.opensecretsanta.domain.user.Profile
+import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfo
 import com.usuallycoding.opensecretsanta.domain.user.Username
 import io.ktor.client.HttpClient
 import io.ktor.client.request.header
@@ -222,12 +222,12 @@ class GroupLifecycleRoutesTest {
     }
 
     @Test
-    fun anIncompleteProfileDoesNotBlockActivationButIsFlagged() = testApplication {
+    fun incompleteDeliveryInfoDoesNotBlockActivationButIsFlagged() = testApplication {
         startApp()
         setup()
         people("alice", "bob")
-        fx.users.updateProfile(Username.parse("alice"), Profile(fullName = "Alice B", address = "1 Main St"))
         val group = client.draft("alice", "bob", "carol-new", "dave-new")
+        fx.deliveryInfos.save(group.id, Username.parse("alice"), DeliveryInfo(fullName = "Alice B", address = "1 Main St"))
         client.change(ApiRoutes.adminGroupPending(group.id))
 
         val change = client.change(ApiRoutes.adminGroupActivate(group.id))

@@ -1,13 +1,14 @@
 package com.usuallycoding.opensecretsanta.server
 
 import com.usuallycoding.opensecretsanta.domain.auth.LoginAttempts
+import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfo
 import com.usuallycoding.opensecretsanta.domain.user.NewUser
-import com.usuallycoding.opensecretsanta.domain.user.Profile
 import com.usuallycoding.opensecretsanta.domain.user.Username
 import com.usuallycoding.opensecretsanta.server.data.auth.SqliteLoginAttemptTracker
 import com.usuallycoding.opensecretsanta.server.data.db.ClasspathMigrations
 import com.usuallycoding.opensecretsanta.server.data.db.Database
 import com.usuallycoding.opensecretsanta.server.data.db.MigrationRunner
+import com.usuallycoding.opensecretsanta.server.data.delivery.SqliteDeliveryInfoRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteGroupMembershipRepository
 import com.usuallycoding.opensecretsanta.server.data.user.SqliteUserRepository
 import java.sql.SQLException
@@ -56,7 +57,6 @@ class SqliteRepositoriesTest {
         users.insertAll(listOf(newUser("alice", enc = enc)))
 
         val alice = assertNotNull(users.find(u("alice")))
-        assertEquals(Profile.EMPTY, alice.profile)
         assertTrue(alice.mustChangePassword)
         assertFalse(alice.isAdmin)
         assertEquals(1, alice.tokenVersion)
@@ -70,18 +70,7 @@ class SqliteRepositoriesTest {
     fun unknownUserIsNull() {
         assertNull(users.find(u("nobody")))
         assertNull(users.credentials(u("nobody")))
-        assertNull(users.updateProfile(u("nobody"), Profile.EMPTY))
         assertNull(users.replaceCredentials(u("nobody"), "h", null, false))
-    }
-
-    @Test
-    fun profileUpdateAndClearing() {
-        users.insertAll(listOf(newUser("alice")))
-        val profile = Profile("Alice B", "a@b.co", "123", "1 Main St", "Ring twice")
-
-        assertEquals(profile, users.updateProfile(u("alice"), profile)!!.profile)
-        assertEquals(profile, users.find(u("alice"))!!.profile)
-        assertEquals(Profile.EMPTY, users.updateProfile(u("alice"), Profile.EMPTY)!!.profile)
     }
 
     @Test
@@ -235,5 +224,50 @@ class SqliteRepositoriesTest {
         val reopened = SqliteLoginAttemptTracker(Database(path.toString()))
 
         assertEquals(42L, reopened.get(u("alice"))!!.lockedUntilMillis)
+    }
+}
+
+class SqliteDeliveryInfoRepositoryTest {
+    private val database = Database(newTempDbPath().toString()).also { MigrationRunner(it, ClasspathMigrations.load()).migrate() }
+    private val infos = SqliteDeliveryInfoRepository(database)
+
+    private fun u(name: String) = Username.parse(name)
+
+    private fun group(): Long {
+        database.connection().use { c ->
+            c.createStatement().use {
+                it.execute("INSERT OR IGNORE INTO users (username, password_hash) VALUES ('boss', 'h')")
+                it.execute("INSERT INTO groups (owner_username, name) VALUES ('boss', 'G')")
+            }
+        }
+        return database.connection().use { c -> c.createStatement().use { s -> s.executeQuery("SELECT MAX(id) FROM groups").use { it.next(); it.getLong(1) } } }
+    }
+
+    @Test
+    fun nothingSavedReadsAsEmpty() {
+        assertEquals(DeliveryInfo.EMPTY, infos.find(group(), u("alice")))
+    }
+
+    @Test
+    fun savedDetailsReadBackAndAreReplacedWholesale() {
+        val id = group()
+        val first = DeliveryInfo("Alice B", "a@b.co", "123", "1 Main St", "Ring twice")
+
+        infos.save(id, u("alice"), first)
+        assertEquals(first, infos.find(id, u("alice")))
+
+        infos.save(id, u("alice"), DeliveryInfo(address = "2 Side St"))
+        assertEquals(DeliveryInfo(address = "2 Side St"), infos.find(id, u("alice")))
+    }
+
+    @Test
+    fun findAllReturnsOnlyWhoSavedInThatGroup() {
+        val one = group()
+        val two = group()
+        infos.save(one, u("alice"), DeliveryInfo(fullName = "A"))
+        infos.save(two, u("bob"), DeliveryInfo(fullName = "B"))
+
+        assertEquals(mapOf(u("alice") to DeliveryInfo(fullName = "A")), infos.findAll(one, listOf(u("alice"), u("bob"))))
+        assertEquals(emptyMap(), infos.findAll(one, emptyList()))
     }
 }

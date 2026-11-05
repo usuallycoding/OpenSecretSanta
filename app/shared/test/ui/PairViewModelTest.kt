@@ -46,9 +46,14 @@ class PairViewModelTest {
 
     @Test
     fun ownDetailsAreLoadedWithBlankValuesLeftOut() = runTest {
-        val model = MyDetailsViewModel(server.api, immediateScope()).also { it.refresh().join() }
+        server.deliveryInfoBody = """{"fullName":"Alice A","address":"1 Main St","phone":"  "}"""
+        val model = MyDetailsViewModel(1, "alice", server.api, immediateScope()).also { it.refresh().join() }
 
         val details = model.details.value.value!!
         assertEquals("alice", details.username)
+        assertEquals("Alice A", details.fullName)
+        assertEquals("1 Main St", details.address)
+        assertNull(details.phone)
+        assertTrue(server.calls.contains("GET /groups/1/delivery-info"))
     }
 }

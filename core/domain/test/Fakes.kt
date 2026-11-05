@@ -10,7 +10,8 @@ import com.usuallycoding.opensecretsanta.domain.auth.TempPasswordGenerator
 import com.usuallycoding.opensecretsanta.domain.auth.TokenClaims
 import com.usuallycoding.opensecretsanta.domain.auth.TokenService
 import com.usuallycoding.opensecretsanta.domain.user.NewUser
-import com.usuallycoding.opensecretsanta.domain.user.Profile
+import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfo
+import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfoRepository
 import com.usuallycoding.opensecretsanta.domain.user.User
 import com.usuallycoding.opensecretsanta.domain.user.UserCredentials
 import com.usuallycoding.opensecretsanta.domain.user.UserRepository
@@ -94,7 +95,7 @@ class InMemoryUsers : UserRepository {
         require(users.none { it.username in rows }) { "duplicate username" }
         users.forEach {
             rows[it.username] = Row(
-                User(it.username, Profile.EMPTY, it.isAdmin, it.mustChangePassword, tokenVersion = 1),
+                User(it.username, it.isAdmin, it.mustChangePassword, tokenVersion = 1),
                 it.passwordHash,
                 it.encryptedTempPassword,
                 it.createdBy,
@@ -123,9 +124,6 @@ class InMemoryUsers : UserRepository {
         rows.remove(username)
         return true
     }
-
-    override fun updateProfile(username: Username, profile: Profile): User? =
-        rows[username]?.also { it.user = it.user.copy(profile = profile) }?.user
 
     override fun replaceCredentials(
         username: Username,
@@ -158,5 +156,19 @@ class InMemoryUsers : UserRepository {
             ),
         )
         return username
+    }
+}
+
+/** Delivery info held in memory, one entry per group and person; a person who saved nothing reads as empty. */
+class FakeDeliveryInfos : DeliveryInfoRepository {
+    private val saved = mutableMapOf<Pair<Long, Username>, DeliveryInfo>()
+
+    override fun find(groupId: Long, username: Username) = saved[groupId to username] ?: DeliveryInfo.EMPTY
+
+    override fun findAll(groupId: Long, usernames: Collection<Username>) =
+        usernames.mapNotNull { name -> saved[groupId to name]?.let { name to it } }.toMap()
+
+    override fun save(groupId: Long, username: Username, info: DeliveryInfo) {
+        saved[groupId to username] = info
     }
 }

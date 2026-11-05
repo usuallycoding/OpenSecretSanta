@@ -1,7 +1,6 @@
 package com.usuallycoding.opensecretsanta.server.data.user
 
 import com.usuallycoding.opensecretsanta.domain.user.NewUser
-import com.usuallycoding.opensecretsanta.domain.user.Profile
 import com.usuallycoding.opensecretsanta.domain.user.User
 import com.usuallycoding.opensecretsanta.domain.user.UserCredentials
 import com.usuallycoding.opensecretsanta.domain.user.UserRepository
@@ -54,27 +53,12 @@ class SqliteUserRepository(private val database: Database) : UserRepository {
         database.transaction { insertUsers(it, users) }
     }
 
-    override fun updateProfile(username: Username, profile: Profile): User? = database.connection().use { c ->
-        val changed = c.prepareStatement(
-            "UPDATE users SET full_name = ?, email = ?, phone = ?, address = ?, delivery_info = ? WHERE username = ?",
-        ).use { s ->
-            s.setString(1, profile.fullName)
-            s.setString(2, profile.email)
-            s.setString(3, profile.phone)
-            s.setString(4, profile.address)
-            s.setString(5, profile.deliveryInfo)
-            s.setString(6, username.value)
-            s.executeUpdate()
-        }
-        if (changed == 0) null else find(c, username)
-    }
-
     override fun deleteUnassigned(username: Username, createdBy: Username): Boolean = database.transaction { c ->
         // Every statement repeats the eligibility, and the first one already holds the write lock, so a group that names the
         // person meanwhile keeps the account whole. The person is in no group, so what is left of their wishlist is stale.
         val eligible = "EXISTS (SELECT 1 FROM users u WHERE u.username = ? AND u.created_by = ? AND u.is_admin = 0 " +
             "AND NOT EXISTS (SELECT 1 FROM group_participants p WHERE p.username = u.username))"
-        for (table in listOf("wishlist_items", "login_attempts")) {
+        for (table in listOf("wishlist_items", "group_delivery_info", "login_attempts")) {
             c.prepareStatement("DELETE FROM $table WHERE username = ? AND $eligible").use { s ->
                 s.setString(1, username.value)
                 s.setString(2, username.value)
@@ -116,13 +100,6 @@ class SqliteUserRepository(private val database: Database) : UserRepository {
 
     private fun toUser(rows: ResultSet) = User(
         username = Username.parse(rows.getString("username")),
-        profile = Profile(
-            fullName = rows.getString("full_name"),
-            email = rows.getString("email"),
-            phone = rows.getString("phone"),
-            address = rows.getString("address"),
-            deliveryInfo = rows.getString("delivery_info"),
-        ),
         isAdmin = rows.getInt("is_admin") == 1,
         mustChangePassword = rows.getInt("must_change_password") == 1,
         tokenVersion = rows.getInt("token_version"),
@@ -132,7 +109,7 @@ class SqliteUserRepository(private val database: Database) : UserRepository {
 
     private companion object {
         const val USER_COLUMNS =
-            "username, full_name, email, phone, address, delivery_info, must_change_password, is_admin, token_version"
+            "username, must_change_password, is_admin, token_version"
     }
 }
 

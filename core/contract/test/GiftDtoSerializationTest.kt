@@ -80,6 +80,8 @@ class GiftDtoSerializationTest {
     @Test
     fun routeBuildersMatchTheirTemplates() {
         assertEquals("/groups/5/receiver", ApiRoutes.groupReceiver(5))
+        assertEquals("/groups/5/delivery-info", ApiRoutes.groupDeliveryInfo(5))
+        assertEquals(ApiRoutes.GROUP_DELIVERY_INFO.replace("{id}", "5"), ApiRoutes.groupDeliveryInfo(5))
         assertEquals("/groups/5/santa", ApiRoutes.groupSanta(5))
         assertEquals("/groups/5/receiver/questions", ApiRoutes.groupReceiverQuestions(5))
         assertEquals("/groups/5/santa/questions", ApiRoutes.groupSantaQuestions(5))

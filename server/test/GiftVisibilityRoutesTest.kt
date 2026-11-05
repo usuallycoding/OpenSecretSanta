@@ -4,7 +4,7 @@ import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.ErrorResponse
 import com.usuallycoding.opensecretsanta.contract.ReceiverDto
 import com.usuallycoding.opensecretsanta.contract.SantaRevealDto
-import com.usuallycoding.opensecretsanta.domain.user.Profile
+import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfo
 import com.usuallycoding.opensecretsanta.domain.user.Username
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
@@ -37,9 +37,9 @@ class GiftVisibilityRoutesTest {
     private fun world(state: String): Int {
         fx.addUser("admin-a", admin = true)
         for (name in names) fx.addUser(name)
-        fx.users.updateProfile(Username.parse("bob"), Profile("Bob Builder", "bob@example.com", "555-0102", "2 Side St", "Leave at the back door"))
-        fx.users.updateProfile(Username.parse("alice"), Profile(fullName = "Alice Archer", address = "1 Main St", phone = "555-0101"))
         val id = fx.addGroup("admin-a", *names.toTypedArray(), state = state)
+        fx.deliveryInfos.save(id.toLong(), Username.parse("bob"), DeliveryInfo("Bob Builder", "bob@example.com", "555-0102", "2 Side St", "Leave at the back door"))
+        fx.deliveryInfos.save(id.toLong(), Username.parse("alice"), DeliveryInfo(fullName = "Alice Archer", address = "1 Main St", phone = "555-0101"))
         if (state == "active" || state == "archived") fx.assign(id, "alice" to "bob", "bob" to "carol", "carol" to "dave", "dave" to "alice")
         return id
     }
@@ -88,7 +88,7 @@ class GiftVisibilityRoutesTest {
     fun theDetailsAreLive() = testApplication {
         startApp()
         val id = world("active")
-        fx.users.updateProfile(Username.parse("bob"), Profile(fullName = "Bob Builder", address = "99 New Road"))
+        fx.deliveryInfos.save(id.toLong(), Username.parse("bob"), DeliveryInfo(fullName = "Bob Builder", address = "99 New Road"))
 
         val receiver = Json.decodeFromString<ReceiverDto>(client.getAs(ApiRoutes.groupReceiver(id.toLong()), fx.token("alice")).bodyAsText())
 

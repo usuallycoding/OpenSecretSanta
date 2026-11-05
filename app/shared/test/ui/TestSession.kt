@@ -59,8 +59,9 @@ class ScriptedServer {
     var groupsAnswer: Pair<HttpStatusCode, String> = HttpStatusCode.OK to "[]"
     var groupAnswer: (Long) -> Pair<HttpStatusCode, String> =
         { HttpStatusCode.NotFound to """{"code":"not_found","message":"Group not found."}""" }
-    var profileAnswer: Pair<HttpStatusCode, String> =
-        HttpStatusCode.OK to """{"username":"alice","isAdmin":false,"mustChangePassword":false}"""
+    /** What the person told the group, as `GET /groups/{id}/delivery-info` answers, and how a `PUT` there is answered. */
+    var deliveryInfoBody: String = "{}"
+    var deliveryInfoAnswer: Pair<HttpStatusCode, String>? = null
     /** The person's own wishlist as the server keeps it: it really adds, edits, deletes and reorders. */
     val wishlist = FakeWishlist()
 
@@ -104,15 +105,17 @@ class ScriptedServer {
         when (request.url.encodedPath) {
             ApiRoutes.LOGIN -> json(loginAnswer.first, loginAnswer.second.first, loginAnswer.second.second)
             ApiRoutes.ME_PASSWORD -> json(passwordAnswer.first, passwordAnswer.second)
-            ApiRoutes.ME ->
-                if (request.method == HttpMethod.Put) {
-                    json(profileAnswer.first, profileAnswer.second)
-                } else {
-                    json(HttpStatusCode.OK, accountBody(request.headers[HttpHeaders.Authorization]?.removePrefix("Bearer ")))
-                }
+            ApiRoutes.ME -> json(HttpStatusCode.OK, accountBody(request.headers[HttpHeaders.Authorization]?.removePrefix("Bearer ")))
             ApiRoutes.GROUPS -> json(groupsAnswer.first, groupsAnswer.second)
             else -> {
                 val path = request.url.encodedPath
+                if (path.endsWith("/delivery-info")) {
+                    return@MockEngine if (request.method == HttpMethod.Put) {
+                        deliveryInfoAnswer?.let { json(it.first, it.second) } ?: json(HttpStatusCode.OK, bodies.last())
+                    } else {
+                        json(HttpStatusCode.OK, deliveryInfoBody)
+                    }
+                }
                 adminUsers.answer(request.method.value, path)?.let { return@MockEngine json(it.first, it.second) }
                 oversight.answer(request.method.value, path)?.let { return@MockEngine json(it.first, it.second) }
                 adminGroups.confirmed = request.url.parameters["confirm"] == "true"
@@ -523,11 +526,6 @@ class FakeAdminGroups {
 class FakeAdminUsers(val me: String = "admin") {
     class Row(
         val username: String,
-        var fullName: String? = null,
-        var email: String? = null,
-        var phone: String? = null,
-        var address: String? = null,
-        var deliveryInfo: String? = null,
         var mustChange: Boolean = false,
         var temporary: String? = null,
         /** The server would accept deleting this user: one the administrator created that is in no group. */
@@ -543,15 +541,15 @@ class FakeAdminUsers(val me: String = "admin") {
     fun row(username: String): Row = rows.first { it.username == username }
 
     /** A user the administrator manages; one who still has to change a temporary password has [temporary]. */
-    fun add(username: String, fullName: String? = null, temporary: String? = null): Row =
-        Row(username, fullName = fullName, mustChange = temporary != null, temporary = temporary).also {
+    fun add(username: String, temporary: String? = null): Row =
+        Row(username, mustChange = temporary != null, temporary = temporary).also {
             rows += it
             managed += username
         }
 
     /** A user the administrator created who is in no group, so the administrator may delete them. */
-    fun addUnassigned(username: String, fullName: String? = null): Row =
-        add(username, fullName).also { it.deletable = true }
+    fun addUnassigned(username: String): Row =
+        add(username).also { it.deletable = true }
 
     /** The user joined a group behind the screen's back: still managed, no longer deletable. */
     fun joinsAGroup(username: String) {
@@ -578,7 +576,7 @@ class FakeAdminUsers(val me: String = "admin") {
     }
 
     private fun dto(row: Row) = ManagedUserDto(
-        AccountDto(row.username, row.fullName, row.email, row.phone, row.address, row.deliveryInfo, row.username == me, row.mustChange),
+        AccountDto(row.username, row.username == me, row.mustChange),
         row.temporary,
         row.deletable,
     )

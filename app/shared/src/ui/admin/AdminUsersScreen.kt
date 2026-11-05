@@ -106,7 +106,6 @@ private fun UserCard(user: ManagedUser, onClick: () -> Unit, onDelete: (() -> Un
                         Text(Strings.USER_MUST_CHANGE, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                     }
                 }
-                user.fullName?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                 if (user.canDelete) {
                     Text(Strings.USER_NOT_IN_GROUP, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }

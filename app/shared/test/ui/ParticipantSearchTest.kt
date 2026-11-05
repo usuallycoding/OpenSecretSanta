@@ -90,17 +90,17 @@ class ParticipantSearchTest {
     }
 
     private val managed = listOf(
-        ManagedUser("alice", "Alice Smith", null, null, null, null, mustChangePassword = false, temporaryPassword = null),
-        ManagedUser("bob", "Bob Brown", null, null, null, null, mustChangePassword = false, temporaryPassword = null),
-        ManagedUser("erin", null, null, null, null, null, mustChangePassword = true, temporaryPassword = "T", canDelete = true),
+        ManagedUser("alice", mustChangePassword = false, temporaryPassword = null),
+        ManagedUser("bob.brown", mustChangePassword = false, temporaryPassword = null),
+        ManagedUser("erin", mustChangePassword = true, temporaryPassword = "T", canDelete = true),
     )
 
     @Test
-    fun usersAreFoundByUsernameOrFullNameWordsInAnyOrder() {
+    fun usersAreFoundByUsernameWordsInAnyOrder() {
         assertEquals(listOf("alice"), filterUsers(managed, "ali").map { it.username })
-        assertEquals(listOf("bob"), filterUsers(managed, "brown").map { it.username })
-        assertEquals(listOf("bob"), filterUsers(managed, "brown bob").map { it.username })
+        assertEquals(listOf("bob.brown"), filterUsers(managed, "brown").map { it.username })
+        assertEquals(listOf("bob.brown"), filterUsers(managed, "brown bob").map { it.username })
         assertEquals(emptyList(), filterUsers(managed, "zzz").map { it.username })
-        assertEquals(listOf("alice", "bob", "erin"), filterUsers(managed, " ").map { it.username })
+        assertEquals(listOf("alice", "bob.brown", "erin"), filterUsers(managed, " ").map { it.username })
     }
 }

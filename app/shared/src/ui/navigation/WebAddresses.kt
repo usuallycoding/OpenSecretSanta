@@ -6,7 +6,7 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.toRoute
 
 /**
- * The readable addresses of the web app, the part after the `#`: `#/groups/2`, `#/profile`,
+ * The readable addresses of the web app, the part after the `#`: `#/groups/2`, `#/groups/2/delivery-info`,
  * `#/admin/users/alice`. Pure, so that the mapping can be tested without a browser.
  */
 object WebAddresses {
@@ -18,7 +18,7 @@ object WebAddresses {
         is GroupRoute -> "#/groups/${route.id}"
         is GifterRoute -> "#/groups/${route.groupId}/gifter" + tabSuffix(route.questions)
         is ReceiverRoute -> "#/groups/${route.groupId}/receiver" + tabSuffix(route.questions)
-        ProfileRoute -> "#/profile"
+        is DeliveryInfoRoute -> "#/groups/${route.groupId}/delivery-info"
         SettingsRoute -> "#/settings"
         AdminGroupsRoute -> "#/admin/groups"
         AdminGroupNewRoute -> "#/admin/groups/new"
@@ -40,7 +40,6 @@ object WebAddresses {
         val parts = fragment.removePrefix("#").split('/').filter { it.isNotEmpty() }
         return when (parts.firstOrNull()) {
             "groups" -> groupRoute(parts.drop(1))
-            "profile" -> if (parts.size == 1) ProfileRoute else null
             "settings" -> if (parts.size == 1) SettingsRoute else null
             "admin" -> if (isAdmin) adminRoute(parts.drop(1)) else null
             else -> null
@@ -56,6 +55,7 @@ object WebAddresses {
             listOf("gifter", "questions") -> GifterRoute(id, questions = true)
             listOf("receiver") -> ReceiverRoute(id)
             listOf("receiver", "questions") -> ReceiverRoute(id, questions = true)
+            listOf("delivery-info") -> DeliveryInfoRoute(id)
             else -> null
         }
     }
@@ -90,7 +90,7 @@ object WebAddresses {
             d.hasRoute<GroupRoute>() -> entry.toRoute<GroupRoute>()
             d.hasRoute<GifterRoute>() -> entry.toRoute<GifterRoute>()
             d.hasRoute<ReceiverRoute>() -> entry.toRoute<ReceiverRoute>()
-            d.hasRoute<ProfileRoute>() -> ProfileRoute
+            d.hasRoute<DeliveryInfoRoute>() -> entry.toRoute<DeliveryInfoRoute>()
             d.hasRoute<SettingsRoute>() -> SettingsRoute
             d.hasRoute<AdminGroupsRoute>() -> AdminGroupsRoute
             d.hasRoute<AdminGroupNewRoute>() -> AdminGroupNewRoute

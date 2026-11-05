@@ -3,7 +3,7 @@ package com.usuallycoding.opensecretsanta.domain
 import com.usuallycoding.opensecretsanta.domain.admin.AccessPolicy
 import com.usuallycoding.opensecretsanta.domain.admin.GroupMembershipRepository
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
-import com.usuallycoding.opensecretsanta.domain.user.Profile
+import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfo
 import com.usuallycoding.opensecretsanta.domain.user.Username
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,7 +12,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class ProfileTest {
+class DeliveryInfoTest {
 
     private fun profile(
         fullName: String? = null,
@@ -20,12 +20,12 @@ class ProfileTest {
         phone: String? = null,
         address: String? = null,
         deliveryInfo: String? = null,
-    ) = Profile.of(fullName, email, phone, address, deliveryInfo)
+    ) = DeliveryInfo.of(fullName, email, phone, address, deliveryInfo)
 
     @Test
     fun blankValuesBecomeNull() {
         val result = profile(fullName = "   ", email = "", phone = null, address = "\n", deliveryInfo = " ")
-        assertEquals(Profile.EMPTY, result)
+        assertEquals(DeliveryInfo.EMPTY, result)
     }
 
     @Test

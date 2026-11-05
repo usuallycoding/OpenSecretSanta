@@ -36,10 +36,11 @@ import org.koin.core.parameter.parametersOf
 @Composable
 fun GroupPage(
     viewModel: GroupDetailViewModel,
+    me: String,
     onBack: () -> Unit,
     onOpenGifter: (questions: Boolean) -> Unit,
     onOpenReceiver: (questions: Boolean) -> Unit,
-    onEditProfile: () -> Unit,
+    onEditDeliveryInfo: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
@@ -68,7 +69,8 @@ fun GroupPage(
             }
         }
     }
-    sheet?.let { PairSheets(it, viewModel.groupId, pair, onDismiss = { sheet = null }, onEditProfile = onEditProfile) }
+    val editable = state.value?.phase.let { it == GroupPhase.Pending || it == GroupPhase.Active }
+    sheet?.let { PairSheets(it, viewModel.groupId, me, pair, editable, onDismiss = { sheet = null }, onEditDeliveryInfo = onEditDeliveryInfo) }
 }
 
 /** What a screen of a group says when the server answers that the group does not exist (any more, for this person). */

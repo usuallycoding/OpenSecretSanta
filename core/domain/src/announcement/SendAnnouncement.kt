@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.domain.announcement
 
+import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfoRepository
 import com.usuallycoding.opensecretsanta.domain.email.EmailMessage
 import com.usuallycoding.opensecretsanta.domain.email.EmailSummary
 import com.usuallycoding.opensecretsanta.domain.email.Mailer
@@ -11,7 +12,6 @@ import com.usuallycoding.opensecretsanta.domain.group.OwnedGroupLoader
 import com.usuallycoding.opensecretsanta.domain.notification.Notifier
 import com.usuallycoding.opensecretsanta.domain.notification.PushPlan
 import com.usuallycoding.opensecretsanta.domain.user.User
-import com.usuallycoding.opensecretsanta.domain.user.UserRepository
 import com.usuallycoding.opensecretsanta.domain.user.Username
 
 /** Which ways of reaching people this server has been set up for. */
@@ -30,7 +30,7 @@ class AnnouncementOutcome(val emails: EmailSummary?, val pushPlan: PushPlan?)
  */
 class SendAnnouncement(
     private val loadOwned: OwnedGroupLoader,
-    private val users: UserRepository,
+    private val deliveryInfos: DeliveryInfoRepository,
     private val mailer: Mailer,
     private val notifier: Notifier,
     private val appUrl: String? = null,
@@ -69,15 +69,15 @@ class SendAnnouncement(
         title: String,
         body: String,
     ): EmailSummary {
-        val accounts = try {
-            users.findAll(participants).associateBy { it.username }
+        val infos = try {
+            deliveryInfos.findAll(groupId, participants)
         } catch (_: Exception) {
             return EmailSummary(sent = 0, failed = participants.size, noAddress = 0)
         }
         var noAddress = 0
         val messages = ArrayList<EmailMessage>()
         for (participant in participants) {
-            val address = accounts[participant]?.profile?.email
+            val address = infos[participant]?.email
             if (address == null) noAddress++ else messages += announcementEmail(address, participant, groupId, details, title, body, appUrl)
         }
         val results = try {

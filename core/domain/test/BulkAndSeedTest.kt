@@ -30,12 +30,6 @@ class CreateMissingUsersTest {
     }
 
     @Test
-    fun newUsersHaveOnlyAUsername() {
-        create(listOf("bob"))
-        assertEquals(com.usuallycoding.opensecretsanta.domain.user.Profile.EMPTY, users.find(u("bob"))!!.profile)
-    }
-
-    @Test
     fun invalidEntryCreatesNothing() {
         assertFailsWith<DomainException.ValidationFailed> { create(listOf("bob", "carol", "no")) }
         assertEquals(0, users.count())

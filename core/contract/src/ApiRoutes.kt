@@ -33,6 +33,7 @@ object ApiRoutes {
     const val GROUPS = "/groups"
     const val GROUP = "/groups/{id}"
 
+    const val GROUP_DELIVERY_INFO = "/groups/{id}/delivery-info"
     const val GROUP_RECEIVER = "/groups/{id}/receiver"
     const val GROUP_SANTA = "/groups/{id}/santa"
     const val GROUP_RECEIVER_QUESTIONS = "/groups/{id}/receiver/questions"
@@ -51,6 +52,7 @@ object ApiRoutes {
     fun groupWishlistOrder(id: Long) = "$GROUPS/$id/wishlist/order"
     fun groupReceiverWishlist(id: Long) = "$GROUPS/$id/receiver/wishlist"
 
+    fun groupDeliveryInfo(id: Long) = "$GROUPS/$id/delivery-info"
     fun groupReceiver(id: Long) = "$GROUPS/$id/receiver"
     fun groupSanta(id: Long) = "$GROUPS/$id/santa"
     fun groupReceiverQuestions(id: Long) = "$GROUPS/$id/receiver/questions"

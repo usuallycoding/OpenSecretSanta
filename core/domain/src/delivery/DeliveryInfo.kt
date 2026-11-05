@@ -1,9 +1,9 @@
-package com.usuallycoding.opensecretsanta.domain.user
+package com.usuallycoding.opensecretsanta.domain.delivery
 
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 
-/** The user-editable part of an account; every field is optional. */
-data class Profile(
+/** What a participant tells one group about where and how a gift can reach them; every field is optional. */
+data class DeliveryInfo(
     val fullName: String? = null,
     val email: String? = null,
     val phone: String? = null,
@@ -17,21 +17,21 @@ data class Profile(
         const val MAX_LENGTH = 500
         private val EMAIL = Regex("[^@\\s]+@[^@\\s]+\\.[^@\\s]+")
 
-        val EMPTY = Profile()
+        val EMPTY = DeliveryInfo()
 
-        /** Builds a profile from raw input: trims text, turns blanks into null and validates. */
+        /** Builds delivery info from raw input: trims text, turns blanks into null and validates. */
         fun of(
             fullName: String?,
             email: String?,
             phone: String?,
             address: String?,
             deliveryInfo: String?,
-        ): Profile {
+        ): DeliveryInfo {
             val cleanEmail = clean("email", email)
             if (cleanEmail != null && !EMAIL.matches(cleanEmail)) {
                 throw DomainException.ValidationFailed("email", "Email is not a valid address.")
             }
-            return Profile(
+            return DeliveryInfo(
                 fullName = clean("fullName", fullName),
                 email = cleanEmail,
                 phone = clean("phone", phone),

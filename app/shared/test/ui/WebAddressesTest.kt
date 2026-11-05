@@ -13,7 +13,7 @@ class WebAddressesTest {
         ReceiverRoute(2) to "#/groups/2/receiver",
         GifterRoute(2, questions = true) to "#/groups/2/gifter/questions",
         ReceiverRoute(2, questions = true) to "#/groups/2/receiver/questions",
-        ProfileRoute to "#/profile",
+        DeliveryInfoRoute(2) to "#/groups/2/delivery-info",
         SettingsRoute to "#/settings",
         AdminGroupsRoute to "#/admin/groups",
         AdminGroupNewRoute to "#/admin/groups/new",
@@ -34,7 +34,8 @@ class WebAddressesTest {
     @Test
     fun aTrailingSlashAndAMissingHashAreTolerated() {
         assertEquals(GroupRoute(2), WebAddresses.routeOf("#/groups/2/", false))
-        assertEquals(ProfileRoute, WebAddresses.routeOf("/profile", false))
+        assertEquals(DeliveryInfoRoute(2), WebAddresses.routeOf("/groups/2/delivery-info/", false))
+        assertNull(WebAddresses.routeOf("#/profile", false)) // the Profile tab is gone, so its address names no screen
     }
 
     @Test

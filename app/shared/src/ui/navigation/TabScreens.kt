@@ -11,7 +11,7 @@ import androidx.navigation.NavGraph
  */
 object TabScreens {
     fun isTab(route: Any): Boolean = when (route) {
-        GroupsRoute, ProfileRoute, SettingsRoute, AdminGroupsRoute, AdminUsersRoute -> true
+        GroupsRoute, SettingsRoute, AdminGroupsRoute, AdminUsersRoute -> true
         else -> false
     }
 
