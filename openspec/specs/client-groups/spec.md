@@ -79,11 +79,11 @@ While a groups screen loads, the app SHALL show a progress indicator. When the s
 - **THEN** the app handles it as for any request: the sign-in screen is shown with the note that the person was signed out
 
 ### Requirement: Group page
-Choosing a group SHALL open its page, loaded with `GET /groups/{id}`, showing its name on one row with an ellipsis when it is longer, then its state and state note, description, date, time and location, then the pair rows of `client-group-pages`, and at the end every participant's username as a chip, with the person's own chip highlighted. Parts the group does not have SHALL be left out.
+Choosing a group SHALL open its page, loaded with `GET /groups/{id}`, showing its name on one row with an ellipsis when it is longer, then its state and state note, description, date, time and location, then the two cards of `client-group-pages`, and at the end every participant's username as a chip, with the person's own chip highlighted. Parts the group does not have SHALL be left out.
 
 #### Scenario: Opening a group
 - **WHEN** the person chooses a group in the list
-- **THEN** the page shows its details, the pair rows and, at the end, a chip for every participant's username with their own highlighted
+- **THEN** the page shows its details, the two cards and, at the end, a chip for every participant's username with their own highlighted
 
 #### Scenario: Back to the list
 - **WHEN** the person goes back from the group page
@@ -99,7 +99,7 @@ Choosing a group SHALL open its page, loaded with `GET /groups/{id}`, showing it
 
 #### Scenario: Few participants
 - **WHEN** the group has four participants on a tall screen
-- **THEN** the chips follow the pair rows directly, with no empty box below them
+- **THEN** the chips follow the cards directly, with no empty box below them
 
 #### Scenario: A long name
 - **WHEN** the group's name is longer than one row and the person chooses it
@@ -110,7 +110,7 @@ Choosing a group SHALL open its page, loaded with `GET /groups/{id}`, showing it
 - **THEN** her chip is highlighted and has no "you" text, and the other chips are not highlighted
 
 ### Requirement: Group information is shown in a card
-On the group page the group's date and time, location and budget SHALL be shown together in one card, in that order, below the name, the state with its note and the description and above the pair rows. Parts the group does not have SHALL be left out, and a group with none of them SHALL show no card.
+On the group page the group's date and time, location and budget SHALL be shown together in one card, in that order, below the name, the state with its note and the description and above the Secret Santa card. Parts the group does not have SHALL be left out, and a group with none of them SHALL show no card.
 
 #### Scenario: All three present
 - **WHEN** a group has a description, the date `2026-12-24`, the time `18:30`, the location "Grandma's house" and the budget 100 in `RON`
@@ -140,11 +140,11 @@ In the card the date and time SHALL be on a line that starts with a calendar ico
 - **THEN** it reads the lines as "When? - " and "Where? - " followed by their values, and the icons announce nothing of their own
 
 ### Requirement: Only the information is in the card
-The name, the state and its note, the description, the pair rows and the participant chips SHALL NOT be in the card.
+The name, the state and its note, the description, the Secret Santa and Your stuff cards and the participant chips SHALL NOT be in the card.
 
 #### Scenario: Name and state stay outside
 - **WHEN** a group page is shown
-- **THEN** the name, the state and its note and the description are above the card and the pair rows and chips are below it, none of them inside it
+- **THEN** the name, the state and its note and the description are above the card and the two cards and the chips are below it, none of them inside it
 
 ### Requirement: A cut group name opens in full
 Choosing a name that was cut SHALL open a dialog with the whole name and the copy icon.
@@ -154,7 +154,7 @@ Choosing a name that was cut SHALL open a dialog with the whole name and the cop
 - **THEN** a dialog shows the whole name with the copy icon
 
 ### Requirement: The chips are part of the page
-The chips SHALL be part of the page itself, not in a box of their own: they wrap onto as many lines as needed, and the whole page (details, pair rows and chips) scrolls together and is refreshed by pulling it where the platform has the gesture.
+The chips SHALL be part of the page itself, not in a box of their own: they wrap onto as many lines as needed, and the whole page (details, cards and chips) scrolls together and is refreshed by pulling it where the platform has the gesture.
 
 #### Scenario: One scroll
 - **WHEN** a group has more participants than fit on the screen

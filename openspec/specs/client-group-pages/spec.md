@@ -1,38 +1,15 @@
 # client-group-pages Specification
 
 ## Purpose
-What a participant sees of a group they are in: the pair rows, the sheets with their own and their receiver's details, and the Gifter and Receiver pages with their wishlists and questions.
+What a participant sees of a group they are in: the two cards, the sheets with their own and their receiver's details, and the Gifter and Receiver pages with their wishlists and questions.
 
 ## Requirements
 
-### Requirement: Pair rows
-Below the group's details the group page SHALL show, while the group is Pending, one row with the person's own username and a gift icon that opens the Receiver page; and, once the group is Active or Archived, two rows: `my username -> receiver's username`, whose pair link opens the Gifter page, and `Secret Santa -> my username`, whose pair link opens the Receiver page. A Draft group SHALL show no rows.
-
-#### Scenario: Pending
-- **WHEN** the group is Pending
-- **THEN** one row shows the person's own username with a gift icon, and no row names a receiver or a Santa
-
-#### Scenario: Active or Archived
-- **WHEN** the group is Active or Archived
-- **THEN** two rows are shown, each with a pair link between its names: `alice` and `bob`, and `Secret Santa` and `alice`, for the person `alice` whose receiver is `bob`
-
-#### Scenario: Receiver cannot be loaded
-- **WHEN** the receiver request fails in an Active group
-- **THEN** the first row says so and offers "Try again", and the rest of the page is unchanged
-
-#### Scenario: The arrows
-- **WHEN** the person chooses the pair link of the first row, and then of the second
-- **THEN** the Gifter page opens, and the Receiver page opens
-
-#### Scenario: Alignment
-- **WHEN** the group is Active
-- **THEN** in both rows the name before the pair link is at the start of the row and the name after it is at the end of the row
-
 ### Requirement: User details sheets
-Choosing the person's own username SHALL open a bottom sheet with their own details (username and the profile fields they have set), and choosing the receiver's username SHALL open a bottom sheet loaded with `GET /groups/{id}/receiver` showing the receiver's username and, for each of full name, email, address, phone and delivery information that they have set, its value, leaving out what is not set and saying that the receiver has not added postal details yet when none is.
+The "Delivery Info" button of the "Your stuff" card SHALL open a bottom sheet with the person's own details (username and the profile fields they have set), and that of the "Secret Santa" card one loaded with `GET /groups/{id}/receiver` showing the receiver's username and, for each of full name, email, address, phone and delivery information that they have set, its value, leaving out what is not set and saying that the receiver has not added postal details yet when none is.
 
 #### Scenario: My details
-- **WHEN** the person chooses their own username
+- **WHEN** the person chooses "Delivery Info" in the "Your stuff" card
 - **THEN** a sheet shows their username and the profile fields they have set
 
 #### Scenario: Receiver's details
@@ -53,10 +30,10 @@ Choosing the person's own username SHALL open a bottom sheet with their own deta
 
 #### Scenario: Santa hidden before archiving
 - **WHEN** the group is Active
-- **THEN** "Secret Santa" cannot be chosen and nothing shows who the Santa is
+- **THEN** nothing offers to reveal the Santa and nothing shows who the Santa is
 
 #### Scenario: Santa revealed after archiving
-- **WHEN** the group is Archived and the person chooses "Secret Santa"
+- **WHEN** the group is Archived and the person chooses "Reveal Santa"
 - **THEN** a sheet shows the Santa's username and full name
 
 #### Scenario: Revealed too early
@@ -68,7 +45,7 @@ Choosing the person's own username SHALL open a bottom sheet with their own deta
 - **THEN** the sheet says the group is no longer available and offers to close
 
 ### Requirement: Receiver page
-The Receiver page, the one for the relationship in which the person receives, SHALL open from the gift icon while the group is Pending and from the second row's pair link once it is Active or Archived. Nothing on the page SHALL identify the Santa.
+The Receiver page, the one for the relationship in which the person receives, SHALL open from the "Edit Wishlist" button of the "Your stuff" card, and from its "Respond to Santa" button once the group is Active or Archived. Nothing on the page SHALL identify the Santa.
 
 #### Scenario: Items in order
 - **WHEN** the person has three items
@@ -107,7 +84,7 @@ The Receiver page, the one for the relationship in which the person receives, SH
 - **THEN** the "Respond to Secret Santa" tab is shown and the tab row marks it
 
 ### Requirement: Gifter page
-The Gifter page, the one for the relationship in which the person gives, SHALL open from the first row's pair link once the group is Active or Archived and SHALL be titled "Giving to <receiver username>". Nothing the person does on the page SHALL be visible to the receiver.
+The Gifter page, the one for the relationship in which the person gives, SHALL open from the "See Wishlist" and "Ask Questions" buttons of the "Secret Santa" card once the group is Active or Archived and SHALL be titled "Giving to <receiver username>". Nothing the person does on the page SHALL be visible to the receiver.
 
 #### Scenario: Receiver's items
 - **WHEN** the person opens the page and the receiver has two items
@@ -183,26 +160,23 @@ Each tab of the Gifter and Receiver pages SHALL load on its own, show that it is
 - **WHEN** the person swipes to a tab they have not looked at for a while
 - **THEN** its content reloads without clearing what it showed
 
-### Requirement: Pair row layout
-In each of those rows the name before the pair link SHALL start at the start of the row and the name after it SHALL end at the end of the row, and the pair link SHALL be the control described by `client-pair-link`.
-
-#### Scenario: Control between the names
-- **WHEN** the two rows of an Active group are shown
-- **THEN** each has the pair-link control between its two names, the first name at the start of the row and the last at its end
-
 ### Requirement: The receiver's username comes from the server
-The receiver's username SHALL come from `GET /groups/{id}/receiver`; while it loads the row SHALL show that, and when it fails the row SHALL say so with "Try again" and the rest of the page SHALL stay.
+The receiver's username SHALL come from `GET /groups/{id}/receiver`; while it loads the "Secret Santa" card SHALL show that, and when it fails the card SHALL say so with "Try again" and the rest of the page SHALL stay.
 
 #### Scenario: Loading state
 - **WHEN** the receiver request is still running
-- **THEN** the row shows that it is loading and the rest of the page is shown
+- **THEN** the card shows that it is loading and the rest of the page is shown
 
 ### Requirement: The Santa stays hidden until the group is archived
-"Secret Santa" SHALL NOT be tappable while the group is Pending or Active and nothing on the page SHALL identify the Santa then; once the group is Archived, choosing it SHALL open a bottom sheet loaded with `GET /groups/{id}/santa` showing the Santa's username and full name when it has one.
+While the group is Pending or Active nothing on the page SHALL identify the Santa or offer to. Once it is Archived the "Your stuff" card SHALL have a "Reveal Santa" button that opens a bottom sheet loaded with `GET /groups/{id}/santa` showing the Santa's username and full name when it has one.
 
 #### Scenario: Row does nothing
-- **WHEN** the group is Active and the person chooses "Secret Santa"
-- **THEN** nothing opens and no name is shown
+- **WHEN** the group is Active
+- **THEN** the "Your stuff" card has no "Reveal Santa" button and no name is shown
+
+#### Scenario: Archived
+- **WHEN** the group is Archived and the person chooses "Reveal Santa"
+- **THEN** a sheet shows the Santa's username and full name
 
 ### Requirement: The sheets are not screens
 The sheets SHALL be part of the group page, not screens, so the web address stays on the page while one is open.
@@ -266,3 +240,77 @@ Pulling a tab down (on Android and iOS) SHALL reload that tab, and returning to 
 #### Scenario: Returning to the app
 - **WHEN** a person returns to the app with a tab showing
 - **THEN** that tab reloads what it shows
+
+### Requirement: The Secret Santa card
+Below the group's information the group page SHALL show a card headed "You're Secret Santa for:" with, on the next row in a bold title font, "TBD" while the group is Pending and the receiver's username in capital letters once it is Active or Archived, and under it the line "Shh... Keep it a secret!" in italics. From Active on it SHALL have the buttons "See Wishlist" and "Ask Questions" on one row and, last, a "Delivery Info" button on its own row. While Pending it SHALL have no button.
+
+#### Scenario: Pending
+- **WHEN** the group is Pending
+- **THEN** the card shows the heading and "TBD" and no button
+
+#### Scenario: The secret line
+- **WHEN** the card is shown in a Pending, an Active or an Archived group
+- **THEN** the line "Shh... Keep it a secret!" is under "TBD" or the name, in italics
+
+#### Scenario: Active
+- **WHEN** the group is Active and the person's receiver is `bob`
+- **THEN** the card shows the heading, "BOB", the line "Shh... Keep it a secret!", the buttons "See Wishlist" and "Ask Questions" and, last, a "Delivery Info" button
+
+#### Scenario: Archived
+- **WHEN** the group is Archived
+- **THEN** the card is shown as for an Active group, and the pages it opens are read-only as before
+
+#### Scenario: The name as it is
+- **WHEN** a screen reader reads the card for the receiver `bob`
+- **THEN** it reads "bob", not a spelled-out capital, and the sheet shows `bob` as written
+
+#### Scenario: Delivery Info
+- **WHEN** the person chooses "Delivery Info"
+- **THEN** the receiver's details sheet opens
+
+#### Scenario: See Wishlist
+- **WHEN** the person chooses "See Wishlist"
+- **THEN** the Gifter page opens on its wishlist tab
+
+#### Scenario: Ask Questions
+- **WHEN** the person chooses "Ask Questions"
+- **THEN** the Gifter page opens on its questions tab
+
+#### Scenario: Receiver not known
+- **WHEN** the receiver request has not finished or has failed
+- **THEN** the name reads "..." and the three buttons are disabled, and a failure shows its message with "Try again"
+
+### Requirement: The Your stuff card
+Below the Secret Santa card the group page SHALL show a card headed "Your stuff:", the line "Tell your santa what you want and let them know you!" in italics under it, "Edit Wishlist" and, once the group is Active or Archived, "Respond to Santa" on one row and, last, a "Delivery Info" button on its own row. In an Archived group it SHALL also have, above that, the "Reveal Santa" button of `The Santa stays hidden until the group is archived`.
+
+#### Scenario: The encouraging line
+- **WHEN** the card is shown in a Pending, an Active or an Archived group
+- **THEN** the line "Tell your santa what you want and let them know you!" is under "Your stuff:", in italics
+
+#### Scenario: Pending
+- **WHEN** the group is Pending
+- **THEN** the card has "Delivery Info" and "Edit Wishlist" and no "Respond to Santa"
+
+#### Scenario: Active
+- **WHEN** the group is Active
+- **THEN** the card has "Delivery Info", "Edit Wishlist" and "Respond to Santa" and no "Reveal Santa"
+
+#### Scenario: Archived
+- **WHEN** the group is Archived
+- **THEN** the card has "Delivery Info", "Edit Wishlist", "Respond to Santa" and "Reveal Santa"
+
+#### Scenario: Delivery Info
+- **WHEN** the person chooses "Delivery Info"
+- **THEN** a sheet shows their own username and the profile fields they have set
+
+#### Scenario: Edit Wishlist
+- **WHEN** the person chooses "Edit Wishlist"
+- **THEN** the Receiver page opens on their wishlist tab
+
+#### Scenario: Respond to Santa
+- **WHEN** the person chooses "Respond to Santa" in an Active group
+- **THEN** the Receiver page opens on its "Respond to Secret Santa" tab
+
+#### Scenario: Group phase not known
+- **WHEN** the group has not loaded
+- **THEN** neither card is shown

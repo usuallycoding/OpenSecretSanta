@@ -36,29 +36,29 @@ The whole pair link SHALL be a touch target at least 48 density-independent pixe
 - **THEN** it shows the press, and what it opens opens when the press ends on it
 
 ### Requirement: Announced once
-A screen reader SHALL announce a pair link as a single button with a label that says what it opens, and SHALL NOT announce its icons separately. The label SHALL be the one the place already had for its arrow: "Gifter" for the first row of a participant's group page, "Receiver" for the second, and "<santa> gives to <receiver>" for a row of an administrator's pair list.
+A screen reader SHALL announce a pair link as a single button with a label that says what it opens, and SHALL NOT announce its icons separately. The label SHALL be "<santa> gives to <receiver>" for a row of an administrator's pair list.
 
 #### Scenario: One announcement
-- **WHEN** a screen reader reaches a pair link in a participant's first row
-- **THEN** it announces one button, "Gifter", and not an arrow, a gift and an arrow
+- **WHEN** a screen reader reaches a pair link
+- **THEN** it announces one button, and not an arrow, a gift and an arrow
 
 #### Scenario: Admin row
 - **WHEN** a screen reader reaches the pair link in the row `alice -> bob` of an administrator's list
 - **THEN** it announces one button, "alice gives to bob"
 
 ### Requirement: Where the pair link is used
-The pair link SHALL replace the arrow in the participant's two rows on a group page and in every row of an administrator's pair list, and SHALL be the same control in all three. It SHALL NOT be used elsewhere: the gift icon alone in a participant's Pending row and the gift icon beside each participant in an administrator's list SHALL stay as they are.
+The pair link SHALL be in every row of an administrator's pair list. It SHALL NOT be used elsewhere: the participant's group page has no pair link, and the gift icon beside each participant in an administrator's list SHALL stay as it is.
 
 #### Scenario: Participant rows
 - **WHEN** a group is Active or Archived
-- **THEN** both pair rows on the person's group page show a pair link between the two names
+- **THEN** the person's group page shows no pair link
 
 #### Scenario: Administrator's list
 - **WHEN** an administrator opens an Active group with three pairs
 - **THEN** each of the three rows shows a pair link between the Santa and the receiver
 
 #### Scenario: Lone gift icons
-- **WHEN** a group is Pending, and when an administrator reads a Pending group's participants
+- **WHEN** an administrator reads a Pending group's participants
 - **THEN** the gift icons shown there are single icons, not pair links
 
 ### Requirement: Names keep their room
