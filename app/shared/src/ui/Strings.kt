@@ -134,7 +134,17 @@ object Strings {
     const val SAVING = "Saving..."
     const val SAVED = "Saved."
 
-    const val MY_WISHLIST = "My wishlist"
+    const val SECRET_SANTA_FOR = "You're Secret Santa for:"
+    const val TBD = "TBD"
+    const val KEEP_IT_SECRET = "Shh... Keep it a secret!"
+    const val TELL_YOUR_SANTA = "Tell your santa what you want and let them know you!"
+    const val YOUR_STUFF = "Your stuff:"
+    const val DELIVERY_INFO = "Delivery Info"
+    const val SEE_WISHLIST = "See Wishlist"
+    const val ASK_QUESTIONS = "Ask Questions"
+    const val EDIT_WISHLIST = "Edit Wishlist"
+    const val RESPOND_TO_SANTA = "Respond to Santa"
+    const val REVEAL_SANTA = "Reveal Santa"
 
 
     const val RECEIVER_NAME = "Name"
@@ -169,9 +179,6 @@ object Strings {
     const val QUESTION_LABEL = "Question"
     const val ITEM_LABEL = "Item"
     const val DESCRIPTION_LABEL = "Description"
-    const val TITLE_GIFTER = "Gifter"
-    const val TITLE_RECEIVER = "Receiver"
-    const val SECRET_SANTA = "Secret Santa"
     const val TAB_WISHLIST = "Wishlist"
     const val TAB_QUESTIONS = "Questions"
     const val TITLE_RECEIVING = "Receiving from Secret Santa"

@@ -30,16 +30,15 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
 /**
- * One group: its details, the pair rows (who gives to whom, from the person's own side), and at the end everyone who
- * takes part. The rows lead to the Gifter and Receiver pages and to the sheets with a person's details.
+ * One group: its details, the two cards (who the person gives to, and their own things), and at the end everyone who
+ * takes part. The cards lead to the Gifter and Receiver pages and to the sheets with a person's details.
  */
 @Composable
 fun GroupPage(
     viewModel: GroupDetailViewModel,
-    me: String,
     onBack: () -> Unit,
-    onOpenGifter: () -> Unit,
-    onOpenReceiver: () -> Unit,
+    onOpenGifter: (questions: Boolean) -> Unit,
+    onOpenReceiver: (questions: Boolean) -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
@@ -62,7 +61,8 @@ fun GroupPage(
         LoadSection(state, onRetry = { viewModel.refresh() }) { detail ->
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Header(detail)
-                PairRows(detail.phase, me, receiver, onRetry = { pair?.refresh() }, onOpenGifter, onOpenReceiver, onSheet = { sheet = it })
+                SecretSantaCard(detail.phase, receiver, onRetry = { pair?.refresh() }, onOpenGifter, onSheet = { sheet = it })
+                YourStuffCard(detail.phase, onOpenReceiver, onSheet = { sheet = it })
                 Participants(detail.participants)
             }
         }

@@ -33,10 +33,4 @@ class PageTitlesTest {
         assertEquals("Your Wishlist", Strings.TAB_YOUR_WISHLIST)
         assertEquals("Respond to Secret Santa", Strings.TAB_RESPOND)
     }
-
-    @Test
-    fun thePairLinksKeepTheirShortLabels() {
-        assertEquals("Gifter", Strings.TITLE_GIFTER)
-        assertEquals("Receiver", Strings.TITLE_RECEIVER)
-    }
 }

@@ -166,10 +166,9 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                             val groupId = entry.toRoute<GroupRoute>().id
                             GroupPage(
                                 koinViewModel<GroupDetailViewModel>(key = "group-$groupId") { parametersOf(groupId, viewModel.account.username) },
-                                me = viewModel.account.username,
                                 onBack = { navController.popBackStack() },
-                                onOpenGifter = { navController.navigate(GifterRoute(groupId)) },
-                                onOpenReceiver = { navController.navigate(ReceiverRoute(groupId)) },
+                                onOpenGifter = { questions -> navController.navigate(GifterRoute(groupId, questions)) },
+                                onOpenReceiver = { questions -> navController.navigate(ReceiverRoute(groupId, questions)) },
                             )
                         }
                         composable<GifterRoute> { entry ->
