@@ -6,11 +6,11 @@ What a participant sees of a group they are in: the two cards, the sheets with t
 ## Requirements
 
 ### Requirement: User details sheets
-The "Delivery Info" button of the "Your stuff" card SHALL open a bottom sheet with the person's own details (username and the profile fields they have set), and that of the "Secret Santa" card one loaded with `GET /groups/{id}/receiver` showing the receiver's username and, for each of full name, email, address, phone and delivery information that they have set, its value, leaving out what is not set and saying that the receiver has not added postal details yet when none is.
+The "Delivery Info" button of the "Your stuff" card SHALL open a bottom sheet with the person's own details (the username and the delivery info they have set for the group), and that of the "Secret Santa" card one loaded with `GET /groups/{id}/receiver` showing the receiver's username and, for each of full name, email, address, phone and delivery information that they have set, its value, leaving out what is not set and saying that the receiver has not added postal details yet when none is.
 
 #### Scenario: My details
 - **WHEN** the person chooses "Delivery Info" in the "Your stuff" card
-- **THEN** a sheet shows their username and the profile fields they have set
+- **THEN** a sheet shows their username and the delivery info they have set for this group
 
 #### Scenario: Receiver's details
 - **WHEN** the receiver has set a full name and an address but no email, phone or delivery information
@@ -301,7 +301,7 @@ Below the Secret Santa card the group page SHALL show a card headed "Your stuff:
 
 #### Scenario: Delivery Info
 - **WHEN** the person chooses "Delivery Info"
-- **THEN** a sheet shows their own username and the profile fields they have set
+- **THEN** a sheet shows their own username and the delivery info they have set for this group
 
 #### Scenario: Edit Wishlist
 - **WHEN** the person chooses "Edit Wishlist"
@@ -331,20 +331,24 @@ In the two sheets opened by the "Delivery Info" buttons the username SHALL be ce
 - **THEN** it is cut as usual and choosing it opens the dialog with all of it
 
 ### Requirement: Edit Delivery Info
-The sheet of the "Your stuff" card's "Delivery Info" button SHALL end with an "Edit Delivery Info" button, below the details or the note that none are set. Choosing it SHALL close the sheet and open the Profile tab. The receiver's sheet SHALL NOT have this button.
+The sheet of the "Your stuff" card's "Delivery Info" button SHALL end with an "Edit Delivery Info" button, below the details or the note that none are set, while the group is Pending or Active. Choosing it SHALL close the sheet and open the group's Delivery Info page. The receiver's sheet SHALL NOT have this button.
 
 #### Scenario: The button
 - **WHEN** the person's own Delivery Info sheet is shown with their details
 - **THEN** the last thing in the sheet is an "Edit Delivery Info" button
 
 #### Scenario: No profile yet
-- **WHEN** the person has not filled in a profile and opens their own sheet
+- **WHEN** the person has set no delivery info for the group and opens their own sheet
 - **THEN** the sheet says so and still ends with the "Edit Delivery Info" button
 
 #### Scenario: Opening the profile
 - **WHEN** the person chooses "Edit Delivery Info"
-- **THEN** the sheet closes and the Profile tab is shown, as when the Profile tab is chosen in the tab bar
+- **THEN** the sheet closes and the Delivery Info page of that group is shown
 
 #### Scenario: Not on the receiver's sheet
 - **WHEN** the person opens their receiver's Delivery Info sheet
+- **THEN** the sheet has no "Edit Delivery Info" button
+
+#### Scenario: Archived group
+- **WHEN** the person opens their own Delivery Info sheet in an Archived group
 - **THEN** the sheet has no "Edit Delivery Info" button

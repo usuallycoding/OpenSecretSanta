@@ -86,7 +86,7 @@ Each announcement email SHALL have the subject `<title>: <group name>` and greet
 - **THEN** the email has no budget line
 
 ### Requirement: Email recipients
-Each participant whose account has an email address SHALL receive one email addressed only to them. Participants without an address SHALL be counted and SHALL NOT stop the others from being emailed.
+Each participant who has set an email in their delivery info for the group SHALL receive one email addressed only to them. Participants without an address SHALL be counted and SHALL NOT stop the others from being emailed.
 
 #### Scenario: One email each
 - **WHEN** a group of four participants with addresses is announced to

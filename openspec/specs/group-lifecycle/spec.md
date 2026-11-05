@@ -40,7 +40,7 @@ Moving a Draft group to Pending SHALL create an account with a generated tempora
 - **THEN** the group becomes Pending and no account is created
 
 ### Requirement: Pending to Active needs four participants
-Moving a Pending group to Active SHALL be refused unless it has at least 4 participants, because with fewer a participant could work out who their Santa is. Incomplete participant profiles SHALL NOT prevent activation.
+Moving a Pending group to Active SHALL be refused unless it has at least 4 participants, because with fewer a participant could work out who their Santa is. Incomplete participant delivery info SHALL NOT prevent activation.
 
 #### Scenario: Too few participants
 - **WHEN** the owner activates a Pending group with 3 participants
@@ -56,7 +56,7 @@ Moving a Pending group to Active SHALL be refused unless it has at least 4 parti
 
 #### Scenario: Flags in the response
 - **WHEN** a group is activated
-- **THEN** the response shows each participant's profile-complete flag
+- **THEN** the response shows each participant's delivery-info-complete flag
 
 ### Requirement: Activation draws assignments
 Moving a group to Active SHALL create the assignments for all its participants as part of the same step, so that an Active group always has a complete set of assignments.

@@ -138,7 +138,7 @@ The app SHALL offer to sign out from every view after sign-in. Signing out SHALL
 - **THEN** nothing of the previous person's session or screens is shown
 
 ### Requirement: Views by role
-After sign-in the app SHALL show a participant view to everyone and an admin view to administrators only. The participant view SHALL be a Groups tab, a Profile tab and a Settings tab under a top bar; the admin view SHALL be a Groups tab with the administrator's groups, a Users tab and the same Settings tab, under the same top bar.
+After sign-in the app SHALL show a participant view to everyone and an admin view to administrators only. The participant view SHALL be a Groups tab and a Settings tab under a top bar; the admin view SHALL be a Groups tab with the administrator's groups, a Users tab and the same Settings tab, under the same top bar.
 
 #### Scenario: Administrator
 - **WHEN** an administrator signs in
@@ -210,7 +210,7 @@ When the person denies the local-network permission, the app SHALL show a screen
 - **THEN** the app continues to the normal start
 
 ### Requirement: Back navigation
-Moving deeper into the app (for example from the groups list into a group) SHALL be undone by the platform's own way of going back: the system back button or gesture on Android, the edge-swipe gesture on iOS and the browser's back button on the web. Going back from the Groups list SHALL leave the app on Android and do nothing visible on iOS; going back from the Profile tab SHALL first return to the Groups tab.
+Moving deeper into the app (for example from the groups list into a group) SHALL be undone by the platform's own way of going back: the system back button or gesture on Android, the edge-swipe gesture on iOS and the browser's back button on the web. Going back from the Groups list SHALL leave the app on Android and do nothing visible on iOS; going back from the Settings tab SHALL first return to the Groups tab.
 
 #### Scenario: Back from a group
 - **WHEN** the person opens a group and then goes back in the platform's way
@@ -221,14 +221,14 @@ Moving deeper into the app (for example from the groups list into a group) SHALL
 - **THEN** the groups list is shown, the page is not reloaded and the session is kept
 
 #### Scenario: Back from the first screens
-- **WHEN** the person goes back on the Groups list, or on the Profile tab
-- **THEN** on Android the Groups list leaves the app and the Profile tab returns to the Groups tab first
+- **WHEN** the person goes back on the Groups list, or on the Settings tab
+- **THEN** on Android the Groups list leaves the app and the Settings tab returns to the Groups tab first
 
 ### Requirement: Tabs keep their place
 Top-level tabs SHALL keep their own place: switching tabs and returning SHALL show the screen the person had left. A different person signing in afterwards SHALL start on the first screen of their view, not where the previous person was.
 
 #### Scenario: Tabs remember their place
-- **WHEN** the person opens a group, switches to the Profile tab and returns to Groups
+- **WHEN** the person opens a group, switches to the Settings tab and returns to Groups
 - **THEN** the group's detail screen is still shown
 
 #### Scenario: Sign out clears navigation
@@ -255,10 +255,10 @@ Going back with the system back button on Android while a bottom sheet is open S
 - **THEN** the sheet closes and the group detail is still shown
 
 ### Requirement: Forms stay usable with the keyboard open
-A form that has a primary button (Profile, Change password, Sign in, and the group form) SHALL lift its content above the keyboard and SHALL scroll, so that the primary button and the field being edited can be reached while the keyboard is open.
+A form that has a primary button (Delivery info, Change password, Sign in, and the group form) SHALL lift its content above the keyboard and SHALL scroll, so that the primary button and the field being edited can be reached while the keyboard is open.
 
 #### Scenario: Save above the keyboard
-- **WHEN** the person is typing in a field of the Profile tab
+- **WHEN** the person is typing in a field of the Delivery Info page
 - **THEN** the Save button can be scrolled into view above the keyboard
 
 #### Scenario: Small screen
@@ -269,7 +269,7 @@ A form that has a primary button (Profile, Change password, Sign in, and the gro
 A drag by the person that scrolls a form or a bottom sheet SHALL close the keyboard. Scrolling the app does itself to bring a field into view SHALL NOT close it, and a drag that only scrolls the text inside a multi-line field SHALL NOT close it.
 
 #### Scenario: Drag a form
-- **WHEN** the keyboard is open on the Profile tab and the person drags the form
+- **WHEN** the keyboard is open on the Delivery Info page and the person drags the form
 - **THEN** the form scrolls and the keyboard closes
 
 #### Scenario: Field brought into view
@@ -326,7 +326,7 @@ On the web a screen SHALL offer no refresh control, because the browser's own re
 - **THEN** the same screen is shown with current data and the person is still signed in
 
 ### Requirement: Readable web addresses
-In the web app each screen SHALL have a short, readable address after the `#` (for example `#/groups/2` for a group, `#/groups/2/gifter` and `#/groups/2/receiver` for its Gifter and Receiver pages, `#/profile`, `#/settings`, `#/admin/groups/2` and `#/admin/users/alice`), and the address bar SHALL follow the screens as the person moves between them.
+In the web app each screen SHALL have a short, readable address after the `#` (for example `#/groups/2` for a group, `#/groups/2/gifter` and `#/groups/2/receiver` for its Gifter and Receiver pages, `#/groups/2/delivery-info`, `#/settings`, `#/admin/groups/2` and `#/admin/users/alice`), and the address bar SHALL follow the screens as the person moves between them.
 
 #### Scenario: A group
 - **WHEN** a signed-in person opens a group in the web app
@@ -360,8 +360,8 @@ In the web app, opening or refreshing an address, or typing one into the address
 - **THEN** that group's Receiver page is shown
 
 #### Scenario: Typed address
-- **WHEN** a signed-in person types `#/profile` into the address bar
-- **THEN** the Profile tab is shown without reloading the page
+- **WHEN** a signed-in person types `#/settings` into the address bar
+- **THEN** the Settings tab is shown without reloading the page
 
 #### Scenario: Sign in first
 - **WHEN** a signed-out person opens `#/groups/2` and signs in
@@ -380,11 +380,11 @@ In the web app, opening or refreshing an address, or typing one into the address
 - **THEN** the first screen is shown
 
 #### Scenario: Groups tab after refreshing another tab
-- **WHEN** a signed-in person refreshes the page on `#/profile` or `#/settings` and chooses the Groups tab
+- **WHEN** a signed-in person refreshes the page on `#/settings` and chooses the Groups tab
 - **THEN** the groups list is shown and its address is `#/groups`
 
 #### Scenario: Other tabs after a refresh
-- **WHEN** a signed-in person refreshes the page on `#/profile` and chooses the Settings tab, then the Profile tab, then the Groups tab
+- **WHEN** a signed-in person refreshes the page on `#/settings` and chooses the Groups tab, then the Settings tab, then the Groups tab
 - **THEN** each tab is shown as it is when no refresh has happened
 
 #### Scenario: The admin view after a refresh
@@ -392,11 +392,11 @@ In the web app, opening or refreshing an address, or typing one into the address
 - **THEN** the administrator's groups are shown and its address is `#/admin/groups`
 
 #### Scenario: Back after a refresh
-- **WHEN** a signed-in person refreshes the page on `#/profile` and goes back
+- **WHEN** a signed-in person refreshes the page on `#/settings` and goes back
 - **THEN** the Groups tab is shown first, as it is without a refresh
 
 ### Requirement: Long read-only text is cut and opens in full
-Read-only text that people wrote (a wishlist note and link, a question and its answer, a group's description, and a user's or receiver's profile fields) SHALL show at most three lines, with an ellipsis when there is more; a wishlist item's title SHALL show on one row, with an ellipsis when it is longer, wherever the item is shown. Choosing text that was cut SHALL open a dialog with its full text, which scrolls when it is long and can be closed. Text that is not cut SHALL do nothing when chosen.
+Read-only text that people wrote (a wishlist note and link, a question and its answer, a group's description, and a receiver's delivery details) SHALL show at most three lines, with an ellipsis when there is more; a wishlist item's title SHALL show on one row, with an ellipsis when it is longer, wherever the item is shown. Choosing text that was cut SHALL open a dialog with its full text, which scrolls when it is long and can be closed. Text that is not cut SHALL do nothing when chosen.
 
 #### Scenario: A long note is cut
 - **WHEN** a wishlist item has a note of more than three lines
@@ -726,7 +726,7 @@ When the person is signed out, the sign-in screen SHALL be shown and, after sign
 After a refresh every tab of the view SHALL work as it does without one.
 
 #### Scenario: Moving between tabs after a refresh
-- **WHEN** a person refreshes the page on a group and chooses the Profile tab and then the Groups tab
+- **WHEN** a person refreshes the page on a group and chooses the Settings tab and then the Groups tab
 - **THEN** each tab is shown as it is when no refresh has happened
 
 ### Requirement: After a password change

@@ -152,22 +152,22 @@ Choosing a group SHALL open its detail, loaded with `GET /admin/groups/{id}`, sh
 - **THEN** their row shows the username and `*`, and choosing the username or the gift icon does nothing
 
 ### Requirement: Marks on participants
-In the participants list of a Draft or Pending group a participant without an account, and a participant whose profile lacks a name or an address, SHALL each be followed by a single `*`, the same mark for both, and the list SHALL end with the legend "* no account or profile incomplete", shown only when at least one participant has the mark.
+In the participants list of a Draft or Pending group a participant without an account SHALL be followed by a single `*`, and so SHALL, in a Pending group, a participant whose delivery info lacks a name or an address, and the list SHALL end with the legend "* no account or delivery info incomplete", shown only when at least one participant has the mark.
 
 #### Scenario: Participants with marks
-- **WHEN** a Draft group has `alice` with a complete profile and `newcomer` without an account
+- **WHEN** a Draft group has `alice` with an account and `newcomer` without one
 - **THEN** `alice` has no mark, `newcomer` is followed by `*` and the legend is shown
 
 #### Scenario: Incomplete profile
-- **WHEN** a participant's account has no address
+- **WHEN** a Pending group has a participant whose delivery info has no address
 - **THEN** that participant is followed by `*`, the same as a participant without an account
 
 #### Scenario: Incomplete profile after the draw
-- **WHEN** an Active group has a participant whose account has no address
+- **WHEN** an Active group has a participant whose delivery info has no address
 - **THEN** that username is followed by `*` in the pair list
 
 #### Scenario: Nobody marked
-- **WHEN** every participant has an account and a complete profile
+- **WHEN** every participant has an account and, in a Pending group, complete delivery info
 - **THEN** no `*` and no legend are shown
 
 ### Requirement: Editing participants
@@ -419,10 +419,10 @@ The whole page SHALL scroll as one: the details, the actions, the search field a
 - **THEN** the details, the actions and the search field scroll away with the people
 
 ### Requirement: Marks in the pair list
-In the pair list of an Active or Archived group a username whose profile lacks a name or an address SHALL be followed by `*`, as described in `client-admin-oversight`.
+In the pair list of an Active or Archived group a username whose delivery info lacks a name or an address SHALL be followed by `*`, as described in `client-admin-oversight`.
 
 #### Scenario: Pair list mark
-- **WHEN** `bob` has no address and the group is Active
+- **WHEN** `bob`'s delivery info has no address and the group is Active
 - **THEN** `bob` is followed by `*` in the pair list
 
 ### Requirement: Marks never block an action

@@ -22,8 +22,8 @@ The detail of an Active or Archived group SHALL show one list of every Santa and
 - **THEN** their username is marked "you" in the pair where they are the Santa and in the pair where they are the receiver
 
 #### Scenario: Incomplete profile
-- **WHEN** `bob` has no address and gives to `carol` and receives from `alice`
-- **THEN** `bob` is followed by `*` in both rows and the legend "* profile incomplete" is shown
+- **WHEN** `bob`'s delivery info has no address and he gives to `carol` and receives from `alice`
+- **THEN** `bob` is followed by `*` in both rows and the legend "* delivery info incomplete" is shown
 
 #### Scenario: Not yet drawn
 - **WHEN** the group is Pending
@@ -65,7 +65,7 @@ Choosing the gift icon at the end of a participant's row in a Pending group SHAL
 - **THEN** the link dialog opens, and the link opens in the browser only from its "Open in browser" button
 
 ### Requirement: User sheet
-Choosing either username in a row of the pair list, or the username of a participant with an account in a Pending group, SHALL open a bottom sheet with that person's details, loaded with `GET /admin/users/{username}` and shown as the user detail of `client-admin-users`: username, the profile fields that are set, and the temporary password while it is still temporary.
+Choosing either username in a row of the pair list, or the username of a participant with an account in a Pending group, SHALL open a bottom sheet with that person's details, loaded with `GET /admin/users/{username}` and shown as the user detail of `client-admin-users`: the username and the temporary password while it is still temporary.
 
 #### Scenario: Open from the Santa
 - **WHEN** the owner chooses `alice` in the row `alice -> bob`
@@ -177,10 +177,10 @@ The label above the pair list SHALL read "Who gives to whom" followed by the num
 - **THEN** the label still reads "Who gives to whom (4 participants)"
 
 ### Requirement: Marks on usernames in the oversight lists
-The administrator's own username SHALL be marked "you" wherever it appears, and a username whose profile is incomplete SHALL be followed by `*` wherever it appears, with a legend "* profile incomplete" under the list.
+The administrator's own username SHALL be marked "you" wherever it appears, and a username whose delivery info is incomplete SHALL be followed by `*` wherever it appears, with a legend "* delivery info incomplete" under the list.
 
 #### Scenario: Both marks
-- **WHEN** the administrator takes part in the group and their own profile is incomplete
+- **WHEN** the administrator takes part in the group and their own delivery info is incomplete
 - **THEN** their username is marked "you" and followed by `*` wherever it appears
 
 ### Requirement: No pair list before the draw

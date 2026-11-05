@@ -17,5 +17,5 @@ On a window wider than the standard width the signed-in app SHALL keep its top b
 - **THEN** the screens, bars and buttons fill the width as before
 
 #### Scenario: Every screen
-- **WHEN** the person moves between the lists, a group, the profile and the owner's screens on a wide window
+- **WHEN** the person moves between the lists, a group, the settings and the owner's screens on a wide window
 - **THEN** all of them are the same width

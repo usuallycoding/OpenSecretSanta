@@ -7,11 +7,11 @@ Defines the user record in Open Secret Santa, what users can change about their 
 ## Requirements
 
 ### Requirement: User record
-A user SHALL have a username, full name, email, phone number, address, delivery information, a password, and an admin flag. Every field except the username, the password and the admin flag SHALL be optional and initially empty.
+A user SHALL have a username, a password and an admin flag. Their name, email, phone, address and delivery information SHALL NOT be on the account: they are kept per group, as `delivery-info` describes.
 
 #### Scenario: New user has only a username
 - **WHEN** a user is created from a username alone
-- **THEN** full name, email, phone number, address and delivery information are empty and the user is not an admin
+- **THEN** the user has no password of their choosing yet and is not an admin
 
 #### Scenario: Password never exposed
 - **WHEN** any endpoint returns a user
@@ -36,38 +36,19 @@ A username SHALL be stored in lowercase, consist of letters, digits, `.`, `_` an
 The system SHALL NOT allow a user's username to change after creation.
 
 #### Scenario: Username change attempt
-- **WHEN** a user submits a profile update containing a different username
-- **THEN** the response is 400 and nothing is changed
+- **WHEN** a user calls `PUT /me` with a different username
+- **THEN** the response is 405, because no route changes a username, and nothing is changed
 
 ### Requirement: Read own account
-The server SHALL expose `GET /me` returning the caller's username, profile fields, admin flag and whether a password change is required, and whether the server can send email and push notifications.
+The server SHALL expose `GET /me` returning the caller's username, admin flag and whether a password change is required, and whether the server can send email and push notifications.
 
 #### Scenario: Own account returned
 - **WHEN** an authenticated user requests `GET /me`
-- **THEN** the response contains their own fields, `isAdmin`, `mustChangePassword`, `emailAvailable` and `pushAvailable`
+- **THEN** the response contains their username, `isAdmin`, `mustChangePassword`, `emailAvailable` and `pushAvailable`, and no name, email, phone, address or delivery information
 
 #### Scenario: What the server can send
 - **WHEN** the server has an email key configured and no push key
 - **THEN** `emailAvailable` is true and `pushAvailable` is false, whoever asks
-
-### Requirement: Edit own profile
-The server SHALL expose `PUT /me` letting an authenticated user replace their full name, email, phone number, address and delivery information, any of which may be cleared. A provided email SHALL be a syntactically valid address and each text field SHALL be at most 500 characters.
-
-#### Scenario: Profile updated
-- **WHEN** a user submits new values for their editable fields
-- **THEN** the response is 200 and a later `GET /me` shows the new values
-
-#### Scenario: Field cleared
-- **WHEN** a user submits a null or blank phone number
-- **THEN** the phone number becomes empty
-
-#### Scenario: Invalid email
-- **WHEN** a user submits an email that is not a valid address
-- **THEN** the response is 400 and the profile is unchanged
-
-#### Scenario: Only own profile
-- **WHEN** a user calls `PUT /me`
-- **THEN** only their own record is modified
 
 ### Requirement: Change own password
 The server SHALL expose `PUT /me/password` requiring the current password and a new password of at least 8 characters that differs from the current one. On success it SHALL return a fresh access token and invalidate all earlier tokens of that user.

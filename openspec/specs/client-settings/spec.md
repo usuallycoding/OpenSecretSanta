@@ -10,7 +10,7 @@ The bottom bar of the participant view and of the admin view SHALL each have a S
 
 #### Scenario: Participant's bar
 - **WHEN** a participant is signed in
-- **THEN** the bottom bar offers Groups, Profile and Settings, in that order
+- **THEN** the bottom bar offers Groups and Settings, in that order
 
 #### Scenario: Administrator's bar
 - **WHEN** an administrator is in the admin view

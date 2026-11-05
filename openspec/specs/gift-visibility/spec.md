@@ -7,14 +7,14 @@ Defines what a participant of an active Secret Santa group may learn about the e
 ## Requirements
 
 ### Requirement: Receiver details
-The server SHALL expose `GET /groups/{id}/receiver` to a participant of an Active or Archived group, returning the username, full name, email address, address, phone number and delivery information of that participant's own receiver as currently stored. Fields the receiver has not set SHALL be empty, and no other account data SHALL be returned.
+The server SHALL expose `GET /groups/{id}/receiver` to a participant of an Active or Archived group, returning the username, full name, email address, address, phone number and delivery information of that participant's own receiver from the receiver's delivery info for that group, as currently stored. Fields the receiver has not set SHALL be empty, and no other account data SHALL be returned.
 
 #### Scenario: Santa reads their receiver
 - **WHEN** `alice`, whose receiver is `bob`, requests `/groups/{id}/receiver` for an Active group
 - **THEN** the response contains `bob`'s username, full name, email address, address, phone number and delivery information
 
 #### Scenario: Live values
-- **WHEN** `bob` changes his address or email after the group became Active and `alice` requests his details again
+- **WHEN** `bob` changes his address or email in his delivery info after the group became Active and `alice` requests his details again
 - **THEN** the response shows the new values
 
 #### Scenario: Unset fields
@@ -52,7 +52,7 @@ Only participants of the group SHALL be able to use the receiver, Santa and ques
 - **THEN** the response is 404
 
 ### Requirement: Santa revealed on archive
-The server SHALL expose `GET /groups/{id}/santa`, returning the username and full name of the participant's own Santa, and only when the group is Archived. It SHALL return nothing else about the Santa.
+The server SHALL expose `GET /groups/{id}/santa`, returning the username and the full name, from the Santa's delivery info for the group, of the participant's own Santa, and only when the group is Archived. It SHALL return nothing else about the Santa.
 
 #### Scenario: After archive
 - **WHEN** the group is Archived and `bob`, whose Santa is `alice`, requests `/groups/{id}/santa`

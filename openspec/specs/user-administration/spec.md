@@ -53,7 +53,7 @@ An admin SHALL be able to view and reset only users who participate in a group t
 - **THEN** admin A requesting `erin` gets 404
 
 ### Requirement: List and view managed users
-The server SHALL expose `GET /admin/users` listing the admin's managed users and `GET /admin/users/{username}` returning one with all profile fields, admin flag, `mustChangePassword` and, only while the user's password is temporary, the current temporary password.
+The server SHALL expose `GET /admin/users` listing the admin's managed users and `GET /admin/users/{username}` returning one with its admin flag, `mustChangePassword` and, only while the user's password is temporary, the current temporary password.
 
 #### Scenario: Temporary password visible
 - **WHEN** an admin views a managed user who has not yet changed their temporary password
