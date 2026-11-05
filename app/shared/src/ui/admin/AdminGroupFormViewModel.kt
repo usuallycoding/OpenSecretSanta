@@ -64,6 +64,8 @@ class AdminGroupFormViewModel(
                             name = group.name,
                             description = group.description.orEmpty(),
                             location = group.location.orEmpty(),
+                            budget = group.budget?.toString().orEmpty(),
+                            currency = group.currency ?: GroupDetails.DEFAULT_CURRENCY,
                             date = group.date.orEmpty(),
                             time = group.time.orEmpty(),
                         )
@@ -80,6 +82,8 @@ class AdminGroupFormViewModel(
             GroupField.Name -> form.copy(name = value)
             GroupField.Description -> form.copy(description = value)
             GroupField.Location -> form.copy(location = value)
+            GroupField.Budget -> form.copy(budget = value)
+            GroupField.Currency -> form.copy(currency = value)
             GroupField.Date -> form.copy(date = value)
             GroupField.Time -> form.copy(time = value)
         }
@@ -91,7 +95,7 @@ class AdminGroupFormViewModel(
         val form = _form.value
         if (form.saving) return null
         val details = try {
-            GroupDetails.of(form.name, form.description, form.location, form.date, form.time)
+            GroupDetails.of(form.name, form.description, form.location, form.date, form.time, budgetOf(form.budget), form.currency)
         } catch (e: DomainException.ValidationFailed) {
             val field = GroupField.entries.firstOrNull { it.key == e.field }
             val message = e.message.orEmpty().replaceFirstChar { it.uppercase() }
@@ -103,9 +107,9 @@ class AdminGroupFormViewModel(
         val time = details.time?.toString()
         return scope.launch {
             val result = if (groupId == null) {
-                api.createGroup(CreateGroupRequest(details.name, details.description, details.location, date, time))
+                api.createGroup(CreateGroupRequest(details.name, details.description, details.location, date, time, budget = details.budget, currency = details.currency))
             } else {
-                api.updateGroup(groupId, GroupDetailsRequest(details.name, details.description, details.location, date, time))
+                api.updateGroup(groupId, GroupDetailsRequest(details.name, details.description, details.location, date, time, details.budget, details.currency))
             }
             when (result) {
                 is ApiResult.Success -> {
@@ -116,6 +120,9 @@ class AdminGroupFormViewModel(
             }
         }
     }
+
+    /** The typed budget as a number; blank is no budget, and what is not a whole number gets the server's own refusal. */
+    private fun budgetOf(text: String): Int? = text.trim().takeIf { it.isNotEmpty() }?.let { it.toIntOrNull() ?: Int.MAX_VALUE }
 
     private fun failed(error: ApiError) = _form.update { form ->
         val field = (error as? ApiError.Validation)?.field?.let { key -> GroupField.entries.firstOrNull { it.key == key } }

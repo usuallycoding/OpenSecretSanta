@@ -19,20 +19,22 @@ import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
 
 /**
- * What a group says about itself, in one card: the description, then "When? - ..." and "Where? - ...". A part the group does
+ * What a group says about itself, in one card: the description, then "When? - ..." and "Where? - ..." and "Budget? - ...". A part the group does
  * not have is left out, and with none of them nothing is drawn. The group's name, state and actions are not part of it.
  */
 @Composable
-internal fun GroupInfoCard(description: String?, whenText: String?, location: String?, modifier: Modifier = Modifier) {
+internal fun GroupInfoCard(description: String?, whenText: String?, location: String?, budget: String?, modifier: Modifier = Modifier) {
     val about = description?.takeIf { it.isNotBlank() }
     val schedule = whenText?.takeIf { it.isNotBlank() }
     val where = location?.takeIf { it.isNotBlank() }
-    if (about == null && schedule == null && where == null) return
+    val spend = budget?.takeIf { it.isNotBlank() }
+    if (about == null && schedule == null && where == null && spend == null) return
     Card(modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             about?.let { ReadOnlyText(it, style = MaterialTheme.typography.bodyLarge, label = Strings.DESCRIPTION_LABEL) }
             schedule?.let { Text(labelled(Strings.WHEN_LABEL, it), style = MaterialTheme.typography.bodyLarge) }
             where?.let { Text(labelled(Strings.WHERE_LABEL, it), style = MaterialTheme.typography.bodyLarge) }
+            spend?.let { Text(labelled(Strings.BUDGET_LABEL, it), style = MaterialTheme.typography.bodyLarge) }
         }
     }
 }

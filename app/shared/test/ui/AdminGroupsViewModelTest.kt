@@ -98,6 +98,20 @@ class AdminGroupsViewModelTest {
     }
 
     @Test
+    fun theCopyHasTheBudgetAndItsCurrency() = runTest {
+        val id = server.adminGroups.add("Party", state = "active")
+        server.adminGroups.group(id).apply { budget = 100; currency = "EUR" }
+        val model = viewModel()
+
+        model.askDuplicate(model.state.value.value!!.first())
+        model.confirmDuplicate()?.join()
+
+        val copy = server.adminGroups.group(model.created.value!!)
+        assertEquals(100, copy.budget)
+        assertEquals("EUR", copy.currency)
+    }
+
+    @Test
     fun confirmingMakesADraftWithTheDetailsAndParticipantsOfAnyGroup() = runTest {
         val id = server.adminGroups.add("Party", state = "active", participants = listOf("alice", "bob", "newcomer"))
         server.adminGroups.group(id).apply {

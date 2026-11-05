@@ -10,6 +10,8 @@ data class GroupDetailsRequest(
     val location: String? = null,
     val date: String? = null,
     val time: String? = null,
+    val budget: Int? = null,
+    val currency: String? = null,
 )
 
 @Serializable
@@ -20,6 +22,8 @@ data class CreateGroupRequest(
     val date: String? = null,
     val time: String? = null,
     val participants: List<String> = emptyList(),
+    val budget: Int? = null,
+    val currency: String? = null,
 )
 
 /** Replaces the whole participant list. */
@@ -51,6 +55,8 @@ data class AdminGroupDto(
     val time: String? = null,
     val state: String,
     val participants: List<ParticipantDto>,
+    val budget: Int? = null,
+    val currency: String? = null,
 )
 
 @Serializable
@@ -112,6 +118,8 @@ data class MemberGroupDto(
     val time: String? = null,
     val state: String,
     val participants: List<String>,
+    val budget: Int? = null,
+    val currency: String? = null,
 )
 
 @Serializable

@@ -78,6 +78,21 @@ class SqliteGroupRepositoryTest {
     }
 
     @Test
+    fun theBudgetAndItsCurrencyAreStoredReadBackAndChanged() {
+        val created = groups.create(owner, GroupDetails("Party", budget = 100, currency = "EUR"), emptyList())
+        assertEquals(100, groups.find(created.id)!!.details.budget)
+        assertEquals("EUR", groups.find(created.id)!!.details.currency)
+
+        val updated = groups.updateDetails(created.id, GroupDetails("Party", budget = 150, currency = "RON"))
+        assertEquals(150, updated.details.budget)
+        assertEquals("RON", updated.details.currency)
+
+        val cleared = groups.updateDetails(created.id, GroupDetails("Party"))
+        assertNull(cleared.details.budget)
+        assertNull(cleared.details.currency)
+    }
+
+    @Test
     fun minimalGroupHasEmptyOptionalFields() {
         val read = groups.find(draft().id)!!
         assertEquals(GroupDetails("Party"), read.details)

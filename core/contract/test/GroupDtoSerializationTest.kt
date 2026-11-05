@@ -26,11 +26,14 @@ class GroupDtoSerializationTest {
         time = "18:30",
         state = "pending",
         participants = listOf(ParticipantDto("alice", hasAccount = true, profileComplete = true), ParticipantDto("bob", false, false)),
+        budget = 100,
+        currency = "EUR",
     )
 
     @Test
     fun requestsRoundTrip() {
-        roundTrip(GroupDetailsRequest("Party", "d", "HQ", "2026-12-24", "18:30"))
+        roundTrip(GroupDetailsRequest("Party", "d", "HQ", "2026-12-24", "18:30", budget = 100, currency = "EUR"))
+        roundTrip(CreateGroupRequest("Party", budget = 100, currency = "EUR"))
         roundTrip(CreateGroupRequest("Party", participants = listOf("alice", "bob")))
         roundTrip(ParticipantsRequest(listOf("alice")))
     }
@@ -47,6 +50,7 @@ class GroupDtoSerializationTest {
         roundTrip(GroupChangeResponse(adminGroup, listOf(CreatedAccountDto("bob", "TempPass0001"))))
         roundTrip(GroupChangeResponse(adminGroup))
         roundTrip(MemberGroupDto(7, "Office party", state = "active", participants = listOf("alice", "bob", "carol")))
+        roundTrip(MemberGroupDto(7, "Office party", state = "active", participants = listOf("alice"), budget = 100, currency = "EUR"))
         roundTrip(AssignmentDto("alice", "bob"))
     }
 

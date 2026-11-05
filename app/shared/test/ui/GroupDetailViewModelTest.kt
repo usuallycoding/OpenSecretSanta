@@ -62,6 +62,22 @@ class GroupDetailViewModelTest {
     }
 
     @Test
+    fun theBudgetIsSaidWithItsCurrencyAndRonWhenThereIsNone() = runTest {
+        server.groupAnswer = { HttpStatusCode.OK to """{"id":7,"name":"G","budget":100,"currency":"EUR","state":"active","participants":["alice"]}""" }
+        assertEquals("100 EUR", viewModel().state.value.value!!.budget)
+
+        server.groupAnswer = { HttpStatusCode.OK to """{"id":7,"name":"G","budget":100,"state":"active","participants":["alice"]}""" }
+        assertEquals("100 RON", viewModel().state.value.value!!.budget)
+    }
+
+    @Test
+    fun aGroupWithoutABudgetHasNoBudgetText() = runTest {
+        server.groupAnswer = { HttpStatusCode.OK to full }
+
+        assertNull(viewModel().state.value.value!!.budget)
+    }
+
+    @Test
     fun blankDescriptionAndLocationCountAsMissing() = runTest {
         server.groupAnswer = { HttpStatusCode.OK to """{"id":7,"name":"Group","description":"  ","location":"","state":"archived","participants":["alice"]}""" }
 

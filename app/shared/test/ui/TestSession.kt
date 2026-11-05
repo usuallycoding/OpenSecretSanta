@@ -353,6 +353,8 @@ class FakeAdminGroups {
         var time: String? = null,
         var state: String = "draft",
         var participants: List<String> = emptyList(),
+        var budget: Int? = null,
+        var currency: String? = null,
     )
 
     private val groups = mutableListOf<Group>()
@@ -414,6 +416,7 @@ class FakeAdminGroups {
     private fun dto(group: Group) = AdminGroupDto(
         group.id, "admin", group.name, group.description, group.location, group.date, group.time, group.state,
         group.participants.map { ParticipantDto(it, it in accounts, it in completeProfiles) },
+        group.budget, group.currency,
     )
 
     private fun response(group: Group, created: List<CreatedAccountDto> = emptyList(), emails: EmailSummaryDto? = null) =
@@ -442,7 +445,7 @@ class FakeAdminGroups {
                     failures.removeFirstOrNull()?.let { return it }
                     val request = Json.decodeFromString<CreateGroupRequest>(body)
                     if (blankName(request.name)) return error(HttpStatusCode.BadRequest, "validation_failed", "Name must be 1 to 100 characters long.", "name")
-                    val group = Group(nextId++, request.name.trim(), request.description, request.location, request.date, request.time, participants = request.participants)
+                    val group = Group(nextId++, request.name.trim(), request.description, request.location, request.date, request.time, participants = request.participants, budget = request.budget, currency = request.currency)
                     groups += group
                     HttpStatusCode.Created to Json.encodeToString(dto(group))
                 }
@@ -463,6 +466,7 @@ class FakeAdminGroups {
                 group.name = request.name.trim()
                 group.description = request.description; group.location = request.location
                 group.date = request.date; group.time = request.time
+                group.budget = request.budget; group.currency = request.currency
                 HttpStatusCode.OK to Json.encodeToString(dto(group))
             }
             method == "PUT" && action == "participants" -> {

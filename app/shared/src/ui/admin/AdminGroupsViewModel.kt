@@ -86,6 +86,8 @@ class AdminGroupsViewModel(
                 date = group.date,
                 time = group.time,
                 participants = group.participants.map { it.username },
+                budget = group.budget,
+                currency = group.currency,
             )
             when (val result = api.createGroup(request)) {
                 is ApiResult.Success -> {

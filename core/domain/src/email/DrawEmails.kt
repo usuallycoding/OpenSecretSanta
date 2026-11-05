@@ -114,13 +114,14 @@ fun announcementEmail(to: String, recipient: Username, groupId: Long, group: Gro
 /** The link to a group in the web app, `<app address>/#/groups/<id>`, or null when no app address is configured. */
 internal fun groupLink(appUrl: String?, groupId: Long): String? = appUrl?.let { "${it.trimEnd('/')}/#/groups/$groupId" }
 
-/** The group's description, when and where, if set, and then the link to the group, each block after an empty line. */
+/** The group's description, when, where and budget, if set, and then the link to the group, each block after an empty line. */
 private fun StringBuilder.appendDetailsAndLink(group: GroupDetails, link: String?) {
     val details = buildList {
         group.description?.let { add(it) }
         group.date?.let { date -> add("When: " + whenText(date, group.time)) }
         if (group.date == null) group.time?.let { add("When: ${timeText(it)}") }
         group.location?.let { add("Where: $it") }
+        group.budget?.let { add("Budget: $it ${group.currency ?: GroupDetails.DEFAULT_CURRENCY}") }
     }
     if (details.isNotEmpty()) {
         appendLine()

@@ -335,6 +335,21 @@ class GroupLifecycleRoutesTest {
     }
 
     @Test
+    fun aParticipantSeesTheBudgetAndItsCurrency() = testApplication {
+        startApp()
+        setup()
+        people("alice", "bob")
+        val group = client.draft("alice", "bob")
+        client.send("PUT", ApiRoutes.adminGroup(group.id), fx.token("admin-a"), GroupDetailsRequest("Party", budget = 120, currency = "EUR"))
+        client.change(ApiRoutes.adminGroupPending(group.id))
+
+        val view = Json.decodeFromString<MemberGroupDto>(client.getAs(ApiRoutes.group(group.id), fx.token("alice")).bodyAsText())
+
+        assertEquals(120, view.budget)
+        assertEquals("EUR", view.currency)
+    }
+
+    @Test
     fun peopleAddedInPendingTakePartInTheDraw() = testApplication {
         startApp()
         setup()

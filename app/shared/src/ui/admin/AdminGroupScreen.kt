@@ -160,7 +160,7 @@ private fun Header(group: AdminGroup, viewModel: AdminGroupViewModel, busy: Bool
             Text(group.state.label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             group.phase.note()?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
         }
-        GroupInfoCard(group.description, group.whenText, group.location)
+        GroupInfoCard(group.description, group.whenText, group.location, group.budgetText)
         val step = viewModel.nextStep
         val blocked = viewModel.drawNeedsMorePeople
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {

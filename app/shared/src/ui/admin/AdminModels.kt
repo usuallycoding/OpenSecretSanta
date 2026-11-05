@@ -3,8 +3,10 @@ package com.usuallycoding.opensecretsanta.ui.admin
 import com.usuallycoding.opensecretsanta.contract.AdminGroupDto
 import com.usuallycoding.opensecretsanta.contract.DeletionImpactDto
 import com.usuallycoding.opensecretsanta.contract.EmailSummaryDto
+import com.usuallycoding.opensecretsanta.domain.group.GroupDetails
 import com.usuallycoding.opensecretsanta.ui.groups.GroupListItem
 import com.usuallycoding.opensecretsanta.ui.groups.GroupStateInfo
+import com.usuallycoding.opensecretsanta.ui.groups.budgetLine
 import com.usuallycoding.opensecretsanta.ui.groups.formatWhen
 import com.usuallycoding.opensecretsanta.ui.groups.groupStateInfo
 
@@ -33,8 +35,11 @@ data class AdminGroup(
     override val stateKey: String,
     val state: GroupStateInfo,
     val participants: List<AdminParticipant>,
+    val budget: Int? = null,
+    val currency: String? = null,
 ) : GroupListItem {
     val whenText: String? get() = formatWhen(date, time)
+    val budgetText: String? get() = budgetLine(budget, currency)
 }
 
 internal fun AdminGroupDto.toGroup() = AdminGroup(
@@ -48,15 +53,19 @@ internal fun AdminGroupDto.toGroup() = AdminGroup(
     stateKey = state.lowercase(),
     state = groupStateInfo(state),
     participants = participants.map { AdminParticipant(it.username, it.hasAccount, it.profileComplete, it.fullName?.takeIf { name -> name.isNotBlank() }) },
+    budget = budget,
+    currency = currency?.takeIf { it.isNotBlank() },
 )
 
 /** The fields of the group form, with the names the server uses for them. */
-enum class GroupField(val key: String) { Name("name"), Description("description"), Location("location"), Date("date"), Time("time") }
+enum class GroupField(val key: String) { Name("name"), Description("description"), Location("location"), Budget("budget"), Currency("currency"), Date("date"), Time("time") }
 
 data class GroupForm(
     val name: String = "",
     val description: String = "",
     val location: String = "",
+    val budget: String = "",
+    val currency: String = GroupDetails.DEFAULT_CURRENCY,
     val date: String = "",
     val time: String = "",
     val errors: Map<GroupField, String> = emptyMap(),

@@ -84,12 +84,23 @@ class DrawEmailsTest {
         assertTrue("Bring snacks" in text)
         assertTrue("When: 24 Dec 2026, 18:30" in text)
         assertTrue("Where: HQ" in text)
+        assertFalse("Budget:" in text)
 
         val bare = FakeMailer()
         send(bare, group = drawn(GroupDetails("Party")))
         val bareText = bare.sent.first().text
         assertFalse("When:" in bareText)
         assertFalse("Where:" in bareText)
+        assertFalse("Budget:" in bareText)
+    }
+
+    @Test
+    fun theBudgetComesAfterTheLocationWithItsCurrency() {
+        listOf("alice", "bob", "carol", "dave").forEach { person(it) }
+        val mailer = FakeMailer()
+        send(mailer, group = drawn(GroupDetails("Party", location = "HQ", budget = 100, currency = "EUR")))
+        val text = mailer.sent.first().text
+        assertTrue("Where: HQ\nBudget: 100 EUR" in text, text)
     }
 
     @Test

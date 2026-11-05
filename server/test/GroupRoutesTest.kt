@@ -108,6 +108,32 @@ class GroupRoutesTest {
     }
 
     @Test
+    fun theBudgetIsStoredEditedDefaultedAndClearedAndTheOverBudgetIsRefused() = testApplication {
+        startApp()
+        admins()
+        val token = fx.token("admin-a")
+
+        val group = client.createGroup(token, CreateGroupRequest("Party", budget = 100))
+        assertEquals(100, group.budget)
+        assertEquals("RON", group.currency)
+
+        val edited = client.send("PUT", ApiRoutes.adminGroup(group.id), token, GroupDetailsRequest("Party", budget = 200, currency = "EUR"))
+        assertEquals(HttpStatusCode.OK, edited.status)
+        assertEquals(200, Json.decodeFromString<AdminGroupDto>(edited.bodyAsText()).budget)
+        assertEquals("EUR", Json.decodeFromString<AdminGroupDto>(edited.bodyAsText()).currency)
+
+        val refused = client.send("PUT", ApiRoutes.adminGroup(group.id), token, GroupDetailsRequest("Party", budget = 10001))
+        assertEquals(HttpStatusCode.BadRequest, refused.status)
+        assertEquals("budget", error(refused.bodyAsText()).field)
+        assertEquals("200", database("SELECT budget FROM groups WHERE id = ${group.id}"))
+
+        val cleared = client.send("PUT", ApiRoutes.adminGroup(group.id), token, GroupDetailsRequest("Party", currency = "EUR"))
+        val body = Json.decodeFromString<AdminGroupDto>(cleared.bodyAsText())
+        assertNull(body.budget)
+        assertNull(body.currency)
+    }
+
+    @Test
     fun nonAdminsCannotCreateGroups() = testApplication {
         startApp()
         admins()
@@ -127,6 +153,8 @@ class GroupRoutesTest {
             "name" to CreateGroupRequest("n".repeat(101)),
             "date" to CreateGroupRequest("P", date = "2026-02-30"),
             "time" to CreateGroupRequest("P", time = "24:00"),
+            "budget" to CreateGroupRequest("P", budget = 49),
+            "currency" to CreateGroupRequest("P", budget = 100, currency = "c".repeat(21)),
             "participants" to CreateGroupRequest("P", participants = listOf("alice", "no")),
         )
         for ((field, request) in cases) {

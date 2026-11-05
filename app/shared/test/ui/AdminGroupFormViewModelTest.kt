@@ -13,6 +13,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class AdminGroupFormViewModelTest {
     private val server = ScriptedServer().also { it.session() }
@@ -55,6 +56,62 @@ class AdminGroupFormViewModelTest {
             CreateGroupRequest("Office party", "Small gifts", "Town Hall", "2026-12-24", "18:30"),
             Json.decodeFromString(server.bodies.last()),
         )
+    }
+
+    @Test
+    fun aNewFormStartsWithNoBudgetAndTheCurrencyRon() = runTest {
+        val form = newForm()
+
+        assertEquals("", form.form.value.budget)
+        assertEquals("RON", form.form.value.currency)
+    }
+
+    @Test
+    fun theBudgetAndItsCurrencyAreSentAsANumberAndTrimmedText() = runTest {
+        val form = newForm()
+        form.fill(name = "Office party")
+        form.edit(GroupField.Budget, " 100 ")
+        form.edit(GroupField.Currency, " EUR ")
+
+        form.save()?.join()
+
+        assertEquals(CreateGroupRequest("Office party", budget = 100, currency = "EUR"), Json.decodeFromString(server.bodies.last()))
+    }
+
+    @Test
+    fun theDefaultCurrencyIsSentWithABudget() = runTest {
+        val form = newForm()
+        form.fill(name = "Office party")
+        form.edit(GroupField.Budget, "75")
+
+        form.save()?.join()
+
+        assertEquals(CreateGroupRequest("Office party", budget = 75, currency = "RON"), Json.decodeFromString(server.bodies.last()))
+    }
+
+    @Test
+    fun aBudgetOutOfRangeOrNotANumberIsNotSentAndIsShownOnTheBudgetField() = runTest {
+        val form = newForm()
+        form.fill(name = "Office party")
+        for (bad in listOf("49", "10001", "abc", "99999999999999")) {
+            form.edit(GroupField.Budget, bad)
+            assertNull(form.save(), bad)
+            assertEquals("Budget must be a whole number from 50 to 10000.", form.form.value.errors[GroupField.Budget], bad)
+        }
+        assertEquals(0, writes())
+    }
+
+    @Test
+    fun aCurrencyOfMoreThanTwentyCharactersIsShownOnTheCurrencyField() = runTest {
+        val form = newForm()
+        form.fill(name = "Office party")
+        form.edit(GroupField.Budget, "100")
+        form.edit(GroupField.Currency, "c".repeat(21))
+
+        assertNull(form.save())
+
+        assertTrue(GroupField.Currency in form.form.value.errors)
+        assertEquals(0, writes())
     }
 
     @Test
@@ -191,6 +248,37 @@ class AdminGroupFormViewModelTest {
         assertEquals(id, form.saved.value)
         assertNull(fake.group(id).description)
         assertEquals(GroupDetailsRequest("Office party", null, null, null, null), Json.decodeFromString(server.bodies.last()))
+    }
+
+    @Test
+    fun editingFillsTheBudgetAndItsCurrencyAndChangingThemSavesThem() = runTest {
+        val id = fake.add("Office party")
+        fake.group(id).apply { budget = 100; currency = "EUR" }
+        val form = editForm(id)
+        assertEquals("100", form.form.value.budget)
+        assertEquals("EUR", form.form.value.currency)
+
+        form.edit(GroupField.Budget, "150")
+        form.save()?.join()
+
+        assertEquals(150, fake.group(id).budget)
+        assertEquals("EUR", fake.group(id).currency)
+    }
+
+    @Test
+    fun aGroupWithoutABudgetEditsWithTheCurrencyRonAndClearingTheBudgetClearsBoth() = runTest {
+        val id = fake.add("Office party")
+        fake.group(id).apply { budget = 100; currency = "EUR" }
+        val form = editForm(id)
+
+        form.edit(GroupField.Budget, "")
+        form.save()?.join()
+
+        assertNull(fake.group(id).budget)
+        assertNull(fake.group(id).currency)
+
+        val other = fake.add("Plain")
+        assertEquals("RON", editForm(other).form.value.currency)
     }
 
     @Test

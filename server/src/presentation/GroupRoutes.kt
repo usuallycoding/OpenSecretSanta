@@ -45,6 +45,8 @@ fun GroupView.toDto() = AdminGroupDto(
     time = group.details.time?.toString(),
     state = group.state.storedName,
     participants = participants.map { ParticipantDto(it.username.value, it.hasAccount, it.profileComplete, it.fullName) },
+    budget = group.details.budget,
+    currency = group.details.currency,
 )
 
 fun GroupChange.toDto() = GroupChangeResponse(
@@ -62,9 +64,11 @@ fun Group.toMemberDto() = MemberGroupDto(
     time = details.time?.toString(),
     state = state.storedName,
     participants = participants.map { it.value },
+    budget = details.budget,
+    currency = details.currency,
 )
 
-private fun GroupDetailsRequest.toDetails() = GroupDetails.of(name, description, location, date, time)
+private fun GroupDetailsRequest.toDetails() = GroupDetails.of(name, description, location, date, time, budget, currency)
 
 /** Owner-only routes to create, read, edit and delete groups and replace their participants. */
 fun Route.adminGroupRoutes(
@@ -79,7 +83,7 @@ fun Route.adminGroupRoutes(
     post(ApiRoutes.ADMIN_GROUPS) {
         val actor = call.currentUser()
         val request = call.receive<CreateGroupRequest>()
-        val details = GroupDetails.of(request.name, request.description, request.location, request.date, request.time)
+        val details = GroupDetails.of(request.name, request.description, request.location, request.date, request.time, request.budget, request.currency)
         call.respond(HttpStatusCode.Created, blocking { createGroup(actor, details, request.participants) }.toDto())
     }
     get(ApiRoutes.ADMIN_GROUPS) {

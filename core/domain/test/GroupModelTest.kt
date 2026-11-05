@@ -65,7 +65,9 @@ class GroupDetailsTest {
         location: String? = null,
         date: String? = null,
         time: String? = null,
-    ) = GroupDetails.of(name, description, location, date, time)
+        budget: Int? = null,
+        currency: String? = null,
+    ) = GroupDetails.of(name, description, location, date, time, budget, currency)
 
     private fun fieldOf(block: () -> Unit) = assertFailsWith<DomainException.ValidationFailed> { block() }.field
 
@@ -112,6 +114,37 @@ class GroupDetailsTest {
         for (bad in listOf("2026-02-30", "2026-13-01", "24-12-2026", "tomorrow", "2026-12-24T10:00")) {
             assertEquals("date", fieldOf { details(date = bad) }, bad)
         }
+    }
+
+    @Test
+    fun aBudgetIsOptionalAndGetsTheDefaultCurrency() {
+        assertNull(details().budget)
+        assertNull(details().currency)
+        assertEquals(GroupDetails("P", budget = 100, currency = "RON"), details(name = "P", budget = 100))
+        assertEquals(GroupDetails("P", budget = 100, currency = "RON"), details(name = "P", budget = 100, currency = "   "))
+    }
+
+    @Test
+    fun theCurrencyIsTrimmedAndKept() {
+        assertEquals("EUR", details(budget = 100, currency = " EUR ").currency)
+        assertEquals(20, details(budget = 100, currency = "c".repeat(20)).currency!!.length)
+    }
+
+    @Test
+    fun withoutABudgetThereIsNoCurrency() {
+        assertEquals(GroupDetails("Office party"), details(currency = "EUR"))
+    }
+
+    @Test
+    fun theBudgetRangeIsEnforcedAndNamed() {
+        assertEquals(50, details(budget = 50).budget)
+        assertEquals(10000, details(budget = 10000).budget)
+        for (bad in listOf(49, 10001, 0, -5)) assertEquals("budget", fieldOf { details(budget = bad) }, bad.toString())
+    }
+
+    @Test
+    fun aCurrencyOfMoreThanTwentyCharactersIsRejected() {
+        assertEquals("currency", fieldOf { details(budget = 100, currency = "c".repeat(21)) })
     }
 
     @Test

@@ -21,6 +21,7 @@ data class GroupDetail(
     val description: String?,
     val whenText: String?,
     val location: String?,
+    val budget: String? = null,
     val participants: List<ParticipantItem>,
 )
 
@@ -31,6 +32,7 @@ internal fun MemberGroupDto.toDetail(me: String) = GroupDetail(
     description = description?.takeIf { it.isNotBlank() },
     whenText = formatWhen(date, time),
     location = location?.takeIf { it.isNotBlank() },
+    budget = budgetLine(budget, currency),
     participants = participants.map { ParticipantItem(it, isMe(it, me)) },
 )
 

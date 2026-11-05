@@ -14,6 +14,7 @@ class GroupFilterTest {
         override val description: String? = null,
         override val stateKey: String = "active",
         val location: String? = null,
+        val budget: Int? = null,
     ) : GroupListItem
 
     private val office = Item("Office Party", "Bring snacks", "pending", location = "Town Hall")
@@ -30,6 +31,11 @@ class GroupFilterTest {
     @Test
     fun theNameIsSearched() {
         assertEquals(listOf("Office Party"), names("party", items = listOf(office, book)))
+    }
+
+    @Test
+    fun theBudgetIsNotSearched() {
+        assertEquals(emptyList(), names("100", items = listOf(Item("Office Party", budget = 100))))
     }
 
     @Test

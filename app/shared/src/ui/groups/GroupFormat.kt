@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.ui.groups
 
+import com.usuallycoding.opensecretsanta.domain.group.GroupDetails
 import com.usuallycoding.opensecretsanta.ui.Strings
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
@@ -99,6 +100,9 @@ private fun lastSundayAtOneUtc(year: Int, month: Int): Instant {
     val sunday = lastDay.minus(DatePeriod(days = lastDay.dayOfWeek.isoDayNumber % 7))
     return LocalDateTime(sunday, LocalTime(1, 0)).toInstant(TimeZone.UTC)
 }
+
+/** A group's budget as the card and the emails say it, `100 RON`; null when it has none. */
+fun budgetLine(budget: Int?, currency: String?): String? = budget?.let { "$it ${currency?.takeIf { c -> c.isNotBlank() } ?: GroupDetails.DEFAULT_CURRENCY}" }
 
 /** A line of the group's information card: its label, " - ", then its value, for example `When? - 24 Dec 2026, 18:30`. */
 fun labelledLine(label: String, value: String): String = "$label - $value"

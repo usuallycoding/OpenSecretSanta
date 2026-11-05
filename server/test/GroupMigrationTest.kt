@@ -33,7 +33,7 @@ class GroupMigrationTest {
 
     @Test
     fun schemaVersionIsLatest() {
-        assertEquals(8, database.schemaVersion())
+        assertEquals(9, database.schemaVersion())
     }
 
     @Test
@@ -49,13 +49,15 @@ class GroupMigrationTest {
 
         database.connection().use { c ->
             c.createStatement().use { s ->
-                s.executeQuery("SELECT state, description, location, event_date, event_time FROM groups WHERE id = $id").use {
+                s.executeQuery("SELECT state, description, location, event_date, event_time, budget, currency FROM groups WHERE id = $id").use {
                     it.next()
                     assertEquals("draft", it.getString(1))
                     assertEquals(null, it.getString(2))
                     assertEquals(null, it.getString(3))
                     assertEquals(null, it.getString(4))
                     assertEquals(null, it.getString(5))
+                    assertEquals(null, it.getString(6))
+                    assertEquals(null, it.getString(7))
                 }
             }
         }

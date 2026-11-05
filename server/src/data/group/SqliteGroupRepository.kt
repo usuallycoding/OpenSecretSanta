@@ -26,7 +26,7 @@ class SqliteGroupRepository(private val database: Database) : GroupRepository {
     override fun create(owner: Username, details: GroupDetails, participants: List<Username>): Group =
         database.transaction { c ->
             val id = c.prepareStatement(
-                "INSERT INTO groups (owner_username, name, description, location, event_date, event_time) VALUES (?, ?, ?, ?, ?, ?)",
+                "INSERT INTO groups (owner_username, name, description, location, event_date, event_time, budget, currency) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 Statement.RETURN_GENERATED_KEYS,
             ).use { s ->
                 s.setString(1, owner.value)
@@ -58,11 +58,11 @@ class SqliteGroupRepository(private val database: Database) : GroupRepository {
 
     override fun updateDetails(id: Long, details: GroupDetails): Group = database.transaction { c ->
         val changed = c.prepareStatement(
-            "UPDATE groups SET name = ?, description = ?, location = ?, event_date = ?, event_time = ? " +
+            "UPDATE groups SET name = ?, description = ?, location = ?, event_date = ?, event_time = ?, budget = ?, currency = ? " +
                 "WHERE id = ? AND state <> 'archived'",
         ).use { s ->
             bindDetails(s, details, firstIndex = 1)
-            s.setLong(6, id)
+            s.setLong(8, id)
             s.executeUpdate()
         }
         if (changed == 0) throw missingOrWrongState(c, id, "An archived group can no longer be edited.")
@@ -187,6 +187,9 @@ class SqliteGroupRepository(private val database: Database) : GroupRepository {
         s.setString(firstIndex + 2, details.location)
         s.setString(firstIndex + 3, details.date?.toString())
         s.setString(firstIndex + 4, details.time?.toString())
+        val budget = details.budget
+        if (budget == null) s.setNull(firstIndex + 5, java.sql.Types.INTEGER) else s.setInt(firstIndex + 5, budget)
+        s.setString(firstIndex + 6, details.currency)
     }
 
     private fun writeParticipants(c: Connection, id: Long, participants: List<Username>) {
@@ -207,7 +210,7 @@ class SqliteGroupRepository(private val database: Database) : GroupRepository {
         }
 
     private fun load(c: Connection, id: Long): Group? =
-        c.prepareStatement("SELECT id, owner_username, name, description, location, event_date, event_time, state FROM groups WHERE id = ?").use { s ->
+        c.prepareStatement("SELECT id, owner_username, name, description, location, event_date, event_time, budget, currency, state FROM groups WHERE id = ?").use { s ->
             s.setLong(1, id)
             s.executeQuery().use { rows -> if (rows.next()) toGroup(rows, participantsOf(c, id)) else null }
         }
@@ -229,6 +232,8 @@ class SqliteGroupRepository(private val database: Database) : GroupRepository {
             location = rows.getString("location"),
             date = rows.getString("event_date")?.let(LocalDate::parse),
             time = rows.getString("event_time")?.let(LocalTime::parse),
+            budget = rows.getInt("budget").takeUnless { rows.wasNull() },
+            currency = rows.getString("currency"),
         ),
         state = GroupState.fromStored(rows.getString("state")),
         participants = participants,

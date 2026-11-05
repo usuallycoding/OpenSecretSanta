@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -20,6 +21,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -67,6 +69,8 @@ fun AdminGroupFormScreen(viewModel: AdminGroupFormViewModel, onSaved: (Long) -> 
                         error = form.errors[GroupField.Description],
                     )
                     Field(Strings.GROUP_LOCATION, form.location, form.errors[GroupField.Location], singleLine = true) { viewModel.edit(GroupField.Location, it) }
+                    Field(Strings.GROUP_BUDGET, form.budget, form.errors[GroupField.Budget], singleLine = true, numeric = true) { viewModel.edit(GroupField.Budget, it.filter(Char::isDigit)) }
+                    Field(Strings.GROUP_CURRENCY, form.currency, form.errors[GroupField.Currency], singleLine = true) { viewModel.edit(GroupField.Currency, it) }
                     DatePickerField(Strings.GROUP_DATE, form.date, form.errors[GroupField.Date]) { viewModel.edit(GroupField.Date, it) }
                     TimePickerField(Strings.GROUP_TIME, form.time, form.errors[GroupField.Time]) { viewModel.edit(GroupField.Time, it) }
                     form.general?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }
@@ -78,12 +82,13 @@ fun AdminGroupFormScreen(viewModel: AdminGroupFormViewModel, onSaved: (Long) -> 
 }
 
 @Composable
-private fun Field(label: String, value: String, error: String?, singleLine: Boolean, onChange: (String) -> Unit) {
+private fun Field(label: String, value: String, error: String?, singleLine: Boolean, numeric: Boolean = false, onChange: (String) -> Unit) {
     OutlinedTextField(
         value = value,
         onValueChange = onChange,
         label = { Text(label) },
         singleLine = singleLine,
+        keyboardOptions = if (numeric) KeyboardOptions(keyboardType = KeyboardType.Number) else KeyboardOptions.Default,
         isError = error != null,
         supportingText = error?.let { { Text(it) } },
         modifier = Modifier.fillMaxWidth().touchesOfAField(),

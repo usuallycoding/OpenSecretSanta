@@ -146,7 +146,7 @@ class SendAnnouncementTest {
 
     @Test
     fun theEmailHasTheDrawLayoutWithTheMessageAndNothingOfTheDraw() {
-        val g = group(GroupState.ACTIVE, GroupDetails("Office Party", description = "Bring snacks", date = LocalDate(2026, 12, 20), time = LocalTime(19, 0), location = "Canteen"))
+        val g = group(GroupState.ACTIVE, GroupDetails("Office Party", description = "Bring snacks", date = LocalDate(2026, 12, 20), time = LocalTime(19, 0), location = "Canteen", budget = 100, currency = "RON"))
         groups.assign(g.id, names.indices.map { Assignment(u(names[it]), u(names[(it + 1) % 4])) })
 
         announce(g, body = "Line one\nLine two")
@@ -154,7 +154,7 @@ class SendAnnouncementTest {
         val alice = mailer.sent.single { it.to == "alice@example.org" }
         assertEquals("Schedule change: Office Party", alice.subject)
         assertEquals(
-            "Hi alice,\n\nLine one\nLine two\n\nBring snacks\nWhen: 20 Dec 2026, 19:00\nWhere: Canteen\n\nOpen the app: https://santa.example/#/groups/${g.id}\n\nKeep it secret!",
+            "Hi alice,\n\nLine one\nLine two\n\nBring snacks\nWhen: 20 Dec 2026, 19:00\nWhere: Canteen\nBudget: 100 RON\n\nOpen the app: https://santa.example/#/groups/${g.id}\n\nKeep it secret!",
             alice.text,
         )
         assertFalse("Secret Santa for" in alice.text)
