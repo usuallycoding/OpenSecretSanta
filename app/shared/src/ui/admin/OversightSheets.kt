@@ -223,9 +223,14 @@ private fun ThreadQuestions(thread: PairThread) {
         Text(Strings.ADMIN_THREAD_EMPTY, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         return
     }
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    // cards like the wishlist items above, with the same padding and the same space between them
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         for (question in thread.questions) {
-            QuestionThread(question.number, question.text, question.asked, question.answer, question.answered, question.answerChanged)
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    QuestionThread(question.number, question.text, question.asked, question.answer, question.answered, question.answerChanged)
+                }
+            }
         }
     }
 }
