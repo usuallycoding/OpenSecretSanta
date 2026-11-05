@@ -43,6 +43,8 @@ services:
       PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${PUBLIC_FIREBASE_MESSAGING_SENDER_ID:-}
       PUBLIC_FIREBASE_APP_ID: ${PUBLIC_FIREBASE_APP_ID:-}
       PUBLIC_FIREBASE_VAPID_KEY: ${PUBLIC_FIREBASE_VAPID_KEY:-}
+      # optional: lets Android open this address in the app (the release certificate's SHA-256, not secret)
+      PUBLIC_ANDROID_CERT_SHA256: ${PUBLIC_ANDROID_CERT_SHA256:-}
     ports:
       - "${WEB_PORT:-8080}:80"
     depends_on:

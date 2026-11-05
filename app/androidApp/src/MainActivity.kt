@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import com.usuallycoding.opensecretsanta.data.BackendConfig
 import com.usuallycoding.opensecretsanta.ui.App
+import com.usuallycoding.opensecretsanta.ui.navigation.LinkTarget
 import com.usuallycoding.opensecretsanta.ui.navigation.NotificationTarget
 import com.usuallycoding.opensecretsanta.ui.navigation.openNotification
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,6 +40,8 @@ class MainActivity : ComponentActivity() {
                         requestedRoutes.value = null
                         intent.removeExtra(EXTRA_GROUP_ID)
                         intent.removeExtra(EXTRA_CATEGORY)
+                        // a link is handled once, so an activity that is recreated does not open its group again
+                        intent.data = null
                     }
                 },
             )
@@ -57,10 +60,15 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    /** What a tap on a notification opens: its group, and the page its kind is about; nothing for a launch that is not a tap. */
+    /**
+     * What a tap on a notification opens: its group, and the page its kind is about; or what a link to the web app names, when
+     * it names a group screen. Nothing for a launch that is neither.
+     */
     private fun routesOf(intent: Intent?): List<Any>? {
-        val groupId = intent?.getLongExtra(EXTRA_GROUP_ID, NONE)?.takeIf { it != NONE } ?: return null
-        return NotificationTarget.routesOf(intent.getStringExtra(EXTRA_CATEGORY), groupId)
+        val groupId = intent?.getLongExtra(EXTRA_GROUP_ID, NONE)?.takeIf { it != NONE }
+        if (groupId != null) return NotificationTarget.routesOf(intent.getStringExtra(EXTRA_CATEGORY), groupId)
+        val link = intent?.data ?: return null
+        return LinkTarget.routesOf(linkFragment(link.scheme, link.host, link.fragment))
     }
 
     private companion object {

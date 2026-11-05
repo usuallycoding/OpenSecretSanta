@@ -124,15 +124,27 @@ class DrawEmailsTest {
     }
 
     @Test
-    fun theAppAddressIsLinkedOnlyWhenConfigured() {
+    fun theGroupIsLinkedOnlyWhenAnAppAddressIsConfigured() {
         listOf("alice", "bob", "carol", "dave").forEach { person(it) }
+        val group = drawn()
         val with = FakeMailer()
-        send(with, appUrl = "https://santa.example.org")
-        assertTrue("Open the app: https://santa.example.org" in with.sent.first().text)
+        send(with, appUrl = "https://santa.example.org", group = group)
+        assertTrue("Open the app: https://santa.example.org/#/groups/${group.id}" in with.sent.first().text)
 
         val without = FakeMailer()
-        send(without)
+        send(without, group = group)
         assertFalse("Open the app" in without.sent.first().text)
+    }
+
+    @Test
+    fun aTrailingSlashOnTheAppAddressGivesNoDoubleSlash() {
+        listOf("alice", "bob", "carol", "dave").forEach { person(it) }
+        val group = drawn()
+        val mailer = FakeMailer()
+
+        send(mailer, appUrl = "https://santa.example.org/", group = group)
+
+        assertTrue("Open the app: https://santa.example.org/#/groups/${group.id}\n" in mailer.sent.first().text)
     }
 
     @Test

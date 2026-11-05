@@ -49,7 +49,7 @@ class SendAnnouncement(
         if (email && !mailer.enabled) throw DomainException.InvalidState("Email is not set up on this server.")
         if (push && !notifier.available) throw DomainException.InvalidState("Push notifications are not set up on this server.")
 
-        val summary = if (email) sendEmails(group.participants, group.details, title, body) else null
+        val summary = if (email) sendEmails(group.participants, groupId, group.details, title, body) else null
         val plan = if (push) {
             try {
                 notifier.planAnnouncement(group, title, body, actor.username)
@@ -64,6 +64,7 @@ class SendAnnouncement(
 
     private fun sendEmails(
         participants: List<Username>,
+        groupId: Long,
         details: GroupDetails,
         title: String,
         body: String,
@@ -77,7 +78,7 @@ class SendAnnouncement(
         val messages = ArrayList<EmailMessage>()
         for (participant in participants) {
             val address = accounts[participant]?.profile?.email
-            if (address == null) noAddress++ else messages += announcementEmail(address, participant, details, title, body, appUrl)
+            if (address == null) noAddress++ else messages += announcementEmail(address, participant, groupId, details, title, body, appUrl)
         }
         val results = try {
             mailer.send(messages).let { if (it.size == messages.size) it else messages.map { false } }

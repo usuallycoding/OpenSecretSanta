@@ -20,6 +20,24 @@ if [ -z "$url" ]; then
 fi
 check PUBLIC_SERVER_URL "$url"
 
+# The file Android reads to verify that this web address belongs to the app, written from the release certificate's
+# fingerprint; without the setting there is no file, and a stale one from an earlier start is removed.
+assetlinks_dir=/usr/share/nginx/html/.well-known
+fingerprint="${PUBLIC_ANDROID_CERT_SHA256:-}"
+if [ -z "$fingerprint" ]; then
+    rm -f "$assetlinks_dir/assetlinks.json"
+else
+    # 32 hexadecimal pairs separated by colons, which is what keytool prints
+    if ! printf '%s' "$fingerprint" | grep -Eq '^([0-9A-Fa-f]{2}:){31}[0-9A-Fa-f]{2}$'; then
+        echo "PUBLIC_ANDROID_CERT_SHA256 must be a SHA-256 fingerprint: 32 hexadecimal pairs separated by colons (AA:BB:...), not: $fingerprint" >&2
+        exit 1
+    fi
+    fingerprint="$(printf '%s' "$fingerprint" | tr 'a-f' 'A-F')"
+    mkdir -p "$assetlinks_dir"
+    printf '[\n  {\n    "relation": ["delegate_permission/common.handle_all_urls"],\n    "target": {\n      "namespace": "android_app",\n      "package_name": "com.usuallycoding.opensecretsanta",\n      "sha256_cert_fingerprints": ["%s"]\n    }\n  }\n]\n' "$fingerprint" > "$assetlinks_dir/assetlinks.json"
+    echo "assetlinks.json: the Android app's certificate is $fingerprint"
+fi
+
 api_key="${PUBLIC_FIREBASE_API_KEY:-}"
 project_id="${PUBLIC_FIREBASE_PROJECT_ID:-}"
 sender_id="${PUBLIC_FIREBASE_MESSAGING_SENDER_ID:-}"

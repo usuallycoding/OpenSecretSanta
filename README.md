@@ -43,6 +43,8 @@ The server reads its configuration from environment variables and refuses to sta
 
 When the owner draws a group's names the server can email every participant who has an email address on their profile: the group's details, that the names have been drawn and who they are Secret Santa for (their own receiver only; no postal details are in the email, and the subject does not name the receiver). It uses [Resend](https://resend.com), is off unless `RESEND_API_KEY` and `EMAIL_FROM` are both set, and never decides whether the draw happens: the group is Active even when no email can be sent, and the owner's page says how many went out (`Emails sent to 8 of 11 participants. 1 failed, 2 have no email address.`). Participants see on their Profile tab that their email is used for this.
 
+With `APP_URL` set (`https://app.example.org`) each email, and the announcement emails, end with a link to the group they are about, `https://app.example.org/#/groups/7`, and not to the front page; a trailing slash on `APP_URL` makes no difference. On a phone with the Android app installed such a link can open in the app (see "Opening links in the Android app" below).
+
 To set it up, add a domain to Resend (a subdomain such as `mail.example.org` keeps its DNS records apart from any mail you already receive on the main domain), create the DNS records Resend lists (DKIM, SPF and MX, normally TXT and MX records named `resend._domainkey.mail`, `send.mail` and `send.mail`) at your DNS provider, wait for the domain to show as verified, create an API key with sending access to that domain and put it in `RESEND_API_KEY`, with a sender on the domain in `EMAIL_FROM`. The free plan allows 100 emails a day and 3,000 a month with one domain; an email that does not go out because the limit is reached is counted as failed and not retried. The key is never logged or returned by the API.
 
 #### Announcements
@@ -111,6 +113,7 @@ The first build downloads the Kotlin toolchain and the dependencies and takes se
 | `WEB_PORT`, `SERVER_PORT` | `8080`, `8081` | the ports published on this machine |
 | `PUBLIC_SERVER_URL` | `http://localhost:` and `SERVER_PORT` | where the browser finds the server; written into the web app's `config.json` each time the web container starts, so changing it needs a restart (`docker compose up -d`), not a rebuild |
 | `PUBLIC_WEB_ORIGIN` | `http://localhost:` and `WEB_PORT` | the address the web app is opened at; the server's `CORS_ALLOWED_ORIGINS` |
+| `PUBLIC_ANDROID_CERT_SHA256` | none | optional: the SHA-256 fingerprint of the certificate the Android app is signed with; with it the web container serves `/.well-known/assetlinks.json` so the app can open the web app's links (see "Opening links in the Android app"); it must be 32 hexadecimal pairs separated by colons, and the container stops naming the variable otherwise |
 
 Compose stops and names the variable when a required one is missing, and the server container exits naming a variable it finds invalid. The database lives in the named volume `data`, so removing or rebuilding the containers keeps your users and groups (`docker compose down -v` deletes it). To back it up, copy the file out with `docker compose cp server:/data/opensecretsanta.db .`; to start from an existing database, copy it in the same way (to `server:/data/opensecretsanta.db`), give the file to the server's user with `docker compose exec -u root server chown santa /data/opensecretsanta.db`, and restart the server. The server runs as an unprivileged user and has a healthcheck on `/health`; the web container starts once it is healthy.
 
@@ -320,6 +323,26 @@ Set it up once:
 5. **The tester group**: open the project's App Distribution page, then Testers & Groups. The script wants the group's *alias* (under the group's name, normally the name in lower case, such as `dincolo`), not the display name. Testers get an email invitation the first time.
 
 Node is needed for the upload (`npx firebase-tools`), and the Android SDK build-tools for `apksigner`, which the script finds under `ANDROID_HOME` or the usual SDK folders.
+
+#### Opening links in the Android app
+
+The links in the emails (`https://santa.example.com/#/groups/7`) open in the installed Android app and not in the browser, once Android has verified that the web address belongs to the app. Without the app, or where the address is not verified, they open the web app as before. Only a group's pages (its page, and its Gifter and Receiver pages) open in the app; any other address just opens the app.
+
+Android verifies by reading `https://santa.example.com/.well-known/assetlinks.json`, which the web container writes when it starts, from `PUBLIC_ANDROID_CERT_SHA256` in `.env`. Set it to the fingerprint of the release key and restart the web container (`docker compose up -d`):
+
+```
+keytool -list -v -keystore secrets/android-release.keystore -alias release | grep SHA256
+```
+
+Copy the value after `SHA256:` (`AB:CD:...`, 32 pairs). The address must be served over `https`, and `https://santa.example.com/.well-known/assetlinks.json` must answer `200` with the app's package `com.usuallycoding.opensecretsanta` and that fingerprint, without a redirect. Verification happens when the app is installed or updated; on a phone you can check and repeat it:
+
+```
+adb shell pm get-app-links com.usuallycoding.opensecretsanta          # santa.example.com: verified
+adb shell pm verify-app-links --re-verify com.usuallycoding.opensecretsanta
+adb shell am start -a android.intent.action.VIEW -d "https://santa.example.com/#/groups/7"
+```
+
+A debug build is signed with another key and is not verified: to try links with one, force it with `adb shell pm set-app-links --package com.usuallycoding.opensecretsanta 2 santa.example.com`. If your email service rewrites links to count clicks, turn that off for the sending domain, or the link goes through the service's address and opens in the browser. The address the app opens is fixed in the app (`WEB_APP_HOST` in `app/androidApp/src/AppLinks.kt` and the link filter in `AndroidManifest.xml`), as is the server it talks to.
 
 #### The app's icons
 

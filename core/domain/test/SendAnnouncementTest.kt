@@ -154,11 +154,21 @@ class SendAnnouncementTest {
         val alice = mailer.sent.single { it.to == "alice@example.org" }
         assertEquals("Schedule change: Office Party", alice.subject)
         assertEquals(
-            "Hi alice,\n\nLine one\nLine two\n\nBring snacks\nWhen: 20 Dec 2026, 19:00\nWhere: Canteen\n\nOpen the app: https://santa.example\n\nKeep it secret!",
+            "Hi alice,\n\nLine one\nLine two\n\nBring snacks\nWhen: 20 Dec 2026, 19:00\nWhere: Canteen\n\nOpen the app: https://santa.example/#/groups/${g.id}\n\nKeep it secret!",
             alice.text,
         )
         assertFalse("Secret Santa for" in alice.text)
         assertFalse("bob" in alice.text)
+    }
+
+    @Test
+    fun theLinkNamesTheGroupWithOneSlashBeforeTheHashWhateverTheAddressEndsWith() {
+        val g = group(GroupState.PENDING)
+
+        announce(g, appUrl = "https://santa.example/")
+        announce(g, appUrl = "https://santa.example")
+
+        assertEquals(listOf("Open the app: https://santa.example/#/groups/${g.id}"), mailer.sent.map { it.text.lines().single { l -> l.startsWith("Open the app") } }.distinct())
     }
 
     @Test

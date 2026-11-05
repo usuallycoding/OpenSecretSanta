@@ -63,7 +63,7 @@ class SendDrawEmails(
                 unbuilt++
                 continue
             }
-            messages += drawEmail(email, participant, group.details, receiver, accounts[receiver], appUrl)
+            messages += drawEmail(email, participant, group.id, group.details, receiver, accounts[receiver], appUrl)
         }
         val results = try {
             mailer.send(messages).let { if (it.size == messages.size) it else messages.map { false } }
@@ -78,6 +78,7 @@ class SendDrawEmails(
 fun drawEmail(
     to: String,
     santa: Username,
+    groupId: Long,
     group: GroupDetails,
     receiver: Username,
     receiverAccount: User?,
@@ -90,7 +91,7 @@ fun drawEmail(
         appendLine("The names for \"${oneLine(group.name)}\" have been drawn.")
         appendLine()
         appendLine("You are Secret Santa for: $receiverName")
-        appendDetailsAndLink(group, appUrl)
+        appendDetailsAndLink(group, groupLink(appUrl, groupId))
         appendLine()
         append("Keep it secret!")
     }
@@ -98,20 +99,23 @@ fun drawEmail(
 }
 
 /** The email that gives [message], written by the group's owner, to [to]: the draw email's layout without the draw. */
-fun announcementEmail(to: String, recipient: Username, group: GroupDetails, title: String, message: String, appUrl: String?): EmailMessage {
+fun announcementEmail(to: String, recipient: Username, groupId: Long, group: GroupDetails, title: String, message: String, appUrl: String?): EmailMessage {
     val text = buildString {
         appendLine("Hi ${recipient.value},")
         appendLine()
         appendLine(message)
-        appendDetailsAndLink(group, appUrl)
+        appendDetailsAndLink(group, groupLink(appUrl, groupId))
         appendLine()
         append("Keep it secret!")
     }
     return EmailMessage(to, "${oneLine(title)}: ${oneLine(group.name)}", text)
 }
 
-/** The group's description, when and where, if set, and then the link to the app, each block after an empty line. */
-private fun StringBuilder.appendDetailsAndLink(group: GroupDetails, appUrl: String?) {
+/** The link to a group in the web app, `<app address>/#/groups/<id>`, or null when no app address is configured. */
+internal fun groupLink(appUrl: String?, groupId: Long): String? = appUrl?.let { "${it.trimEnd('/')}/#/groups/$groupId" }
+
+/** The group's description, when and where, if set, and then the link to the group, each block after an empty line. */
+private fun StringBuilder.appendDetailsAndLink(group: GroupDetails, link: String?) {
     val details = buildList {
         group.description?.let { add(it) }
         group.date?.let { date -> add("When: " + whenText(date, group.time)) }
@@ -122,9 +126,9 @@ private fun StringBuilder.appendDetailsAndLink(group: GroupDetails, appUrl: Stri
         appendLine()
         details.forEach { appendLine(it) }
     }
-    if (appUrl != null) {
+    if (link != null) {
         appendLine()
-        appendLine("Open the app: $appUrl")
+        appendLine("Open the app: $link")
     }
 }
 
