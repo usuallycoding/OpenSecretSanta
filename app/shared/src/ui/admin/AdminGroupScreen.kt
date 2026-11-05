@@ -126,7 +126,14 @@ fun AdminGroupScreen(
     ui.sheet?.let { GroupSheetHost(it, viewModel.groupId, viewModel.me, draw, viewModel::dismissSheet) }
     ui.confirming?.let { step -> StepDialog(step, state.value?.name.orEmpty(), viewModel) }
     ui.confirmingDelete?.let { impact -> DeleteImpactDialog(impact, viewModel) }
-    ui.passwords?.let { PasswordsDialog(Strings.PASSWORDS_TITLE, Strings.PASSWORDS_BODY, it, viewModel::dismissPasswords) }
+    ui.passwords?.let { passwords ->
+        val body = when {
+            !ui.passwordsAskedFor -> Strings.PASSWORDS_BODY
+            passwords.isEmpty() -> Strings.PASSWORDS_NOBODY
+            else -> Strings.PASSWORDS_ASKED_FOR_BODY
+        }
+        PasswordsDialog(Strings.PASSWORDS_TITLE, body, passwords, viewModel::dismissPasswords)
+    }
 }
 
 private fun AdminNotice.text() = when (this) {
@@ -169,6 +176,9 @@ private fun Header(group: AdminGroup, viewModel: AdminGroupViewModel, busy: Bool
             }
             if (viewModel.canAnnounce) {
                 OutlinedButton(onClick = onAnnounce) { Text(Strings.ANNOUNCE_BUTTON) }
+            }
+            if (viewModel.canGetPasswords) {
+                OutlinedButton(onClick = { viewModel.getPasswords() }, enabled = !busy) { Text(Strings.GET_PASSWORDS) }
             }
             if (step != null) {
                 Button(onClick = { viewModel.ask(step) }, enabled = !busy && !blocked) { Text(step.label()) }

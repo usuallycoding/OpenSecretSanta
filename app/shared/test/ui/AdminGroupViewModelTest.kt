@@ -268,6 +268,105 @@ class AdminGroupViewModelTest {
         assertFalse("Temp-newcomer" in "${model.data.value} ${model.ui.value}")
     }
 
+    private fun pendingGroup(vararg people: String) = fake.add("Pending", state = "pending", participants = people.toList())
+
+    @Test
+    fun getPasswordsListsTheGroupsPeopleWhoStillHaveATemporaryPasswordInTheGroupsOrder() = runTest {
+        server.adminUsers.add("alice")
+        server.adminUsers.add("bob", temporary = "Temp-bob-1")
+        server.adminUsers.add("dave", temporary = "Temp-dave-1")
+        server.adminUsers.add("zed", temporary = "Temp-zed-1") // managed, but in no part of this group
+        val model = viewModel(pendingGroup("dave", "alice", "bob"))
+
+        model.getPasswords()?.join()
+
+        assertEquals(listOf("dave" to "Temp-dave-1", "bob" to "Temp-bob-1"), model.ui.value.passwords!!.map { it.username to it.temporaryPassword })
+        assertTrue(model.ui.value.passwordsAskedFor)
+        assertFalse(model.ui.value.busy)
+    }
+
+    @Test
+    fun getPasswordsMakesOneRequestForTheWholeGroup() = runTest {
+        server.adminUsers.add("alice", temporary = "Temp-alice-1")
+        server.adminUsers.add("bob", temporary = "Temp-bob-1")
+        val model = viewModel(pendingGroup("alice", "bob"))
+        val before = server.calls.count { it == "GET /admin/users" }
+
+        model.getPasswords()?.join()
+
+        assertEquals(before + 1, server.calls.count { it == "GET /admin/users" })
+    }
+
+    @Test
+    fun getPasswordsWithNobodyLeftOpensTheDialogWithAnEmptyList() = runTest {
+        server.adminUsers.add("alice")
+        server.adminUsers.add("bob")
+        val model = viewModel(pendingGroup("alice", "bob"))
+
+        model.getPasswords()?.join()
+
+        assertEquals(emptyList(), model.ui.value.passwords)
+        assertTrue(model.ui.value.passwordsAskedFor)
+    }
+
+    @Test
+    fun closingTheAskedForDialogLeavesNoPasswordsAnywhere() = runTest {
+        server.adminUsers.add("bob", temporary = "Temp-bob-1")
+        val model = viewModel(pendingGroup("bob", "alice"))
+        model.getPasswords()?.join()
+
+        model.dismissPasswords()
+
+        assertNull(model.ui.value.passwords)
+        assertFalse(model.ui.value.passwordsAskedFor)
+        assertFalse("Temp-bob" in "${model.data.value} ${model.ui.value}")
+    }
+
+    @Test
+    fun getPasswordsIsOfferedOnlyWhilePendingOrActive() = runTest {
+        assertFalse(viewModel(fake.add("Draft", state = "draft", participants = listOf("alice"))).canGetPasswords)
+        assertTrue(viewModel(fake.add("Pending", state = "pending", participants = listOf("alice"))).canGetPasswords)
+        assertTrue(viewModel(fake.add("Active", state = "active", participants = listOf("alice"))).canGetPasswords)
+        assertFalse(viewModel(fake.add("Archived", state = "archived", participants = listOf("alice"))).canGetPasswords)
+    }
+
+    @Test
+    fun getPasswordsDoesNothingForADraftAndIsNotStartedTwiceWhileLoading() = runTest {
+        server.adminUsers.add("alice", temporary = "Temp-alice-1")
+        val draft = viewModel(fake.add("Draft", state = "draft", participants = listOf("alice")))
+        assertNull(draft.getPasswords())
+        assertNull(draft.ui.value.passwords)
+
+        val model = viewModel(pendingGroup("alice", "bob"))
+        val first = model.getPasswords()
+        assertTrue(model.ui.value.busy)
+        assertNull(model.getPasswords())
+        first?.join()
+        assertFalse(model.ui.value.busy)
+    }
+
+    @Test
+    fun anUnreachableServerIsSaidWithTheNoticeAndOpensNoDialog() = runTest {
+        server.adminUsers.add("alice", temporary = "Temp-alice-1")
+        val model = viewModel(pendingGroup("alice", "bob"))
+        server.unreachable = true
+
+        model.getPasswords()?.join()
+
+        assertEquals(AdminNotice.Unreachable, model.ui.value.notice)
+        assertNull(model.ui.value.passwords)
+        assertFalse(model.ui.value.busy)
+    }
+
+    @Test
+    fun theDialogForCreatedAccountsIsNotTheAskedForOne() = runTest {
+        val model = viewModel(fake.add("Draft", participants = listOf("alice", "bob", "newcomer", "other")))
+        model.ask(AdminStep.MakePending)
+        model.confirmStep()?.join()
+
+        assertFalse(model.ui.value.passwordsAskedFor)
+    }
+
     @Test
     fun noDialogWhenNoAccountWasCreated() = runTest {
         val model = viewModel(fake.add("Draft", participants = listOf("alice", "bob")))

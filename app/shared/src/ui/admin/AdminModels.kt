@@ -112,6 +112,8 @@ data class AdminGroupUi(
     val confirmingDelete: DeletionImpactDto? = null,
     val busy: Boolean = false,
     val passwords: List<CreatedAccount>? = null,
+    /** The passwords were asked for with "Get passwords", not handed over because accounts were just created. */
+    val passwordsAskedFor: Boolean = false,
     val notice: AdminNotice? = null,
     val sheet: GroupSheet? = null,
     /** The group was deleted: the screen goes back to the list. */

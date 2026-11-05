@@ -118,6 +118,9 @@ class AdminGroupViewModel(
     /** A message to the participants can be sent while the group is Pending or Active. */
     val canAnnounce: Boolean get() = current?.phase.let { it == AdminPhase.Pending || it == AdminPhase.Active }
 
+    /** The temporary passwords of the group's people can be looked up while the group is Pending or Active, as a message can be sent. */
+    val canGetPasswords: Boolean get() = canAnnounce
+
     /** The next step for the state, or null when there is none (an Archived group). */
     val nextStep: AdminStep?
         get() = when (current?.phase) {
@@ -237,7 +240,29 @@ class AdminGroupViewModel(
 
     // --- the passwords and notices ----------------------------------------------------------------------
 
-    fun dismissPasswords() = _ui.update { it.copy(passwords = null) }
+    fun dismissPasswords() = _ui.update { it.copy(passwords = null, passwordsAskedFor = false) }
+
+    /**
+     * Looks up who in the group still has a temporary password, from the users the administrator manages, in the group's order;
+     * the answer is shown in the passwords dialog, also when nobody has one. Returns the running work, or null when nothing starts.
+     */
+    fun getPasswords(): Job? {
+        val group = current ?: return null
+        if (!canGetPasswords || _ui.value.busy) return null
+        _ui.update { it.copy(busy = true) }
+        return scope.launch {
+            when (val result = api.adminUsers()) {
+                is ApiResult.Success -> {
+                    val byName = result.value.associateBy { it.user.username }
+                    val found = group.participants.mapNotNull { person ->
+                        byName[person.username]?.temporaryPassword?.let { CreatedAccount(person.username, it) }
+                    }
+                    _ui.update { it.copy(busy = false, passwords = found, passwordsAskedFor = true) }
+                }
+                is ApiResult.Failure -> _ui.update { it.copy(busy = false, notice = AdminNotice.Unreachable) }
+            }
+        }
+    }
 
     fun dismissNotice() = _ui.update { it.copy(notice = null) }
 
@@ -251,7 +276,7 @@ class AdminGroupViewModel(
         loader.replace(group)
         loadDraw(group.phase, group.participants)
         val created = change.createdAccounts.map { CreatedAccount(it.username, it.temporaryPassword) }
-        if (created.isNotEmpty()) _ui.update { it.copy(passwords = created) }
+        if (created.isNotEmpty()) _ui.update { it.copy(passwords = created, passwordsAskedFor = false) }
     }
 
     private suspend fun participantsFailed(error: ApiError) {
