@@ -320,7 +320,8 @@ Set it up once:
 4. **Firebase access**, either of two:
    - `npx firebase-tools login` once, with a Google account that may use App Distribution in the project (nothing is stored in this repository), or
    - a service-account key in `secrets/firebase-service-account.json`, for an account with the role "Firebase App Distribution Admin"; the script uses it when the file exists.
-5. **The tester group**: open the project's App Distribution page, then Testers & Groups. The script wants the group's *alias* (under the group's name, normally the name in lower case, such as `dincolo`), not the display name. Testers get an email invitation the first time.
+5. **The web app's host**, in `secrets/web-app-host`: one line, the host the emails link to (`santa.example.org`, no `https://`, no path). The checkout names `santa.example.com` as a placeholder in the app's manifest and in `app/androidApp/src/AppLinks.kt`, so that your real host is never committed; the script writes yours there for the build, checks that the built APK names it, and puts the two files back (like `module.yaml`, they must have no uncommitted changes when it starts). See "Opening links in the Android app" below.
+6. **The tester group**: open the project's App Distribution page, then Testers & Groups. The script wants the group's *alias* (under the group's name, normally the name in lower case, such as `dincolo`), not the display name. Testers get an email invitation the first time.
 
 Node is needed for the upload (`npx firebase-tools`), and the Android SDK build-tools for `apksigner`, which the script finds under `ANDROID_HOME` or the usual SDK folders.
 
@@ -342,7 +343,7 @@ adb shell pm verify-app-links --re-verify com.usuallycoding.opensecretsanta
 adb shell am start -a android.intent.action.VIEW -d "https://santa.example.com/#/groups/7"
 ```
 
-A debug build is signed with another key and is not verified: to try links with one, force it with `adb shell pm set-app-links --package com.usuallycoding.opensecretsanta 2 santa.example.com`. If your email service rewrites links to count clicks, turn that off for the sending domain, or the link goes through the service's address and opens in the browser. The address the app opens is fixed in the app (`WEB_APP_HOST` in `app/androidApp/src/AppLinks.kt` and the link filter in `AndroidManifest.xml`), as is the server it talks to.
+A debug build is signed with another key and is not verified: to try links with one, force it with `adb shell pm set-app-links --package com.usuallycoding.opensecretsanta 2 santa.example.com`. If your email service rewrites links to count clicks, turn that off for the sending domain, or the link goes through the service's address and opens in the browser. The address the app opens is fixed when the release is built: `secrets/web-app-host` (see "Distribute the Android app to testers") is written into the link filter in `AndroidManifest.xml` and into `WEB_APP_HOST` in `app/androidApp/src/AppLinks.kt` for the build only, and the script stops if it is missing. A build made any other way, such as a debug build from Android Studio, keeps the placeholder `santa.example.com` and never opens these links.
 
 #### The app's icons
 

@@ -37,7 +37,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <!-- The links in the emails: the web app's address opens here, once Android has verified it against
-                 /.well-known/assetlinks.json on that host. Keep the host the same as WEB_APP_HOST in AppLinks.kt. -->
+                 /.well-known/assetlinks.json on that host. The host is a placeholder: the release script writes the real one
+                 from secrets/web-app-host for the build (see AppLinks.kt), and a debug build is not verified anyway. -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 

@@ -13,8 +13,12 @@
 #   secrets/android-signing.properties     storePassword=, keyAlias=, keyPassword=
 #   app/androidApp/google-services.json    the Firebase app file
 #   secrets/firebase-service-account.json  optional; without it the CLI uses your own `firebase login`
+#   secrets/web-app-host                   the host of the web app the emails link to, one line (santa.example.org)
 #
-# SECRETS_DIR points somewhere else for the first three; FIREBASE_CLI replaces `npx firebase-tools` (a test uses it).
+# The checkout names that host as santa.example.com in the app's manifest and in AppLinks.kt; the build writes the real one
+# there from secrets/web-app-host and puts the files back, so the real host is never committed.
+#
+# SECRETS_DIR points somewhere else for the files in secrets/; FIREBASE_CLI replaces `npx firebase-tools` (a test uses it).
 set -euo pipefail
 
 root=$(cd "$(dirname "$0")/.." && pwd)
@@ -25,6 +29,10 @@ keystore=$secrets_dir/android-release.keystore
 signing_properties=$secrets_dir/android-signing.properties
 google_services=app/androidApp/google-services.json
 module_file=app/androidApp/module.yaml
+manifest_file=app/androidApp/src/AndroidManifest.xml
+app_links_file=app/androidApp/src/AppLinks.kt
+placeholder_host=santa.example.com
+web_app_host_file=$secrets_dir/web-app-host
 module_properties=app/androidApp/keystore.properties
 app_version_file=app/shared/src/AppVersion.kt
 apk_dir=build/tasks/_androidApp_buildAndroidRelease
@@ -59,6 +67,7 @@ done
 [ -f "$keystore" ] || die "the release keystore is missing: $keystore (see the README)"
 [ -f "$signing_properties" ] || die "the signing properties are missing: $signing_properties (see the README)"
 [ -f "$google_services" ] || die "$google_services is missing (download it from the Firebase console)"
+[ -f "$web_app_host_file" ] || die "the web app's host is missing: $web_app_host_file (one line, such as santa.example.org; see the README)"
 command -v python3 >/dev/null || die "python3 is needed"
 command -v git >/dev/null || die "git is needed"
 [ -x ./kotlin ] || die "run this from a checkout: ./kotlin is missing"
@@ -87,8 +96,19 @@ if [ "$upload" = yes ]; then
   [ -n "${FIREBASE_CLI:-}" ] || command -v npx >/dev/null || die "Node (npx) is needed to upload"
 fi
 
-# the build edits this file for its own sake and puts it back, so it must not hold anything of the person's yet
-[ -z "$(git status --porcelain -- "$module_file")" ] || die "$module_file has uncommitted changes; commit or discard them first"
+web_app_host=$(grep -v '^[[:space:]]*#' "$web_app_host_file" | head -n 1 | tr -d '[:space:]' || true)
+case $web_app_host in
+  ''|*[!A-Za-z0-9.-]*|.*|*.|*..*) die "$web_app_host_file must hold a host name such as santa.example.org, and nothing else" ;;
+esac
+[ "$web_app_host" != "$placeholder_host" ] || die "$web_app_host_file still holds the placeholder $placeholder_host"
+
+# the build edits these files for its own sake and puts them back, so they must not hold anything of the person's yet
+for file in "$module_file" "$manifest_file" "$app_links_file"; do
+  [ -z "$(git status --porcelain -- "$file")" ] || die "$file has uncommitted changes; commit or discard them first"
+done
+for file in "$manifest_file" "$app_links_file"; do
+  [ "$(grep -cF "$placeholder_host" "$file")" = 1 ] || die "$file must name $placeholder_host on exactly one line"
+done
 [ ! -e "$module_properties" ] || die "$module_properties exists; remove it (this script writes and removes its own)"
 
 if [ -z "$version" ]; then
@@ -101,15 +121,27 @@ case $version in *[!A-Za-z0-9._+-]*|'') die "the version may only hold letters, 
 version_code=$(( $(date +%s) / 60 ))
 [ -n "$notes" ] || notes=$(git log -1 --pretty=%s)
 
-# --- the build, with module.yaml and the properties file put back whatever happens -----------------------------------
+# --- the build, with the edited files and the properties file put back whatever happens -----------------------------------
 
 backup=$(mktemp)
+manifest_backup=$(mktemp)
+app_links_backup=$(mktemp)
 cp "$module_file" "$backup"
+cp "$manifest_file" "$manifest_backup"
+cp "$app_links_file" "$app_links_backup"
 cleanup() {
   cp "$backup" "$module_file"
-  rm -f "$backup" "$module_properties"
+  cp "$manifest_backup" "$manifest_file"
+  cp "$app_links_backup" "$app_links_file"
+  rm -f "$backup" "$manifest_backup" "$app_links_backup" "$module_properties"
 }
 trap cleanup EXIT INT TERM
+
+# the host holds only letters, digits, dots and hyphens, so it is safe in a sed replacement
+sed "s/santa\.example\.com/$web_app_host/" "$manifest_backup" > "$manifest_file"
+sed "s/santa\.example\.com/$web_app_host/" "$app_links_backup" > "$app_links_file"
+grep -qF "\"$web_app_host\"" "$manifest_file" || die "could not set the web app's host in $manifest_file"
+grep -qF "\"$web_app_host\"" "$app_links_file" || die "could not set the web app's host in $app_links_file"
 
 awk -v code="$version_code" -v name="$version" '
   { print }
@@ -140,6 +172,11 @@ certificates=$("$build_tools/apksigner" verify --print-certs "$apk" 2>&1) || die
 case $certificates in *"Android Debug"*) die "the APK is signed with the debug key" ;; esac
 badging=$("$build_tools/aapt2" dump badging "$apk" 2>&1 | grep -E "^package:")
 case $badging in *"versionCode='$version_code'"*"versionName='$version'"*) ;; *) die "the APK does not carry the version $version ($version_code)" ;; esac
+
+# the link filter of the built app names the real host, not the placeholder
+manifest_hosts=$("$build_tools/aapt2" dump xmltree --file AndroidManifest.xml "$apk" 2>&1 | grep -F "host(" || true)
+case $manifest_hosts in *"\"$web_app_host\""*) ;; *) die "the APK's link filter does not name $web_app_host" ;; esac
+case $manifest_hosts in *"\"$placeholder_host\""*) die "the APK's link filter still names the placeholder $placeholder_host" ;; esac
 
 mkdir -p build/distribution
 out=build/distribution/opensecretsanta-$version-$version_code.apk

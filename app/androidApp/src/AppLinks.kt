@@ -2,7 +2,8 @@ package com.usuallycoding.opensecretsanta
 
 /**
  * The host of the web app the emails link to. It is also the host of the link filter in `AndroidManifest.xml`, which Android
- * verifies against `/.well-known/assetlinks.json` on that host; keep the two the same.
+ * verifies against `/.well-known/assetlinks.json` on that host. The checkout holds a placeholder in both places; the release
+ * script writes the real host there from `secrets/web-app-host` for the build and puts the files back.
  */
 internal const val WEB_APP_HOST = "santa.example.com"
 
