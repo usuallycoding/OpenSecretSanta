@@ -6,15 +6,15 @@ Tells each participant of a group, by email, that the names have been drawn and 
 ## Requirements
 
 ### Requirement: Participants are emailed their draw
-When a group becomes Active the server SHALL send one email to each participant whose account has an email address, addressed only to that person. The email SHALL give the group's name, description, date, time and location (those that are set), say that the names have been drawn, and name the participant's own receiver (the username and, when set, the full name).
+When a group becomes Active the server SHALL send one email to each participant whose account has an email address, addressed only to that person. The email SHALL give the group's name, description, date, time, location and budget with its currency (those that are set), say that the names have been drawn, and name the participant's own receiver (the username and, when set, the full name).
 
 #### Scenario: Each person gets their own receiver
 - **WHEN** a group of `alice`, `bob`, `carol` and `dave` with email addresses is drawn so that `alice` gives to `bob`
 - **THEN** `alice`'s email names `bob` as the person she is Secret Santa for, and no email names anyone else's receiver
 
 #### Scenario: Group details
-- **WHEN** the group has a description, a date, a time and a location
-- **THEN** each email carries them, and a group without a date does not show an empty date
+- **WHEN** the group has a description, a date, a time, a location and the budget 100 in `RON`
+- **THEN** each email carries them, the budget as "Budget: 100 RON" after the location, and a group without a date does not show an empty date
 
 #### Scenario: Nothing private in the subject or the body
 - **WHEN** the receiver has set an address, a phone and delivery information
@@ -31,6 +31,10 @@ When a group becomes Active the server SHALL send one email to each participant 
 #### Scenario: No app address
 - **WHEN** no app address is configured
 - **THEN** the email has no link
+
+#### Scenario: No budget
+- **WHEN** the group has no budget
+- **THEN** the email has no budget line
 
 ### Requirement: Only people with an address are emailed
 A participant without an account, or whose account has no email address, SHALL NOT be emailed, SHALL NOT stop the others from being emailed and SHALL be counted as having no address.

@@ -21,7 +21,7 @@ The participant's Groups tab and the administrator's groups list SHALL each have
 - **THEN** it has a control that empties it
 
 ### Requirement: What the search matches
-The list SHALL show only the groups whose name or description matches what is typed, ignoring upper and lower case. With several words, a group SHALL match when every word is found in its name or description, in any order. A group's date, time, location and participants SHALL NOT be searched.
+The list SHALL show only the groups whose name or description matches what is typed, ignoring upper and lower case. With several words, a group SHALL match when every word is found in its name or description, in any order. A group's date, time, location, budget, currency and participants SHALL NOT be searched.
 
 #### Scenario: Matches the name
 - **WHEN** the person types "party" and one group is called "Office Party"
@@ -45,6 +45,10 @@ The list SHALL show only the groups whose name or description matches what is ty
 
 #### Scenario: Other details are not searched
 - **WHEN** the person types "Town Hall" and only a group's location is "Town Hall"
+- **THEN** that group is not listed
+
+#### Scenario: Budget is not searched
+- **WHEN** the person types "100" and only a group's budget is 100
 - **THEN** that group is not listed
 
 ### Requirement: State chips

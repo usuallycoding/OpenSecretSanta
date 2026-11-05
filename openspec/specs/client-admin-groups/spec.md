@@ -30,7 +30,7 @@ The admin view SHALL list the signed-in administrator's own groups, loaded with 
 - **THEN** each has a "Duplicate" button, and choosing it does not open the group
 
 ### Requirement: Creating a group
-"New group" SHALL open a form with name, description, location, date and time. A successful `POST /admin/groups` SHALL open the new group, which is a Draft. A field the server refuses SHALL show its message next to the field.
+"New group" SHALL open a form with name, description, location, budget, currency, date and time. A successful `POST /admin/groups` SHALL open the new group, which is a Draft. A field the server refuses SHALL show its message next to the field.
 
 #### Scenario: Create a group
 - **WHEN** the administrator enters a name and saves
@@ -41,7 +41,7 @@ The admin view SHALL list the signed-in administrator's own groups, loaded with 
 - **THEN** the form keeps what was typed and says so
 
 ### Requirement: The group form checks what the server checks
-Before anything is sent the form SHALL check every field exactly as the server does: a name of 1 to 100 characters, a description of up to 2000, a location of up to 200, a real calendar date and a real time of day, with blanks taken as empty. A failed check SHALL show its message next to the field.
+Before anything is sent the form SHALL check every field exactly as the server does: a name of 1 to 100 characters, a description of up to 2000, a location of up to 200, a budget that is a whole number from 50 to 10000, a currency of up to 20, a real calendar date and a real time of day, with blanks taken as empty. A failed check SHALL show its message next to the field.
 
 #### Scenario: Name required
 - **WHEN** the administrator saves with a blank name
@@ -52,8 +52,12 @@ Before anything is sent the form SHALL check every field exactly as the server d
 - **THEN** nothing is sent and the form says what format is expected next to that field
 
 #### Scenario: Blank means empty
-- **WHEN** the administrator leaves description, location, date and time blank
+- **WHEN** the administrator leaves description, location, budget, date and time blank
 - **THEN** the group is saved without them
+
+#### Scenario: Budget out of range
+- **WHEN** the form holds a budget of 49, of 10001 or of `abc`
+- **THEN** nothing is sent and the form says next to the budget field that it must be a whole number from 50 to 10000
 
 ### Requirement: Date and time are chosen with pickers
 The group form's Date and Time fields SHALL be read-only and open a date picker or a time picker when chosen, and SHALL show the chosen value as `2026-12-24` and `18:30`. A field with a value SHALL show a clear control that empties it. The time picker SHALL be 24-hour on every device. The date and time SHALL be local values: the date chosen is the date saved in every timezone.
@@ -257,7 +261,7 @@ Every admin group screen SHALL show that it is loading, SHALL show a message wit
 - **THEN** the list stays on screen with the error message
 
 ### Requirement: Duplicating a group
-Choosing "Duplicate" on a group SHALL ask for confirmation, naming the group. Confirming SHALL create a Draft with `POST /admin/groups` having the original's description, location, date, time and participants and the name "Copy of " followed by the original's name, and SHALL open the new group.
+Choosing "Duplicate" on a group SHALL ask for confirmation, naming the group. Confirming SHALL create a Draft with `POST /admin/groups` having the original's description, location, budget, currency, date, time and participants and the name "Copy of " followed by the original's name, and SHALL open the new group.
 
 #### Scenario: Duplicate an Active group
 - **WHEN** the administrator confirms "Duplicate" on an Active group "Party" with participants `alice` and `bob`
@@ -278,6 +282,10 @@ Choosing "Duplicate" on a group SHALL ask for confirmation, naming the group. Co
 #### Scenario: Failure
 - **WHEN** the server cannot be reached, or refuses the new group
 - **THEN** the dialog says so, nothing is created and the list stays as it was
+
+#### Scenario: Budget is copied
+- **WHEN** the administrator confirms "Duplicate" on a group with the budget 100 and the currency `EUR`
+- **THEN** the copy has the budget 100 and the currency `EUR`
 
 ### Requirement: Deleting a group
 Every group, whatever its state, SHALL offer "Delete" in the row of buttons under its details, after a confirmation, sent with `DELETE /admin/groups/{id}`. Deleting SHALL return to the list.
@@ -375,18 +383,18 @@ When no participant or pair matches, the page SHALL say so in place of the list 
 - **THEN** it has a control that empties it and shows everyone again
 
 ### Requirement: Admin group details are shown in a card
-On the admin group screen the group's description, date and time and location SHALL be shown in the same card, with the same "When? - " and "Where? - " lines, as `client-groups` describes for the group page, below the name and the state with its note. The actions of the group (edit, announce, the next step and delete) SHALL be below the card and SHALL NOT be in it.
+On the admin group screen the group's description, date and time, location and budget SHALL be shown in the same card, with the same "When? - ", "Where? - " and "Budget? - " lines, as `client-groups` describes for the group page, below the name and the state with its note. The actions of the group (edit, announce, the next step and delete) SHALL be below the card and SHALL NOT be in it.
 
 #### Scenario: Details in the card
-- **WHEN** an administrator opens a group that has a description, a date and time and a location
-- **THEN** the card shows the description, "When? - " with the date and time, and "Where? - " with the location
+- **WHEN** an administrator opens a group that has a description, a date and time, a location and a budget
+- **THEN** the card shows the description, "When? - " with the date and time, "Where? - " with the location and "Budget? - " with the budget and its currency
 
 #### Scenario: Actions stay below
 - **WHEN** the screen shows the card and the group has actions
 - **THEN** the buttons are below the card and none is inside it
 
 #### Scenario: Nothing to show
-- **WHEN** a group has no description, date, time or location
+- **WHEN** a group has no description, date, time, location or budget
 - **THEN** no card is shown and the actions follow the state directly
 
 ### Requirement: Who takes part depends on the state
@@ -444,3 +452,22 @@ When the server answers 409 `confirmation_required` the app SHALL show a second 
 #### Scenario: The dialog names the counts
 - **WHEN** the server answers 409 with counts of 3 wishlist items and 2 questions
 - **THEN** the second dialog names those counts and says that this cannot be undone
+
+### Requirement: The group form has a budget
+The group form SHALL have a "Budget (optional)" field that takes digits only and a "Currency" field that starts with `RON` on a new group and with the group's own currency when editing one that has a budget. Clearing the budget SHALL save the group without a budget and without a currency.
+
+#### Scenario: New group
+- **WHEN** the administrator opens the form for a new group
+- **THEN** the budget is empty and the currency reads `RON`
+
+#### Scenario: Edit a budget
+- **WHEN** the administrator opens an Active group with the budget 100 and the currency `EUR`, sets the budget to 150 and saves
+- **THEN** the detail shows "Budget? - 150 EUR"
+
+#### Scenario: Clear the budget
+- **WHEN** the administrator empties the budget field and saves
+- **THEN** the group has no budget and the detail shows no budget line
+
+#### Scenario: Letters are not accepted
+- **WHEN** the administrator types letters in the budget field
+- **THEN** the field keeps only the digits

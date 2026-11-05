@@ -110,18 +110,18 @@ Choosing a group SHALL open its page, loaded with `GET /groups/{id}`, showing it
 - **THEN** her chip is highlighted and has no "you" text, and the other chips are not highlighted
 
 ### Requirement: Group information is shown in a card
-On the group page the group's description, date and time and location SHALL be shown together in one card, in that order, below the name and the state with its note and above the pair rows. Parts the group does not have SHALL be left out, and a group with none of them SHALL show no card.
+On the group page the group's description, date and time, location and budget SHALL be shown together in one card, in that order, below the name and the state with its note and above the pair rows. Parts the group does not have SHALL be left out, and a group with none of them SHALL show no card.
 
 #### Scenario: All three present
-- **WHEN** a group has a description, the date `2026-12-24`, the time `18:30` and the location "Grandma's house"
-- **THEN** one card shows the description, "When? - 24 Dec 2026, 18:30" and "Where? - Grandma's house", in that order
+- **WHEN** a group has a description, the date `2026-12-24`, the time `18:30`, the location "Grandma's house" and the budget 100 in `RON`
+- **THEN** one card shows the description, "When? - 24 Dec 2026, 18:30", "Where? - Grandma's house" and "Budget? - 100 RON", in that order
 
 #### Scenario: Parts left out
-- **WHEN** a group has a location and nothing else of the three
-- **THEN** the card shows only "Where? - " and the location
+- **WHEN** a group has a budget and nothing else of the four
+- **THEN** the card shows only "Budget? - " and the budget
 
 #### Scenario: Nothing to show
-- **WHEN** a group has no description, no date, no time and no location
+- **WHEN** a group has no description, no date, no time, no location and no budget
 - **THEN** no card is shown
 
 ### Requirement: The card labels the date and the location
@@ -162,3 +162,18 @@ The chips SHALL NOT be tappable.
 #### Scenario: Tapping a chip
 - **WHEN** a person taps a participant's chip
 - **THEN** nothing happens
+
+### Requirement: The card labels the budget
+In the card the budget SHALL be on a line reading "Budget? - " followed by the budget, a space and the currency, with the label in a semi-bold weight, below the location line. A group without a budget SHALL have no such line.
+
+#### Scenario: Budget line
+- **WHEN** a group has the budget 100 and the currency `EUR`
+- **THEN** the card's budget line reads "Budget? - 100 EUR"
+
+#### Scenario: No budget
+- **WHEN** a group has no budget
+- **THEN** the card has no budget line
+
+#### Scenario: Screen reader
+- **WHEN** a screen reader reads the card
+- **THEN** it reads the budget line with its label, like the other lines
