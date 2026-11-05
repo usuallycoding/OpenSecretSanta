@@ -207,10 +207,10 @@ private fun WishlistItems(items: List<OversightItem>) {
         return
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        for (item in items) {
+        for ((index, item) in items.withIndex()) {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    ItemText(item.title, item.note, item.url, item.added, item.changed)
+                    ItemText(index + 1, item.title, item.note, item.url, item.added, item.changed)
                 }
             }
         }

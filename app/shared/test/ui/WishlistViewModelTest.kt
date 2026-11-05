@@ -357,6 +357,40 @@ class WishlistViewModelTest {
     }
 
     @Test
+    fun movingToAnIndexSendsAllIdsOnceAndShowsTheServersOrder() = runTest {
+        val a = server.wishlist.add("A")
+        server.wishlist.add("B")
+        val c = server.wishlist.add("C")
+        val model = viewModel()
+
+        model.moveTo(a, 2)?.join()
+        assertEquals(listOf("B", "C", "A"), model.titles())
+        assertEquals(1, changesSent())
+
+        model.moveTo(a, 0)?.join()
+        assertEquals(listOf("A", "B", "C"), model.titles())
+        model.moveTo(c, 0)?.join()
+        assertEquals(listOf("C", "A", "B"), model.titles())
+        assertEquals(listOf(c, a, server.wishlist.ids.last()), server.wishlist.ids)
+        assertFalse(model.ui.value.moving)
+    }
+
+    @Test
+    fun movingToTheSameOrAnImpossibleIndexSendsNothing() = runTest {
+        val a = server.wishlist.add("A")
+        val b = server.wishlist.add("B")
+        val model = viewModel()
+
+        assertNull(model.moveTo(a, 0))
+        assertNull(model.moveTo(b, 2))
+        assertNull(model.moveTo(b, -1))
+        assertNull(model.moveTo(9999, 0))
+
+        assertEquals(0, changesSent())
+        assertEquals(listOf("A", "B"), model.titles())
+    }
+
+    @Test
     fun aListChangedElsewhereIsReloadedWithANotice() = runTest {
         val a = server.wishlist.add("A")
         val b = server.wishlist.add("B")

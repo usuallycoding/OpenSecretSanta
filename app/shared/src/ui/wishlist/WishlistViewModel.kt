@@ -142,19 +142,23 @@ class WishlistViewModel(
 
     // --- reordering ---------------------------------------------------------------------------
 
-    fun moveUp(itemId: Long): Job? = move(itemId, -1)
+    fun moveUp(itemId: Long): Job? = moveBy(itemId, -1)
 
-    fun moveDown(itemId: Long): Job? = move(itemId, +1)
+    fun moveDown(itemId: Long): Job? = moveBy(itemId, +1)
 
-    /** Sends every id in the new order; the order the server answers with is the one shown. */
-    private fun move(itemId: Long, by: Int): Job? {
+    private fun moveBy(itemId: Long, by: Int): Job? {
+        val from = current?.items?.indexOfFirst { it.id == itemId } ?: return null
+        return moveTo(itemId, from + by)
+    }
+
+    /** Moves the item to [index] and sends every id in the new order; the order the server answers with is the one shown. */
+    fun moveTo(itemId: Long, index: Int): Job? {
         val data = current?.takeIf { it.editable } ?: return null
         if (_ui.value.moving) return null
         val from = data.items.indexOfFirst { it.id == itemId }
-        val to = from + by
-        if (from < 0 || to !in data.items.indices) return null
+        if (from < 0 || index !in data.items.indices || index == from) return null
         val ids = data.items.map { it.id }.toMutableList()
-        ids.add(to, ids.removeAt(from))
+        ids.add(index, ids.removeAt(from))
         _ui.update { it.copy(moving = true, notice = null) }
         return scope.launch {
             when (val result = api.reorderWishlist(groupId, ids)) {

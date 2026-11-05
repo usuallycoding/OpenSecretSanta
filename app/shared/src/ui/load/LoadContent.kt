@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -29,6 +30,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import com.usuallycoding.opensecretsanta.getPlatform
 import com.usuallycoding.opensecretsanta.ui.Strings
@@ -102,6 +106,13 @@ internal fun PullRefresh(loading: Boolean, onRefresh: () -> Unit, modifier: Modi
 /** True inside a page while it is being pulled, so that a section does not show its own bar next to the pull indicator. */
 internal val LocalPullActive = compositionLocalOf { false }
 
+/** The scroll of the page a section sits in and where the page is on the screen, for a section that has to scroll it, such as one dragging an item to the edge. */
+internal class PageScroll(val state: ScrollState) {
+    var viewport: Rect = Rect.Zero
+}
+
+internal val LocalPageScroll = compositionLocalOf<PageScroll?> { null }
+
 /**
  * One section of a page that loads by itself: progress while it first loads, the failure with "Try again"
  * (keeping what it showed), or [content]. It does not scroll or pull; the page around it does.
@@ -132,9 +143,10 @@ fun PullPage(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val scroll = rememberScrollState()
+    val pageScroll = remember(scroll) { PageScroll(scroll) }
     val body: @Composable (Boolean) -> Unit = { pulled ->
-        CompositionLocalProvider(LocalPullActive provides pulled) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        CompositionLocalProvider(LocalPullActive provides pulled, LocalPageScroll provides pageScroll) {
+            Box(Modifier.fillMaxSize().onGloballyPositioned { pageScroll.viewport = it.boundsInWindow() }, contentAlignment = Alignment.TopCenter) {
                 Column(
                     Modifier.fillMaxSize().verticalScroll(scroll).padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp + bottomSpace),
                     verticalArrangement = Arrangement.spacedBy(12.dp),

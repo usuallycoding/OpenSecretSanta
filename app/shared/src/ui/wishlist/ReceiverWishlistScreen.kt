@@ -38,9 +38,9 @@ fun ReceiverWishlistSection(viewModel: ReceiverWishlistViewModel) {
                 Text(Strings.RECEIVER_WISHLIST_EMPTY, style = MaterialTheme.typography.bodyLarge)
             } else {
                 Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    for (item in items) {
+                    for ((index, item) in items.withIndex()) {
                         Card(Modifier.fillMaxWidth()) {
-                            ItemText(item.title, item.note, item.url, item.added, item.changed, Modifier.padding(16.dp))
+                            ItemText(index + 1, item.title, item.note, item.url, item.added, item.changed, Modifier.padding(16.dp))
                         }
                     }
                 }

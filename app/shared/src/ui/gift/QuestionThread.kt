@@ -27,11 +27,12 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.form.BadgeGap
+import com.usuallycoding.opensecretsanta.ui.form.BadgeSize
+import com.usuallycoding.opensecretsanta.ui.form.NumberBadge
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
 import com.usuallycoding.opensecretsanta.ui.form.TimesLine
 
-private val BadgeSize = 24.dp
-private val BadgeGap = 10.dp
 private val LineGap = 6.dp
 private val LineElbow = 8.dp
 private val LineWidth = 1.5.dp
@@ -74,12 +75,7 @@ internal fun QuestionThread(
         verticalArrangement = Arrangement.spacedBy(LineGap),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(BadgeGap)) {
-            Box(
-                Modifier.size(BadgeSize).background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(number.toString(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
-            }
+            NumberBadge(number)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 ReadOnlyText(text, style = MaterialTheme.typography.titleSmall, label = "${Strings.QUESTION_LABEL} $number")
                 TimesLine(Strings.asked(asked))
