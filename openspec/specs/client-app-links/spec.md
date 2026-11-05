@@ -6,7 +6,7 @@ How the Android app takes over the web app's group addresses, so that the link i
 ## Requirements
 
 ### Requirement: Group links open in the Android app
-On Android, an address of the web app that the release was built for (for example `https://santa.example.org`) that names a group (`/#/groups/<id>`, and the group's Gifter and Receiver pages with their tabs) SHALL open in the installed app, and not in the browser, once the system has verified that the address belongs to the app. The app SHALL open the screen the address names with the group list behind it, as a tap on a notification does, and SHALL wait for sign-in first when the person is signed out.
+On Android, an address of the web app that the release was built for (for example `https://santa.example.org`) that names a group (`/#/groups/<id>`, or the group's Gifter or Receiver page with its tab) SHALL open in the installed app, and not in the browser, once the system has verified that the address belongs to the app.
 
 #### Scenario: Link from an email
 - **WHEN** a signed-in person with the app installed taps `https://santa.example.org/#/groups/7` in an email
@@ -49,3 +49,14 @@ When the app is not installed, when the address could not be verified for the ap
 #### Scenario: Debug build
 - **WHEN** a debug build installed from Android Studio is on the phone and the person taps the link
 - **THEN** the link opens in the browser and not in that build
+
+### Requirement: A link opens its screen as a notification does
+The app SHALL open the screen a link names with the group list behind it, as a tap on a notification does, and SHALL wait for sign-in first when the person is signed out.
+
+#### Scenario: Back goes to the group list
+- **WHEN** a signed-in person opens a link to group 7 and goes back
+- **THEN** the group list is shown
+
+#### Scenario: A page of the group
+- **WHEN** a link names `/#/groups/7/receiver/questions`
+- **THEN** the Receiver page of group 7 opens on its questions tab, with group 7's page and then the group list behind it
