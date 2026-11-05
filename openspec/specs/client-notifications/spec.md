@@ -88,7 +88,7 @@ When the push service gives the device a new token while the device switch is on
 - **THEN** the server holds the new token for the signed-in person
 
 ### Requirement: Showing and opening notifications
-A notification that arrives SHALL be shown by the system with the app's name and the notification's text, whether the app is open, in the background or closed. Tapping it SHALL open the screen it is about with the group list and the group's page behind it: a question from the person's Santa opens the Receiver page on its questions tab, an answer from the person's receiver opens the Gifter page on its questions tab, a change to the receiver's wishlist opens the Gifter page on its wishlist tab, and any other notification, or one with no known category, opens the group's page. When that group is not available to the person, the screen SHALL say so and offer the way back.
+A notification that arrives SHALL be shown by the system with the app's name and the notification's text, whether the app is open, in the background or closed.
 
 #### Scenario: App closed
 - **WHEN** a question notification arrives while the app is closed
@@ -133,3 +133,17 @@ A notification that arrives SHALL be shown by the system with the app's name and
 #### Scenario: Group not available
 - **WHEN** the person taps a notification about a group they can no longer see
 - **THEN** the screen says the group is no longer available and offers the way back
+
+### Requirement: Tapping a notification opens its screen
+Tapping a notification SHALL open the screen it is about with the group list and the group's page behind it: a question from the person's Santa opens the Receiver page on its questions tab, an answer from the person's receiver opens the Gifter page on its questions tab, a change to the receiver's wishlist opens the Gifter page on its wishlist tab, and any other notification, or one with no known category, opens the group's page.
+
+#### Scenario: Order of the screens
+- **WHEN** a person taps the notification of a question from their Santa
+- **THEN** the screens, from the bottom, are the group list, the group's page and the Receiver page on its questions tab
+
+### Requirement: A notification about a group that is not available
+When the group a tapped notification is about is not available to the person, the screen SHALL say so and offer the way back.
+
+#### Scenario: Way back
+- **WHEN** the group was deleted and the person taps its notification
+- **THEN** the screen says the group is not available and offers the way back to the list

@@ -7,7 +7,7 @@ What an owner reads in the app about a group they run: the draw as pairs, a part
 ## Requirements
 
 ### Requirement: The draw
-The detail of an Active or Archived group SHALL show one list of every Santa and receiver pair, loaded with `GET /admin/groups/{id}/assignments`, in the order the server returns them, each row showing the Santa's username, a pair link (the control described by `client-pair-link`) and the receiver's username, the Santa's username at the start of the row and the receiver's username at the end of the row. This list SHALL replace the participants list and any separate draw section, and SHALL be part of the page, which scrolls as one as described by `client-admin-groups`, with its legend under the list. The label above it SHALL read "Who gives to whom" followed by the number of participants in the group in brackets, as in "Who gives to whom (4 participants)", and the number SHALL NOT change while a search narrows the list. The administrator's own username SHALL be marked "you" wherever it appears, and a username whose profile is incomplete SHALL be followed by `*` wherever it appears, with a legend "* profile incomplete" under the list. A group that is Draft or Pending SHALL show no pair list and the app SHALL NOT request it.
+The detail of an Active or Archived group SHALL show one list of every Santa and receiver pair, loaded with `GET /admin/groups/{id}/assignments`, in the order the server returns them, each row showing the Santa's username, a pair link (the control described by `client-pair-link`) and the receiver's username, the Santa's username at the start of the row and the receiver's username at the end of the row.
 
 #### Scenario: Pairs shown
 - **WHEN** an Active group has `alice` giving to `bob` and `bob` giving to `carol`
@@ -46,7 +46,7 @@ The detail of an Active or Archived group SHALL show one list of every Santa and
 - **THEN** the label above the pairs reads "Who gives to whom (4 participants)"
 
 ### Requirement: Participant wishlist
-Choosing the gift icon at the end of a participant's row in a Pending group SHALL open a bottom sheet with that person's wishlist for the group, loaded with `GET /admin/groups/{id}/participants/{username}/wishlist`, read-only and in the order the participant chose, showing for each item its title and, when set, its note and link, and when it was added or last changed. Choosing a link SHALL open the link dialog of `client-wishlist`. There SHALL be no wishlist screen, and the sheet SHALL offer no way to add, change, delete or reorder items.
+Choosing the gift icon at the end of a participant's row in a Pending group SHALL open a bottom sheet with that person's wishlist for the group, loaded with `GET /admin/groups/{id}/participants/{username}/wishlist`, read-only and in the order the participant chose, showing for each item its title and, when set, its note and link, and when it was added or last changed.
 
 #### Scenario: List shown in order
 - **WHEN** a Pending group's participant has three items in a chosen order
@@ -65,7 +65,7 @@ Choosing the gift icon at the end of a participant's row in a Pending group SHAL
 - **THEN** the link dialog opens, and the link opens in the browser only from its "Open in browser" button
 
 ### Requirement: User sheet
-Choosing either username in a row of the pair list, or the username of a participant with an account in a Pending group, SHALL open a bottom sheet with that person's details, loaded with `GET /admin/users/{username}` and shown as the user detail of `client-admin-users`: username, the profile fields that are set, and the temporary password while it is still temporary. The sheet SHALL offer "Reset password" with the same confirmation and one-time password dialog as the Users tab, and SHALL offer none for the administrator's own username.
+Choosing either username in a row of the pair list, or the username of a participant with an account in a Pending group, SHALL open a bottom sheet with that person's details, loaded with `GET /admin/users/{username}` and shown as the user detail of `client-admin-users`: username, the profile fields that are set, and the temporary password while it is still temporary.
 
 #### Scenario: Open from the Santa
 - **WHEN** the owner chooses `alice` in the row `alice -> bob`
@@ -161,3 +161,52 @@ In the pair thread each question SHALL be in a card, like the wishlist items in 
 #### Scenario: Questions are cards
 - **WHEN** the pair sheet shows the wishlist and the thread
 - **THEN** each question is in a card that looks like a wishlist item's card, with the same padding and the same space between cards
+
+### Requirement: The pair list replaces the participants list
+The pair list SHALL replace the participants list and any separate draw section, and SHALL be part of the page, which scrolls as one as described by `client-admin-groups`, with its legend under the list.
+
+#### Scenario: One list on the page
+- **WHEN** an Active group's detail is shown
+- **THEN** there is no participants list and no separate draw section, and the legend is under the pair list
+
+### Requirement: The pair list label counts the participants
+The label above the pair list SHALL read "Who gives to whom" followed by the number of participants in the group in brackets, as in "Who gives to whom (4 participants)", and the number SHALL NOT change while a search narrows the list.
+
+#### Scenario: Count while searching
+- **WHEN** a search narrows the pair list to one pair in a group of four participants
+- **THEN** the label still reads "Who gives to whom (4 participants)"
+
+### Requirement: Marks on usernames in the oversight lists
+The administrator's own username SHALL be marked "you" wherever it appears, and a username whose profile is incomplete SHALL be followed by `*` wherever it appears, with a legend "* profile incomplete" under the list.
+
+#### Scenario: Both marks
+- **WHEN** the administrator takes part in the group and their own profile is incomplete
+- **THEN** their username is marked "you" and followed by `*` wherever it appears
+
+### Requirement: No pair list before the draw
+A group that is Draft or Pending SHALL show no pair list, and the app SHALL NOT request it.
+
+#### Scenario: Draft group
+- **WHEN** a Draft group's detail is shown
+- **THEN** there is no pair list and no assignments request is made
+
+### Requirement: The wishlist sheet is read-only
+There SHALL be no wishlist screen for a participant's wishlist, and the sheet SHALL offer no way to add, change, delete or reorder items.
+
+#### Scenario: A sheet, not a screen
+- **WHEN** the owner chooses a participant's gift icon
+- **THEN** a bottom sheet opens over the group's detail and no wishlist screen is shown
+
+### Requirement: Wishlist links open the link dialog
+Choosing a link in the participant's wishlist sheet SHALL open the link dialog of `client-wishlist`.
+
+#### Scenario: The same dialog as the person's own list
+- **WHEN** the owner chooses a link in the wishlist sheet
+- **THEN** the link dialog that the person's own wishlist uses opens
+
+### Requirement: The user sheet resets passwords
+The user sheet SHALL offer "Reset password" with the same confirmation and one-time password dialog as the Users tab, and SHALL offer none for the administrator's own username.
+
+#### Scenario: Cancelling the confirmation
+- **WHEN** the owner chooses "Reset password" in a sheet and cancels the confirmation
+- **THEN** the password is unchanged and no new password is shown

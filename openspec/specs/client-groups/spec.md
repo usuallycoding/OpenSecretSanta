@@ -79,7 +79,7 @@ While a groups screen loads, the app SHALL show a progress indicator. When the s
 - **THEN** the app handles it as for any request: the sign-in screen is shown with the note that the person was signed out
 
 ### Requirement: Group page
-Choosing a group SHALL open its page, loaded with `GET /groups/{id}`, showing its name on one row with an ellipsis when it is longer, then its state and state note, description, date, time and location, then the pair rows of `client-group-pages`, and at the end every participant's username as a chip, with the person's own chip highlighted. Choosing a name that was cut SHALL open a dialog with the whole name and the copy icon. The chips SHALL be part of the page itself, not in a box of their own: they wrap onto as many lines as needed, and the whole page (details, pair rows and chips) scrolls together and is refreshed by pulling it where the platform has the gesture. The chips SHALL NOT be tappable. Parts the group does not have SHALL be left out.
+Choosing a group SHALL open its page, loaded with `GET /groups/{id}`, showing its name on one row with an ellipsis when it is longer, then its state and state note, description, date, time and location, then the pair rows of `client-group-pages`, and at the end every participant's username as a chip, with the person's own chip highlighted. Parts the group does not have SHALL be left out.
 
 #### Scenario: Opening a group
 - **WHEN** the person chooses a group in the list
@@ -141,3 +141,24 @@ The name, the state and its note, the pair rows and the participant chips SHALL 
 #### Scenario: Name and state stay outside
 - **WHEN** a group page is shown
 - **THEN** the name, the state and its note are above the card and the pair rows and chips are below it, none of them inside it
+
+### Requirement: A cut group name opens in full
+Choosing a name that was cut SHALL open a dialog with the whole name and the copy icon.
+
+#### Scenario: Copy from the dialog
+- **WHEN** a person chooses a name that was cut
+- **THEN** a dialog shows the whole name with the copy icon
+
+### Requirement: The chips are part of the page
+The chips SHALL be part of the page itself, not in a box of their own: they wrap onto as many lines as needed, and the whole page (details, pair rows and chips) scrolls together and is refreshed by pulling it where the platform has the gesture.
+
+#### Scenario: One scroll
+- **WHEN** a group has more participants than fit on the screen
+- **THEN** the page grows and scrolls as one and no area scrolls inside the page
+
+### Requirement: The chips are not tappable
+The chips SHALL NOT be tappable.
+
+#### Scenario: Tapping a chip
+- **WHEN** a person taps a participant's chip
+- **THEN** nothing happens

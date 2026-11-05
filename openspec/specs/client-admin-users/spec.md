@@ -30,7 +30,7 @@ The Users tab SHALL list the users the administrator manages, loaded with `GET /
 - **THEN** `erin` is listed and marked "Not in any group"
 
 ### Requirement: User detail
-Choosing a user on the Users tab SHALL open their detail, and choosing a username in a group's pair list SHALL show the same detail in a bottom sheet. The detail is loaded with `GET /admin/users/{username}`, showing the username and each of full name, email, phone, address and delivery information that is set, leaving out the others. For a person who still has a temporary password the detail SHALL also show that password, selectable so it can be copied; for a person who has set their own password it SHALL show none.
+Choosing a user on the Users tab SHALL open their detail, and choosing a username in a group's pair list SHALL show the same detail in a bottom sheet. The detail is loaded with `GET /admin/users/{username}`, showing the username and each of full name, email, phone, address and delivery information that is set, leaving out the others.
 
 #### Scenario: Profile fields
 - **WHEN** a user has a full name and an address but no phone
@@ -155,3 +155,10 @@ If the server refuses a deletion because the person has joined a group meanwhile
 #### Scenario: Server unreachable
 - **WHEN** the server cannot be reached while deleting
 - **THEN** the list says so and nothing changes
+
+### Requirement: The detail shows a temporary password
+For a person who still has a temporary password the detail SHALL also show that password, selectable so it can be copied; for a person who has set their own password it SHALL show none.
+
+#### Scenario: Password can be copied
+- **WHEN** the owner views a user who still has a temporary password
+- **THEN** the password text can be selected for copying

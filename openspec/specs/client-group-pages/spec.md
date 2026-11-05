@@ -6,7 +6,7 @@ What a participant sees of a group they are in: the pair rows, the sheets with t
 ## Requirements
 
 ### Requirement: Pair rows
-Below the group's details the group page SHALL show, while the group is Pending, one row with the person's own username and a gift icon that opens the Receiver page; and, once the group is Active or Archived, two rows: `my username -> receiver's username`, whose pair link opens the Gifter page, and `Secret Santa -> my username`, whose pair link opens the Receiver page. In each of those rows the name before the pair link SHALL start at the start of the row and the name after it SHALL end at the end of the row, and the pair link SHALL be the control described by `client-pair-link`. The receiver's username SHALL come from `GET /groups/{id}/receiver`; while it loads the row SHALL show that, and when it fails the row SHALL say so with "Try again" and the rest of the page SHALL stay. A Draft group SHALL show no rows.
+Below the group's details the group page SHALL show, while the group is Pending, one row with the person's own username and a gift icon that opens the Receiver page; and, once the group is Active or Archived, two rows: `my username -> receiver's username`, whose pair link opens the Gifter page, and `Secret Santa -> my username`, whose pair link opens the Receiver page. A Draft group SHALL show no rows.
 
 #### Scenario: Pending
 - **WHEN** the group is Pending
@@ -29,7 +29,7 @@ Below the group's details the group page SHALL show, while the group is Pending,
 - **THEN** in both rows the name before the pair link is at the start of the row and the name after it is at the end of the row
 
 ### Requirement: User details sheets
-Choosing the person's own username SHALL open a bottom sheet with their own details (username and the profile fields they have set), and choosing the receiver's username SHALL open a bottom sheet loaded with `GET /groups/{id}/receiver` showing the receiver's username and, for each of full name, email, address, phone and delivery information that they have set, its value, leaving out what is not set and saying that the receiver has not added postal details yet when none is. "Secret Santa" SHALL NOT be tappable while the group is Pending or Active and nothing on the page SHALL identify the Santa then; once the group is Archived, choosing it SHALL open a bottom sheet loaded with `GET /groups/{id}/santa` showing the Santa's username and full name when it has one. The sheets are part of the group page, not screens, so the web address stays on the page while one is open.
+Choosing the person's own username SHALL open a bottom sheet with their own details (username and the profile fields they have set), and choosing the receiver's username SHALL open a bottom sheet loaded with `GET /groups/{id}/receiver` showing the receiver's username and, for each of full name, email, address, phone and delivery information that they have set, its value, leaving out what is not set and saying that the receiver has not added postal details yet when none is.
 
 #### Scenario: My details
 - **WHEN** the person chooses their own username
@@ -68,7 +68,7 @@ Choosing the person's own username SHALL open a bottom sheet with their own deta
 - **THEN** the sheet says the group is no longer available and offers to close
 
 ### Requirement: Receiver page
-The Receiver page, the one for the relationship in which the person receives, SHALL open from the gift icon while the group is Pending and from the second row's pair link once it is Active or Archived. Once the group is Active or Archived it SHALL be titled "Receiving from Secret Santa" and show a tab row with two tabs, **Your Wishlist** and **Respond to Secret Santa**, and one tab at a time, which the person SHALL be able to change by choosing a tab or by swiping the content sideways, the tab row following the swipe. The first tab SHALL show the person's own wishlist for the group, loaded with `GET /groups/{id}/wishlist`, with each item's title, note and link in the person's own order, or a short explanation that nothing has been added yet with the offer to add the first item; the list SHALL be edited as `client-wishlist` describes. The second tab SHALL show the questions the person's Santa asked as `client-receiver-and-questions` describes, with the answering described there. While the group is Pending the page SHALL be titled "Your Wishlist" and show the wishlist only, without tabs. Nothing on the page SHALL identify the Santa.
+The Receiver page, the one for the relationship in which the person receives, SHALL open from the gift icon while the group is Pending and from the second row's pair link once it is Active or Archived. Nothing on the page SHALL identify the Santa.
 
 #### Scenario: Items in order
 - **WHEN** the person has three items
@@ -107,7 +107,7 @@ The Receiver page, the one for the relationship in which the person receives, SH
 - **THEN** the "Respond to Secret Santa" tab is shown and the tab row marks it
 
 ### Requirement: Gifter page
-The Gifter page, the one for the relationship in which the person gives, SHALL open from the first row's pair link once the group is Active or Archived and SHALL be titled "Giving to <receiver username>". It SHALL show a tab row with two tabs, **<receiver username>'s Wishlist** and **Questions for <receiver username>**, and one tab at a time, which the person SHALL be able to change by choosing a tab or by swiping the content sideways, the tab row following the swipe. The first tab SHALL show the list the person's receiver keeps for the group, loaded with `GET /groups/{id}/receiver/wishlist`, read-only, in the receiver's order, with each item's title, note and link, or a short explanation that the receiver has not added anything yet. The second tab SHALL show the person's own questions to the receiver as `client-receiver-and-questions` describes, with the receiver's answers and, while the group is Active, the way to ask a new question. Nothing the person does on the page SHALL be visible to the receiver.
+The Gifter page, the one for the relationship in which the person gives, SHALL open from the first row's pair link once the group is Active or Archived and SHALL be titled "Giving to <receiver username>". Nothing the person does on the page SHALL be visible to the receiver.
 
 #### Scenario: Receiver's items
 - **WHEN** the person opens the page and the receiver has two items
@@ -165,7 +165,7 @@ The Receiver and Gifter pages SHALL be able to open on either of their two tabs,
 - **THEN** the wishlist tab shows and loads as it does when it is opened first
 
 ### Requirement: Page loading and refreshing
-Each tab of the Gifter and Receiver pages SHALL load on its own, show that it is loading, and show a message with "Try again" when the server cannot be reached or answers with an error, without affecting the other tab or what it already showed. Pulling a tab down (on Android and iOS) SHALL reload that tab, and returning to the app and showing a tab, by choosing it or by swiping to it, SHALL reload what the tab shows, as "Pulling a screen refreshes it" and "The web has no refresh control" describe.
+Each tab of the Gifter and Receiver pages SHALL load on its own, show that it is loading, and show a message with "Try again" when the server cannot be reached or answers with an error, without affecting the other tab or what it already showed.
 
 #### Scenario: One section fails
 - **WHEN** the questions cannot be loaded and the wishlist can
@@ -182,3 +182,87 @@ Each tab of the Gifter and Receiver pages SHALL load on its own, show that it is
 #### Scenario: Swiping to a tab
 - **WHEN** the person swipes to a tab they have not looked at for a while
 - **THEN** its content reloads without clearing what it showed
+
+### Requirement: Pair row layout
+In each of those rows the name before the pair link SHALL start at the start of the row and the name after it SHALL end at the end of the row, and the pair link SHALL be the control described by `client-pair-link`.
+
+#### Scenario: Control between the names
+- **WHEN** the two rows of an Active group are shown
+- **THEN** each has the pair-link control between its two names, the first name at the start of the row and the last at its end
+
+### Requirement: The receiver's username comes from the server
+The receiver's username SHALL come from `GET /groups/{id}/receiver`; while it loads the row SHALL show that, and when it fails the row SHALL say so with "Try again" and the rest of the page SHALL stay.
+
+#### Scenario: Loading state
+- **WHEN** the receiver request is still running
+- **THEN** the row shows that it is loading and the rest of the page is shown
+
+### Requirement: The Santa stays hidden until the group is archived
+"Secret Santa" SHALL NOT be tappable while the group is Pending or Active and nothing on the page SHALL identify the Santa then; once the group is Archived, choosing it SHALL open a bottom sheet loaded with `GET /groups/{id}/santa` showing the Santa's username and full name when it has one.
+
+#### Scenario: Row does nothing
+- **WHEN** the group is Active and the person chooses "Secret Santa"
+- **THEN** nothing opens and no name is shown
+
+### Requirement: The sheets are not screens
+The sheets SHALL be part of the group page, not screens, so the web address stays on the page while one is open.
+
+#### Scenario: Address while a sheet is open
+- **WHEN** a person on the web opens a details sheet
+- **THEN** the address is still the group page's
+
+### Requirement: The Receiver page of a drawn group has two tabs
+Once the group is Active or Archived the page SHALL be titled "Receiving from Secret Santa" and show a tab row with two tabs, **Your Wishlist** and **Respond to Secret Santa**, and one tab at a time, which the person SHALL be able to change by choosing a tab or by swiping the content sideways, the tab row following the swipe.
+
+#### Scenario: Title and tabs
+- **WHEN** the Receiver page of an Active group is opened
+- **THEN** it is titled "Receiving from Secret Santa" with the tabs Your Wishlist and Respond to Secret Santa
+
+### Requirement: The Receiver page's wishlist tab
+The first tab SHALL show the person's own wishlist for the group, loaded with `GET /groups/{id}/wishlist`, with each item's title, note and link in the person's own order, or a short explanation that nothing has been added yet with the offer to add the first item; the list SHALL be edited as `client-wishlist` describes.
+
+#### Scenario: Loaded from the wishlist route
+- **WHEN** the first tab is shown
+- **THEN** the person's items come from `GET /groups/{id}/wishlist`
+
+### Requirement: The Receiver page's questions tab
+The second tab SHALL show the questions the person's Santa asked as `client-receiver-and-questions` describes, with the answering described there.
+
+#### Scenario: Questions with the way to answer
+- **WHEN** the second tab is shown for an Active group
+- **THEN** it lists the questions the Santa asked, with the way to answer them
+
+### Requirement: A pending group's Receiver page has no tabs
+While the group is Pending the page SHALL be titled "Your Wishlist" and show the wishlist only, without tabs.
+
+#### Scenario: Title and no tabs
+- **WHEN** the Receiver page of a Pending group is opened
+- **THEN** it is titled "Your Wishlist" and has no tab row
+
+### Requirement: The Gifter page has two tabs
+The Gifter page SHALL show a tab row with two tabs, **<receiver username>'s Wishlist** and **Questions for <receiver username>**, and one tab at a time, which the person SHALL be able to change by choosing a tab or by swiping the content sideways, the tab row following the swipe.
+
+#### Scenario: Tab titles
+- **WHEN** the Gifter page for `alice` is opened
+- **THEN** its tabs are "alice's Wishlist" and "Questions for alice"
+
+### Requirement: The Gifter page's wishlist tab
+The first tab SHALL show the list the person's receiver keeps for the group, loaded with `GET /groups/{id}/receiver/wishlist`, read-only, in the receiver's order, with each item's title, note and link, or a short explanation that the receiver has not added anything yet.
+
+#### Scenario: Read-only list
+- **WHEN** the first tab is shown
+- **THEN** there is no control that adds, changes, deletes or moves an item
+
+### Requirement: The Gifter page's questions tab
+The second tab SHALL show the person's own questions to the receiver as `client-receiver-and-questions` describes, with the receiver's answers and, while the group is Active, the way to ask a new question.
+
+#### Scenario: Archived group
+- **WHEN** the group is Archived
+- **THEN** the questions and answers are shown and there is no way to ask a new question
+
+### Requirement: Tabs reload
+Pulling a tab down (on Android and iOS) SHALL reload that tab, and returning to the app and showing a tab, by choosing it or by swiping to it, SHALL reload what the tab shows, as "Pulling a screen refreshes it" and "The web has no refresh control" describe.
+
+#### Scenario: Returning to the app
+- **WHEN** a person returns to the app with a tab showing
+- **THEN** that tab reloads what it shows

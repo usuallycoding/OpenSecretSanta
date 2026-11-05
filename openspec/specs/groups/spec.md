@@ -126,7 +126,7 @@ The server SHALL expose `GET /groups` and `GET /groups/{id}` to any authenticate
 - **THEN** the response is 403 with code `password_change_required`
 
 ### Requirement: Delete a group
-The owner SHALL be able to delete a group in any state with `DELETE /admin/groups/{id}`. Deleting SHALL remove the group together with its participants, its draw, every wishlist item, every question and every answer. When the group has linked data (a draw, a wishlist item, a question or an answer), the server SHALL refuse the request without `confirm=true` with HTTP 409, the code `confirmation_required` and the counts of what would be deleted, and SHALL delete only when the request carries `confirm=true`. A group without linked data SHALL be deleted by the plain request.
+The owner SHALL be able to delete a group in any state with `DELETE /admin/groups/{id}`. Deleting SHALL remove the group together with its participants, its draw, every wishlist item, every question and every answer.
 
 #### Scenario: Delete a Draft
 - **WHEN** the owner deletes a Draft group
@@ -182,3 +182,10 @@ The owner SHALL be able to delete a group in any state with `DELETE /admin/group
 #### Scenario: Same second
 - **WHEN** two groups are created within the same second
 - **THEN** the one created last is returned first
+
+### Requirement: Deleting a group with linked data needs confirmation
+When the group has linked data (a draw, a wishlist item, a question or an answer), the server SHALL refuse the request without `confirm=true` with HTTP 409, the code `confirmation_required` and the counts of what would be deleted, and SHALL delete only when the request carries `confirm=true`. A group without linked data SHALL be deleted by the plain request.
+
+#### Scenario: Counts in the refusal
+- **WHEN** a group with three wishlist items and a draw is deleted without `confirm=true`
+- **THEN** the answer is 409 `confirmation_required` with those counts and nothing is deleted

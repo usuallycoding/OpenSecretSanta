@@ -85,7 +85,7 @@ The password-change screen SHALL ask for the current password, the new password 
 - **THEN** the app shows that message next to the matching field
 
 ### Requirement: Session storage per platform
-On Android the app SHALL keep the access token in encrypted storage backed by the platform keystore, and on iOS in the Keychain, so that the person stays signed in after closing the app. On web the app SHALL keep the token in the browser's local storage when the person chose to stay signed in, so that it survives closing the tab and the browser, and otherwise in the browser tab's session storage, so that it survives a refresh of the page and is lost when the tab is closed. The token SHALL NOT be written to logs, to plain preferences, or on the web to cookies, and SHALL be in one of the two web storages at a time.
+On Android the app SHALL keep the access token in encrypted storage backed by the platform keystore, and on iOS in the Keychain, so that the person stays signed in after closing the app. On web the app SHALL keep the token in the browser's local storage when the person chose to stay signed in, so that it survives closing the tab and the browser, and otherwise in the browser tab's session storage, so that it survives a refresh of the page and is lost when the tab is closed.
 
 #### Scenario: Native restart
 - **WHEN** a signed-in person closes and reopens the Android or iOS app
@@ -138,7 +138,7 @@ The app SHALL offer to sign out from every view after sign-in. Signing out SHALL
 - **THEN** nothing of the previous person's session or screens is shown
 
 ### Requirement: Views by role
-After sign-in the app SHALL show a participant view to everyone and an admin view to administrators only. The participant view SHALL be a Groups tab, a Profile tab and a Settings tab under a top bar; the admin view SHALL be a Groups tab with the administrator's groups, a Users tab and the same Settings tab, under the same top bar. The top bar SHALL have no menu: for administrators only it SHALL have one icon that switches to the other view, announced as "Switch to participant view" in the admin view and "Switch to admin view" in the participant view, and for everyone else no action. "Appearance", "Notifications", "Change password" and "Sign out" SHALL be on the Settings page, as `client-settings` describes. An administrator SHALL start in the admin view. A person who is not an administrator SHALL see no admin view and no item to reach it. The choice SHALL last for the current run only. The admin status SHALL come from the server's `GET /me` and be refreshed whenever the app starts or the person signs in.
+After sign-in the app SHALL show a participant view to everyone and an admin view to administrators only. The participant view SHALL be a Groups tab, a Profile tab and a Settings tab under a top bar; the admin view SHALL be a Groups tab with the administrator's groups, a Users tab and the same Settings tab, under the same top bar.
 
 #### Scenario: Administrator
 - **WHEN** an administrator signs in
@@ -326,7 +326,7 @@ On the web a screen SHALL offer no refresh control, because the browser's own re
 - **THEN** the same screen is shown with current data and the person is still signed in
 
 ### Requirement: Readable web addresses
-In the web app each screen SHALL have a short, readable address after the `#` (for example `#/groups/2` for a group, `#/groups/2/gifter` and `#/groups/2/receiver` for its Gifter and Receiver pages, `#/profile`, `#/settings`, `#/admin/groups/2` and `#/admin/users/alice`), and the address bar SHALL follow the screens as the person moves between them. A page that opens on its questions tab SHALL have the address of the page followed by `/questions`. The addresses SHALL NOT contain the names of the app's classes. Bottom sheets SHALL NOT be part of the address.
+In the web app each screen SHALL have a short, readable address after the `#` (for example `#/groups/2` for a group, `#/groups/2/gifter` and `#/groups/2/receiver` for its Gifter and Receiver pages, `#/profile`, `#/settings`, `#/admin/groups/2` and `#/admin/users/alice`), and the address bar SHALL follow the screens as the person moves between them.
 
 #### Scenario: A group
 - **WHEN** a signed-in person opens a group in the web app
@@ -353,7 +353,7 @@ In the web app each screen SHALL have a short, readable address after the `#` (f
 - **THEN** the address stays as it was, and a name for the wishlist tab such as `#/groups/2/receiver/wishlist` names no screen
 
 ### Requirement: Opening a web address
-In the web app, opening or refreshing an address, or typing one into the address bar while signed in, SHALL show the screen it names. An address that names no screen SHALL show the first screen of the person's view. An address of an admin screen opened by someone who is not an administrator SHALL show the first screen. When the person is signed out, the sign-in screen SHALL be shown and, after signing in, the screen the address names. After a refresh every tab of the view SHALL work as it does without one.
+In the web app, opening or refreshing an address, or typing one into the address bar while signed in, SHALL show the screen it names. An address that names no screen SHALL show the first screen of the person's view. An address of an admin screen opened by someone who is not an administrator SHALL show the first screen.
 
 #### Scenario: Refresh
 - **WHEN** a signed-in person refreshes the page on `#/groups/2/receiver`
@@ -468,7 +468,7 @@ Adding a wishlist item, asking a question and creating a group (the owner's "New
 - **THEN** its last item is fully visible above the button
 
 ### Requirement: Changing your own password
-Choosing "Change password" on the Settings page SHALL open a bottom sheet over the current screen, which stays as it was, asking for the current password, the new password and a repeat of it, with the same checks before sending and the same field-level server errors as the password-change form, and sending `PUT /me/password`. On success the app SHALL keep the person signed in with the new token the server returns, and the sheet SHALL say that the password was changed and that the person is signed out on their other devices, with a way to close it. Closing the sheet at any time, before or after a change, SHALL discard everything typed in it.
+Choosing "Change password" on the Settings page SHALL open a bottom sheet over the current screen, which stays as it was, asking for the current password, the new password and a repeat of it, with the same checks before sending and the same field-level server errors as the password-change form, and sending `PUT /me/password`.
 
 #### Scenario: Open from either view
 - **WHEN** a participant, or an administrator in the admin view, chooses "Change password" on the Settings page
@@ -495,7 +495,7 @@ Choosing "Change password" on the Settings page SHALL open a bottom sheet over t
 - **THEN** all three fields are empty and no earlier message is shown
 
 ### Requirement: Staying signed in on the web
-The web sign-in screen SHALL show a "Stay signed in" checkbox, ticked by default; the Android and iOS sign-in screens SHALL NOT show it. Signing in with it ticked SHALL keep the session across closing and reopening the tab or the browser for as long as the server accepts the token; signing in with it unticked SHALL keep it only for the life of the tab. Signing out, a token the server rejects and a password change that returns a new token SHALL leave no stale token in either storage, and the new token SHALL stay where the old one was.
+The web sign-in screen SHALL show a "Stay signed in" checkbox, ticked by default; the Android and iOS sign-in screens SHALL NOT show it. Signing in with it ticked SHALL keep the session across closing and reopening the tab or the browser for as long as the server accepts the token; signing in with it unticked SHALL keep it only for the life of the tab.
 
 #### Scenario: Ticked by default
 - **WHEN** the web sign-in screen is shown
@@ -658,3 +658,94 @@ The sign-in and password-change screens SHALL close the keyboard on a swipe or a
 #### Scenario: Sign-in
 - **WHEN** the keyboard is open for the sign-in fields and the person taps empty space or swipes
 - **THEN** the keyboard closes
+
+### Requirement: The token is kept in one place only
+The token SHALL NOT be written to logs, to plain preferences, or on the web to cookies, and SHALL be in one of the two web storages at a time.
+
+#### Scenario: No cookie or log
+- **WHEN** a person signs in on the web
+- **THEN** the token is in no cookie and in no log, and in only one of local storage and session storage
+
+### Requirement: The top bar switches views for administrators
+The top bar SHALL have no menu: for administrators only it SHALL have one icon that switches to the other view, announced as "Switch to participant view" in the admin view and "Switch to admin view" in the participant view, and for everyone else no action.
+
+#### Scenario: Icon announced
+- **WHEN** an administrator in the admin view uses a screen reader on the top bar
+- **THEN** the icon is announced as "Switch to participant view"
+
+### Requirement: Settings are the same in both views
+"Appearance", "Notifications", "Change password" and "Sign out" SHALL be on the Settings page, as `client-settings` describes.
+
+#### Scenario: Settings in the admin view
+- **WHEN** an administrator opens Settings in the admin view
+- **THEN** the same four items are there as in the participant view
+
+### Requirement: Administrators start in the admin view
+An administrator SHALL start in the admin view, and the view they choose SHALL last for the current run only.
+
+#### Scenario: Next run
+- **WHEN** an administrator switched to the participant view and the app is started again
+- **THEN** it opens in the admin view
+
+### Requirement: Others see no admin view
+A person who is not an administrator SHALL see no admin view and no item to reach it.
+
+#### Scenario: No admin item
+- **WHEN** a participant who is not an administrator looks at the top bar and Settings
+- **THEN** nothing leads to the admin view
+
+### Requirement: The admin status comes from the server
+The admin status SHALL come from the server's `GET /me` and be refreshed whenever the app starts or the person signs in.
+
+#### Scenario: Status refreshed at sign-in
+- **WHEN** a person who has become an administrator signs in again
+- **THEN** the admin view is offered
+
+### Requirement: A questions tab has its own address
+A page that opens on its questions tab SHALL have the address of the page followed by `/questions`.
+
+#### Scenario: Questions suffix
+- **WHEN** a person opens the Receiver page of group 2 on its questions tab
+- **THEN** the address is `#/groups/2/receiver/questions`
+
+### Requirement: Addresses are plain
+The addresses SHALL NOT contain the names of the app's classes. Bottom sheets SHALL NOT be part of the address.
+
+#### Scenario: No class names
+- **WHEN** a person moves through the app
+- **THEN** no address in the address bar contains the name of a class
+
+### Requirement: An address survives signing in
+When the person is signed out, the sign-in screen SHALL be shown and, after signing in, the screen the address names.
+
+#### Scenario: Sign in to a page
+- **WHEN** a signed-out person opens `#/groups/2/receiver` and signs in
+- **THEN** the Receiver page of group 2 is shown
+
+### Requirement: Tabs work after a refresh
+After a refresh every tab of the view SHALL work as it does without one.
+
+#### Scenario: Moving between tabs after a refresh
+- **WHEN** a person refreshes the page on a group and chooses the Profile tab and then the Groups tab
+- **THEN** each tab is shown as it is when no refresh has happened
+
+### Requirement: After a password change
+On success the app SHALL keep the person signed in with the new token the server returns, and the sheet SHALL say that the password was changed and that the person is signed out on their other devices, with a way to close it.
+
+#### Scenario: Still signed in
+- **WHEN** the change succeeds
+- **THEN** the person is still signed in and closing the sheet shows the screen that was under it
+
+### Requirement: Closing the password sheet discards what was typed
+Closing the sheet at any time, before or after a change, SHALL discard everything typed in it.
+
+#### Scenario: Reopening
+- **WHEN** a person types into the sheet, closes it and opens it again
+- **THEN** all three fields are empty
+
+### Requirement: No stale token is left behind
+Signing out, a token the server rejects and a password change that returns a new token SHALL leave no stale token in either storage, and the new token SHALL stay where the old one was.
+
+#### Scenario: New token where the old one was
+- **WHEN** a person who signed in with "Stay signed in" unticked changes their password
+- **THEN** the new token is in the tab's session storage only

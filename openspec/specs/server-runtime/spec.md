@@ -26,7 +26,7 @@ The server SHALL read its configuration from environment variables: `JWT_SECRET`
 - **THEN** draw emails are enabled, and without them the server runs with email off
 
 ### Requirement: Fail fast on invalid configuration
-The server SHALL refuse to start, with an error naming the offending variable, when a required variable is missing or blank, when `PORT` is not an integer between 1 and 65535, when `DATA_ENCRYPTION_KEY` is not valid base64 for exactly 32 bytes, when `ADMIN_USERNAME` is not a valid username, when the database has no users and `ADMIN_PASSWORD` is missing or blank, when `RESEND_API_KEY` is set without `EMAIL_FROM`, when `EMAIL_FROM` is not an email address (optionally with a display name), or when `APP_URL` is not an http or https address.
+The server SHALL refuse to start, with an error naming the offending variable, when a required variable is missing or blank, when `PORT` is not an integer between 1 and 65535, when `DATA_ENCRYPTION_KEY` is not valid base64 for exactly 32 bytes, or when `ADMIN_USERNAME` is not a valid username.
 
 #### Scenario: Missing secret
 - **WHEN** the server starts without `JWT_SECRET`
@@ -107,3 +107,10 @@ The server SHALL accept cross-origin requests from a browser only from the origi
 #### Scenario: Authentication unaffected
 - **WHEN** a request from a listed origin has no valid token
 - **THEN** it is still answered 401, and a preflight request needs no token
+
+### Requirement: Fail fast on invalid admin and email configuration
+The server SHALL also refuse to start, with an error naming the offending variable, when the database has no users and `ADMIN_PASSWORD` is missing or blank, when `RESEND_API_KEY` is set without `EMAIL_FROM`, when `EMAIL_FROM` is not an email address (optionally with a display name), or when `APP_URL` is not an http or https address.
+
+#### Scenario: Bad sender
+- **WHEN** `RESEND_API_KEY` is set and `EMAIL_FROM` is `not an address`
+- **THEN** startup fails and the error names `EMAIL_FROM`

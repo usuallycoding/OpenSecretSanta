@@ -6,7 +6,7 @@ Tells each participant of a group, by email, that the names have been drawn and 
 ## Requirements
 
 ### Requirement: Participants are emailed their draw
-When a group becomes Active the server SHALL send one email to each participant whose account has an email address, addressed only to that person. The email SHALL give the group's name, description, date, time and location (those that are set), say that the names have been drawn, and name the participant's own receiver (the username and, when set, the full name). It SHALL NOT name anyone else's receiver or Santa and SHALL NOT include the receiver's address, phone or delivery information. The subject SHALL NOT name the receiver. The email SHALL link to the group in the web app, as the app address followed by `/#/groups/` and the group's id, when an app address is configured.
+When a group becomes Active the server SHALL send one email to each participant whose account has an email address, addressed only to that person. The email SHALL give the group's name, description, date, time and location (those that are set), say that the names have been drawn, and name the participant's own receiver (the username and, when set, the full name).
 
 #### Scenario: Each person gets their own receiver
 - **WHEN** a group of `alice`, `bob`, `carol` and `dave` with email addresses is drawn so that `alice` gives to `bob`
@@ -75,3 +75,17 @@ Email SHALL be off unless an API key and a sender address are configured. The AP
 #### Scenario: Key not exposed
 - **WHEN** any endpoint is called or the server logs a failure to send
 - **THEN** the API key appears in no response and no log line
+
+### Requirement: The draw email names only the person's own receiver
+The draw email SHALL NOT name anyone else's receiver or Santa and SHALL NOT include the receiver's address, phone or delivery information. The subject SHALL NOT name the receiver.
+
+#### Scenario: Another pair
+- **WHEN** `alice`'s email is read
+- **THEN** no other pair of the draw appears in it
+
+### Requirement: The draw email links to the group
+The email SHALL link to the group in the web app, as the app address followed by `/#/groups/` and the group's id, when an app address is configured.
+
+#### Scenario: Link opens the group page
+- **WHEN** the app address is `https://santa.example.org` and group 7 is drawn
+- **THEN** the link goes to group 7's page and not to the front page

@@ -117,7 +117,7 @@ While a group is Draft, Pending or Active the administrator SHALL be able to ope
 - **THEN** there is no way to edit its details
 
 ### Requirement: Group detail shows who takes part
-Choosing a group SHALL open its detail, loaded with `GET /admin/groups/{id}`, showing its name on one row with an ellipsis when it is longer (choosing a name that was cut opens a dialog with the whole name), its details, its state with a sentence on what that state means for the owner, the actions of the group, and at the end who takes part. For a Draft group that is the participants as chips; for a Pending group it is the participants as rows; for an Active or Archived group it is the pair list of `client-admin-oversight`, which replaces the participants list. In a Pending group choosing a participant's username SHALL open that person's user sheet of `client-admin-oversight`, and each row SHALL end with a gift icon, named "Read wishlist" for assistive technology, that opens the participant's wishlist. The whole page SHALL scroll as one: the details, the actions, the search field and the people move together, and no area of the page scrolls inside itself. The chips of a Draft group SHALL wrap onto as many lines as needed and SHALL NOT be tappable.
+Choosing a group SHALL open its detail, loaded with `GET /admin/groups/{id}`, showing its name on one row with an ellipsis when it is longer (choosing a name that was cut opens a dialog with the whole name), its details, its state with a sentence on what that state means for the owner, the actions of the group, and at the end who takes part.
 
 #### Scenario: Group not available
 - **WHEN** the server answers that the group does not exist for this administrator
@@ -148,7 +148,7 @@ Choosing a group SHALL open its detail, loaded with `GET /admin/groups/{id}`, sh
 - **THEN** their row shows the username and `*`, and choosing the username or the gift icon does nothing
 
 ### Requirement: Marks on participants
-In the participants list of a Draft or Pending group a participant without an account, and a participant whose profile lacks a name or an address, SHALL each be followed by a single `*`, the same mark for both, and the list SHALL end with the legend "* no account or profile incomplete", shown only when at least one participant has the mark. In the pair list of an Active or Archived group a username whose profile lacks a name or an address SHALL be followed by `*`, as described in `client-admin-oversight`. The marks SHALL NOT block any action.
+In the participants list of a Draft or Pending group a participant without an account, and a participant whose profile lacks a name or an address, SHALL each be followed by a single `*`, the same mark for both, and the list SHALL end with the legend "* no account or profile incomplete", shown only when at least one participant has the mark.
 
 #### Scenario: Participants with marks
 - **WHEN** a Draft group has `alice` with a complete profile and `newcomer` without an account
@@ -257,7 +257,7 @@ Every admin group screen SHALL show that it is loading, SHALL show a message wit
 - **THEN** the list stays on screen with the error message
 
 ### Requirement: Duplicating a group
-Choosing "Duplicate" on a group SHALL ask for confirmation, naming the group. Confirming SHALL create a Draft with `POST /admin/groups` having the original's description, location, date, time and participants and the name "Copy of " followed by the original's name, and SHALL open the new group. A name that would exceed 100 characters with the prefix SHALL be cut, ending in an ellipsis, so that it is exactly 100 characters. Nothing of the original's draw, wishlists or questions SHALL be copied, and the original SHALL NOT change.
+Choosing "Duplicate" on a group SHALL ask for confirmation, naming the group. Confirming SHALL create a Draft with `POST /admin/groups` having the original's description, location, date, time and participants and the name "Copy of " followed by the original's name, and SHALL open the new group.
 
 #### Scenario: Duplicate an Active group
 - **WHEN** the administrator confirms "Duplicate" on an Active group "Party" with participants `alice` and `bob`
@@ -280,7 +280,7 @@ Choosing "Duplicate" on a group SHALL ask for confirmation, naming the group. Co
 - **THEN** the dialog says so, nothing is created and the list stays as it was
 
 ### Requirement: Deleting a group
-Every group, whatever its state, SHALL offer "Delete" in the row of buttons under its details, after a confirmation, sent with `DELETE /admin/groups/{id}`. When the server answers 409 `confirmation_required` the app SHALL show a second dialog naming what would be deleted from the counts it returns (wishlist items, questions, answers and the draw) and saying that this cannot be undone, and SHALL send the request again with `confirm=true` only if that is confirmed. Deleting SHALL return to the list.
+Every group, whatever its state, SHALL offer "Delete" in the row of buttons under its details, after a confirmation, sent with `DELETE /admin/groups/{id}`. Deleting SHALL return to the list.
 
 #### Scenario: Delete a Draft
 - **WHEN** the administrator confirms "Delete" on a Draft
@@ -388,3 +388,59 @@ On the admin group screen the group's description, date and time and location SH
 #### Scenario: Nothing to show
 - **WHEN** a group has no description, date, time or location
 - **THEN** no card is shown and the actions follow the state directly
+
+### Requirement: Who takes part depends on the state
+For a Draft group who takes part SHALL be the participants as chips; for a Pending group the participants as rows; for an Active or Archived group the pair list of `client-admin-oversight`, which replaces the participants list. The chips of a Draft group SHALL wrap onto as many lines as needed and SHALL NOT be tappable.
+
+#### Scenario: Chips wrap and do not respond
+- **WHEN** a Draft group has many participants
+- **THEN** the chips wrap onto several lines and tapping one does nothing
+
+### Requirement: Pending participants open sheets
+In a Pending group choosing a participant's username SHALL open that person's user sheet of `client-admin-oversight`, and each row SHALL end with a gift icon, named "Read wishlist" for assistive technology, that opens the participant's wishlist.
+
+#### Scenario: Gift icon named for assistive technology
+- **WHEN** a screen reader reads the rows of a Pending group
+- **THEN** each gift icon is announced as "Read wishlist"
+
+### Requirement: The group page scrolls as one
+The whole page SHALL scroll as one: the details, the actions, the search field and the people move together, and no area of the page scrolls inside itself.
+
+#### Scenario: Search field scrolls away
+- **WHEN** the page of a group with many participants is scrolled down
+- **THEN** the details, the actions and the search field scroll away with the people
+
+### Requirement: Marks in the pair list
+In the pair list of an Active or Archived group a username whose profile lacks a name or an address SHALL be followed by `*`, as described in `client-admin-oversight`.
+
+#### Scenario: Pair list mark
+- **WHEN** `bob` has no address and the group is Active
+- **THEN** `bob` is followed by `*` in the pair list
+
+### Requirement: Marks never block an action
+The marks SHALL NOT block any action.
+
+#### Scenario: Marks do not disable controls
+- **WHEN** a participant is marked
+- **THEN** no button or row of the group is disabled because of the mark
+
+### Requirement: A duplicate's name is cut to 100 characters
+A name that would exceed 100 characters with the prefix SHALL be cut, ending in an ellipsis, so that it is exactly 100 characters.
+
+#### Scenario: Exactly 100
+- **WHEN** the original's name is 98 characters long
+- **THEN** the copy's name is exactly 100 characters and ends in an ellipsis
+
+### Requirement: A duplicate copies nothing of the draw
+Nothing of the original's draw, wishlists or questions SHALL be copied, and the original SHALL NOT change.
+
+#### Scenario: Original untouched
+- **WHEN** an Active group is duplicated
+- **THEN** the copy has no draw, wishlists or questions and the original is unchanged
+
+### Requirement: Deleting a group with content asks again
+When the server answers 409 `confirmation_required` the app SHALL show a second dialog naming what would be deleted from the counts it returns (wishlist items, questions, answers and the draw) and saying that this cannot be undone, and SHALL send the request again with `confirm=true` only if that is confirmed.
+
+#### Scenario: The dialog names the counts
+- **WHEN** the server answers 409 with counts of 3 wishlist items and 2 questions
+- **THEN** the second dialog names those counts and says that this cannot be undone
