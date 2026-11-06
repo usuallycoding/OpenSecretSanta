@@ -21,15 +21,21 @@ class FakePushDevice(
     override val platform: String = "android",
     override val isSupported: Boolean = true,
 ) : PushDevice {
-    /** `granted`, `denied` or `undecided` (asking turns it into the answer in [willAnswer]). */
+    /** `granted`, `denied`, `blocked` (refused, and the platform will not ask again) or `undecided` (asking turns it into the answer in [willAnswer]). */
     var permission = "undecided"
     var willAnswer = "granted"
     var token: String? = "tok-1"
     var failing = false
     var asked = 0
     var disabled = 0
+    var settingsOpened = 0
+    override var canOpenSettings = false
 
     override suspend fun isPermitted() = permission == "granted"
+
+    override fun openSettings() {
+        settingsOpened++
+    }
 
     override suspend fun enable(): PushEnable {
         if (failing) throw IllegalStateException("the push service is down")
@@ -37,6 +43,7 @@ class FakePushDevice(
             asked++
             permission = willAnswer
         }
+        if (permission == "blocked") return PushEnable.Blocked
         if (permission != "granted") return PushEnable.Denied
         return token?.let { PushEnable.Ready(it) } ?: PushEnable.Failed
     }
@@ -78,6 +85,27 @@ class PushRegistrationTest {
 
         assertEquals(emptyMap(), server.notifications.devices)
         assertFalse(registration.isOn())
+    }
+
+    @Test
+    fun aPermissionThePlatformWillNotAskAboutAgainIsBlockedNotDenied() = runTest {
+        device.willAnswer = "blocked"
+
+        assertEquals(TurnOn.Blocked, registration.turnOn())
+
+        assertEquals(emptyMap(), server.notifications.devices)
+        assertFalse(registration.isOn())
+    }
+
+    @Test
+    fun theSettingsAreOfferedOnlyWhenTheDeviceCanOpenThem() = runTest {
+        assertFalse(registration.canOpenSettings)
+
+        device.canOpenSettings = true
+        registration.openSettings()
+
+        assertTrue(registration.canOpenSettings)
+        assertEquals(1, device.settingsOpened)
     }
 
     @Test

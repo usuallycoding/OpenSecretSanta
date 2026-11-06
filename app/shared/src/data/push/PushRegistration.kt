@@ -15,6 +15,9 @@ sealed interface TurnOn {
     /** The person refused the permission. */
     data object Denied : TurnOn
 
+    /** The permission is refused and the platform will not ask again: only the device's settings can allow it. */
+    data object Blocked : TurnOn
+
     /** No token could be had, or the server did not take it ([error] is the server's side when it was that). */
     data class Failed(val error: ApiError? = null) : TurnOn
 }
@@ -34,6 +37,19 @@ class PushRegistration(
     /** Whether the menu offers notifications on this platform at all. */
     val isOffered: Boolean get() = device.isOffered
 
+    /** Whether the platform can take the person to the settings where notifications are allowed. */
+    val canOpenSettings: Boolean get() = device.canOpenSettings
+
+    fun openSettings() {
+        try {
+            device.openSettings()
+        } catch (_: Throwable) { // a device without a settings screen must not break the app
+        }
+    }
+
+    /** Whether the device allows notifications right now, whether or not the person turned them on here. */
+    suspend fun isPermitted(): Boolean = isSupported && safely(false) { device.isPermitted() }
+
     private fun wanted(): Boolean = settings.get(KEY) == TRUE
 
     private fun remember(on: Boolean) = settings.put(KEY, if (on) TRUE else FALSE)
@@ -45,6 +61,7 @@ class PushRegistration(
         if (!isSupported) return TurnOn.Failed()
         return when (val enabled = safely<PushEnable>(PushEnable.Failed) { device.enable() }) {
             PushEnable.Denied -> TurnOn.Denied
+            PushEnable.Blocked -> TurnOn.Blocked
             PushEnable.Failed -> TurnOn.Failed()
             is PushEnable.Ready -> when (val registered = api.value.registerDevice(enabled.token, device.platform)) {
                 is ApiResult.Success -> {

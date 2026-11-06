@@ -5,8 +5,11 @@ sealed interface PushEnable {
     /** Allowed, and this is the device's push token. */
     data class Ready(val token: String) : PushEnable
 
-    /** The person refused the permission, now or before; only the device's settings can change that. */
+    /** The person refused the permission, now or before; asking again, or the device's settings, can change that. */
     data object Denied : PushEnable
+
+    /** The permission is refused and the platform will not ask again; only the device's own settings can change that. */
+    data object Blocked : PushEnable
 
     /** The permission is fine but no token could be had (no network, no push service on the device). */
     data object Failed : PushEnable
@@ -25,6 +28,12 @@ interface PushDevice {
 
     /** Whether the platform has the feature at all, so that the menu offers it; a browser that cannot do it still offers it, to say why. */
     val isOffered: Boolean get() = true
+
+    /** Whether the platform can take the person to the settings where notifications are allowed; false where it cannot (a browser, iOS). */
+    val canOpenSettings: Boolean get() = false
+
+    /** Opens those settings; does nothing where [canOpenSettings] is false. */
+    fun openSettings() = Unit
 
     /** Whether the permission is granted right now, asking nothing. */
     suspend fun isPermitted(): Boolean

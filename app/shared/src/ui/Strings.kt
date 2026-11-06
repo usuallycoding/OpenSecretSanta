@@ -27,6 +27,8 @@ object Strings {
     const val NOTIFICATIONS_LETTERS_NOTE = "The person you give to sends you a letter"
     const val NOTIFICATIONS_SERVER_OFF = "Notifications are not available on this server."
     const val NOTIFICATIONS_UNSUPPORTED = "This device or browser cannot show notifications."
+    const val NOTIFICATIONS_BLOCKED = "Notifications are blocked for this app, and Android will not ask again. Allow them in the app's notification settings, then come back and turn this on."
+    const val NOTIFICATIONS_OPEN_SETTINGS = "Open settings"
     const val NOTIFICATIONS_DENIED = "Notifications are blocked. Allow them for this app in your device or browser settings, then turn this on again."
     const val NOTIFICATIONS_DEVICE_FAILED = "Notifications could not be turned on. Check your connection and try again."
     const val NOTIFICATIONS_SAVE_FAILED = "That could not be saved. Check your connection and try again."

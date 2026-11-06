@@ -50,7 +50,16 @@ data class NotificationSwitches(
 private fun NotificationSettingsDto.toSwitches() = NotificationSwitches(announcements, wishlist, questions, answers, letters)
 
 /** Something the sheet tells the person after an attempt that did not work. */
-enum class NotificationsMessage { PermissionDenied, DeviceFailed, SaveFailed }
+enum class NotificationsMessage {
+    PermissionDenied,
+
+    /** The permission is refused and the system will not ask again: the settings are the only way. */
+    PermissionBlocked,
+    DeviceFailed,
+    SaveFailed,
+}
+
+private fun NotificationsMessage?.isAboutPermission() = this == NotificationsMessage.PermissionDenied || this == NotificationsMessage.PermissionBlocked
 
 data class NotificationsUiState(
     val switches: NotificationSwitches = NotificationSwitches(),
@@ -93,9 +102,12 @@ class NotificationsViewModel(
 
     private suspend fun onLoaded(settings: NotificationSettingsDto) {
         val on = push.isOn()
+        val permitted = push.isPermitted()
         confirmed = settings.toSwitches()
         _ui.update { current ->
             current.copy(
+                // coming back with notifications allowed in the settings: the refusal no longer applies, and the switch is the person's to turn on
+                message = if (permitted && current.message.isAboutPermission()) null else current.message,
                 switches = if (changesInFlight == 0) confirmed else current.switches,
                 serverAvailable = settings.available,
                 deviceSupported = push.isSupported,
@@ -105,6 +117,11 @@ class NotificationsViewModel(
     }
 
     fun refresh(): Job = loader.refresh()
+
+    /** Whether the sheet can send the person to the settings where notifications are allowed. */
+    val canOpenSettings: Boolean get() = push.canOpenSettings
+
+    fun openSettings() = push.openSettings()
 
     fun dismissMessage() = _ui.update { it.copy(message = null) }
 
@@ -118,6 +135,7 @@ class NotificationsViewModel(
                 val message = when (push.turnOn()) {
                     TurnOn.Done -> null
                     TurnOn.Denied -> NotificationsMessage.PermissionDenied
+                    TurnOn.Blocked -> NotificationsMessage.PermissionBlocked
                     is TurnOn.Failed -> NotificationsMessage.DeviceFailed
                 }
                 _ui.update { it.copy(deviceBusy = false, deviceOn = message == null, message = message) }

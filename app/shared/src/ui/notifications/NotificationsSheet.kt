@@ -73,6 +73,10 @@ fun NotificationsSheet(viewModel: NotificationsViewModel, onDismiss: () -> Unit)
                 }
                 ui.message?.let {
                     Text(it.text(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+                    // refused for good: the system's own settings are the only way, where the device can take the person there
+                    if (it == NotificationsMessage.PermissionBlocked && viewModel.canOpenSettings) {
+                        Button(onClick = { viewModel.openSettings() }, modifier = Modifier.fillMaxWidth()) { Text(Strings.NOTIFICATIONS_OPEN_SETTINGS) }
+                    }
                 }
             }
         }
@@ -88,6 +92,7 @@ private fun reason(ui: NotificationsUiState): String? = when {
 
 private fun NotificationsMessage.text(): String = when (this) {
     NotificationsMessage.PermissionDenied -> Strings.NOTIFICATIONS_DENIED
+    NotificationsMessage.PermissionBlocked -> Strings.NOTIFICATIONS_BLOCKED
     NotificationsMessage.DeviceFailed -> Strings.NOTIFICATIONS_DEVICE_FAILED
     NotificationsMessage.SaveFailed -> Strings.NOTIFICATIONS_SAVE_FAILED
 }

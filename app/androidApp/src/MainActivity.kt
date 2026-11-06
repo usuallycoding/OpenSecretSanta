@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta
 
+import android.Manifest
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -19,7 +20,10 @@ class MainActivity : ComponentActivity() {
     private val permission get() = (application as OpenSecretSantaApplication).notificationPermission
 
     // registered here, before the activity starts, as the result API requires
-    private val askForNotifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) { permission.onResult(it) }
+    private val askForNotifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        // only the activity can tell whether the system would still show its question
+        permission.onResult(granted, shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS))
+    }
 
     /** The screens a tapped notification opens, until the signed-in app has opened them. */
     private val requestedRoutes = MutableStateFlow<List<Any>?>(null)

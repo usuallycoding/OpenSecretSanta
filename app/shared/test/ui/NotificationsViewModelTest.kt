@@ -97,6 +97,55 @@ class NotificationsViewModelTest {
     }
 
     @Test
+    fun aPermissionTheSystemWillNotAskAboutAgainIsBlocked() = runTest {
+        device.willAnswer = "blocked"
+        val model = viewModel()
+
+        model.setDevice(true)!!.join()
+
+        assertFalse(model.ui.value.deviceOn)
+        assertEquals(NotificationsMessage.PermissionBlocked, model.ui.value.message)
+        assertEquals(emptyMap(), server.notifications.devices)
+    }
+
+    @Test
+    fun theSettingsAreOnlyOfferedWhereTheDeviceCanOpenThem() = runTest {
+        assertFalse(viewModel().canOpenSettings)
+
+        device.canOpenSettings = true
+        val model = viewModel()
+        model.openSettings()
+
+        assertTrue(model.canOpenSettings)
+        assertEquals(1, device.settingsOpened)
+    }
+
+    @Test
+    fun theBlockedMessageStaysWhileTheSheetIsReloadedStillBlocked() = runTest {
+        device.willAnswer = "blocked"
+        val model = viewModel()
+        model.setDevice(true)!!.join()
+
+        model.refresh().join()
+
+        assertEquals(NotificationsMessage.PermissionBlocked, model.ui.value.message)
+    }
+
+    @Test
+    fun theBlockedMessageGoesAwayOnceTheSettingsAllowNotificationsButTheSwitchStaysOff() = runTest {
+        device.willAnswer = "blocked"
+        val model = viewModel()
+        model.setDevice(true)!!.join()
+
+        device.permission = "granted"
+        model.refresh().join()
+
+        assertNull(model.ui.value.message)
+        assertFalse(model.ui.value.deviceOn)
+        assertEquals(emptyMap(), server.notifications.devices)
+    }
+
+    @Test
     fun aServerThatCannotBeReachedPutsTheSwitchBackOffWithAReason() = runTest {
         val model = viewModel()
         server.unreachable = true
