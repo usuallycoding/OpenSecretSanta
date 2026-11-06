@@ -6,7 +6,7 @@ How the Android app takes over the web app's group addresses, so that the link i
 ## Requirements
 
 ### Requirement: Group links open in the Android app
-On Android, an address of the web app that the release was built for (for example `https://santa.example.org`) that names a group (`/#/groups/<id>`, or the group's Gifter or Receiver page with its tab) SHALL open in the installed app, and not in the browser, once the system has verified that the address belongs to the app.
+On Android, an address of the web app that the release was built for (for example `https://santa.example.org`) that names a group (`/#/groups/<id>`, or the group's Giver or Receiver page with its tab) SHALL open in the installed app, and not in the browser, once the system has verified that the address belongs to the app.
 
 #### Scenario: Link from an email
 - **WHEN** a signed-in person with the app installed taps `https://santa.example.org/#/groups/7` in an email
@@ -23,6 +23,14 @@ On Android, an address of the web app that the release was built for (for exampl
 #### Scenario: A group the person is not in
 - **WHEN** the link names a group the person cannot read
 - **THEN** the screen says the group is not available and offers the way back, as it does for a notification
+
+#### Scenario: A Giver page
+- **WHEN** a link names `/#/groups/7/giver/questions`
+- **THEN** the Giver page of group 7 opens on its questions tab, with group 7's page and then the group list behind it
+
+#### Scenario: A renamed address
+- **WHEN** a link names `/#/groups/7/gifter`
+- **THEN** the app opens its first screen and no other
 
 ### Requirement: Only group addresses open from a link
 A link SHALL open only the group screens named above. A link with the address of an admin screen, of the settings or of a group's delivery info, or of nothing the app knows, SHALL open the app's first screen and no other.

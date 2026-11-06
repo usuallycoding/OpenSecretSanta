@@ -326,7 +326,7 @@ On the web a screen SHALL offer no refresh control, because the browser's own re
 - **THEN** the same screen is shown with current data and the person is still signed in
 
 ### Requirement: Readable web addresses
-In the web app each screen SHALL have a short, readable address after the `#` (for example `#/groups/2` for a group, `#/groups/2/gifter` and `#/groups/2/receiver` for its Gifter and Receiver pages, `#/groups/2/delivery-info`, `#/settings`, `#/admin/groups/2` and `#/admin/users/alice`), and the address bar SHALL follow the screens as the person moves between them.
+In the web app each screen SHALL have a short, readable address after the `#` (for example `#/groups/2` for a group, `#/groups/2/giver` and `#/groups/2/receiver` for its Giver and Receiver pages, `#/groups/2/delivery-info`, `#/settings`, `#/admin/groups/2` and `#/admin/users/alice`), and the address bar SHALL follow the screens as the person moves between them.
 
 #### Scenario: A group
 - **WHEN** a signed-in person opens a group in the web app
@@ -345,7 +345,7 @@ In the web app each screen SHALL have a short, readable address after the `#` (f
 - **THEN** the address is still the group's address
 
 #### Scenario: A page on its questions tab
-- **WHEN** a signed-in person opens `#/groups/2/receiver/questions` or `#/groups/2/gifter/questions`
+- **WHEN** a signed-in person opens `#/groups/2/receiver/questions` or `#/groups/2/giver/questions`
 - **THEN** that page of group 2 opens on its questions tab
 
 #### Scenario: The tab is where the page opens
@@ -369,6 +369,10 @@ In the web app, opening or refreshing an address, or typing one into the address
 
 #### Scenario: Unknown address
 - **WHEN** a signed-in person opens an address the app does not know, such as the former `#/groups/2/wishlist`
+- **THEN** the first screen of their view is shown
+
+#### Scenario: A renamed address
+- **WHEN** a signed-in person opens `#/groups/2/gifter` or `#/groups/2/letters`, which the app no longer uses
 - **THEN** the first screen of their view is shown
 
 #### Scenario: Admin address without admin rights
