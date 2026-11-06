@@ -186,11 +186,15 @@ The sheets SHALL be part of the group page, not screens, so the web address stay
 - **THEN** the address is still the group page's
 
 ### Requirement: The Receiver page of a drawn group has two tabs
-Once the group is Active or Archived the page SHALL be titled "Receiving from Secret Santa" and show a tab row with two tabs, **Your Wishlist** and **Respond to Secret Santa**, and one tab at a time, which the person SHALL be able to change by choosing a tab or by swiping the content sideways, the tab row following the swipe.
+Once the group is Active or Archived the page SHALL be titled "Receiving from Secret Santa" and show a tab row with two tabs, **Your Wishlist** and **Respond to Secret Santa**, and one tab at a time, which the person SHALL be able to change by choosing a tab or by swiping the content sideways, the tab row following the swipe. On a wide window the page SHALL have no tab row and no swiping: it shows both sections, with the Outbox, side by side as `client-layout` describes.
 
 #### Scenario: Title and tabs
 - **WHEN** the Receiver page of an Active group is opened
 - **THEN** it is titled "Receiving from Secret Santa" with the tabs Your Wishlist and Respond to Secret Santa
+
+#### Scenario: Wide window
+- **WHEN** the Receiver page of an Active group is opened on a wide window
+- **THEN** there is no tab row, and "Your Wishlist", "Respond to Secret Santa" and the Outbox are shown beside each other
 
 ### Requirement: The Receiver page's wishlist tab
 The first tab SHALL show the person's own wishlist for the group, loaded with `GET /groups/{id}/wishlist`, with each item's title, note and link in the person's own order, or a short explanation that nothing has been added yet with the offer to add the first item; the list SHALL be edited as `client-wishlist` describes.
@@ -214,11 +218,15 @@ While the group is Pending the page SHALL be titled "Your Wishlist" and show the
 - **THEN** it is titled "Your Wishlist" and has no tab row
 
 ### Requirement: The Gifter page has two tabs
-The Gifter page SHALL show a tab row with two tabs, **<receiver username>'s Wishlist** and **Questions for <receiver username>**, and one tab at a time, which the person SHALL be able to change by choosing a tab or by swiping the content sideways, the tab row following the swipe.
+The Gifter page SHALL show a tab row with two tabs, **<receiver username>'s Wishlist** and **Questions for <receiver username>**, and one tab at a time, which the person SHALL be able to change by choosing a tab or by swiping the content sideways, the tab row following the swipe. On a wide window the page SHALL have no tab row and no swiping: it shows both sections, with the Inbox, side by side as `client-layout` describes.
 
 #### Scenario: Tab titles
 - **WHEN** the Gifter page for `alice` is opened
 - **THEN** its tabs are "alice's Wishlist" and "Questions for alice"
+
+#### Scenario: Wide window
+- **WHEN** the Gifter page for `alice` is opened on a wide window
+- **THEN** there is no tab row, and "alice's Wishlist", "Questions for alice" and the Inbox are shown beside each other
 
 ### Requirement: The Gifter page's wishlist tab
 The first tab SHALL show the list the person's receiver keeps for the group, loaded with `GET /groups/{id}/receiver/wishlist`, read-only, in the receiver's order, with each item's title, note and link, or a short explanation that the receiver has not added anything yet.
@@ -242,15 +250,15 @@ Pulling a tab down (on Android and iOS) SHALL reload that tab, and returning to 
 - **THEN** that tab reloads what it shows
 
 ### Requirement: The Secret Santa card
-Below the group's information the group page SHALL show a card headed "You're Secret Santa for:" with, on the next row in a bold title font, "TBD" while the group is Pending and the receiver's username in capital letters once it is Active or Archived, and under it the line "Shh... Keep it a secret!" in italics. From Active on it SHALL have "See Wishlist" and "Ask Questions" on one row, then "Inbox" and, last, "Delivery Info", each on its own row. While Pending it SHALL have no button.
+Below the group's information the group page SHALL show, once the group is Active or Archived, a card headed "You're Secret Santa for:" with, on the next row in a bold title font, the receiver's username in capital letters, and under it the line "Shh... Keep it a secret!" in italics, then "See Wishlist" and "Ask Questions" on one row, then "Inbox" and, last, "Delivery Info", each on its own row. While the group is Pending there SHALL be no such card, as there is no receiver to tell about yet.
 
 #### Scenario: Pending
 - **WHEN** the group is Pending
-- **THEN** the card shows the heading and "TBD" and no button
+- **THEN** the group page has no "You're Secret Santa for:" card
 
 #### Scenario: The secret line
-- **WHEN** the card is shown in a Pending, an Active or an Archived group
-- **THEN** the line "Shh... Keep it a secret!" is under "TBD" or the name, in italics
+- **WHEN** the card is shown in an Active or an Archived group
+- **THEN** the line "Shh... Keep it a secret!" is under the name, in italics
 
 #### Scenario: Active
 - **WHEN** the group is Active and the person's receiver is `bob`

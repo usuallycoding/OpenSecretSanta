@@ -6,15 +6,15 @@ Where a signed-in person reaches the app's own settings: a Settings item in the 
 ## Requirements
 
 ### Requirement: The Settings tab
-The bottom bar of the participant view and of the admin view SHALL each have a Settings item with a settings icon and the label "Settings", after the view's other tabs. Choosing it SHALL open the Settings page, and the item SHALL be shown as selected while the page is open. Like the other tabs, it SHALL keep its place when the person moves to another tab and back.
+The bottom bar of the participant view and of the admin view, and on a wide window their sidebar, SHALL each have a Settings item with a settings icon and the label "Settings", after the view's other tabs. Choosing it SHALL open the Settings page, and the item SHALL be shown as selected while the page is open. Like the other tabs, it SHALL keep its place when the person moves to another tab and back.
 
 #### Scenario: Participant's bar
 - **WHEN** a participant is signed in
-- **THEN** the bottom bar offers Groups and Settings, in that order
+- **THEN** the bottom bar, or on a wide window the sidebar, offers Groups and Settings, in that order
 
 #### Scenario: Administrator's bar
 - **WHEN** an administrator is in the admin view
-- **THEN** the bottom bar offers Groups, Users and Settings, in that order
+- **THEN** the bottom bar, or on a wide window the sidebar, offers Groups, Users and Settings, in that order
 
 #### Scenario: Selected
 - **WHEN** the Settings page is open
@@ -51,15 +51,15 @@ Choosing "Appearance", "Notifications" or "Change password" SHALL open the same 
 - **THEN** the stored token is deleted and the sign-in screen is shown
 
 ### Requirement: Settings does not change the view
-Opening the Settings page SHALL NOT switch between the participant view and the admin view: it SHALL be shown in the view the person is in, with that view's bottom bar.
+Opening the Settings page SHALL NOT switch between the participant view and the admin view: it SHALL be shown in the view the person is in, with that view's bottom bar, or on a wide window that view's sidebar.
 
 #### Scenario: Administrator in the admin view
 - **WHEN** an administrator in the admin view chooses Settings
-- **THEN** the Settings page is shown with the admin view's bottom bar, Groups, Users and Settings
+- **THEN** the Settings page is shown with the admin view's bar or sidebar, Groups, Users and Settings
 
 #### Scenario: Administrator in the participant view
 - **WHEN** an administrator who has switched to the participant view chooses Settings
-- **THEN** the Settings page is shown with the participant view's bottom bar
+- **THEN** the Settings page is shown with the participant view's bar or sidebar
 
 ### Requirement: The Settings address on the web
 In the web app the Settings page SHALL have the address `#/settings`. Opening or refreshing that address, or typing it while signed in, SHALL show the Settings page in the view the person is in.

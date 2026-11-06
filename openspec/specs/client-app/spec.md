@@ -138,7 +138,7 @@ The app SHALL offer to sign out from every view after sign-in. Signing out SHALL
 - **THEN** nothing of the previous person's session or screens is shown
 
 ### Requirement: Views by role
-After sign-in the app SHALL show a participant view to everyone and an admin view to administrators only. The participant view SHALL be a Groups tab and a Settings tab under a top bar; the admin view SHALL be a Groups tab with the administrator's groups, a Users tab and the same Settings tab, under the same top bar.
+After sign-in the app SHALL show a participant view to everyone and an admin view to administrators only. The participant view SHALL be a Groups tab and a Settings tab under a top bar; the admin view SHALL be a Groups tab with the administrator's groups, a Users tab and the same Settings tab, under the same top bar. The tabs are in a bottom bar, or in the sidebar on a wide window, as `client-layout` describes.
 
 #### Scenario: Administrator
 - **WHEN** an administrator signs in
@@ -150,7 +150,7 @@ After sign-in the app SHALL show a participant view to everyone and an admin vie
 
 #### Scenario: The admin view has two tabs
 - **WHEN** an administrator is in the admin view
-- **THEN** a bottom bar offers its two tabs, Groups, which shows the administrator's own groups, and Users, and then the Settings tab that both views share
+- **THEN** a bottom bar, or on a wide window the sidebar, offers its two tabs, Groups, which shows the administrator's own groups, and Users, and then the Settings tab that both views share
 
 #### Scenario: Switching views
 - **WHEN** an administrator switches to the participant view and back
@@ -158,7 +158,7 @@ After sign-in the app SHALL show a participant view to everyone and an admin vie
 
 #### Scenario: The menu in both views
 - **WHEN** the person looks at the top bar in the participant view or in the admin view
-- **THEN** there is no menu: an administrator sees the one switch icon and anyone else sees no action
+- **THEN** there is no menu: an administrator sees the one switch icon and anyone else sees no action, apart from the page's own buttons on a wide window
 
 ### Requirement: Requests carry the session and nothing else
 Every request after sign-in SHALL carry the access token in the `Authorization: Bearer` header and no other credential. The app SHALL send the password only to `POST /auth/login` and `PUT /me/password`.
@@ -453,7 +453,7 @@ Every multi-line text field SHALL keep its minimum height while its text is shor
 - **THEN** each stops growing at three rows
 
 ### Requirement: Actions that add are floating buttons
-Adding a wishlist item, asking a question and creating a group (the owner's "New group") SHALL each be a floating action button at the bottom end of its screen, showing an icon and offering the action's name to assistive technology, shown only while the action is available. When the action is not available the screen SHALL keep saying why in text, as before. The button SHALL NOT cover the last row of the content.
+On a window narrower than 840dp adding a wishlist item, asking a question and creating a group (the owner's "New group") SHALL each be a floating action button at the bottom end of its screen, showing an icon and offering the action's name to assistive technology, shown only while the action is available. When the action is not available the screen SHALL keep saying why in text, as before. The button SHALL NOT cover the last row of the content. On wider windows `client-layout` puts them in the top bar.
 
 #### Scenario: Add item
 - **WHEN** the person's wishlist can be changed and has room
