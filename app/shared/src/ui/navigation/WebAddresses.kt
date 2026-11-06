@@ -16,10 +16,10 @@ object WebAddresses {
     fun addressOf(route: Any): String? = when (route) {
         GroupsRoute -> "#/groups"
         is GroupRoute -> "#/groups/${route.id}"
-        is GifterRoute -> "#/groups/${route.groupId}/gifter" + tabSuffix(route.questions)
+        is GifterRoute -> "#/groups/${route.groupId}/giver" + tabSuffix(route.questions)
         is ReceiverRoute -> "#/groups/${route.groupId}/receiver" + tabSuffix(route.questions)
         is DeliveryInfoRoute -> "#/groups/${route.groupId}/delivery-info"
-        is SendLetterRoute -> "#/groups/${route.groupId}/letters"
+        is SendLetterRoute -> "#/groups/${route.groupId}/outbox"
         is InboxRoute -> "#/groups/${route.groupId}/inbox"
         SettingsRoute -> "#/settings"
         AdminGroupsRoute -> "#/admin/groups"
@@ -53,12 +53,12 @@ object WebAddresses {
         val id = parts[0].toLongOrNull() ?: return null
         return when (parts.drop(1)) {
             emptyList<String>() -> GroupRoute(id)
-            listOf("gifter") -> GifterRoute(id)
-            listOf("gifter", "questions") -> GifterRoute(id, questions = true)
+            listOf("giver") -> GifterRoute(id)
+            listOf("giver", "questions") -> GifterRoute(id, questions = true)
             listOf("receiver") -> ReceiverRoute(id)
             listOf("receiver", "questions") -> ReceiverRoute(id, questions = true)
             listOf("delivery-info") -> DeliveryInfoRoute(id)
-            listOf("letters") -> SendLetterRoute(id)
+            listOf("outbox") -> SendLetterRoute(id)
             listOf("inbox") -> InboxRoute(id)
             else -> null
         }

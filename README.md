@@ -273,9 +273,9 @@ The web addresses are the part after the `#`, so the web host needs nothing spec
 | `#/groups`, `#/settings` | the Groups tab and the Settings page |
 | `#/groups/{id}` | a group |
 | `#/groups/{id}/delivery-info` | the Delivery Info page of a group |
-| `#/groups/{id}/letters` | the Send letter page of a group: the letters you sent your Santa |
+| `#/groups/{id}/outbox` | the Send letter page of a group: the letters you sent your Santa |
 | `#/groups/{id}/inbox` | the Inbox page of a group: the letters your receiver sent you |
-| `#/groups/{id}/gifter`, `#/groups/{id}/receiver` | the Gifter page (your receiver's wishlist and your questions) and the Receiver page (your wishlist and your Santa's questions) |
+| `#/groups/{id}/giver`, `#/groups/{id}/receiver` | the Gifter page (your receiver's wishlist and your questions) and the Receiver page (your wishlist and your Santa's questions) |
 | `#/admin/groups`, `#/admin/groups/new`, `#/admin/groups/{id}`, `#/admin/groups/{id}/edit` | the administrator's groups, a new group, a group, its details |
 | `#/admin/users`, `#/admin/users/{username}` | the users, one user |
 

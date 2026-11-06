@@ -46,8 +46,8 @@ class NotificationTargetTest {
     fun theWebAddressesTheServiceWorkerBuildsOpenTheSameScreens() {
         assertEquals(GroupRoute(7), WebAddresses.routeOf("#/groups/7", false))
         assertEquals(NotificationTarget.routesOf("questions", 7).last(), WebAddresses.routeOf("#/groups/7/receiver/questions", false))
-        assertEquals(NotificationTarget.routesOf("answers", 7).last(), WebAddresses.routeOf("#/groups/7/gifter/questions", false))
-        assertEquals(NotificationTarget.routesOf("wishlist", 7).last(), WebAddresses.routeOf("#/groups/7/gifter", false))
+        assertEquals(NotificationTarget.routesOf("answers", 7).last(), WebAddresses.routeOf("#/groups/7/giver/questions", false))
+        assertEquals(NotificationTarget.routesOf("wishlist", 7).last(), WebAddresses.routeOf("#/groups/7/giver", false))
         assertEquals(NotificationTarget.routesOf("letters", 7).last(), WebAddresses.routeOf("#/groups/7/inbox", false))
     }
 }

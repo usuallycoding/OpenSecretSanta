@@ -9,12 +9,12 @@ class WebAddressesTest {
     private val addresses = listOf(
         GroupsRoute to "#/groups",
         GroupRoute(2) to "#/groups/2",
-        GifterRoute(2) to "#/groups/2/gifter",
+        GifterRoute(2) to "#/groups/2/giver",
         ReceiverRoute(2) to "#/groups/2/receiver",
-        GifterRoute(2, questions = true) to "#/groups/2/gifter/questions",
+        GifterRoute(2, questions = true) to "#/groups/2/giver/questions",
         ReceiverRoute(2, questions = true) to "#/groups/2/receiver/questions",
         DeliveryInfoRoute(2) to "#/groups/2/delivery-info",
-        SendLetterRoute(2) to "#/groups/2/letters",
+        SendLetterRoute(2) to "#/groups/2/outbox",
         InboxRoute(2) to "#/groups/2/inbox",
         SettingsRoute to "#/settings",
         AdminGroupsRoute to "#/admin/groups",
@@ -42,7 +42,7 @@ class WebAddressesTest {
 
     @Test
     fun unknownAndOldFormAddressesNameNothing() {
-        for (a in listOf("", "#", "#/", "#/nope", "#/groups/x", "#/groups/2/other", "#/groups/2/wishlist", "#/groups/2/receiver/wishlist", "#/groups/2/gifter/wishlist", "#/groups/2/gifter/questions/extra", "#/groups/2/receiver/questions/extra", "#/groups/2/questions", "#/groups/2/santa", "#/groups/2/letters/extra", "#/groups/2/inbox/extra", "#/groups/2/send-letter", "#/profile/x", "#/settings/extra", "#/admin", "#/admin/users/Al ice",
+        for (a in listOf("", "#", "#/", "#/nope", "#/groups/x", "#/groups/2/other", "#/groups/2/wishlist", "#/groups/2/receiver/wishlist", "#/groups/2/giver/wishlist", "#/groups/2/giver/questions/extra", "#/groups/2/receiver/questions/extra", "#/groups/2/questions", "#/groups/2/santa", "#/groups/2/outbox/extra", "#/groups/2/inbox/extra", "#/groups/2/send-letter", "#/groups/2/gifter", "#/groups/2/gifter/questions", "#/groups/2/letters", "#/profile/x", "#/settings/extra", "#/admin", "#/admin/users/Al ice",
             "#com.usuallycoding.opensecretsanta.ui.navigation.GroupRoute/2")) {
             assertNull(WebAddresses.routeOf(a, true), a)
         }

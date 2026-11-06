@@ -18,10 +18,16 @@ class LinkTargetTest {
 
     @Test
     fun aGifterOrReceiverPageOpensWithTheGroupBehindIt() {
-        assertEquals(listOf(GroupRoute(7), GifterRoute(7)), LinkTarget.routesOf("/groups/7/gifter"))
-        assertEquals(listOf(GroupRoute(7), GifterRoute(7, questions = true)), LinkTarget.routesOf("/groups/7/gifter/questions"))
+        assertEquals(listOf(GroupRoute(7), GifterRoute(7)), LinkTarget.routesOf("/groups/7/giver"))
+        assertEquals(listOf(GroupRoute(7), GifterRoute(7, questions = true)), LinkTarget.routesOf("/groups/7/giver/questions"))
         assertEquals(listOf(GroupRoute(7), ReceiverRoute(7)), LinkTarget.routesOf("/groups/7/receiver"))
         assertEquals(listOf(GroupRoute(7), ReceiverRoute(7, questions = true)), LinkTarget.routesOf("/groups/7/receiver/questions"))
+    }
+
+    @Test
+    fun theFormerGifterAddressOpensNothing() {
+        assertNull(LinkTarget.routesOf("/groups/7/gifter"))
+        assertNull(LinkTarget.routesOf("/groups/7/gifter/questions"))
     }
 
     @Test

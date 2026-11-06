@@ -35,8 +35,8 @@ function addressOf(groupId, category) {
     const group = '#/groups/' + groupId;
     switch (category) {
         case 'questions': return group + '/receiver/questions';
-        case 'answers': return group + '/gifter/questions';
-        case 'wishlist': return group + '/gifter';
+        case 'answers': return group + '/giver/questions';
+        case 'wishlist': return group + '/giver';
         case 'letters': return group + '/inbox';
         default: return group;
     }
