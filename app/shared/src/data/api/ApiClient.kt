@@ -7,6 +7,9 @@ import com.usuallycoding.opensecretsanta.contract.AnswerRequest
 import com.usuallycoding.opensecretsanta.contract.AnnouncementRequest
 import com.usuallycoding.opensecretsanta.contract.AnnouncementResponse
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
+import com.usuallycoding.opensecretsanta.contract.ReadMarksDto
+import com.usuallycoding.opensecretsanta.contract.ReadMarkDto
+import com.usuallycoding.opensecretsanta.contract.MarkReadRequest
 import com.usuallycoding.opensecretsanta.contract.SendLetterRequest
 import com.usuallycoding.opensecretsanta.contract.LetterDto
 import com.usuallycoding.opensecretsanta.contract.AdminLetterBoxDto
@@ -144,6 +147,14 @@ class ApiClient(
     /** Sets or replaces the person's answer to question [number]; the answer is the question as stored. */
     suspend fun answerQuestion(groupId: Long, number: Int, text: String): ApiResult<QuestionDto> =
         call(HttpMethod.Put, ApiRoutes.groupSantaQuestionAnswer(groupId, number), body = AnswerRequest(text))
+
+    /** What is new to the person, as the Santa of their receiver: the unread count and the time seen up to of each kind. */
+    suspend fun readMarks(groupId: Long): ApiResult<ReadMarksDto> =
+        call(HttpMethod.Get, ApiRoutes.groupReceiverReads(groupId))
+
+    /** Says the person has seen [kind] (`wishlist`, `answers` or `letters`) up to [seenUpTo], an ISO-8601 instant. */
+    suspend fun markRead(groupId: Long, kind: String, seenUpTo: String): ApiResult<ReadMarkDto> =
+        call(HttpMethod.Put, ApiRoutes.groupReceiverRead(groupId, kind), body = MarkReadRequest(seenUpTo))
 
     /** The letters the person has sent their Santa, in the order sent, with nothing that names the Santa. */
     suspend fun sentLetters(groupId: Long): ApiResult<List<LetterDto>> =

@@ -4,14 +4,23 @@ import com.usuallycoding.opensecretsanta.contract.AdminLetterBoxDto
 import com.usuallycoding.opensecretsanta.contract.LetterDto
 import com.usuallycoding.opensecretsanta.ui.groups.GroupPhase
 import com.usuallycoding.opensecretsanta.ui.groups.formatInstant
+import com.usuallycoding.opensecretsanta.ui.readmarks.SeenBaseline
+import com.usuallycoding.opensecretsanta.ui.readmarks.letterIsNew
 
 /** One letter as the screens show it: nothing in it can name anyone. [sent] is the time it was sent, ready to read. */
-data class LetterItem(val number: Int, val title: String, val text: String, val sent: String)
+data class LetterItem(
+    val number: Int,
+    val title: String,
+    val text: String,
+    val sent: String,
+    /** Sent since the Santa last looked, when the Santa has marks to compare with. */
+    val isNew: Boolean = false,
+)
 
-internal fun LetterDto.toItem() = LetterItem(number, title, text, formatInstant(sentAt))
+internal fun LetterDto.toItem(baseline: SeenBaseline? = null) = LetterItem(number, title, text, formatInstant(sentAt), letterIsNew(sentAt, baseline))
 
 /** The server lists letters in the order they were sent; the screens show the newest first. */
-internal fun List<LetterDto>.newestFirst(): List<LetterItem> = map { it.toItem() }.sortedByDescending { it.number }
+internal fun List<LetterDto>.newestFirst(baseline: SeenBaseline? = null): List<LetterItem> = map { it.toItem(baseline) }.sortedByDescending { it.number }
 
 /** The letters the person sent their Santa, newest first, and the group's phase, read together. */
 data class SentLettersData(val letters: List<LetterItem>, val phase: GroupPhase)

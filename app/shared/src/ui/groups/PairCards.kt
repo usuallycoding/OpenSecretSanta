@@ -23,6 +23,7 @@ import com.usuallycoding.opensecretsanta.ui.form.SnowCard
 import com.usuallycoding.opensecretsanta.ui.gift.countBadgeText
 import com.usuallycoding.opensecretsanta.ui.gift.ReceiverInfo
 import com.usuallycoding.opensecretsanta.ui.load.LoadState
+import com.usuallycoding.opensecretsanta.ui.readmarks.UnreadCounts
 import com.usuallycoding.opensecretsanta.ui.load.loadMessage
 
 /** The details sheet that is open on a group page. */
@@ -37,6 +38,7 @@ enum class PairSheet { Me, Receiver, Santa }
 internal fun SecretSantaCard(
     phase: GroupPhase,
     receiver: LoadState<ReceiverInfo>?,
+    unread: UnreadCounts?,
     onRetry: () -> Unit,
     onOpenGifter: (questions: Boolean) -> Unit,
     onOpenInbox: () -> Unit,
@@ -66,10 +68,10 @@ internal fun SecretSantaCard(
                 }
                 val known = name != null
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { onOpenGifter(false) }, enabled = known, modifier = Modifier.weight(1f)) { Text(Strings.SEE_WISHLIST) }
-                    Button(onClick = { onOpenGifter(true) }, enabled = known, modifier = Modifier.weight(1f)) { Text(Strings.ASK_QUESTIONS) }
+                    UnreadButton(Strings.SEE_WISHLIST, unread?.wishlist ?: 0, Strings::withNewOrEdited, { onOpenGifter(false) }, known, Modifier.weight(1f))
+                    UnreadButton(Strings.ASK_QUESTIONS, unread?.answers ?: 0, Strings::withNew, { onOpenGifter(true) }, known, Modifier.weight(1f))
                 }
-                Button(onClick = onOpenInbox, enabled = known, modifier = Modifier.fillMaxWidth()) { Text(Strings.INBOX) }
+                UnreadButton(Strings.INBOX, unread?.letters ?: 0, Strings::withNew, onOpenInbox, known, Modifier.fillMaxWidth())
                 OutlinedButton(onClick = { onSheet(PairSheet.Receiver) }, enabled = known, modifier = Modifier.fillMaxWidth()) { Text(Strings.DELIVERY_INFO) }
             }
         }
@@ -119,5 +121,17 @@ internal fun YourStuffCard(
                 OutlinedButton(onClick = { onSheet(PairSheet.Me) }, modifier = Modifier.fillMaxWidth()) { Text(Strings.DELIVERY_INFO) }
             }
         }
+    }
+}
+
+/** A button with a badge for what is new to the Santa behind it: none for nothing, "9+" for many. The button says the count aloud. */
+@Composable
+private fun UnreadButton(label: String, count: Int, spoken: (String, Int) -> String, onClick: () -> Unit, enabled: Boolean, modifier: Modifier) {
+    CountBadged(countBadgeText(count), modifier) {
+        Button(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = Modifier.fillMaxWidth().semantics { if (count > 0) contentDescription = spoken(label, count) },
+        ) { Text(label) }
     }
 }

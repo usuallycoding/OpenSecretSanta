@@ -17,6 +17,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -35,6 +36,8 @@ import com.usuallycoding.opensecretsanta.ui.form.FormColumn
 import com.usuallycoding.opensecretsanta.ui.form.MultiLineTextField
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
 import com.usuallycoding.opensecretsanta.ui.form.SnowCard
+import com.usuallycoding.opensecretsanta.ui.form.StatusPill
+import com.usuallycoding.opensecretsanta.ui.form.startAccentBar
 import com.usuallycoding.opensecretsanta.ui.form.TimesLine
 import com.usuallycoding.opensecretsanta.ui.form.touchesOfAField
 import com.usuallycoding.opensecretsanta.ui.groups.GroupGone
@@ -48,10 +51,14 @@ import com.usuallycoding.opensecretsanta.ui.load.PullPage
 @Composable
 internal fun LetterCard(letter: LetterItem, modifier: Modifier = Modifier) {
     SnowCard("letter-${letter.number}", modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // a letter the Santa has not read yet has a "New" pill and a bar on the card's start edge
+        Column(Modifier.startAccentBar(letter.isNew).padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             ReadOnlyText(letter.title, style = MaterialTheme.typography.titleMedium, label = Strings.LETTER_TITLE_LABEL, maxLines = 2, copy = false)
             ReadOnlyText(letter.text, style = MaterialTheme.typography.bodyMedium, label = Strings.LETTER_TEXT_LABEL)
-            TimesLine(Strings.letterSentAt(letter.sent))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                TimesLine(Strings.letterSentAt(letter.sent), modifier = Modifier.weight(1f, fill = false))
+                if (letter.isNew) StatusPill(Strings.READ_NEW)
+            }
         }
     }
 }
@@ -139,6 +146,8 @@ internal fun LetterSheet(
 fun InboxScreen(viewModel: InboxViewModel, onBack: () -> Unit, onTitle: (String?) -> Unit) {
     val state by viewModel.data.collectAsState()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
+    // the letters are marked as seen once they are on screen, so the next visit has none marked
+    LaunchedEffect(state.value) { if (state.value != null) viewModel.markSeen() }
     // the receiver's name once it is known; a failed refresh keeps the name that was loaded before
     PageTitle(Strings.lettersFrom(state.value?.receiver), onTitle)
 

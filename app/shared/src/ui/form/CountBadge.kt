@@ -36,9 +36,12 @@ internal fun CountBadged(text: String?, modifier: Modifier = Modifier, content: 
     ) { content() }
 }
 
-/** A small pill saying that a question has not been answered: text on the tertiary container, so that colour is not the only sign. */
+/**
+ * A small pill with a word in it ("Unanswered", "New", "Edited"): text on the tertiary container, so that colour is never the only
+ * sign.
+ */
 @Composable
-internal fun UnansweredPill(text: String, modifier: Modifier = Modifier) {
+internal fun StatusPill(text: String, modifier: Modifier = Modifier) {
     Surface(modifier, shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.tertiaryContainer, contentColor = MaterialTheme.colorScheme.onTertiaryContainer) {
         Row(Modifier.padding(horizontal = 8.dp, vertical = 2.dp)) {
             Text(text, style = MaterialTheme.typography.labelSmall)

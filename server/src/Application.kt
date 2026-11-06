@@ -39,7 +39,9 @@ import com.usuallycoding.opensecretsanta.domain.gift.GetMySanta
 import com.usuallycoding.opensecretsanta.domain.gift.ListMyQuestions
 import com.usuallycoding.opensecretsanta.domain.gift.ListLetterBoxes
 import com.usuallycoding.opensecretsanta.domain.gift.ListLettersFromMyReceiver
+import com.usuallycoding.opensecretsanta.domain.gift.GetMyReadMarks
 import com.usuallycoding.opensecretsanta.domain.gift.ListMySentLetters
+import com.usuallycoding.opensecretsanta.domain.gift.MarkRead
 import com.usuallycoding.opensecretsanta.domain.gift.ListQuestionThreads
 import com.usuallycoding.opensecretsanta.domain.gift.SendLetter
 import com.usuallycoding.opensecretsanta.domain.gift.ListQuestionsFromMySanta
@@ -78,6 +80,7 @@ import com.usuallycoding.opensecretsanta.server.presentation.groupLifecycleRoute
 import com.usuallycoding.opensecretsanta.server.presentation.memberGroupRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.letterRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.questionRoutes
+import com.usuallycoding.opensecretsanta.server.presentation.readMarkRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.receiverWishlistRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.wishlistRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.deliveryInfoRoutes
@@ -170,6 +173,7 @@ fun Application.module(
             giftVisibilityRoutes(get<GetMyReceiver>(), get<GetMySanta>())
             questionRoutes(get<AskQuestion>(), get<ListMyQuestions>(), get<ListQuestionsFromMySanta>(), get<AnswerQuestion>(), get<NotificationDispatcher>())
             letterRoutes(get<SendLetter>(), get<ListMySentLetters>(), get<ListLettersFromMyReceiver>(), get<NotificationDispatcher>())
+            readMarkRoutes(get<GetMyReadMarks>(), get<MarkRead>())
             wishlistRoutes(get<GetMyWishlist>(), get<AddWishlistItem>(), get<UpdateWishlistItem>(), get<DeleteWishlistItem>(), get<ReorderWishlist>(), get<NotificationDispatcher>())
             receiverWishlistRoutes(get<GetReceiverWishlist>())
             notificationRoutes(get<GetNotificationSettings>(), get<UpdateNotificationSettings>(), get<RegisterDevice>(), get<UnregisterDevice>())

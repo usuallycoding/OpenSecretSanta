@@ -15,21 +15,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.domain.gift.QuestionLimits
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.form.SnowCard
+import com.usuallycoding.opensecretsanta.ui.form.startAccentBar
 import com.usuallycoding.opensecretsanta.ui.groups.GroupPhase
 import com.usuallycoding.opensecretsanta.ui.load.LoadSection
 import androidx.compose.foundation.layout.BoxScope
@@ -38,10 +36,12 @@ import com.usuallycoding.opensecretsanta.ui.form.QuestionIcon
 
 /** The person's questions to their receiver and the receiver's answers, as a section of the Gifter page. */
 @Composable
-fun ReceiverQuestionsSection(viewModel: ReceiverViewModel) {
+fun ReceiverQuestionsSection(viewModel: ReceiverViewModel, shown: Boolean = true) {
     val state by viewModel.data.collectAsState()
     val ui by viewModel.ui.collectAsState()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
+    // the answers are marked as seen once they are on screen, not when the page opens on the other tab
+    LaunchedEffect(shown, state.value) { if (shown && state.value != null) viewModel.markSeen() }
 
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         ui.notice?.let { Notice(it, onDismiss = viewModel::dismissNotice) }
@@ -61,8 +61,6 @@ fun ReceiverQuestionsSection(viewModel: ReceiverViewModel) {
         TextSheet(Strings.ASK_QUESTION, Strings.YOUR_QUESTION, editor, viewModel::edit, onSave = { viewModel.save() }, onDismiss = viewModel::dismissEditor)
     }
 }
-
-private val QuestionBarWidth = 4.dp
 
 /** The floating "Ask a question" button: there only while the group is Active and the person has questions left. */
 @Composable
@@ -94,22 +92,10 @@ private fun QuestionsHeader(data: ReceiverData, viewModel: ReceiverViewModel) {
 
 @Composable
 internal fun QuestionCard(question: Question, action: (@Composable () -> Unit)? = null, needsAnswer: Boolean = false) {
-    val barColor = MaterialTheme.colorScheme.tertiary
     SnowCard("question-${question.number}", Modifier.fillMaxWidth()) {
-        Column(
-            Modifier
-                .drawBehind {
-                    // the accent bar along the card's start edge: the card's shape rounds it, and it takes no room
-                    if (needsAnswer) {
-                        val width = QuestionBarWidth.toPx()
-                        val left = if (layoutDirection == LayoutDirection.Ltr) 0f else size.width - width
-                        drawRect(barColor, topLeft = Offset(left, 0f), size = Size(width, size.height))
-                    }
-                }
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            QuestionThread(question.number, question.text, question.asked, question.answer, question.answered, question.answerChanged, needsAnswer = needsAnswer)
+        // the accent bar along the card's start edge: for a question that needs an answer, or an answer the Santa has not read yet
+        Column(Modifier.startAccentBar(needsAnswer || question.answerIsNew).padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            QuestionThread(question.number, question.text, question.asked, question.answer, question.answered, question.answerChanged, needsAnswer = needsAnswer, answerIsNew = question.answerIsNew)
             action?.invoke()
         }
     }

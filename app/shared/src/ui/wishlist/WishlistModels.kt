@@ -5,12 +5,23 @@ import com.usuallycoding.opensecretsanta.contract.WishlistItemDto
 import com.usuallycoding.opensecretsanta.ui.groups.GroupPhase
 import com.usuallycoding.opensecretsanta.ui.groups.changedTime
 import com.usuallycoding.opensecretsanta.ui.groups.formatInstant
+import com.usuallycoding.opensecretsanta.ui.readmarks.Change
+import com.usuallycoding.opensecretsanta.ui.readmarks.SeenBaseline
+import com.usuallycoding.opensecretsanta.ui.readmarks.itemChange
 
 /** One of the person's own items, with the id needed to change it; [changed] is set only when it was edited after it was added. */
 data class WishItem(val id: Long, val title: String, val note: String?, val url: String?, val added: String, val changed: String?)
 
 /** An item of the receiver's list: a Santa can read it but never address an item, so there is no id. */
-data class SharedWishItem(val title: String, val note: String?, val url: String?, val added: String, val changed: String?)
+data class SharedWishItem(
+    val title: String,
+    val note: String?,
+    val url: String?,
+    val added: String,
+    val changed: String?,
+    /** New or edited since the Santa last looked, when the Santa has marks to compare with; null otherwise. */
+    val change: Change? = null,
+)
 
 /** The person's list for one group together with where the group is, which decides whether it can be changed. */
 data class WishlistData(val items: List<WishItem>, val phase: GroupPhase) {
@@ -46,4 +57,5 @@ data class WishlistUiState(
 
 internal fun WishlistItemDto.toItem() = WishItem(id, title, note, url, formatInstant(createdAt), changedTime(createdAt, updatedAt))
 
-internal fun SharedWishlistItemDto.toItem() = SharedWishItem(title, note, url, formatInstant(createdAt), changedTime(createdAt, updatedAt))
+internal fun SharedWishlistItemDto.toItem(baseline: SeenBaseline? = null) =
+    SharedWishItem(title, note, url, formatInstant(createdAt), changedTime(createdAt, updatedAt), itemChange(createdAt, updatedAt, baseline))

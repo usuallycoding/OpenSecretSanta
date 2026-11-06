@@ -15,6 +15,7 @@ import com.usuallycoding.opensecretsanta.ui.admin.AdminUserViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminUsersViewModel
 import com.usuallycoding.opensecretsanta.ui.gift.ReceiverViewModel
 import com.usuallycoding.opensecretsanta.ui.gift.SantaQuestionsViewModel
+import com.usuallycoding.opensecretsanta.ui.readmarks.ReadMarksViewModel
 import com.usuallycoding.opensecretsanta.ui.gift.SantaRevealViewModel
 import com.usuallycoding.opensecretsanta.ui.notifications.NotificationsViewModel
 import com.usuallycoding.opensecretsanta.ui.wishlist.ReceiverWishlistViewModel
@@ -74,6 +75,7 @@ class AppModulesTest {
             assertEquals(7L, koin.get<ReceiverWishlistViewModel> { parametersOf(7L) }.groupId)
             assertEquals(7L, koin.get<ReceiverViewModel> { parametersOf(7L) }.groupId)
             assertEquals(7L, koin.get<SantaQuestionsViewModel> { parametersOf(7L) }.groupId)
+            assertEquals(7L, koin.get<ReadMarksViewModel> { parametersOf(7L) }.groupId)
             assertEquals(7L, koin.get<SantaRevealViewModel> { parametersOf(7L) }.groupId)
             assertEquals(7L, koin.get<SendLetterViewModel> { parametersOf(7L) }.groupId)
             assertEquals(7L, koin.get<InboxViewModel> { parametersOf(7L) }.groupId)

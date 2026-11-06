@@ -5,6 +5,8 @@ import com.usuallycoding.opensecretsanta.contract.ReceiverDto
 import com.usuallycoding.opensecretsanta.ui.groups.GroupPhase
 import com.usuallycoding.opensecretsanta.ui.groups.changedTime
 import com.usuallycoding.opensecretsanta.ui.groups.formatInstant
+import com.usuallycoding.opensecretsanta.ui.readmarks.SeenBaseline
+import com.usuallycoding.opensecretsanta.ui.readmarks.answerIsNew
 
 /**
  * One question of a thread with the answer the receiver gave, if any, and when each happened. [answerChanged] is set only
@@ -17,6 +19,8 @@ data class Question(
     val asked: String,
     val answered: String?,
     val answerChanged: String?,
+    /** The answer was given or changed since the Santa last looked, when the Santa has marks to compare with. */
+    val answerIsNew: Boolean = false,
 )
 
 /** Where the person posts their gift: whatever the receiver has set, blank values left out. */
@@ -53,13 +57,14 @@ enum class GiftNotice { Locked, LimitReached, QuestionGone, Unreachable }
 
 data class ReceiverUiState(val editor: TextEditor? = null, val notice: GiftNotice? = null)
 
-internal fun QuestionDto.toQuestion() = Question(
+internal fun QuestionDto.toQuestion(baseline: SeenBaseline? = null) = Question(
     number = number,
     text = text,
     answer = answer,
     asked = formatInstant(askedAt),
     answered = answeredAt?.let(::formatInstant),
     answerChanged = answerUpdatedAt?.let { changedTime(answeredAt, it) },
+    answerIsNew = answerIsNew(answerUpdatedAt, baseline),
 )
 
 internal fun ReceiverDto.toInfo() = ReceiverInfo(

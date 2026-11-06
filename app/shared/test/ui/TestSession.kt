@@ -3,6 +3,9 @@ package com.usuallycoding.opensecretsanta.ui
 import com.usuallycoding.opensecretsanta.contract.AnnouncementRequest
 import com.usuallycoding.opensecretsanta.contract.AnnouncementResponse
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
+import com.usuallycoding.opensecretsanta.contract.ReadMarksDto
+import com.usuallycoding.opensecretsanta.contract.ReadMarkDto
+import com.usuallycoding.opensecretsanta.contract.MarkReadRequest
 import com.usuallycoding.opensecretsanta.contract.SendLetterRequest
 import com.usuallycoding.opensecretsanta.contract.LetterDto
 import com.usuallycoding.opensecretsanta.contract.PushSummaryDto
@@ -84,6 +87,9 @@ class ScriptedServer {
     /** The letters between a receiver and their Santa, as the server keeps and answers them. */
     val letters = FakeLetters(gift)
 
+    /** What the person has seen of their receiver's things, as the server keeps and answers it. */
+    val readMarks = FakeReadMarks()
+
     /** The notification switches and registered devices as the server keeps and answers them. */
     val notifications = FakeNotifications()
 
@@ -130,6 +136,7 @@ class ScriptedServer {
                 announcements.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 gift.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 letters.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
+                readMarks.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 notifications.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 val wishlistAnswer = wishlist.answer(request.method.value, path, bodies.last())
                 if (wishlistAnswer != null) return@MockEngine json(wishlistAnswer.first, wishlistAnswer.second)
@@ -402,6 +409,45 @@ class FakeLetters(private val gift: FakeGift) {
                 sent += letter
                 HttpStatusCode.Created to Json.encodeToString(letter)
             }
+        }
+    }
+}
+
+/**
+ * What a Santa has seen of their receiver's things, as the server keeps and answers it: the marks of each kind, the marks the app
+ * sent, and a switch that makes the server fail. The times are the ones a test puts in.
+ */
+class FakeReadMarks {
+    var wishlist = ReadMarkDto(0, null)
+    var answers = ReadMarkDto(0, null)
+    var letters = ReadMarkDto(0, null)
+
+    /** Every mark the app sent, as kind to time, in order. */
+    val sent = mutableListOf<Pair<String, String>>()
+
+    /** Makes the reads route answer 500, and the marking route too. */
+    var failing = false
+
+    private fun dto() = ReadMarksDto(wishlist, answers, letters)
+
+    fun answer(method: String, path: String, body: String): Pair<HttpStatusCode, String>? {
+        val match = Regex("/groups/\\d+/receiver/reads(/(wishlist|answers|letters))?").matchEntire(path) ?: return null
+        if (failing) return HttpStatusCode.InternalServerError to """{"code":"internal_error","message":"refused"}"""
+        val kind = match.groupValues[2]
+        return when {
+            method == "GET" && kind.isEmpty() -> HttpStatusCode.OK to Json.encodeToString(dto())
+            method == "PUT" && kind.isNotEmpty() -> {
+                val time = Json.decodeFromString<MarkReadRequest>(body).seenUpTo.orEmpty()
+                sent += kind to time
+                val marked = ReadMarkDto(0, time)
+                when (kind) {
+                    "wishlist" -> wishlist = marked
+                    "answers" -> answers = marked
+                    else -> letters = marked
+                }
+                HttpStatusCode.OK to Json.encodeToString(marked)
+            }
+            else -> null
         }
     }
 }

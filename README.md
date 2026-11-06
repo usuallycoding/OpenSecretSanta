@@ -191,9 +191,13 @@ Once a group is Active every participant is both a Santa (for their receiver) an
 | `POST /groups/{id}/santa/letters`                 | the receiver | Send your Santa a one-way letter (`{"title": ..., "text": ...}`, a title of 1-100 and a text of 1-2000 characters, both required, at most 30 per group, Active only) |
 | `GET /groups/{id}/santa/letters`                  | the receiver | The letters you have sent, in order (Active and Archived), without any sign of your Santa |
 | `GET /groups/{id}/receiver/letters`               | the Santa | The letters your receiver has sent you, in order (Active and Archived) |
+| `GET /groups/{id}/receiver/reads`                 | the Santa | What is new to you from your receiver: for the wishlist, your questions' answers and the letters, `{"unread": n, "seenUpTo": time or null}` (Active and Archived) |
+| `PUT /groups/{id}/receiver/reads/{kind}`          | the Santa | Say you have seen a `kind` (`wishlist`, `answers` or `letters`) up to a time (`{"seenUpTo": "2026-12-24T18:30:00Z"}`); the later of that and what is kept stays, never a time later than the server's own |
 | `GET /groups/{id}/santa`                          | the receiver | Your Santa's username and full name, only once the group is Archived          |
 
 Questions are numbered from 1 within each Santa's own thread, so the numbers say nothing about other threads. A question cannot be edited or deleted once asked, an answer can be changed as often as you like while the group is Active, and once the group is Archived both threads stay readable but nothing changes. Only the group's owner can read them, through the oversight routes below. Asking in a group that is not Active, answering in one, or asking the 31st question answers `409` with the code `invalid_state`.
+
+Read marks tell a Santa what is new from their receiver. For the wishlist, the answers to the Santa's questions and the letters the server keeps the newest time the Santa has seen, per group, and `reads` counts what came after it: a wishlist item created or changed (once each), an answer given or changed, a letter sent; a kind never marked counts everything. A mark belongs to its Santa alone: no other response, the receiver's and the owner's included, carries a mark, a count or a time of reading, and marks go with the group.
 
 Letters are one way: a receiver writes to their Santa (a title and a text, both required) and the Santa reads them, with no reply, edit or delete. They are numbered from 1 within each receiver's own letters, are private to that pair and, read-only, to the group's owner, and go with the group when it is deleted. The Santa is told with a push notification (the **letters** switch), held like questions.
 

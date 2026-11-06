@@ -81,3 +81,24 @@ data class AdminLetterBoxDto(
     val receiver: String,
     val letters: List<LetterDto>,
 )
+
+/** How much of one kind a Santa has not seen yet, and the newest time they have seen of it (an ISO-8601 UTC instant; null when never marked). */
+@Serializable
+data class ReadMarkDto(
+    val unread: Int,
+    val seenUpTo: String? = null,
+)
+
+/** A Santa's own marks for what their receiver keeps and sends. Only ever returned to that Santa. */
+@Serializable
+data class ReadMarksDto(
+    val wishlist: ReadMarkDto,
+    val answers: ReadMarkDto,
+    val letters: ReadMarkDto,
+)
+
+/** The newest time the Santa has seen of one kind: an ISO-8601 UTC instant, taken from what the app showed. */
+@Serializable
+data class MarkReadRequest(
+    val seenUpTo: String? = null,
+)

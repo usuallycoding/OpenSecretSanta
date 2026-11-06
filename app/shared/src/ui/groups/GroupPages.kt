@@ -70,7 +70,7 @@ fun ReceiverPage(groupId: Long, wishlist: WishlistViewModel, onBack: () -> Unit,
         Strings.TAB_RESPOND,
         tab,
         onShown = { page -> if (page == 0) wishlist.refresh() else questions.refresh() },
-    ) { page ->
+    ) { page, _ ->
         if (page == 0) {
             Box(Modifier.fillMaxSize()) {
                 PullPage(loading = wishlistState.loading, onRefresh = { wishlist.refresh() }, bottomSpace = FAB_CLEARANCE) { WishlistSection(wishlist) }
@@ -103,12 +103,12 @@ fun GifterPage(wishlist: ReceiverWishlistViewModel, questions: ReceiverViewModel
         Strings.receiverQuestionsTab(receiver),
         tab,
         onShown = { page -> if (page == 0) wishlist.refresh() else questions.refresh() },
-    ) { page ->
+    ) { page, shown ->
         if (page == 0) {
-            PullPage(loading = wishlistState.loading, onRefresh = { wishlist.refresh() }) { ReceiverWishlistSection(wishlist) }
+            PullPage(loading = wishlistState.loading, onRefresh = { wishlist.refresh() }) { ReceiverWishlistSection(wishlist, shown) }
         } else {
             Box(Modifier.fillMaxSize()) {
-                PullPage(loading = questionsState.loading, onRefresh = { questions.refresh() }, bottomSpace = FAB_CLEARANCE) { ReceiverQuestionsSection(questions) }
+                PullPage(loading = questionsState.loading, onRefresh = { questions.refresh() }, bottomSpace = FAB_CLEARANCE) { ReceiverQuestionsSection(questions, shown) }
                 AskQuestionFab(questions)
             }
         }
@@ -129,7 +129,7 @@ internal fun PageTitle(title: String, onTitle: (String?) -> Unit) {
  * reloads a tab when it is shown (a tab that was left may be stale).
  */
 @Composable
-private fun TabbedPages(first: String, second: String, opensOn: PageTab, onShown: (Int) -> Unit, page: @Composable (Int) -> Unit) {
+private fun TabbedPages(first: String, second: String, opensOn: PageTab, onShown: (Int) -> Unit, page: @Composable (index: Int, shown: Boolean) -> Unit) {
     val pager = rememberPagerState(initialPage = opensOn.ordinal) { 2 }
     val scope = rememberCoroutineScope()
     val latestOnShown by rememberUpdatedState(onShown)
@@ -141,7 +141,7 @@ private fun TabbedPages(first: String, second: String, opensOn: PageTab, onShown
             Tab(selected = pager.currentPage == 0, onClick = { scope.launch { pager.animateScrollToPage(0) } }, text = { TabLabel(first) })
             Tab(selected = pager.currentPage == 1, onClick = { scope.launch { pager.animateScrollToPage(1) } }, text = { TabLabel(second) })
         }
-        HorizontalPager(pager, Modifier.weight(1f), beyondViewportPageCount = 1) { index -> page(index) }
+        HorizontalPager(pager, Modifier.weight(1f), beyondViewportPageCount = 1) { index -> page(index, pager.currentPage == index) }
     }
 }
 

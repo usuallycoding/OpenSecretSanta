@@ -184,6 +184,8 @@ object Strings {
     const val NO_QUESTIONS_ASKED = "You have not asked anything yet."
     const val NOT_ANSWERED = "Not answered yet"
     const val UNANSWERED = "Unanswered"
+    const val READ_NEW = "New"
+    const val READ_EDITED = "Edited"
     const val ANSWER = "Answer"
     const val CHANGE_ANSWER = "Change answer"
     const val YOUR_ANSWER = "Your answer"
@@ -366,6 +368,11 @@ object Strings {
     fun changed(time: String) = "Changed $time"
     /** What a screen reader says for a button or tab that carries a count of unanswered questions. */
     fun withUnanswered(name: String, count: Int) = "$name, $count unanswered"
+
+    /** What a screen reader says for a button that carries a count of things that are new to the Santa. */
+    fun withNew(name: String, count: Int) = "$name, $count new"
+
+    fun withNewOrEdited(name: String, count: Int) = "$name, $count new or edited"
     fun asked(time: String) = "Asked $time"
     fun answered(time: String) = "Answered $time"
     fun answerChanged(time: String) = "Answer changed $time"

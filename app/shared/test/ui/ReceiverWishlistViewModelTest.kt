@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.ui
 
+import com.usuallycoding.opensecretsanta.contract.ReadMarkDto
 import com.usuallycoding.opensecretsanta.contract.SharedWishlistItemDto
 import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.ui.wishlist.ReceiverWishlistViewModel
@@ -22,6 +23,8 @@ class ReceiverWishlistViewModelTest {
     @Test
     fun theReceiversItemsAreShownInTheReceiversOrder() = runTest {
         server.receiverWishlist = listOf(item("Gloves", "Black", "https://shop.example/gloves"), item("Book"), item("Tea", "Loose"))
+        // the Santa has already seen all of it, so nothing is marked and the list is just the list
+        server.readMarks.wishlist = ReadMarkDto(0, "2026-12-31T00:00:00Z")
 
         val items = viewModel().state.value.value!!
 
@@ -73,6 +76,8 @@ class ReceiverWishlistViewModelTest {
         val model = viewModel()
         model.refresh().join()
 
-        assertTrue(server.calls.isNotEmpty() && server.calls.all { it == "GET /groups/1/receiver/wishlist" }, server.calls.toString())
+        // the list, and what the Santa had seen of it; nothing is written unless the screen says the list was shown
+        val allowed = setOf("GET /groups/1/receiver/wishlist", "GET /groups/1/receiver/reads")
+        assertTrue(server.calls.isNotEmpty() && server.calls.all { it in allowed }, server.calls.toString())
     }
 }

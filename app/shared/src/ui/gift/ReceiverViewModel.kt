@@ -10,6 +10,9 @@ import com.usuallycoding.opensecretsanta.ui.groups.GroupPhase
 import com.usuallycoding.opensecretsanta.ui.groups.groupPhase
 import com.usuallycoding.opensecretsanta.ui.load.LoadState
 import com.usuallycoding.opensecretsanta.ui.load.Loader
+import com.usuallycoding.opensecretsanta.ui.readmarks.KIND_ANSWERS
+import com.usuallycoding.opensecretsanta.ui.readmarks.ReadTracker
+import com.usuallycoding.opensecretsanta.ui.readmarks.newestOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +31,7 @@ class ReceiverViewModel(
     private val api: ApiClient,
     private val scope: CoroutineScope,
 ) : ViewModel(scope) {
+    private val tracker = ReadTracker(api, groupId, scope, KIND_ANSWERS)
     private val loader = Loader(scope) { load() }
     private val _ui = MutableStateFlow(ReceiverUiState())
 
@@ -42,6 +46,9 @@ class ReceiverViewModel(
 
     fun refresh(): Job = loader.refresh()
 
+    /** Tells the server the answers have been shown, so that the next visit has none marked; call it once the tab is on screen. */
+    fun markSeen(): Job? = tracker.markSeen()
+
     private suspend fun load(): ApiResult<ReceiverData> {
         val receiver = when (val result = api.receiver(groupId)) {
             is ApiResult.Success -> result.value
@@ -55,7 +62,9 @@ class ReceiverViewModel(
             is ApiResult.Success -> result.value
             is ApiResult.Failure -> return result
         }
-        return ApiResult.Success(ReceiverData(receiver.toInfo(), questions.map { it.toQuestion() }, groupPhase(group.state)))
+        tracker.ensureBaseline()
+        tracker.shown(newestOf(questions.filter { it.answer != null }.map { it.answerUpdatedAt }))
+        return ApiResult.Success(ReceiverData(receiver.toInfo(), questions.map { it.toQuestion(tracker.baseline) }, groupPhase(group.state)))
     }
 
     // --- the bottom sheet -------------------------------------------------------------------

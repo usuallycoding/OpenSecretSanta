@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import com.usuallycoding.opensecretsanta.ui.form.BadgeGap
 import com.usuallycoding.opensecretsanta.ui.form.DragHandleIcon
 import com.usuallycoding.opensecretsanta.ui.form.NumberBadge
+import com.usuallycoding.opensecretsanta.ui.form.StatusPill
 import com.usuallycoding.opensecretsanta.ui.form.SnowCard
 import com.usuallycoding.opensecretsanta.ui.load.LocalPageScroll
 import kotlinx.coroutines.launch
@@ -320,17 +321,20 @@ private val EDGE_SPEED = 16.dp
 
 /**
  * An item's title, note and link, as the person and their Santa both read it, after the circle with its [number] in the
- * list. A link opens a dialog first.
+ * list. A link opens a dialog first. A [pill] ("New", "Edited") sits beside the times.
  */
 @Composable
-internal fun ItemText(number: Int, title: String, note: String?, url: String?, added: String, changed: String?, modifier: Modifier = Modifier) {
+internal fun ItemText(number: Int, title: String, note: String?, url: String?, added: String, changed: String?, modifier: Modifier = Modifier, pill: String? = null) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(BadgeGap)) {
         NumberBadge(number)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             ReadOnlyText(title, style = MaterialTheme.typography.titleMedium, label = "${Strings.ITEM_LABEL} $number", maxLines = 1)
             note?.let { ReadOnlyText(it, style = MaterialTheme.typography.bodyMedium, label = Strings.NOTE_LABEL) }
             url?.let { LinkText(it) }
-            TimesLine(Strings.added(added), changed?.let(Strings::changed))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                TimesLine(Strings.added(added), changed?.let(Strings::changed), modifier = Modifier.weight(1f, fill = false))
+                pill?.let { StatusPill(it) }
+            }
         }
     }
 }

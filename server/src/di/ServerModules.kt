@@ -26,7 +26,10 @@ import com.usuallycoding.opensecretsanta.domain.gift.LetterRepository
 import com.usuallycoding.opensecretsanta.domain.gift.ListLetterBoxes
 import com.usuallycoding.opensecretsanta.domain.gift.ListLettersFromMyReceiver
 import com.usuallycoding.opensecretsanta.domain.gift.ListMySentLetters
+import com.usuallycoding.opensecretsanta.domain.gift.GetMyReadMarks
 import com.usuallycoding.opensecretsanta.domain.gift.ListQuestionThreads
+import com.usuallycoding.opensecretsanta.domain.gift.MarkRead
+import com.usuallycoding.opensecretsanta.domain.gift.ReadMarkRepository
 import com.usuallycoding.opensecretsanta.domain.gift.SendLetter
 import com.usuallycoding.opensecretsanta.domain.gift.ListQuestionsFromMySanta
 import com.usuallycoding.opensecretsanta.domain.gift.QuestionRepository
@@ -95,6 +98,7 @@ import com.usuallycoding.opensecretsanta.server.data.push.FcmPushSender
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteGroupRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteLetterRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteQuestionRepository
+import com.usuallycoding.opensecretsanta.server.data.group.SqliteReadMarkRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteWishlistRepository
 import com.usuallycoding.opensecretsanta.server.data.user.SqliteUserRepository
 import com.usuallycoding.opensecretsanta.server.presentation.HealthService
@@ -137,6 +141,7 @@ val repositoryModule = module {
     single<GroupRepository> { SqliteGroupRepository(get()) }
     single<QuestionRepository> { SqliteQuestionRepository(get()) }
     single<LetterRepository> { SqliteLetterRepository(get()) }
+    single<ReadMarkRepository> { SqliteReadMarkRepository(get()) }
     single<WishlistRepository> { SqliteWishlistRepository(get()) }
     single<DeliveryInfoRepository> { SqliteDeliveryInfoRepository(get()) }
     single<DeviceRepository> { SqliteDeviceRepository(get()) }
@@ -221,6 +226,8 @@ val useCaseModule = module {
     single { SendLetter(get(), get(), get()) }
     single { ListMySentLetters(get(), get()) }
     single { ListLettersFromMyReceiver(get(), get()) }
+    single { GetMyReadMarks(get(), get(), get(), get(), get(), get()) }
+    single { MarkRead(get(), get(), get(), get(), get(), get(), get()) }
 
     single { GetMyDeliveryInfo(get(), get()) }
     single { UpdateMyDeliveryInfo(get(), get()) }

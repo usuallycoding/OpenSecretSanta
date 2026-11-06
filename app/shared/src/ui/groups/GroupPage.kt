@@ -18,6 +18,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.usuallycoding.opensecretsanta.ui.readmarks.ReadMarksViewModel
+import com.usuallycoding.opensecretsanta.ui.readmarks.known
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.ui.Strings
@@ -54,13 +56,19 @@ fun GroupPage(
     } else {
         null
     }
+    // what is new to the Santa, once the names are drawn
+    val readMarks = if (phase == GroupPhase.Active || phase == GroupPhase.Archived) {
+        koinViewModel<ReadMarksViewModel>(key = "read-marks-${viewModel.groupId}") { parametersOf(viewModel.groupId) }
+    } else {
+        null
+    }
     // the person's own delivery info, which the sheet of the card shares, only while they can still fill it in
     val myDetails = if (phase == GroupPhase.Pending || phase == GroupPhase.Active) {
         koinViewModel<MyDetailsViewModel>(key = "my-details-${viewModel.groupId}") { parametersOf(viewModel.groupId, me) }
     } else {
         null
     }
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh(); santaQuestions?.refresh(); myDetails?.refresh() }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh(); santaQuestions?.refresh(); myDetails?.refresh(); readMarks?.refresh() }
 
     if (state.isGone()) {
         GroupGone(onBack)
@@ -76,17 +84,18 @@ fun GroupPage(
     // unknown, so no badge, while the questions load and when they could not be loaded
     val unanswered = santaQuestions?.data?.collectAsState()?.value
         ?.takeIf { it.error == null }?.value?.let { unansweredCount(it.questions, it.canAnswer) } ?: 0
+    val unread = readMarks?.counts?.collectAsState()?.value.known()
     val asksForDeliveryInfo = showsDeliveryNudge(phase, myDetails?.details?.collectAsState()?.value)
     var sheet by remember { mutableStateOf<PairSheet?>(null) }
 
     PullPage(
         loading = state.loading || receiver?.loading == true,
-        onRefresh = { viewModel.refresh(); pair?.refresh(); santaQuestions?.refresh(); myDetails?.refresh() },
+        onRefresh = { viewModel.refresh(); pair?.refresh(); santaQuestions?.refresh(); myDetails?.refresh(); readMarks?.refresh() },
     ) {
         LoadSection(state, onRetry = { viewModel.refresh() }) { detail ->
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Header(detail)
-                SecretSantaCard(detail.phase, receiver, onRetry = { pair?.refresh() }, onOpenGifter, onOpenInbox, onSheet = { sheet = it })
+                SecretSantaCard(detail.phase, receiver, unread, onRetry = { pair?.refresh() }, onOpenGifter, onOpenInbox, onSheet = { sheet = it })
                 YourStuffCard(detail.phase, unanswered, asksForDeliveryInfo, onOpenReceiver, onSendLetter, onSheet = { sheet = it })
                 Participants(detail.participants)
             }
