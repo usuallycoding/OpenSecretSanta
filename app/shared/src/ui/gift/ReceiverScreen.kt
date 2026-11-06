@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -26,6 +25,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.domain.gift.QuestionLimits
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.form.SnowCard
 import com.usuallycoding.opensecretsanta.ui.groups.GroupPhase
 import com.usuallycoding.opensecretsanta.ui.load.LoadSection
 import androidx.compose.foundation.layout.BoxScope
@@ -88,7 +88,7 @@ private fun QuestionsHeader(data: ReceiverData, viewModel: ReceiverViewModel) {
 
 @Composable
 internal fun QuestionCard(question: Question, action: (@Composable () -> Unit)? = null) {
-    Card(Modifier.fillMaxWidth()) {
+    SnowCard("question-${question.number}", Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             QuestionThread(question.number, question.text, question.asked, question.answer, question.answered, question.answerChanged)
             action?.invoke()

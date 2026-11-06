@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.form.PairLink
+import com.usuallycoding.opensecretsanta.ui.form.SnowCard
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.load.LoadState
 import com.usuallycoding.opensecretsanta.ui.load.loadMessage
@@ -208,7 +208,7 @@ private fun WishlistItems(items: List<OversightItem>) {
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         for ((index, item) in items.withIndex()) {
-            Card(Modifier.fillMaxWidth()) {
+            SnowCard("wish-$index", Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     ItemText(index + 1, item.title, item.note, item.url, item.added, item.changed)
                 }
@@ -226,7 +226,7 @@ private fun ThreadQuestions(thread: PairThread) {
     // cards like the wishlist items above, with the same padding and the same space between them
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         for (question in thread.questions) {
-            Card(Modifier.fillMaxWidth()) {
+            SnowCard("question-${question.number}", Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp)) {
                     QuestionThread(question.number, question.text, question.asked, question.answer, question.answered, question.answerChanged)
                 }

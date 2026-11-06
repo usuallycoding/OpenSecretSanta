@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.form.SnowCard
 import com.usuallycoding.opensecretsanta.ui.load.LoadContent
 
 /** The users the administrator manages: everyone in their non-Draft groups, and themselves. */
@@ -94,7 +94,7 @@ fun AdminUsersScreen(viewModel: AdminUsersViewModel, onOpen: (String) -> Unit) {
 /** One user; a user the server says can be deleted has a delete icon at the end of the row. */
 @Composable
 private fun UserCard(user: ManagedUser, onClick: () -> Unit, onDelete: (() -> Unit)?) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+    SnowCard(user.username, onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth().padding(start = 16.dp, top = 16.dp, bottom = 16.dp, end = if (onDelete != null) 4.dp else 16.dp),
             verticalAlignment = Alignment.CenterVertically,

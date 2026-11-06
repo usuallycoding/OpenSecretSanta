@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
 import com.usuallycoding.opensecretsanta.ui.form.SheetFrame
+import com.usuallycoding.opensecretsanta.ui.form.SnowCard
 import com.usuallycoding.opensecretsanta.ui.gift.ReceiverInfo
 import com.usuallycoding.opensecretsanta.ui.gift.SantaRevealViewModel
 import com.usuallycoding.opensecretsanta.ui.load.LoadSection
@@ -53,7 +53,7 @@ private fun MySheet(groupId: Long, me: String, editable: Boolean, onDismiss: () 
         LoadSection(state, onRetry = { viewModel.refresh() }) { details ->
             ReadOnlyText(details.username, style = MaterialTheme.typography.headlineSmall, label = Strings.USERNAME, centered = true)
             if (details.hasProfile) {
-                Card(Modifier.fillMaxWidth()) {
+                SnowCard("me-details", Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         DetailField(Strings.USER_FIELD_NAME, details.fullName)
                         DetailField(Strings.USER_FIELD_EMAIL, details.email)
@@ -90,7 +90,7 @@ private fun ReceiverDetails(receiver: ReceiverInfo) {
     if (!receiver.hasPostalDetails) {
         Text(Strings.NO_POSTAL_DETAILS, style = MaterialTheme.typography.bodyMedium)
     } else {
-        Card(Modifier.fillMaxWidth()) {
+        SnowCard("receiver-details", Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 DetailField(Strings.RECEIVER_NAME, receiver.fullName)
                 DetailField(Strings.RECEIVER_EMAIL, receiver.email)

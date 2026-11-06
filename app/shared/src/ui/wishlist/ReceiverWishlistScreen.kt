@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -24,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.form.SnowCard
 import com.usuallycoding.opensecretsanta.ui.load.LoadSection
 
 /** What the person's receiver wants, in the receiver's order, as a section of the Gifter page. Nothing here can be changed. */
@@ -39,7 +39,7 @@ fun ReceiverWishlistSection(viewModel: ReceiverWishlistViewModel) {
             } else {
                 Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     for ((index, item) in items.withIndex()) {
-                        Card(Modifier.fillMaxWidth()) {
+                        SnowCard("wish-$index", Modifier.fillMaxWidth()) {
                             ItemText(index + 1, item.title, item.note, item.url, item.added, item.changed, Modifier.padding(16.dp))
                         }
                     }

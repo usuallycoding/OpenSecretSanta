@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,6 +22,7 @@ import com.usuallycoding.opensecretsanta.ui.form.BankIcon
 import com.usuallycoding.opensecretsanta.ui.form.CalendarIcon
 import com.usuallycoding.opensecretsanta.ui.form.PlaceIcon
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
+import com.usuallycoding.opensecretsanta.ui.form.SnowCard
 
 /**
  * What a group says about itself: its description as plain text, then one card with a line for when, where and how much,
@@ -39,7 +39,7 @@ internal fun GroupInfoCard(description: String?, whenText: String?, location: St
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         about?.let { ReadOnlyText(it, style = MaterialTheme.typography.bodyLarge, label = Strings.DESCRIPTION_LABEL) }
         if (schedule != null || where != null || spend != null) {
-            Card(Modifier.fillMaxWidth()) {
+            SnowCard("group-info", Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     schedule?.let { InfoLine(CalendarIcon, Strings.WHEN_LABEL, it) }
                     where?.let { InfoLine(PlaceIcon, Strings.WHERE_LABEL, it) }

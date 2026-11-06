@@ -21,7 +21,6 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -58,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import com.usuallycoding.opensecretsanta.ui.form.BadgeGap
 import com.usuallycoding.opensecretsanta.ui.form.DragHandleIcon
 import com.usuallycoding.opensecretsanta.ui.form.NumberBadge
+import com.usuallycoding.opensecretsanta.ui.form.SnowCard
 import com.usuallycoding.opensecretsanta.ui.load.LocalPageScroll
 import kotlinx.coroutines.launch
 import androidx.lifecycle.Lifecycle
@@ -260,7 +260,8 @@ private fun ItemRow(
         if (canMoveUp) add(CustomAccessibilityAction(Strings.MOVE_UP) { onUp(); true })
         if (canMoveDown) add(CustomAccessibilityAction(Strings.MOVE_DOWN) { onDown(); true })
     }
-    Card(
+    SnowCard(
+        "wish-$number",
         modifier.fillMaxWidth().semantics { customActions = actions },
         elevation = CardDefaults.cardElevation(defaultElevation = if (dragged) 8.dp else 0.dp),
     ) {
