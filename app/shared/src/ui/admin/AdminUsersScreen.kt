@@ -59,7 +59,10 @@ fun AdminUsersScreen(viewModel: AdminUsersViewModel, onOpen: (String) -> Unit) {
             LoadContent(state, onRetry = { viewModel.refresh() }, onRefresh = { viewModel.refresh() }) { users ->
                 val shown = filterUsers(users, viewModel.search)
                 Column(Modifier.fillMaxSize()) {
-                    PeopleSearchField(viewModel.search, viewModel::setSearch, viewModel::clearSearch, Strings.ADMIN_SEARCH_USERS)
+                    // the same room at the sides as the cards under it
+                    Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                        PeopleSearchField(viewModel.search, viewModel::setSearch, viewModel::clearSearch, Strings.ADMIN_SEARCH_USERS)
+                    }
                     if (shown.isEmpty()) {
                         // it scrolls, so that pulling down still reloads
                         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
