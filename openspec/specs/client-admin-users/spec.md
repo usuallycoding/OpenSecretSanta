@@ -114,7 +114,7 @@ The Users tab SHALL list the users the administrator manages, loaded with `GET /
 - **THEN** `erin` is listed and marked "Not in any group"
 
 ### Requirement: User detail shows the account
-Choosing a user on the Users tab SHALL open their detail, and choosing a username in a group's pair list SHALL show the same detail in a bottom sheet. The detail is loaded with `GET /admin/users/{username}` and shows the username and, while it is temporary, the password. It SHALL NOT show a name, email, phone, address or delivery information.
+Choosing a user on the Users tab SHALL open their detail, and choosing a username in a group's pair list SHALL open the same account detail in a bottom sheet. The detail is loaded with `GET /admin/users/{username}` and shows the username and, while it is temporary, the password. On the Users tab it SHALL NOT show a name, email, phone, address or delivery information; the sheet opened from a group adds the group's delivery info, as `client-admin-oversight` describes.
 
 #### Scenario: Temporary password visible
 - **WHEN** a managed user has not changed their temporary password
@@ -125,7 +125,7 @@ Choosing a user on the Users tab SHALL open their detail, and choosing a usernam
 - **THEN** the detail shows no password
 
 #### Scenario: No personal details
-- **WHEN** a managed user's detail is shown
+- **WHEN** a managed user's detail is shown on the Users tab
 - **THEN** it has no name, email, phone, address or delivery information
 
 #### Scenario: User out of scope
@@ -134,7 +134,7 @@ Choosing a user on the Users tab SHALL open their detail, and choosing a usernam
 
 #### Scenario: Same detail in a sheet
 - **WHEN** the owner chooses a username in a group's pair list
-- **THEN** a sheet shows the same fields and temporary password rule as the Users tab detail
+- **THEN** the sheet shows the same username, temporary password rule and "Reset password" as the Users tab detail, followed by the group's delivery info
 
 ### Requirement: Searching users by username
 The Users tab SHALL have a search field above the list, shown once the users have loaded. The list SHALL show only the users whose username matches what is typed, ignoring upper and lower case; with several words, a user SHALL match when every word is found in the username, in any order. An empty or blank search SHALL show everyone. The field SHALL have a control that empties it while it holds text.
