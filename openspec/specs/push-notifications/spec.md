@@ -28,25 +28,6 @@ A signed-in person SHALL be able to register a device for push notifications by 
 - **WHEN** a request to register or remove a device carries no valid sign-in
 - **THEN** it is refused with 401
 
-### Requirement: Four notification categories
-Each person SHALL have four switches that decide what they are notified about: announcements, wishlist changes, questions and answers. Each SHALL be on until the person turns it off. The person SHALL be able to read and change them, and a change SHALL apply to every device of that person and to every notification sent after it.
-
-#### Scenario: Defaults
-- **WHEN** a person who has never changed them reads their switches
-- **THEN** all four are on
-
-#### Scenario: Turn one off
-- **WHEN** `alice` turns "questions" off
-- **THEN** a question for her sends her nothing, while her announcements, wishlist changes and answers still do
-
-#### Scenario: Shared by devices
-- **WHEN** `alice` turns "answers" off from her phone
-- **THEN** her browser also receives no answer notification
-
-#### Scenario: Unknown or missing values
-- **WHEN** a change names a switch that does not exist, or gives a value that is not true or false
-- **THEN** it is refused with 400 and no switch changes
-
 ### Requirement: Announcement of a group
 The server SHALL send an announcement to a person when a group they take part in becomes visible to them: to every participant other than the actor when the owner moves the group out of Draft, and to a person the owner adds to a group that is already Pending. A group still in Draft SHALL notify nobody. The text SHALL give the group's name.
 
@@ -146,6 +127,10 @@ No notification SHALL contain the identity of a participant's Santa, the text of
 - **WHEN** a question is sent
 - **THEN** the notification says only that a question (or, for several, questions) came in for the group, without the Santa's name and without the question
 
+#### Scenario: A letter
+- **WHEN** a letter titled "Thank you" with the text "For the scarf" is sent
+- **THEN** the notification contains neither the title nor the text, only that a letter came in for the group
+
 #### Scenario: A wishlist item
 - **WHEN** an item titled "Blue scarf" is added
 - **THEN** the notification does not contain "Blue scarf"
@@ -189,3 +174,49 @@ Push notifications SHALL be on only when a Firebase service-account key is confi
 #### Scenario: The key is not exposed
 - **WHEN** the server logs its configuration or answers any request
 - **THEN** the key's contents do not appear
+
+### Requirement: Five notification categories
+Each person SHALL have five switches that decide what they are notified about: announcements, wishlist changes, questions, answers and letters from their receiver. Each SHALL be on until the person turns it off. The person SHALL be able to read and change them, and a change SHALL apply to every device of that person and to every notification sent after it. A request that does not mention the letters switch SHALL turn it on.
+
+#### Scenario: Defaults
+- **WHEN** a person who has never changed them reads their switches
+- **THEN** all five are on, including letters
+
+#### Scenario: Turn letters off
+- **WHEN** `alice` turns "letters" off
+- **THEN** a letter from her receiver sends her nothing, while her announcements, wishlist changes, questions and answers still do
+
+#### Scenario: Turn one off
+- **WHEN** `alice` turns "questions" off
+- **THEN** a question for her sends her nothing, while the other four kinds still do
+
+#### Scenario: Shared by devices
+- **WHEN** `alice` turns "letters" off from her phone
+- **THEN** her browser also receives no letter notification
+
+#### Scenario: An older client
+- **WHEN** a request gives the four older switches and no letters switch
+- **THEN** it is accepted and the letters switch is on
+
+#### Scenario: Unknown or missing values
+- **WHEN** a change names a switch that does not exist, or gives a value that is not true or false
+- **THEN** it is refused with 400 and no switch changes
+
+### Requirement: Letters from your receiver
+When a receiver sends a letter the server SHALL send a letter notification to their Santa if the Santa has the letters switch on, naming the group. Letters that follow one another closely SHALL make one notification, held like questions: sent after a minute of quiet and at the latest five minutes after the first, with the plural "letters" when several are waiting. It SHALL be kept apart from other kinds, people and groups.
+
+#### Scenario: One letter
+- **WHEN** `bob` sends one letter to his Santa `alice`
+- **THEN** a minute later `alice` is sent "Your receiver sent you a letter" with the group's name
+
+#### Scenario: Several letters
+- **WHEN** `bob` sends three letters less than a minute apart
+- **THEN** `alice` is sent one notification reading "Your receiver sent you letters" with the group's name
+
+#### Scenario: Switched off
+- **WHEN** `alice` has turned "letters" off and `bob` sends a letter
+- **THEN** the letter is stored as usual and no notification is sent
+
+#### Scenario: Tap target
+- **WHEN** a letter notification for group 7 is delivered
+- **THEN** it carries group 7 and the category "letters"

@@ -3,7 +3,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: The Secret Santa card
-Below the group's information the group page SHALL show a card headed "You're Secret Santa for:" with, on the next row in a bold title font, "TBD" while the group is Pending and the receiver's username in capital letters once it is Active or Archived, and under it the line "Shh... Keep it a secret!" in italics. From Active on it SHALL have the buttons "See Wishlist" and "Ask Questions" on one row, an "Inbox" button on its own row and, last, a "Delivery Info" button on its own row. While Pending it SHALL have no button.
+Below the group's information the group page SHALL show a card headed "You're Secret Santa for:" with, on the next row in a bold title font, "TBD" while the group is Pending and the receiver's username in capital letters once it is Active or Archived, and under it the line "Shh... Keep it a secret!" in italics. From Active on it SHALL have "See Wishlist" and "Ask Questions" on one row, then "Inbox" and, last, "Delivery Info", each on its own row. While Pending it SHALL have no button.
 
 #### Scenario: Pending
 - **WHEN** the group is Pending
@@ -46,7 +46,7 @@ Below the group's information the group page SHALL show a card headed "You're Se
 - **THEN** the name reads "..." and the four buttons are disabled, and a failure shows its message with "Try again"
 
 ### Requirement: The Your stuff card
-Below the Secret Santa card the group page SHALL show a card headed "Your stuff:", the line "Tell your santa what you want and let them know you!" in italics under it, "Edit Wishlist" and, once the group is Active or Archived, "Respond to Santa" on one row, once the group is Active or Archived a "Send letter" button on its own row under them and, last, a "Delivery Info" button on its own row. In an Archived group it SHALL also have, above that, the "Reveal Santa" button of `The Santa stays hidden until the group is archived`.
+Below the Secret Santa card the group page SHALL show a card headed "Your stuff:", the line "Tell your santa what you want and let them know you!" in italics under it, "Edit Wishlist" and, from Active on, "Respond to Santa" on one row, then, from Active on, "Send letter" on its own row and, last, "Delivery Info" on its own row. In an Archived group it SHALL also have, above that, the "Reveal Santa" button of `The Santa stays hidden until the group is archived`.
 
 #### Scenario: The encouraging line
 - **WHEN** the card is shown in a Pending, an Active or an Archived group
