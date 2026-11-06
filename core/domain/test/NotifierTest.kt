@@ -10,6 +10,7 @@ import com.usuallycoding.opensecretsanta.domain.group.OwnedGroupLoader
 import com.usuallycoding.opensecretsanta.domain.notification.DevicePlatform
 import com.usuallycoding.opensecretsanta.domain.notification.DeviceRepository
 import com.usuallycoding.opensecretsanta.domain.notification.NotificationCategory
+import com.usuallycoding.opensecretsanta.domain.notification.NotificationTexts
 import com.usuallycoding.opensecretsanta.domain.notification.NotificationSettings
 import com.usuallycoding.opensecretsanta.domain.notification.NotificationSettingsRepository
 import com.usuallycoding.opensecretsanta.domain.notification.Notifier
@@ -189,16 +190,51 @@ class NotifierTest {
     }
 
     @Test
+    fun aSingleQuestionOrAnswerIsSingularAndSeveralArePlural() {
+        val g = group(GroupState.ACTIVE)
+        names.forEach { register(it) }
+
+        notifier.questionAsked(g.id, u("alice"))
+        notifier.questionAsked(g.id, u("alice"), count = 2)
+        notifier.questionAsked(g.id, u("alice"), count = 5)
+        notifier.questionAnswered(g.id, u("bob"))
+        notifier.questionAnswered(g.id, u("bob"), count = 3)
+
+        val group = "\"${g.details.name}\""
+        assertEquals(
+            listOf(
+                "Your Secret Santa has a question for you in $group",
+                "Your Secret Santa has questions for you in $group",
+                "Your Secret Santa has questions for you in $group",
+                "Your receiver answered a question in $group",
+                "Your receiver answered questions in $group",
+            ),
+            sender.sent.map { it.body },
+        )
+    }
+
+    @Test
+    fun theWordsDoNotSayHowManyAndTheGroupIsTheOnlyVariablePart() {
+        for (count in listOf(2, 7, 30)) {
+            assertFalse(Regex("[0-9]").containsMatchIn(NotificationTexts.questionAsked("\"G\"", count)), "asked $count")
+            assertFalse(Regex("[0-9]").containsMatchIn(NotificationTexts.questionAnswered("\"G\"", count)), "answered $count")
+        }
+        assertEquals(NotificationTexts.questionAsked("\"A\"", 4).replace("\"A\"", "\"B\""), NotificationTexts.questionAsked("\"B\"", 4))
+    }
+
+    @Test
     fun noTextNamesTheSantaOrCarriesPrivateContent() {
         val g = group(GroupState.ACTIVE)
         names.forEach { register(it) }
 
         notifier.questionAsked(g.id, u("alice"))
         notifier.questionAnswered(g.id, u("bob"))
+        notifier.questionAsked(g.id, u("alice"), count = 3)
+        notifier.questionAnswered(g.id, u("bob"), count = 3)
         notifier.wishlistChanged(g.id, u("bob"))
         notifier.groupDrawn(g, u("boss"))
 
-        assertEquals(7, sender.sent.size)
+        assertEquals(9, sender.sent.size)
         for (message in sender.sent) {
             for (name in names + "boss") assertFalse(name in message.body + message.title, "${message.body} names $name")
             assertTrue("\"${g.details.name}\"" in message.body)

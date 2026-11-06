@@ -38,9 +38,11 @@ fun daemonSingleThreadExecutor(name: String = "notifications"): Executor =
 
 /**
  * What the routes call after an action has been stored. Every notification is worked out and sent by [executor], so
- * that a slow push service never delays a response and nothing it does can fail a request. Wishlist changes are held
- * back until the person has been quiet for [quietMillis] (but at most [maxWaitMillis] after the first change), so that
- * a list being filled in makes one notification. The held changes live in memory: a restart forgets them.
+ * that a slow push service never delays a response and nothing it does can fail a request. Wishlist changes, questions
+ * and answers are held back until the person has been quiet for [quietMillis] (but at most [maxWaitMillis] after the
+ * first of them), so that a list being filled in, or a run of questions or answers, makes one notification. Each kind
+ * of person, group and action is held on its own, and the number held is passed on so that the text can say "questions".
+ * The held ones live in memory: a restart forgets them.
  */
 class NotificationDispatcher(
     private val notifier: Notifier,
@@ -52,9 +54,12 @@ class NotificationDispatcher(
 ) {
     private val log = LoggerFactory.getLogger(NotificationDispatcher::class.java)
 
-    private class Held(val firstAtMillis: Long, val timer: Cancellation)
+    /** What is held for: a person's wishlist changes, the questions they ask, or the answers they give. */
+    private enum class Kind { WISHLIST, QUESTION, ANSWER }
 
-    private val held = HashMap<Pair<Long, Username>, Held>()
+    private class Held(val firstAtMillis: Long, val timer: Cancellation, val count: Int)
+
+    private val held = HashMap<Triple<Kind, Long, Username>, Held>()
 
     fun groupVisible(group: Group, recipients: Collection<Username>, actor: Username) =
         run { notifier.groupVisible(group, recipients, actor) }
@@ -64,28 +69,38 @@ class NotificationDispatcher(
     /** Sends the push notifications of an announcement, already planned and counted by the caller. */
     fun announce(plan: PushPlan) = run { notifier.send(plan) }
 
-    fun questionAsked(groupId: Long, santa: Username) = run { notifier.questionAsked(groupId, santa) }
+    fun questionAsked(groupId: Long, santa: Username) =
+        hold(Kind.QUESTION, groupId, santa) { count -> notifier.questionAsked(groupId, santa, count) }
 
-    fun questionAnswered(groupId: Long, receiver: Username) = run { notifier.questionAnswered(groupId, receiver) }
+    fun questionAnswered(groupId: Long, receiver: Username) =
+        hold(Kind.ANSWER, groupId, receiver) { count -> notifier.questionAnswered(groupId, receiver, count) }
 
-    fun wishlistChanged(groupId: Long, editor: Username) {
-        val key = groupId to editor
+    fun wishlistChanged(groupId: Long, editor: Username) =
+        hold(Kind.WISHLIST, groupId, editor) { notifier.wishlistChanged(groupId, editor) }
+
+    /**
+     * Notes one more [kind] event of [actor] in the group and restarts the quiet period, never letting the notification wait
+     * more than [maxWaitMillis] after the first; when it is due, [send] is given how many events it stands for.
+     */
+    private fun hold(kind: Kind, groupId: Long, actor: Username, send: (count: Int) -> Unit) {
+        val key = Triple(kind, groupId, actor)
         synchronized(held) {
             val now = clock.nowMillis()
             val previous = held.remove(key)
             previous?.timer?.cancel()
             val first = previous?.firstAtMillis ?: now
+            val count = (previous?.count ?: 0) + 1
             val delay = minOf(quietMillis, maxOf(0L, first + maxWaitMillis - now))
             val timer = try {
                 scheduler.schedule(delay) {
                     synchronized(held) { held.remove(key) }
-                    run { notifier.wishlistChanged(groupId, editor) }
+                    run { send(count) }
                 }
             } catch (e: Exception) {
-                log.warn("A wishlist notification could not be scheduled ({})", e::class.simpleName)
+                log.warn("A {} notification could not be scheduled ({})", kind.name.lowercase(), e::class.simpleName)
                 return
             }
-            held[key] = Held(first, timer)
+            held[key] = Held(first, timer, count)
         }
     }
 

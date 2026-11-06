@@ -157,15 +157,159 @@ class NotificationDispatcherTest {
         assertEquals(emptyList(), sender.sent)
     }
 
+    private fun texts() = sender.sent.map { it.token to it.body }
+
+    private fun party() = "\"Party\""
+
     @Test
-    fun questionsAndAnswersAreNotHeldBack() {
+    fun aRunOfQuestionsMakesOnePluralNotificationAfterTheQuietPeriod() {
+        val id = group()
+        val dispatcher = dispatcher()
+
+        dispatcher.questionAsked(id, alice)
+        scheduler.advance(20_000)
+        dispatcher.questionAsked(id, alice)
+        scheduler.advance(20_000)
+        dispatcher.questionAsked(id, alice)
+        scheduler.advance(59_000)
+        assertEquals(emptyList(), sender.sent, "still inside the quiet period")
+
+        scheduler.advance(2_000)
+
+        assertEquals(listOf("bob-phone" to "Your Secret Santa has questions for you in ${party()}"), texts())
+        assertEquals(NotificationCategory.QUESTIONS, sender.sent.single().category)
+    }
+
+    @Test
+    fun aRunOfAnswersMakesOnePluralNotificationToTheSanta() {
+        val id = group()
+        val dispatcher = dispatcher()
+
+        dispatcher.questionAnswered(id, bob)
+        dispatcher.questionAnswered(id, bob)
+        scheduler.advance(61_000)
+
+        assertEquals(listOf("alice-phone" to "Your receiver answered questions in ${party()}"), texts())
+        assertEquals(NotificationCategory.ANSWERS, sender.sent.single().category)
+    }
+
+    @Test
+    fun aSingleQuestionOrAnswerKeepsTheSingularAndIsSentAfterTheQuietPeriod() {
         val id = group()
         val dispatcher = dispatcher()
 
         dispatcher.questionAsked(id, alice)
         dispatcher.questionAnswered(id, bob)
+        assertEquals(emptyList(), sender.sent, "held, not sent at once")
+        scheduler.advance(61_000)
 
-        assertEquals(listOf("bob-phone" to NotificationCategory.QUESTIONS, "alice-phone" to NotificationCategory.ANSWERS), bodies())
+        assertEquals(
+            listOf(
+                "bob-phone" to "Your Secret Santa has a question for you in ${party()}",
+                "alice-phone" to "Your receiver answered a question in ${party()}",
+            ),
+            texts().sortedBy { it.first }.sortedBy { if (it.first == "bob-phone") 0 else 1 },
+        )
+    }
+
+    @Test
+    fun aLaterQuestionAfterTheNotificationStartsANewSingularRound() {
+        val id = group()
+        val dispatcher = dispatcher()
+
+        dispatcher.questionAsked(id, alice)
+        scheduler.advance(61_000)
+        dispatcher.questionAsked(id, alice)
+        scheduler.advance(61_000)
+
+        assertEquals(2, sender.sent.size)
+        assertTrue(sender.sent.all { "a question" in it.body })
+    }
+
+    @Test
+    fun aRunOfQuestionsThatIsNeverQuietIsStillSentWithinFiveMinutesOfItsFirst() {
+        val id = group()
+        val dispatcher = dispatcher()
+
+        repeat(12) {
+            dispatcher.questionAsked(id, alice)
+            scheduler.advance(30_000) // never a full quiet minute
+        }
+
+        assertTrue(sender.sent.isNotEmpty(), "sent despite the questions going on")
+        assertEquals("bob-phone", sender.sent.first().token)
+        assertTrue("questions" in sender.sent.first().body)
+        // the first batch left at the five minute mark, so ten asked in the first five minutes made one plural notification
+        assertEquals(1, sender.sent.size)
+    }
+
+    @Test
+    fun questionsAnswersAndWishlistChangesOfOnePersonAreHeldApart() {
+        val id = group()
+        val dispatcher = dispatcher()
+
+        dispatcher.wishlistChanged(id, bob)
+        dispatcher.questionAnswered(id, bob)
+        dispatcher.questionAsked(id, bob)
+        scheduler.advance(61_000)
+
+        assertEquals(
+            setOf(
+                "alice-phone" to NotificationCategory.WISHLIST,
+                "alice-phone" to NotificationCategory.ANSWERS,
+                "carol-phone" to NotificationCategory.QUESTIONS,
+            ),
+            bodies().toSet(),
+        )
+        assertEquals(3, sender.sent.size)
+    }
+
+    @Test
+    fun differentPeopleAndGroupsAreHeldApartForQuestions() {
+        val id = group()
+        val dispatcher = dispatcher()
+
+        dispatcher.questionAsked(id, alice)
+        dispatcher.questionAsked(id, carol)
+        dispatcher.questionAsked(9998, alice)
+        scheduler.advance(61_000)
+
+        assertEquals(listOf("alice-phone", "bob-phone"), sender.sent.map { it.token }.sorted())
+        assertTrue(sender.sent.all { "a question" in it.body }, "one question each, so singular")
+    }
+
+    @Test
+    fun theRecipientIsWorkedOutWhenTheNotificationIsDue() {
+        val id = group()
+        val dispatcher = dispatcher()
+
+        dispatcher.questionAsked(id, alice)
+        scheduler.advance(61_000)
+
+        assertEquals(listOf("bob-phone"), sender.sent.map { it.token })
+    }
+
+    @Test
+    fun aQuestionBeforeTheDrawNotifiesNobody() {
+        val id = group(pending = true)
+
+        dispatcher().questionAsked(id, alice)
+        scheduler.advance(61_000)
+
+        assertEquals(emptyList(), sender.sent)
+    }
+
+    @Test
+    fun aSchedulerThatRefusesSendsNothingAndFailsNothing() {
+        val id = group()
+        val refusing = Scheduler { _, _ -> throw java.util.concurrent.RejectedExecutionException("shut down") }
+        val dispatcher = NotificationDispatcher(Notifier(SqliteNotificationSettingsRepository(database), devices, sender, groups), direct, refusing, clock)
+
+        dispatcher.questionAsked(id, alice)
+        dispatcher.questionAnswered(id, bob)
+        dispatcher.wishlistChanged(id, bob)
+
+        assertEquals(emptyList(), sender.sent)
     }
 
     @Test
@@ -175,6 +319,7 @@ class NotificationDispatcherTest {
         val dispatcher = dispatcher(executor = { queued += it })
 
         dispatcher.questionAsked(id, alice)
+        scheduler.advance(61_000)
 
         assertEquals(emptyList(), sender.sent, "nothing done on the calling thread")
         queued.forEach { it.run() }
@@ -187,6 +332,7 @@ class NotificationDispatcherTest {
 
         dispatcher(executor = { throw java.util.concurrent.RejectedExecutionException("shut down") }).questionAsked(id, alice)
         dispatcher(executor = { it.run() }).questionAsked(9999, alice)
+        scheduler.advance(61_000)
         dispatcher(executor = { throw IllegalStateException("boom") }).groupDrawn(groups.find(id)!!, boss)
     }
 }

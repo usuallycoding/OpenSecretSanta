@@ -173,13 +173,17 @@ class NotificationEventRoutesTest {
 
         val asked = client.send("POST", ApiRoutes.groupReceiverQuestions(group), fx.token(santa), AskQuestionRequest("Favourite colour?"))
         assertEquals(HttpStatusCode.Created, asked.status, asked.bodyAsText())
+        assertEquals(emptyList(), sender.sent, "held back for the quiet period")
+        scheduler.advance(61_000)
         assertEquals(listOf(receiver), recipients())
         assertEquals(NotificationCategory.QUESTIONS, sender.sent.single().category)
         assertTrue("Favourite colour" !in sender.sent.single().body)
+        assertTrue("a question" in sender.sent.single().body)
 
         sender.sent.clear()
         val answered = client.send("PUT", ApiRoutes.groupSantaQuestionAnswer(group, 1), fx.token(receiver), AnswerRequest("Green"))
         assertEquals(HttpStatusCode.OK, answered.status, answered.bodyAsText())
+        scheduler.advance(61_000)
         assertEquals(listOf(santa), recipients())
         assertEquals(NotificationCategory.ANSWERS, sender.sent.single().category)
     }
@@ -194,6 +198,7 @@ class NotificationEventRoutesTest {
         SqliteNotificationSettingsRepository(fx.database).save(Username.parse(receiver), NotificationSettings(questions = false))
 
         val asked = client.send("POST", ApiRoutes.groupReceiverQuestions(group), fx.token(santa), AskQuestionRequest("Size?"))
+        scheduler.advance(61_000)
 
         assertEquals(HttpStatusCode.Created, asked.status)
         assertEquals(emptyList(), sender.sent)
@@ -209,6 +214,7 @@ class NotificationEventRoutesTest {
         val asked = client.send("POST", ApiRoutes.groupReceiverQuestions(group.id), fx.token("alice"), AskQuestionRequest("Too early?"))
 
         assertTrue(asked.status.value in 400..499, asked.status.toString())
+        scheduler.advance(61_000)
         assertEquals(emptyList(), sender.sent.filter { it.category == NotificationCategory.QUESTIONS })
     }
 
@@ -220,8 +226,31 @@ class NotificationEventRoutesTest {
         sender.throwing = true
 
         val asked = client.send("POST", ApiRoutes.groupReceiverQuestions(group), fx.token(names.first()), AskQuestionRequest("Anything?"))
+        scheduler.advance(61_000)
 
         assertEquals(HttpStatusCode.Created, asked.status, asked.bodyAsText())
+    }
+
+    @Test
+    fun severalQuestionsAndAnswersEachMakeOnePluralNotification() = testApplication {
+        startApp()
+        setup()
+        val (group, receivers) = client.activeGroup()
+        val santa = names.first()
+        val receiver = receivers.getValue(santa)
+
+        repeat(3) { client.send("POST", ApiRoutes.groupReceiverQuestions(group), fx.token(santa), AskQuestionRequest("Question $it?")) }
+        scheduler.advance(61_000)
+
+        assertEquals(listOf(receiver), recipients())
+        assertTrue(sender.sent.single().body.startsWith("Your Secret Santa has questions for you"), sender.sent.single().body)
+
+        sender.sent.clear()
+        for (number in 1..3) client.send("PUT", ApiRoutes.groupSantaQuestionAnswer(group, number), fx.token(receiver), AnswerRequest("Answer $number"))
+        scheduler.advance(61_000)
+
+        assertEquals(listOf(santa), recipients())
+        assertTrue(sender.sent.single().body.startsWith("Your receiver answered questions"), sender.sent.single().body)
     }
 
     // --- wishlist ---

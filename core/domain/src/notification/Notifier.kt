@@ -12,8 +12,13 @@ object NotificationTexts {
     fun groupVisible(group: String) = "You are in a new group: $group"
     fun groupDrawn(group: String) = "The names for $group have been drawn"
     fun wishlistChanged(group: String) = "Your receiver changed their wishlist in $group"
-    fun questionAsked(group: String) = "Your Secret Santa has a question for you in $group"
-    fun questionAnswered(group: String) = "Your receiver answered a question in $group"
+
+    /** [count] questions came in while the notification was held: one is "a question", several are "questions", never how many. */
+    fun questionAsked(group: String, count: Int = 1) =
+        if (count > 1) "Your Secret Santa has questions for you in $group" else "Your Secret Santa has a question for you in $group"
+
+    fun questionAnswered(group: String, count: Int = 1) =
+        if (count > 1) "Your receiver answered questions in $group" else "Your receiver answered a question in $group"
 }
 
 /**
@@ -48,20 +53,20 @@ class Notifier(
             deliver(NotificationCategory.WISHLIST, listOf(santa), groupId, NotificationTexts.wishlistChanged(name(group)))
         }
 
-    /** [santa] asked a question: their receiver is told. */
-    fun questionAsked(groupId: Long, santa: Username) =
+    /** [santa] asked [count] questions (several, when they were held and sent together): their receiver is told. */
+    fun questionAsked(groupId: Long, santa: Username, count: Int = 1) =
         attempt {
             val group = groups.find(groupId) ?: return@attempt
             val receiver = groups.receiverOf(groupId, santa) ?: return@attempt
-            deliver(NotificationCategory.QUESTIONS, listOf(receiver), groupId, NotificationTexts.questionAsked(name(group)))
+            deliver(NotificationCategory.QUESTIONS, listOf(receiver), groupId, NotificationTexts.questionAsked(name(group), count))
         }
 
-    /** [receiver] answered a question: their Santa is told. */
-    fun questionAnswered(groupId: Long, receiver: Username) =
+    /** [receiver] answered [count] questions (several, when they were held and sent together): their Santa is told. */
+    fun questionAnswered(groupId: Long, receiver: Username, count: Int = 1) =
         attempt {
             val group = groups.find(groupId) ?: return@attempt
             val santa = groups.santaOf(groupId, receiver) ?: return@attempt
-            deliver(NotificationCategory.ANSWERS, listOf(santa), groupId, NotificationTexts.questionAnswered(name(group)))
+            deliver(NotificationCategory.ANSWERS, listOf(santa), groupId, NotificationTexts.questionAnswered(name(group), count))
         }
 
     /** Whether a push service is set up at all. */
