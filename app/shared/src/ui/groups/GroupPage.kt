@@ -93,10 +93,16 @@ fun GroupPage(
         onRefresh = { viewModel.refresh(); pair?.refresh(); santaQuestions?.refresh(); myDetails?.refresh(); readMarks?.refresh() },
     ) {
         LoadSection(state, onRetry = { viewModel.refresh() }) { detail ->
+            val secretSanta: @Composable () -> Unit = {
+                SecretSantaCard(detail.phase, receiver, unread, onRetry = { pair?.refresh() }, onOpenGifter, onOpenInbox, onSheet = { sheet = it })
+            }
+            val yourStuff: @Composable () -> Unit = {
+                YourStuffCard(detail.phase, unanswered, asksForDeliveryInfo, onOpenReceiver, onSendLetter, onSheet = { sheet = it })
+            }
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Header(detail)
-                SecretSantaCard(detail.phase, receiver, unread, onRetry = { pair?.refresh() }, onOpenGifter, onOpenInbox, onSheet = { sheet = it })
-                YourStuffCard(detail.phase, unanswered, asksForDeliveryInfo, onOpenReceiver, onSendLetter, onSheet = { sheet = it })
+                secretSanta()
+                yourStuff()
                 Participants(detail.participants)
             }
         }

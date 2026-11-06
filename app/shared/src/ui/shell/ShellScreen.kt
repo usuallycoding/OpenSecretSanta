@@ -4,9 +4,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -21,9 +24,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -33,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
@@ -46,6 +54,12 @@ import androidx.navigation.toRoute
 import androidx.compose.ui.ExperimentalComposeUiApi
 import com.usuallycoding.opensecretsanta.data.push.PushRegistration
 import com.usuallycoding.opensecretsanta.ui.form.SwapIcon
+import com.usuallycoding.opensecretsanta.ui.groups.GroupsViewModel
+import com.usuallycoding.opensecretsanta.ui.layout.LocalPageActions
+import com.usuallycoding.opensecretsanta.ui.layout.LocalWideLayout
+import com.usuallycoding.opensecretsanta.ui.layout.PageActionHost
+import com.usuallycoding.opensecretsanta.ui.layout.STANDARD_CONTENT_WIDTH
+import com.usuallycoding.opensecretsanta.ui.layout.isWide
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -54,6 +68,7 @@ import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupFormScreen
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupFormViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupScreen
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupViewModel
+import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupsViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupsScreen
 import com.usuallycoding.opensecretsanta.ui.admin.AdminUserScreen
 import com.usuallycoding.opensecretsanta.ui.admin.AdminUserViewModel
@@ -128,46 +143,73 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
     val push = koinInject<PushRegistration>()
     // a device that had notifications on tells the server its current token, which may have changed
     LaunchedEffect(Unit) { push.resume() }
-    // One standard width for the bars, content and buttons; on a wider window the rest is plain background
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.TopCenter) {
-        Scaffold(
-            modifier = Modifier.widthIn(max = MAX_CONTENT_WIDTH).fillMaxSize(),
-            topBar = {
-                TopAppBar(
-                    title = { Text(titleOf(view, destination, pageTitle)) },
-                    navigationIcon = {
-                        if (onGroup) {
-                            IconButton(onClick = { navController.popBackStack() }) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = Strings.BACK)
-                            }
-                        }
-                    },
-                    actions = {
-                        // the one thing in the top bar: administrators switch between their two views
-                        if (viewModel.canSwitch) {
-                            IconButton(onClick = { viewModel.select(if (view == AppView.Admin) AppView.Participant else AppView.Admin) }) {
-                                Icon(
-                                    SwapIcon,
-                                    contentDescription = if (view == AppView.Admin) Strings.SWITCH_TO_PARTICIPANT else Strings.SWITCH_TO_ADMIN,
-                                )
-                            }
-                        }
-                    },
-                )
-            },
-            // The tabs stay while a group is open, so switching tabs and coming back finds the group as it was left.
-            // While the keyboard is open the bar is hidden behind it anyway; leaving it out keeps a form's own keyboard padding exact.
-            bottomBar = {
-                if (!imeVisible) {
-                    if (participant) TabBar(navController, destination) else AdminTabBar(navController, destination)
+    val backEntry = navController.currentBackStackEntryAsState().value
+    // the participant view's groups: the Groups screen lists them and, on a wide window, so does the sidebar
+    val groups = koinViewModel<GroupsViewModel>(key = "groups-${viewModel.account.username}")
+    // the administrator's groups, which the Groups screen lists and, on a wide window, so does the sidebar; only an administrator may ask for them
+    val adminGroups = if (viewModel.account.isAdmin) koinViewModel<AdminGroupsViewModel>(key = "admin-groups-${viewModel.account.username}") else null
+    val pageActions = remember { PageActionHost() }
+    BoxWithConstraints(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        val wide = isWide(maxWidth)
+        CompositionLocalProvider(LocalWideLayout provides wide, LocalPageActions provides if (wide) pageActions else null) {
+            Row(Modifier.fillMaxSize()) {
+                if (wide) {
+                    if (participant) ParticipantSidebar(navController, backEntry, groups) else AdminSidebar(navController, backEntry, adminGroups)
                 }
-            },
+                // One standard width for the bars, content and buttons; on a wider window the rest is plain background. Beside a sidebar the
+                // top bar is as wide as the area and only the content keeps the standard width.
+                Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
+                    Scaffold(
+                        modifier = Modifier.widthIn(max = if (wide) Dp.Unspecified else STANDARD_CONTENT_WIDTH).fillMaxSize(),
+                        topBar = {
+                            CenterAlignedTopAppBar(
+                                title = { Text(titleOf(view, destination, pageTitle)) },
+                                navigationIcon = {
+                                    if (onGroup) {
+                                        IconButton(onClick = { navController.popBackStack() }) {
+                                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = Strings.BACK)
+                                        }
+                                    }
+                                },
+                                actions = {
+                                    // the page's own buttons, which a wide window shows here in the place of floating buttons
+                                    for (action in pageActions.actions) {
+                                        TextButton(onClick = action.onClick) {
+                                            Icon(action.icon, contentDescription = null)
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(action.description)
+                                        }
+                                    }
+                                    // administrators switch between their two views
+                                    if (viewModel.canSwitch) {
+                                        IconButton(onClick = { viewModel.select(if (view == AppView.Admin) AppView.Participant else AppView.Admin) }) {
+                                            Icon(
+                                                SwapIcon,
+                                                contentDescription = if (view == AppView.Admin) Strings.SWITCH_TO_PARTICIPANT else Strings.SWITCH_TO_ADMIN,
+                                            )
+                                        }
+                                    }
+                                },
+                            )
+                        },
+                        // The tabs stay while a group is open, so switching tabs and coming back finds the group as it was left.
+                        // While the keyboard is open the bar is hidden behind it anyway; leaving it out keeps a form's own keyboard padding exact.
+                        // A wide window has the sidebar instead.
+                        bottomBar = {
+                            if (!imeVisible && !wide) {
+                                if (participant) TabBar(navController, destination) else AdminTabBar(navController, destination)
+                            }
+                        },
         ) { padding ->
-            Box(Modifier.fillMaxSize().padding(padding)) {
-                run {
+            // On a wide window the content keeps one readable width beside the sidebar; the pages that lay out columns of their own use all of it
+            val spread = wide && destination?.let {
+                it.hasRoute<AdminGroupRoute>() || it.hasRoute<GifterRoute>() || it.hasRoute<ReceiverRoute>()
+            } == true
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
+                Box(Modifier.widthIn(max = if (wide && !spread) STANDARD_CONTENT_WIDTH else Dp.Unspecified).fillMaxSize()) {
                     NavHost(navController, startDestination = startRoute) {
                         composable<GroupsRoute> {
-                            GroupsScreen(koinViewModel(), onOpen = { navController.navigate(GroupRoute(it)) })
+                            GroupsScreen(groups, onOpen = { navController.navigate(GroupRoute(it)) })
                         }
                         composable<GroupRoute> { entry ->
                             val groupId = entry.toRoute<GroupRoute>().id
@@ -177,8 +219,9 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                                 onBack = { navController.popBackStack() },
                                 onOpenGifter = { questions -> navController.navigate(GifterRoute(groupId, questions)) },
                                 onOpenReceiver = { questions -> navController.navigate(ReceiverRoute(groupId, questions)) },
-                                onSendLetter = { navController.navigate(SendLetterRoute(groupId)) },
-                                onOpenInbox = { navController.navigate(InboxRoute(groupId)) },
+                                // a wide window has the Inbox and the Outbox on the Giving and Receiving pages
+                                onSendLetter = { navController.navigate(if (wide) ReceiverRoute(groupId) else SendLetterRoute(groupId)) },
+                                onOpenInbox = { navController.navigate(if (wide) GifterRoute(groupId) else InboxRoute(groupId)) },
                                 onEditDeliveryInfo = { navController.navigate(DeliveryInfoRoute(groupId)) },
                             )
                         }
@@ -191,6 +234,7 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                                 onBack = { navController.popBackStack() },
                                 onTitle = { pageTitle = it },
                                 tab = route.tab,
+                                inbox = if (wide) koinViewModel<InboxViewModel>(key = "inbox-$groupId") { parametersOf(groupId) } else null,
                             )
                         }
                         composable<ReceiverRoute> { entry ->
@@ -202,6 +246,7 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                                 onBack = { navController.popBackStack() },
                                 onTitle = { pageTitle = it },
                                 tab = route.tab,
+                                letters = if (wide) koinViewModel<SendLetterViewModel>(key = "send-letter-$groupId") { parametersOf(groupId) } else null,
                             )
                         }
                         composable<SendLetterRoute> { entry ->
@@ -227,7 +272,7 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                         // stand-ins until the admin screens arrive
                         composable<AdminGroupsRoute> {
                             AdminGroupsScreen(
-                                koinViewModel(),
+                                adminGroups ?: koinViewModel(),
                                 onOpen = { navController.navigate(AdminGroupRoute(it)) },
                                 onNew = { navController.navigate(AdminGroupNewRoute) },
                                 onCreated = { navController.navigate(AdminGroupRoute(it)) },
@@ -272,11 +317,12 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                 }
             }
         }
+                }
+            }
+        }
     }
 }
 
-/** The widest the signed-in app gets: the bars, the content and the floating buttons share it. */
-private val MAX_CONTENT_WIDTH = 640.dp
 
 private fun titleOf(view: AppView, destination: NavDestination?, pageTitle: String?): String = when {
     destination?.hasRoute<SettingsRoute>() == true -> Strings.TITLE_SETTINGS

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -31,7 +32,7 @@ import com.usuallycoding.opensecretsanta.domain.gift.LetterLimits
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.form.AppBottomSheet
 import com.usuallycoding.opensecretsanta.ui.form.AppFab
-import com.usuallycoding.opensecretsanta.ui.form.FAB_CLEARANCE
+import com.usuallycoding.opensecretsanta.ui.form.fabClearance
 import com.usuallycoding.opensecretsanta.ui.form.FormColumn
 import com.usuallycoding.opensecretsanta.ui.form.MultiLineTextField
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
@@ -44,6 +45,7 @@ import com.usuallycoding.opensecretsanta.ui.groups.GroupGone
 import com.usuallycoding.opensecretsanta.ui.groups.GroupPhase
 import com.usuallycoding.opensecretsanta.ui.groups.PageTitle
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
+import com.usuallycoding.opensecretsanta.ui.layout.LocalWideLayout
 import com.usuallycoding.opensecretsanta.ui.load.LoadSection
 import com.usuallycoding.opensecretsanta.ui.load.PullPage
 
@@ -70,15 +72,22 @@ internal fun LetterCard(letter: LetterItem, modifier: Modifier = Modifier) {
 @Composable
 fun SendLetterScreen(viewModel: SendLetterViewModel, onBack: () -> Unit) {
     val state by viewModel.data.collectAsState()
-    val ui by viewModel.ui.collectAsState()
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
-
     if (state.isGone()) {
         GroupGone(onBack)
         return
     }
+    SendLetterContent(viewModel)
+}
+
+/** The sent letters and the way to write one, without the page's gone case: also the Outbox column of a wide window's Receiving page. */
+@Composable
+fun SendLetterContent(viewModel: SendLetterViewModel) {
+    val state by viewModel.data.collectAsState()
+    val ui by viewModel.ui.collectAsState()
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
+
     Box(Modifier.fillMaxSize()) {
-        PullPage(loading = state.loading, onRefresh = { viewModel.refresh() }, bottomSpace = FAB_CLEARANCE) {
+        PullPage(loading = state.loading, onRefresh = { viewModel.refresh() }, bottomSpace = fabClearance()) {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 ui.notice?.let { notice ->
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -98,7 +107,11 @@ fun SendLetterScreen(viewModel: SendLetterViewModel, onBack: () -> Unit) {
                 }
             }
         }
-        if (state.value != null && viewModel.canSend) AppFab(Icons.Filled.Add, Strings.WRITE_LETTER, onClick = viewModel::openSheet)
+        if (state.value != null && viewModel.canSend) {
+            // a wide window shows the action in the top bar, where it is named "Send letter"
+            if (LocalWideLayout.current) AppFab(Icons.AutoMirrored.Filled.Send, Strings.SEND_LETTER, onClick = viewModel::openSheet)
+            else AppFab(Icons.Filled.Add, Strings.WRITE_LETTER, onClick = viewModel::openSheet)
+        }
     }
     ui.editor?.let { editor ->
         LetterSheet(editor, viewModel::editTitle, viewModel::editText, onSend = { viewModel.save() }, onDismiss = viewModel::dismissEditor)
@@ -145,9 +158,6 @@ internal fun LetterSheet(
 @Composable
 fun InboxScreen(viewModel: InboxViewModel, onBack: () -> Unit, onTitle: (String?) -> Unit) {
     val state by viewModel.data.collectAsState()
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
-    // the letters are marked as seen once they are on screen, so the next visit has none marked
-    LaunchedEffect(state.value) { if (state.value != null) viewModel.markSeen() }
     // the receiver's name once it is known; a failed refresh keeps the name that was loaded before
     PageTitle(Strings.lettersFrom(state.value?.receiver), onTitle)
 
@@ -155,6 +165,16 @@ fun InboxScreen(viewModel: InboxViewModel, onBack: () -> Unit, onTitle: (String?
         GroupGone(onBack)
         return
     }
+    InboxContent(viewModel)
+}
+
+/** The received letters without the page's title and gone case: also the Inbox column of a wide window's Giving page. */
+@Composable
+fun InboxContent(viewModel: InboxViewModel) {
+    val state by viewModel.data.collectAsState()
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
+    // the letters are marked as seen once they are on screen, so the next visit has none marked
+    LaunchedEffect(state.value) { if (state.value != null) viewModel.markSeen() }
     PullPage(loading = state.loading, onRefresh = { viewModel.refresh() }) {
         LoadSection(state, onRetry = { viewModel.refresh() }) { data ->
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {

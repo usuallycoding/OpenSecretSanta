@@ -30,9 +30,8 @@ import com.usuallycoding.opensecretsanta.ui.load.loadMessage
 enum class PairSheet { Me, Receiver, Santa }
 
 /**
- * Who the person gives to: "TBD" while the group is Pending, then the receiver's username in capitals with the ways to learn
- * about them, the Gifter page on either tab and, last, the details sheet. While Pending there is nothing to press. Nothing here
- * says who the Santa is.
+ * Who the person gives to, once the names are drawn: the receiver's username in capitals with the ways to learn about them, the
+ * Gifter page on either tab and, last, the details sheet. A Pending group has no such card. Nothing here says who the Santa is.
  */
 @Composable
 internal fun SecretSantaCard(
@@ -44,36 +43,31 @@ internal fun SecretSantaCard(
     onOpenInbox: () -> Unit,
     onSheet: (PairSheet) -> Unit,
 ) {
-    if (phase != GroupPhase.Pending && phase != GroupPhase.Active && phase != GroupPhase.Archived) return
-    val drawn = phase != GroupPhase.Pending
+    // before the draw there is no receiver to tell about
+    if (phase != GroupPhase.Active && phase != GroupPhase.Archived) return
     val name = receiver?.value?.username
     SnowCard("secret-santa", Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(Strings.SECRET_SANTA_FOR, style = MaterialTheme.typography.titleMedium)
-            when {
-                !drawn -> Text(Strings.TBD, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                else -> Text(
-                    // capitals are only how it is drawn; a screen reader reads the name as it is written
-                    name?.uppercase() ?: "...",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clearAndSetSemantics { contentDescription = name ?: "..." },
-                )
-            }
+            Text(
+                // capitals are only how it is drawn; a screen reader reads the name as it is written
+                name?.uppercase() ?: "...",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clearAndSetSemantics { contentDescription = name ?: "..." },
+            )
             Text(Strings.KEEP_IT_SECRET, style = MaterialTheme.typography.bodyMedium, fontStyle = FontStyle.Italic)
-            if (drawn) {
-                if (receiver?.value == null && receiver?.error != null) {
-                    Text(receiver.error.loadMessage(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-                    OutlinedButton(onClick = onRetry) { Text(Strings.TRY_AGAIN) }
-                }
-                val known = name != null
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    UnreadButton(Strings.SEE_WISHLIST, unread?.wishlist ?: 0, Strings::withNewOrEdited, { onOpenGifter(false) }, known, Modifier.weight(1f))
-                    UnreadButton(Strings.ASK_QUESTIONS, unread?.answers ?: 0, Strings::withNew, { onOpenGifter(true) }, known, Modifier.weight(1f))
-                }
-                UnreadButton(Strings.INBOX, unread?.letters ?: 0, Strings::withNew, onOpenInbox, known, Modifier.fillMaxWidth())
-                OutlinedButton(onClick = { onSheet(PairSheet.Receiver) }, enabled = known, modifier = Modifier.fillMaxWidth()) { Text(Strings.DELIVERY_INFO) }
+            if (receiver?.value == null && receiver?.error != null) {
+                Text(receiver.error.loadMessage(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                OutlinedButton(onClick = onRetry) { Text(Strings.TRY_AGAIN) }
             }
+            val known = name != null
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                UnreadButton(Strings.SEE_WISHLIST, unread?.wishlist ?: 0, Strings::withNewOrEdited, { onOpenGifter(false) }, known, Modifier.weight(1f))
+                UnreadButton(Strings.ASK_QUESTIONS, unread?.answers ?: 0, Strings::withNew, { onOpenGifter(true) }, known, Modifier.weight(1f))
+            }
+            UnreadButton(Strings.INBOX, unread?.letters ?: 0, Strings::withNew, onOpenInbox, known, Modifier.fillMaxWidth())
+            OutlinedButton(onClick = { onSheet(PairSheet.Receiver) }, enabled = known, modifier = Modifier.fillMaxWidth()) { Text(Strings.DELIVERY_INFO) }
         }
     }
 }

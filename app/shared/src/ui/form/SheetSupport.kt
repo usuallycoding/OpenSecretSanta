@@ -1,14 +1,18 @@
 package com.usuallycoding.opensecretsanta.ui.form
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Surface
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -21,6 +25,9 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import com.usuallycoding.opensecretsanta.ui.layout.LocalWideLayout
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
@@ -43,7 +50,8 @@ private class KeyboardHider {
  * The app's modal bottom sheet. While the keyboard is open it is only a keyboard that can be put away: a tap on the dimmed
  * area, a swipe down on the sheet and any drag on the sheet that nothing else used hide the keyboard and leave the sheet
  * where it is; the sheet's own dragging is off until the keyboard is gone. With the keyboard closed it is a plain
- * [ModalBottomSheet] that opens at full height, so the sheets with no text field never notice.
+ * [ModalBottomSheet] that opens at full height, so the sheets with no text field never notice. On a wide window it is a centered
+ * dialog with the same content and the same keyboard rules.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,6 +60,16 @@ fun AppBottomSheet(onDismissRequest: () -> Unit, content: @Composable ColumnScop
     // so the window around it sees none
     var keyboardOpen by remember { mutableStateOf(false) }
     val hider = remember { KeyboardHider() }
+    if (LocalWideLayout.current) {
+        // closing is asked for by a tap outside and by back; with the keyboard open that only hides it
+        Dialog(onDismissRequest = { if (keyboardOpen) hider.hide() else onDismissRequest() }) {
+            Surface(shape = MaterialTheme.shapes.extraLarge, tonalElevation = 6.dp) {
+                // a sheet has its handle above the title; the dialog leaves room instead
+                Box(Modifier.padding(top = 24.dp)) { SheetContent(hider, keyboardOpen, { keyboardOpen = it }, content) }
+            }
+        }
+        return
+    }
     val state = rememberAppSheetState(confirmValueChange = { target ->
         // closing is asked for by a tap on the dimmed area and by a swipe down; with the keyboard open that only hides it
         if (target == SheetValue.Hidden && keyboardOpen) {
@@ -62,21 +80,27 @@ fun AppBottomSheet(onDismissRequest: () -> Unit, content: @Composable ColumnScop
         }
     })
     ModalBottomSheet(onDismissRequest = onDismissRequest, sheetState = state, sheetGesturesEnabled = !keyboardOpen) {
-        val focus = LocalFocusManager.current
-        val keyboard = LocalSoftwareKeyboardController.current
-        val imeShown = WindowInsets.ime.getBottom(LocalDensity.current) > 0
-        SideEffect {
-            hider.hide = { focus.clearFocus(); keyboard?.hide() }
-            keyboardOpen = imeShown
-        }
-        // a drag nothing used hides the keyboard; a form's own scrolling uses every vertical drag, even with nothing to scroll,
-        // so vertical drags are judged by what is left of them, which is what the hook counts
-        val tracker = remember { GestureTracker() }
-        val connection = remember { scrollHook(countConsumed = false) { if (keyboardOpen) hider.hide() } }
-        Column(
-            Modifier.fillMaxWidth().nestedScroll(connection).watchGestures(tracker, onDrag = { if (keyboardOpen) hider.hide() }, onTap = null),
-        ) { content() }
+        SheetContent(hider, keyboardOpen, { keyboardOpen = it }, content)
     }
+}
+
+/** What a sheet or its dialog holds: the content, watching for the keyboard and for drags that should only put it away. */
+@Composable
+private fun SheetContent(hider: KeyboardHider, keyboardOpen: Boolean, onKeyboardOpen: (Boolean) -> Unit, content: @Composable ColumnScope.() -> Unit) {
+    val focus = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    val imeShown = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    SideEffect {
+        hider.hide = { focus.clearFocus(); keyboard?.hide() }
+        onKeyboardOpen(imeShown)
+    }
+    // a drag nothing used hides the keyboard; a form's own scrolling uses every vertical drag, even with nothing to scroll,
+    // so vertical drags are judged by what is left of them, which is what the hook counts
+    val tracker = remember { GestureTracker() }
+    val connection = remember { scrollHook(countConsumed = false) { if (keyboardOpen) hider.hide() } }
+    Column(
+        Modifier.fillMaxWidth().nestedScroll(connection).watchGestures(tracker, onDrag = { if (keyboardOpen) hider.hide() }, onTap = null),
+    ) { content() }
 }
 
 /**

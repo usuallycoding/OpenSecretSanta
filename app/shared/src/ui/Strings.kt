@@ -139,6 +139,7 @@ object Strings {
     // --- letters from a receiver to their Santa ---
     const val SEND_LETTER = "Send letter"
     const val INBOX = "Inbox"
+    const val OUTBOX = "Outbox"
     const val TITLE_SEND_LETTER = "Letters to your Santa"
     const val TITLE_INBOX = "Letters from your receiver"
     fun lettersFrom(receiver: String?) = if (receiver == null) TITLE_INBOX else "Letters from $receiver"
@@ -160,7 +161,6 @@ object Strings {
     const val SAVED = "Saved."
 
     const val SECRET_SANTA_FOR = "You're Secret Santa for:"
-    const val TBD = "TBD"
     const val KEEP_IT_SECRET = "Shh... Keep it a secret!"
     const val TELL_YOUR_SANTA = "Tell your santa what you want and let them know you!"
     const val YOUR_STUFF = "Your stuff:"
@@ -255,6 +255,9 @@ object Strings {
     const val TITLE_GROUP = "Group"
     const val TITLE_DELIVERY_INFO = "Delivery Info"
     const val TITLE_SETTINGS = "Settings"
+    const val SIDEBAR_OVERVIEW = "Overview"
+    const val SIDEBAR_GIVING = "Giving"
+    const val SIDEBAR_RECEIVING = "Receiving"
     const val TITLE_ADMIN = "Admin"
     const val ADMIN_NO_GROUPS = "You do not have any group yet. Use the + button to create one."
     const val NEW_GROUP = "New group"

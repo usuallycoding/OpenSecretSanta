@@ -39,7 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import com.usuallycoding.opensecretsanta.ui.form.AppFab
-import com.usuallycoding.opensecretsanta.ui.form.FAB_CLEARANCE
+import com.usuallycoding.opensecretsanta.ui.form.fabClearance
 
 /** The administrator's own groups, with a way to create one. */
 @Composable
@@ -71,7 +71,7 @@ fun AdminGroupsScreen(viewModel: AdminGroupsViewModel, onOpen: (Long) -> Unit, o
                         } else {
                             LazyColumn(
                                 Modifier.fillMaxWidth(),
-                                contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp + FAB_CLEARANCE),
+                                contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp + fabClearance()),
                                 verticalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
                                 items(shown, key = { it.id }) { group -> GroupCard(group, onDuplicate = { viewModel.askDuplicate(group) }) { onOpen(group.id) } }

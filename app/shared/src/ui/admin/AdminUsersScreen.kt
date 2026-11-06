@@ -68,7 +68,7 @@ fun AdminUsersScreen(viewModel: AdminUsersViewModel, onOpen: (String) -> Unit) {
                     } else {
                         LazyColumn(
                             Modifier.fillMaxWidth(),
-                            contentPadding = PaddingValues(vertical = 8.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             items(shown, key = { it.username }) { user ->

@@ -1,6 +1,12 @@
 package com.usuallycoding.opensecretsanta.ui.admin
 
 import androidx.compose.foundation.layout.Arrangement
+import com.usuallycoding.opensecretsanta.ui.layout.STANDARD_CONTENT_WIDTH
+import com.usuallycoding.opensecretsanta.ui.layout.LocalWideLayout
+import androidx.compose.material3.VerticalDivider
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.fillMaxHeight
 import com.usuallycoding.opensecretsanta.contract.DeletionImpactDto
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -61,6 +67,9 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.ui.text.style.TextAlign
 
+/** How wide the pane beside the group page is. */
+private val PANE_WIDTH = 400.dp
+
 /** One of the administrator's groups: its details and people, and what can be done with it in its state. */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -94,30 +103,42 @@ fun AdminGroupScreen(
         }
         return
     }
-    // one page that scrolls as a whole (and can be pulled down to reload): notices, details, buttons, search and people
-    PullPage(loading = state.loading, onRefresh = { viewModel.refresh() }) {
-        ui.notice?.let { notice ->
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(notice.text(), modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-                TextButton(onClick = viewModel::dismissNotice) { Text(Strings.OK) }
+    // on a wide window a participant's wishlist and a pair open in a pane beside the page, which keeps its place
+    val pane = if (LocalWideLayout.current) ui.sheet?.takeIf { it.opensInPane() } else null
+    Row(Modifier.fillMaxSize()) {
+        Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
+            Box(Modifier.widthIn(max = STANDARD_CONTENT_WIDTH).fillMaxSize()) {
+                // one page that scrolls as a whole (and can be pulled down to reload): notices, details, buttons, search and people
+                PullPage(loading = state.loading, onRefresh = { viewModel.refresh() }) {
+                    ui.notice?.let { notice ->
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text(notice.text(), modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                            TextButton(onClick = viewModel::dismissNotice) { Text(Strings.OK) }
+                        }
+                    }
+                    ui.emails?.let { emails ->
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                Strings.emailSummary(emails.sent, emails.failed, emails.noAddress),
+                                modifier = Modifier.weight(1f),
+                                color = if (emails.failed > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            TextButton(onClick = viewModel::dismissEmails) { Text(Strings.OK) }
+                        }
+                    }
+                    LoadSection(state, onRetry = { viewModel.refresh() }) { group ->
+                        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Header(group, viewModel, ui.busy, onEdit) { announcing = true }
+                            People(group, viewModel, draw)
+                        }
+                    }
+                }
             }
         }
-        ui.emails?.let { emails ->
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    Strings.emailSummary(emails.sent, emails.failed, emails.noAddress),
-                    modifier = Modifier.weight(1f),
-                    color = if (emails.failed > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                TextButton(onClick = viewModel::dismissEmails) { Text(Strings.OK) }
-            }
-        }
-        LoadSection(state, onRetry = { viewModel.refresh() }) { group ->
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Header(group, viewModel, ui.busy, onEdit) { announcing = true }
-                People(group, viewModel, draw)
-            }
+        if (pane != null) {
+            VerticalDivider()
+            GroupPane(pane, viewModel.groupId, draw, onDismiss = viewModel::dismissSheet, modifier = Modifier.width(PANE_WIDTH).fillMaxHeight())
         }
     }
     ui.participants?.let { ParticipantsSheet(it, viewModel) }
@@ -129,7 +150,7 @@ fun AdminGroupScreen(
             announceKey++
         }
     }
-    ui.sheet?.let { GroupSheetHost(it, viewModel.groupId, viewModel.me, draw, viewModel::dismissSheet) }
+    ui.sheet?.takeIf { pane == null || !it.opensInPane() }?.let { GroupSheetHost(it, viewModel.groupId, viewModel.me, draw, viewModel::dismissSheet) }
     ui.confirming?.let { step -> StepDialog(step, state.value?.name.orEmpty(), viewModel) }
     ui.confirmingDelete?.let { impact -> DeleteImpactDialog(impact, viewModel) }
     ui.passwords?.let { passwords ->

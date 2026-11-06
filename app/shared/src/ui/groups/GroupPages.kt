@@ -8,7 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import com.usuallycoding.opensecretsanta.ui.wishlist.WishlistFab
 import com.usuallycoding.opensecretsanta.ui.gift.AskQuestionFab
-import com.usuallycoding.opensecretsanta.ui.form.FAB_CLEARANCE
+import com.usuallycoding.opensecretsanta.ui.form.fabClearance
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.drop
 import androidx.compose.runtime.snapshotFlow
@@ -20,6 +20,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.Alignment
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -28,6 +30,12 @@ import com.usuallycoding.opensecretsanta.ui.gift.ReceiverQuestionsSection
 import com.usuallycoding.opensecretsanta.ui.gift.ReceiverViewModel
 import com.usuallycoding.opensecretsanta.ui.gift.SantaQuestionsSection
 import com.usuallycoding.opensecretsanta.ui.gift.SantaQuestionsViewModel
+import com.usuallycoding.opensecretsanta.ui.layout.LocalWideLayout
+import com.usuallycoding.opensecretsanta.ui.layout.STANDARD_CONTENT_WIDTH
+import com.usuallycoding.opensecretsanta.ui.letters.InboxContent
+import com.usuallycoding.opensecretsanta.ui.letters.InboxViewModel
+import com.usuallycoding.opensecretsanta.ui.letters.SendLetterContent
+import com.usuallycoding.opensecretsanta.ui.letters.SendLetterViewModel
 import com.usuallycoding.opensecretsanta.ui.load.PullPage
 import com.usuallycoding.opensecretsanta.ui.navigation.PageTab
 import com.usuallycoding.opensecretsanta.ui.wishlist.ReceiverWishlistSection
@@ -42,7 +50,14 @@ import org.koin.core.parameter.parametersOf
  * tab the questions their Santa asked. Nothing on it says who the Santa is.
  */
 @Composable
-fun ReceiverPage(groupId: Long, wishlist: WishlistViewModel, onBack: () -> Unit, onTitle: (String?) -> Unit, tab: PageTab = PageTab.Wishlist) {
+fun ReceiverPage(
+    groupId: Long,
+    wishlist: WishlistViewModel,
+    onBack: () -> Unit,
+    onTitle: (String?) -> Unit,
+    tab: PageTab = PageTab.Wishlist,
+    letters: SendLetterViewModel? = null,
+) {
     val wishlistState by wishlist.data.collectAsState()
     val phase = wishlistState.value?.phase
     // the questions exist once the names are drawn: the tab, and the request behind it, only then
@@ -59,9 +74,35 @@ fun ReceiverPage(groupId: Long, wishlist: WishlistViewModel, onBack: () -> Unit,
         return
     }
     if (questions == null) {
-        Box(Modifier.fillMaxSize()) {
-            PullPage(loading = wishlistState.loading, onRefresh = { wishlist.refresh() }, bottomSpace = FAB_CLEARANCE) { WishlistSection(wishlist) }
-            WishlistFab(wishlist)
+        // one section only: on a wide window it keeps the standard width, in the middle
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            Box(Modifier.widthIn(max = STANDARD_CONTENT_WIDTH).fillMaxSize()) {
+                if (LocalWideLayout.current) {
+                    WideColumns(listOf(Strings.TITLE_YOUR_WISHLIST)) {
+                        Box(Modifier.fillMaxSize()) {
+                            PullPage(loading = wishlistState.loading, onRefresh = { wishlist.refresh() }, bottomSpace = fabClearance()) { WishlistSection(wishlist) }
+                            WishlistFab(wishlist)
+                        }
+                    }
+                } else {
+                    PullPage(loading = wishlistState.loading, onRefresh = { wishlist.refresh() }, bottomSpace = fabClearance()) { WishlistSection(wishlist) }
+                    WishlistFab(wishlist)
+                }
+            }
+        }
+        return
+    }
+    // a wide window shows the three sections side by side, each with its own button in the top bar
+    if (LocalWideLayout.current && letters != null) {
+        WideColumns(listOf(Strings.TAB_YOUR_WISHLIST, Strings.TAB_RESPOND, Strings.TITLE_SEND_LETTER)) { index ->
+            when (index) {
+                0 -> Box(Modifier.fillMaxSize()) {
+                    PullPage(loading = wishlistState.loading, onRefresh = { wishlist.refresh() }, bottomSpace = fabClearance()) { WishlistSection(wishlist) }
+                    WishlistFab(wishlist)
+                }
+                1 -> PullPage(loading = questionsState?.loading == true, onRefresh = { questions.refresh() }) { SantaQuestionsSection(questions) }
+                else -> SendLetterContent(letters)
+            }
         }
         return
     }
@@ -73,7 +114,7 @@ fun ReceiverPage(groupId: Long, wishlist: WishlistViewModel, onBack: () -> Unit,
     ) { page, _ ->
         if (page == 0) {
             Box(Modifier.fillMaxSize()) {
-                PullPage(loading = wishlistState.loading, onRefresh = { wishlist.refresh() }, bottomSpace = FAB_CLEARANCE) { WishlistSection(wishlist) }
+                PullPage(loading = wishlistState.loading, onRefresh = { wishlist.refresh() }, bottomSpace = fabClearance()) { WishlistSection(wishlist) }
                 WishlistFab(wishlist)
             }
         } else {
@@ -87,7 +128,14 @@ fun ReceiverPage(groupId: Long, wishlist: WishlistViewModel, onBack: () -> Unit,
  * person's own questions to the receiver with the answers in the other.
  */
 @Composable
-fun GifterPage(wishlist: ReceiverWishlistViewModel, questions: ReceiverViewModel, onBack: () -> Unit, onTitle: (String?) -> Unit, tab: PageTab = PageTab.Wishlist) {
+fun GifterPage(
+    wishlist: ReceiverWishlistViewModel,
+    questions: ReceiverViewModel,
+    onBack: () -> Unit,
+    onTitle: (String?) -> Unit,
+    tab: PageTab = PageTab.Wishlist,
+    inbox: InboxViewModel? = null,
+) {
     val wishlistState by wishlist.state.collectAsState()
     val questionsState by questions.data.collectAsState()
     // the receiver's name, once it is known; a failed refresh keeps the name that was loaded before
@@ -96,6 +144,20 @@ fun GifterPage(wishlist: ReceiverWishlistViewModel, questions: ReceiverViewModel
 
     if (wishlistState.isGone() || questionsState.isGone()) {
         GroupGone(onBack)
+        return
+    }
+    // a wide window shows the three sections side by side, the questions with their button in the top bar
+    if (LocalWideLayout.current && inbox != null) {
+        WideColumns(listOf(Strings.receiverWishlistTab(receiver), Strings.receiverQuestionsTab(receiver), Strings.lettersFrom(receiver))) { index ->
+            when (index) {
+                0 -> PullPage(loading = wishlistState.loading, onRefresh = { wishlist.refresh() }) { ReceiverWishlistSection(wishlist, true) }
+                1 -> Box(Modifier.fillMaxSize()) {
+                    PullPage(loading = questionsState.loading, onRefresh = { questions.refresh() }, bottomSpace = fabClearance()) { ReceiverQuestionsSection(questions, true) }
+                    AskQuestionFab(questions)
+                }
+                else -> InboxContent(inbox)
+            }
+        }
         return
     }
     TabbedPages(
@@ -108,7 +170,7 @@ fun GifterPage(wishlist: ReceiverWishlistViewModel, questions: ReceiverViewModel
             PullPage(loading = wishlistState.loading, onRefresh = { wishlist.refresh() }) { ReceiverWishlistSection(wishlist, shown) }
         } else {
             Box(Modifier.fillMaxSize()) {
-                PullPage(loading = questionsState.loading, onRefresh = { questions.refresh() }, bottomSpace = FAB_CLEARANCE) { ReceiverQuestionsSection(questions, shown) }
+                PullPage(loading = questionsState.loading, onRefresh = { questions.refresh() }, bottomSpace = fabClearance()) { ReceiverQuestionsSection(questions, shown) }
                 AskQuestionFab(questions)
             }
         }
@@ -126,7 +188,7 @@ internal fun PageTitle(title: String, onTitle: (String?) -> Unit) {
 /**
  * The two tabs of the two pages, labelled [first] and [second]: a tab row and the content of the shown tab, which can be changed
  * by choosing a tab or by swiping the content sideways; the page opens on [opensOn]. A label that is too long for its tab ends in an ellipsis. [onShown]
- * reloads a tab when it is shown (a tab that was left may be stale).
+ * reloads a tab when it is shown (a tab that was left may be stale). A wide window has no tabs: the Giving and Receiving pages show their sections side by side.
  */
 @Composable
 private fun TabbedPages(first: String, second: String, opensOn: PageTab, onShown: (Int) -> Unit, page: @Composable (index: Int, shown: Boolean) -> Unit) {

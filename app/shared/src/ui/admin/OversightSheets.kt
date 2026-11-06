@@ -1,6 +1,12 @@
 package com.usuallycoding.opensecretsanta.ui.admin
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -85,15 +91,32 @@ internal fun ColumnScope.PairList(draw: DrawState, query: String, counts: MarkCo
 internal fun GroupSheetHost(sheet: GroupSheet, groupId: Long, me: String, draw: DrawState, onDismiss: () -> Unit) {
     when (sheet) {
         is GroupSheet.User -> UserSheet(groupId, sheet.username, me, onDismiss)
-        is GroupSheet.Pair -> {
-            val pair = (draw as? DrawState.Pairs)?.pairs?.firstOrNull { it.santa == sheet.santa && it.receiver == sheet.receiver }
-            val title = pairTitle(
-                markedText(sheet.santa, pair?.santaIsMe == true, pair?.santaMarks() ?: ParticipantMarks()),
-                markedText(sheet.receiver, pair?.receiverIsMe == true, pair?.receiverMarks() ?: ParticipantMarks(), marksBefore = true),
-            )
-            PairSheet(groupId, sheet.santa, sheet.receiver, title, onDismiss)
-        }
+        is GroupSheet.Pair -> PairSheet(groupId, sheet.santa, sheet.receiver, pairSheetTitle(sheet, draw), onDismiss)
         is GroupSheet.Wishlist -> WishlistSheet(groupId, sheet.username, onDismiss)
+    }
+}
+
+/** The pair sheet's title: both names, with the marks the pair list shows next to them. */
+private fun pairSheetTitle(sheet: GroupSheet.Pair, draw: DrawState): AnnotatedString {
+    val pair = (draw as? DrawState.Pairs)?.pairs?.firstOrNull { it.santa == sheet.santa && it.receiver == sheet.receiver }
+    return pairTitle(
+        markedText(sheet.santa, pair?.santaIsMe == true, pair?.santaMarks() ?: ParticipantMarks()),
+        markedText(sheet.receiver, pair?.receiverIsMe == true, pair?.receiverMarks() ?: ParticipantMarks(), marksBefore = true),
+    )
+}
+
+/** Whether [sheet] is shown in a pane beside the group page on a wide window, rather than in a dialog. */
+internal fun GroupSheet.opensInPane(): Boolean = this is GroupSheet.Wishlist || this is GroupSheet.Pair
+
+/** The pane beside the group page on a wide window, for the sheets that [opensInPane]. */
+@Composable
+internal fun GroupPane(sheet: GroupSheet, groupId: Long, draw: DrawState, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+    PaneFrame(onDismiss, modifier) {
+        when (sheet) {
+            is GroupSheet.Wishlist -> WishlistContent(groupId, sheet.username, onDismiss)
+            is GroupSheet.Pair -> PairContent(groupId, sheet.santa, sheet.receiver, pairSheetTitle(sheet, draw), onDismiss)
+            is GroupSheet.User -> Unit
+        }
     }
 }
 
@@ -187,6 +210,11 @@ private fun DeliveryInfoPart(state: LoadState<OversightDeliveryInfo>, onRetry: (
 /** The receiver's wishlist and what the Santa asked them, read-only. Each part loads, fails and retries on its own. */
 @Composable
 private fun PairSheet(groupId: Long, santa: String, receiver: String, title: AnnotatedString, onDismiss: () -> Unit) {
+    SheetFrame(onDismiss) { PairContent(groupId, santa, receiver, title, onDismiss) }
+}
+
+@Composable
+private fun PairContent(groupId: Long, santa: String, receiver: String, title: AnnotatedString, onDismiss: () -> Unit) {
     val wishlist = koinViewModel<AdminParticipantWishlistViewModel>(key = "admin-wishlist-$groupId-$receiver") { parametersOf(groupId, receiver) }
     val thread = koinViewModel<AdminPairThreadViewModel>(key = "admin-thread-$groupId-$santa-$receiver") { parametersOf(groupId, santa, receiver) }
     // the letters of every pair of the group are one request; the sheet shows the chosen pair's receiver's
@@ -200,23 +228,21 @@ private fun PairSheet(groupId: Long, santa: String, receiver: String, title: Ann
         letters.refresh()
     }
 
-    SheetFrame(onDismiss) {
-        val unavailable = when {
-            wishes.isGone() || asked.isGone() -> Strings.ADMIN_PARTICIPANT_GONE
-            wishes.notReadable() || asked.notReadable() -> Strings.ADMIN_NOT_READABLE
-            else -> null
-        }
-        if (unavailable != null) {
-            Unavailable(unavailable, onDismiss)
-        } else {
-            Text(title, style = MaterialTheme.typography.titleLarge, inlineContent = markIcons())
-            Text(Strings.adminWishlistTitle(receiver), style = MaterialTheme.typography.titleMedium)
-            Part(wishes, onRetry = { wishlist.refresh() }) { items -> WishlistItems(items) }
-            Text(Strings.ADMIN_QUESTIONS_TITLE, style = MaterialTheme.typography.titleMedium)
-            Part(asked, onRetry = { thread.refresh() }) { found -> ThreadQuestions(found) }
-            Text(Strings.adminLettersTitle(receiver), style = MaterialTheme.typography.titleMedium)
-            Part(written, onRetry = { letters.refresh() }) { boxes -> PairLetters(boxes.lettersOf(receiver)) }
-        }
+    val unavailable = when {
+        wishes.isGone() || asked.isGone() -> Strings.ADMIN_PARTICIPANT_GONE
+        wishes.notReadable() || asked.notReadable() -> Strings.ADMIN_NOT_READABLE
+        else -> null
+    }
+    if (unavailable != null) {
+        Unavailable(unavailable, onDismiss)
+    } else {
+        Text(title, style = MaterialTheme.typography.titleLarge, inlineContent = markIcons())
+        Text(Strings.adminWishlistTitle(receiver), style = MaterialTheme.typography.titleMedium)
+        Part(wishes, onRetry = { wishlist.refresh() }) { items -> WishlistItems(items) }
+        Text(Strings.ADMIN_QUESTIONS_TITLE, style = MaterialTheme.typography.titleMedium)
+        Part(asked, onRetry = { thread.refresh() }) { found -> ThreadQuestions(found) }
+        Text(Strings.adminLettersTitle(receiver), style = MaterialTheme.typography.titleMedium)
+        Part(written, onRetry = { letters.refresh() }) { boxes -> PairLetters(boxes.lettersOf(receiver)) }
     }
 }
 
@@ -235,18 +261,33 @@ private fun PairLetters(letters: List<LetterItem>) {
 /** One participant's wishlist in a Pending group, read-only. */
 @Composable
 private fun WishlistSheet(groupId: Long, username: String, onDismiss: () -> Unit) {
+    SheetFrame(onDismiss) { WishlistContent(groupId, username, onDismiss) }
+}
+
+/** A pane beside the group page: a way to close it above content that scrolls. */
+@Composable
+private fun PaneFrame(onDismiss: () -> Unit, modifier: Modifier, content: @Composable () -> Unit) {
+    Column(modifier) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = Strings.ADMIN_SHEET_CLOSE) }
+        }
+        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun WishlistContent(groupId: Long, username: String, onDismiss: () -> Unit) {
     val wishlist = koinViewModel<AdminParticipantWishlistViewModel>(key = "admin-wishlist-$groupId-$username") { parametersOf(groupId, username) }
     val wishes by wishlist.state.collectAsState()
     LaunchedEffect(wishlist) { wishlist.refresh() }
-
-    SheetFrame(onDismiss) {
-        when {
-            wishes.isGone() -> Unavailable(Strings.ADMIN_PARTICIPANT_GONE, onDismiss)
-            wishes.notReadable() -> Unavailable(Strings.ADMIN_NOT_READABLE, onDismiss)
-            else -> {
-                Text(Strings.adminWishlistTitle(username), style = MaterialTheme.typography.titleLarge)
-                Part(wishes, onRetry = { wishlist.refresh() }) { items -> WishlistItems(items) }
-            }
+    when {
+        wishes.isGone() -> Unavailable(Strings.ADMIN_PARTICIPANT_GONE, onDismiss)
+        wishes.notReadable() -> Unavailable(Strings.ADMIN_NOT_READABLE, onDismiss)
+        else -> {
+            Text(Strings.adminWishlistTitle(username), style = MaterialTheme.typography.titleLarge)
+            Part(wishes, onRetry = { wishlist.refresh() }) { items -> WishlistItems(items) }
         }
     }
 }
