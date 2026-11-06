@@ -19,6 +19,10 @@ object NotificationTexts {
 
     fun questionAnswered(group: String, count: Int = 1) =
         if (count > 1) "Your receiver answered questions in $group" else "Your receiver answered a question in $group"
+
+    /** [count] letters came in while the notification was held: one is "a letter", several are "letters", never how many, never what they say. */
+    fun letterSent(group: String, count: Int = 1) =
+        if (count > 1) "Your receiver sent you letters in $group" else "Your receiver sent you a letter in $group"
 }
 
 /**
@@ -26,7 +30,7 @@ object NotificationTexts {
  * after the action that caused it was stored and never throws: a failure only means that nobody is told. Devices the
  * push service says are gone are forgotten.
  *
- * Nothing it sends carries a question, an answer, a wishlist item or the name of a Santa; only the group's name.
+ * Nothing it sends carries a question, an answer, a letter, a wishlist item or the name of a Santa; only the group's name.
  */
 class Notifier(
     private val settings: NotificationSettingsRepository,
@@ -67,6 +71,14 @@ class Notifier(
             val group = groups.find(groupId) ?: return@attempt
             val santa = groups.santaOf(groupId, receiver) ?: return@attempt
             deliver(NotificationCategory.ANSWERS, listOf(santa), groupId, NotificationTexts.questionAnswered(name(group), count))
+        }
+
+    /** [receiver] sent [count] letters (several, when they were held and sent together): their Santa is told. */
+    fun letterSent(groupId: Long, receiver: Username, count: Int = 1) =
+        attempt {
+            val group = groups.find(groupId) ?: return@attempt
+            val santa = groups.santaOf(groupId, receiver) ?: return@attempt
+            deliver(NotificationCategory.LETTERS, listOf(santa), groupId, NotificationTexts.letterSent(name(group), count))
         }
 
     /** Whether a push service is set up at all. */

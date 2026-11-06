@@ -54,3 +54,30 @@ data class AskQuestionRequest(
 data class AnswerRequest(
     val text: String,
 )
+
+/**
+ * One letter from a receiver to their Santa. The same shape serves both sides and has no field naming anyone, so reading letters
+ * cannot reveal the Santa. [sentAt] is an ISO-8601 UTC instant.
+ */
+@Serializable
+data class LetterDto(
+    val number: Int,
+    val title: String,
+    val text: String,
+    val sentAt: String,
+)
+
+/** A letter to send: both the title (1 to 100 characters) and the text (1 to 2000) are required. */
+@Serializable
+data class SendLetterRequest(
+    val title: String,
+    val text: String,
+)
+
+/** One receiver's letters to their Santa as the group owner sees them: both people are named, only in the owner's endpoint. */
+@Serializable
+data class AdminLetterBoxDto(
+    val santa: String,
+    val receiver: String,
+    val letters: List<LetterDto>,
+)

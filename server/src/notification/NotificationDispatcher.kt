@@ -38,9 +38,9 @@ fun daemonSingleThreadExecutor(name: String = "notifications"): Executor =
 
 /**
  * What the routes call after an action has been stored. Every notification is worked out and sent by [executor], so
- * that a slow push service never delays a response and nothing it does can fail a request. Wishlist changes, questions
- * and answers are held back until the person has been quiet for [quietMillis] (but at most [maxWaitMillis] after the
- * first of them), so that a list being filled in, or a run of questions or answers, makes one notification. Each kind
+ * that a slow push service never delays a response and nothing it does can fail a request. Wishlist changes, questions,
+ * answers and letters are held back until the person has been quiet for [quietMillis] (but at most [maxWaitMillis] after the
+ * first of them), so that a list being filled in, or a run of questions, answers or letters, makes one notification. Each kind
  * of person, group and action is held on its own, and the number held is passed on so that the text can say "questions".
  * The held ones live in memory: a restart forgets them.
  */
@@ -54,8 +54,8 @@ class NotificationDispatcher(
 ) {
     private val log = LoggerFactory.getLogger(NotificationDispatcher::class.java)
 
-    /** What is held for: a person's wishlist changes, the questions they ask, or the answers they give. */
-    private enum class Kind { WISHLIST, QUESTION, ANSWER }
+    /** What is held for: a person's wishlist changes, the questions they ask, the answers they give, or the letters they send. */
+    private enum class Kind { WISHLIST, QUESTION, ANSWER, LETTER }
 
     private class Held(val firstAtMillis: Long, val timer: Cancellation, val count: Int)
 
@@ -74,6 +74,9 @@ class NotificationDispatcher(
 
     fun questionAnswered(groupId: Long, receiver: Username) =
         hold(Kind.ANSWER, groupId, receiver) { count -> notifier.questionAnswered(groupId, receiver, count) }
+
+    fun letterSent(groupId: Long, receiver: Username) =
+        hold(Kind.LETTER, groupId, receiver) { count -> notifier.letterSent(groupId, receiver, count) }
 
     fun wishlistChanged(groupId: Long, editor: Username) =
         hold(Kind.WISHLIST, groupId, editor) { notifier.wishlistChanged(groupId, editor) }

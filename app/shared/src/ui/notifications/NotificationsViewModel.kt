@@ -20,18 +20,20 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-/** The four switches of the person, all on until they turn one off. */
+/** The five switches of the person, all on until they turn one off. */
 data class NotificationSwitches(
     val announcements: Boolean = true,
     val wishlist: Boolean = true,
     val questions: Boolean = true,
     val answers: Boolean = true,
+    val letters: Boolean = true,
 ) {
     operator fun get(category: NotificationCategory): Boolean = when (category) {
         NotificationCategory.ANNOUNCEMENTS -> announcements
         NotificationCategory.WISHLIST -> wishlist
         NotificationCategory.QUESTIONS -> questions
         NotificationCategory.ANSWERS -> answers
+        NotificationCategory.LETTERS -> letters
     }
 
     fun with(category: NotificationCategory, on: Boolean): NotificationSwitches = when (category) {
@@ -39,12 +41,13 @@ data class NotificationSwitches(
         NotificationCategory.WISHLIST -> copy(wishlist = on)
         NotificationCategory.QUESTIONS -> copy(questions = on)
         NotificationCategory.ANSWERS -> copy(answers = on)
+        NotificationCategory.LETTERS -> copy(letters = on)
     }
 
-    fun toRequest() = NotificationSettingsRequest(announcements, wishlist, questions, answers)
+    fun toRequest() = NotificationSettingsRequest(announcements, wishlist, questions, answers, letters)
 }
 
-private fun NotificationSettingsDto.toSwitches() = NotificationSwitches(announcements, wishlist, questions, answers)
+private fun NotificationSettingsDto.toSwitches() = NotificationSwitches(announcements, wishlist, questions, answers, letters)
 
 /** Something the sheet tells the person after an attempt that did not work. */
 enum class NotificationsMessage { PermissionDenied, DeviceFailed, SaveFailed }

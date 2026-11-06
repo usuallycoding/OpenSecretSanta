@@ -84,7 +84,7 @@ class SqliteNotificationSettingsRepository(private val database: Database) : Not
         val saved = database.connection().use { c ->
             usernames.distinct().chunked(CHUNK).flatMap { names ->
                 c.prepareStatement(
-                    "SELECT username, announcements, wishlist, questions, answers FROM notification_prefs " +
+                    "SELECT username, announcements, wishlist, questions, answers, letters FROM notification_prefs " +
                         "WHERE username IN (${names.joinToString { "?" }})",
                 ).use { s ->
                     names.forEachIndexed { i, name -> s.setString(i + 1, name.value) }
@@ -96,6 +96,7 @@ class SqliteNotificationSettingsRepository(private val database: Database) : Not
                                     wishlist = rows.getInt(3) == 1,
                                     questions = rows.getInt(4) == 1,
                                     answers = rows.getInt(5) == 1,
+                                    letters = rows.getInt(6) == 1,
                                 )
                             } else {
                                 null
@@ -111,15 +112,16 @@ class SqliteNotificationSettingsRepository(private val database: Database) : Not
     override fun save(username: Username, settings: NotificationSettings) {
         database.connection().use { c ->
             c.prepareStatement(
-                "INSERT INTO notification_prefs (username, announcements, wishlist, questions, answers) VALUES (?, ?, ?, ?, ?) " +
+                "INSERT INTO notification_prefs (username, announcements, wishlist, questions, answers, letters) VALUES (?, ?, ?, ?, ?, ?) " +
                     "ON CONFLICT (username) DO UPDATE SET announcements = excluded.announcements, wishlist = excluded.wishlist, " +
-                    "questions = excluded.questions, answers = excluded.answers",
+                    "questions = excluded.questions, answers = excluded.answers, letters = excluded.letters",
             ).use { s ->
                 s.setString(1, username.value)
                 s.setInt(2, settings.announcements.toInt())
                 s.setInt(3, settings.wishlist.toInt())
                 s.setInt(4, settings.questions.toInt())
                 s.setInt(5, settings.answers.toInt())
+                s.setInt(6, settings.letters.toInt())
                 s.executeUpdate()
             }
         }

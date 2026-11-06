@@ -29,6 +29,7 @@ object ApiRoutes {
     const val ADMIN_GROUP_ASSIGNMENTS = "/admin/groups/{id}/assignments"
     const val ADMIN_GROUP_PARTICIPANT_WISHLIST = "/admin/groups/{id}/participants/{username}/wishlist"
     const val ADMIN_GROUP_PARTICIPANT_DELIVERY_INFO = "/admin/groups/{id}/participants/{username}/delivery-info"
+    const val ADMIN_GROUP_LETTERS = "/admin/groups/{id}/letters"
     const val ADMIN_GROUP_QUESTIONS = "/admin/groups/{id}/questions"
 
     const val GROUPS = "/groups"
@@ -40,6 +41,8 @@ object ApiRoutes {
     const val GROUP_RECEIVER_QUESTIONS = "/groups/{id}/receiver/questions"
     const val GROUP_SANTA_QUESTIONS = "/groups/{id}/santa/questions"
     const val GROUP_SANTA_QUESTION_ANSWER = "/groups/{id}/santa/questions/{number}/answer"
+    const val GROUP_SANTA_LETTERS = "/groups/{id}/santa/letters"
+    const val GROUP_RECEIVER_LETTERS = "/groups/{id}/receiver/letters"
 
     const val GROUP_WISHLIST = "/groups/{id}/wishlist"
     const val GROUP_WISHLIST_ITEMS = "/groups/{id}/wishlist/items"
@@ -59,6 +62,8 @@ object ApiRoutes {
     fun groupReceiverQuestions(id: Long) = "$GROUPS/$id/receiver/questions"
     fun groupSantaQuestions(id: Long) = "$GROUPS/$id/santa/questions"
     fun groupSantaQuestionAnswer(id: Long, number: Int) = "$GROUPS/$id/santa/questions/$number/answer"
+    fun groupSantaLetters(id: Long) = "$GROUPS/$id/santa/letters"
+    fun groupReceiverLetters(id: Long) = "$GROUPS/$id/receiver/letters"
 
     fun adminGroup(id: Long) = "$ADMIN_GROUPS/$id"
     fun adminGroupParticipants(id: Long) = "$ADMIN_GROUPS/$id/participants"
@@ -70,6 +75,7 @@ object ApiRoutes {
     fun adminGroupParticipantWishlist(id: Long, username: String) = "$ADMIN_GROUPS/$id/participants/$username/wishlist"
     fun adminGroupParticipantDeliveryInfo(id: Long, username: String) = "$ADMIN_GROUPS/$id/participants/$username/delivery-info"
     fun adminGroupQuestions(id: Long) = "$ADMIN_GROUPS/$id/questions"
+    fun adminGroupLetters(id: Long) = "$ADMIN_GROUPS/$id/letters"
     fun group(id: Long) = "$GROUPS/$id"
 
     fun adminUser(username: String) = "$ADMIN_USERS/$username"

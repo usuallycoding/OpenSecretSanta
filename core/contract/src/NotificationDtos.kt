@@ -2,7 +2,7 @@ package com.usuallycoding.opensecretsanta.contract
 
 import kotlinx.serialization.Serializable
 
-/** The person's four switches, and whether the server can send push notifications at all. */
+/** The person's five switches, and whether the server can send push notifications at all. */
 @Serializable
 data class NotificationSettingsDto(
     val available: Boolean,
@@ -10,15 +10,18 @@ data class NotificationSettingsDto(
     val wishlist: Boolean,
     val questions: Boolean,
     val answers: Boolean,
+    /** Letters from the person's receiver; on when an older server says nothing about it. */
+    val letters: Boolean = true,
 )
 
-/** Replaces all four switches; every one must be given. */
+/** Replaces all five switches; the first four must be given, and letters is on when an older client leaves it out. */
 @Serializable
 data class NotificationSettingsRequest(
     val announcements: Boolean,
     val wishlist: Boolean,
     val questions: Boolean,
     val answers: Boolean,
+    val letters: Boolean = true,
 )
 
 /** Registers a device's push token; [platform] is `android` or `web`. */

@@ -22,7 +22,12 @@ import com.usuallycoding.opensecretsanta.domain.gift.AskQuestion
 import com.usuallycoding.opensecretsanta.domain.gift.GetMyReceiver
 import com.usuallycoding.opensecretsanta.domain.gift.GetMySanta
 import com.usuallycoding.opensecretsanta.domain.gift.ListMyQuestions
+import com.usuallycoding.opensecretsanta.domain.gift.LetterRepository
+import com.usuallycoding.opensecretsanta.domain.gift.ListLetterBoxes
+import com.usuallycoding.opensecretsanta.domain.gift.ListLettersFromMyReceiver
+import com.usuallycoding.opensecretsanta.domain.gift.ListMySentLetters
 import com.usuallycoding.opensecretsanta.domain.gift.ListQuestionThreads
+import com.usuallycoding.opensecretsanta.domain.gift.SendLetter
 import com.usuallycoding.opensecretsanta.domain.gift.ListQuestionsFromMySanta
 import com.usuallycoding.opensecretsanta.domain.gift.QuestionRepository
 import com.usuallycoding.opensecretsanta.domain.group.ActivateGroup
@@ -88,6 +93,7 @@ import com.usuallycoding.opensecretsanta.server.data.notification.SqliteDeviceRe
 import com.usuallycoding.opensecretsanta.server.data.notification.SqliteNotificationSettingsRepository
 import com.usuallycoding.opensecretsanta.server.data.push.FcmPushSender
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteGroupRepository
+import com.usuallycoding.opensecretsanta.server.data.group.SqliteLetterRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteQuestionRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteWishlistRepository
 import com.usuallycoding.opensecretsanta.server.data.user.SqliteUserRepository
@@ -130,6 +136,7 @@ val repositoryModule = module {
     single<LoginAttemptTracker> { SqliteLoginAttemptTracker(get()) }
     single<GroupRepository> { SqliteGroupRepository(get()) }
     single<QuestionRepository> { SqliteQuestionRepository(get()) }
+    single<LetterRepository> { SqliteLetterRepository(get()) }
     single<WishlistRepository> { SqliteWishlistRepository(get()) }
     single<DeliveryInfoRepository> { SqliteDeliveryInfoRepository(get()) }
     single<DeviceRepository> { SqliteDeviceRepository(get()) }
@@ -211,6 +218,9 @@ val useCaseModule = module {
     single { ListMyQuestions(get(), get()) }
     single { ListQuestionsFromMySanta(get(), get()) }
     single { AnswerQuestion(get(), get(), get()) }
+    single { SendLetter(get(), get(), get()) }
+    single { ListMySentLetters(get(), get()) }
+    single { ListLettersFromMyReceiver(get(), get()) }
 
     single { GetMyDeliveryInfo(get(), get()) }
     single { UpdateMyDeliveryInfo(get(), get()) }
@@ -224,6 +234,7 @@ val useCaseModule = module {
     single { GetParticipantWishlist(get(), get()) }
     single { GetParticipantDeliveryInfo(get(), get()) }
     single { ListQuestionThreads(get(), get(), get()) }
+    single { ListLetterBoxes(get(), get(), get()) }
 
     single { GetNotificationSettings(get(), get()) }
     single { UpdateNotificationSettings(get(), get()) }

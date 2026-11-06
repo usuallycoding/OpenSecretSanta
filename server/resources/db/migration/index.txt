@@ -9,3 +9,4 @@ V007__notifications.sql
 V008__account_creator.sql
 V009__group_budget.sql
 V010__group_delivery_info.sql
+V011__letters.sql

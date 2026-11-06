@@ -2,6 +2,7 @@ package com.usuallycoding.opensecretsanta.ui
 
 import com.usuallycoding.opensecretsanta.ui.navigation.GifterRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.GroupRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.InboxRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.NotificationTarget
 import com.usuallycoding.opensecretsanta.ui.navigation.ReceiverRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.WebAddresses
@@ -25,6 +26,11 @@ class NotificationTargetTest {
     }
 
     @Test
+    fun aLetterFromTheReceiverOpensTheInboxOverTheGroup() {
+        assertEquals(listOf(GroupRoute(7), InboxRoute(7)), NotificationTarget.routesOf("letters", 7))
+    }
+
+    @Test
     fun anAnnouncementOpensTheGroup() {
         assertEquals(listOf(GroupRoute(7)), NotificationTarget.routesOf("announcements", 7))
     }
@@ -42,5 +48,6 @@ class NotificationTargetTest {
         assertEquals(NotificationTarget.routesOf("questions", 7).last(), WebAddresses.routeOf("#/groups/7/receiver/questions", false))
         assertEquals(NotificationTarget.routesOf("answers", 7).last(), WebAddresses.routeOf("#/groups/7/gifter/questions", false))
         assertEquals(NotificationTarget.routesOf("wishlist", 7).last(), WebAddresses.routeOf("#/groups/7/gifter", false))
+        assertEquals(NotificationTarget.routesOf("letters", 7).last(), WebAddresses.routeOf("#/groups/7/inbox", false))
     }
 }

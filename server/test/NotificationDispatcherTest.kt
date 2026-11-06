@@ -279,6 +279,81 @@ class NotificationDispatcherTest {
     }
 
     @Test
+    fun aRunOfLettersMakesOnePluralNotificationToTheSantaAfterTheQuietPeriod() {
+        val id = group()
+        val dispatcher = dispatcher()
+
+        dispatcher.letterSent(id, bob)
+        scheduler.advance(20_000)
+        dispatcher.letterSent(id, bob)
+        scheduler.advance(20_000)
+        dispatcher.letterSent(id, bob)
+        scheduler.advance(59_000)
+        assertEquals(emptyList(), sender.sent, "still inside the quiet period")
+
+        scheduler.advance(2_000)
+
+        assertEquals(listOf("alice-phone" to "Your receiver sent you letters in ${party()}"), texts())
+        assertEquals(NotificationCategory.LETTERS, sender.sent.single().category)
+    }
+
+    @Test
+    fun aSingleLetterKeepsTheSingularAndIsHeldFirst() {
+        val id = group()
+        val dispatcher = dispatcher()
+
+        dispatcher.letterSent(id, bob)
+        assertEquals(emptyList(), sender.sent, "held, not sent at once")
+        scheduler.advance(61_000)
+
+        assertEquals(listOf("alice-phone" to "Your receiver sent you a letter in ${party()}"), texts())
+    }
+
+    @Test
+    fun lettersAreHeldApartFromQuestionsAnswersAndWishlistChangesOfTheSamePerson() {
+        val id = group()
+        val dispatcher = dispatcher()
+
+        dispatcher.letterSent(id, bob)
+        dispatcher.questionAnswered(id, bob)
+        dispatcher.wishlistChanged(id, bob)
+        dispatcher.questionAsked(id, bob)
+        scheduler.advance(61_000)
+
+        assertEquals(
+            setOf(
+                "alice-phone" to NotificationCategory.LETTERS,
+                "alice-phone" to NotificationCategory.ANSWERS,
+                "alice-phone" to NotificationCategory.WISHLIST,
+                "carol-phone" to NotificationCategory.QUESTIONS,
+            ),
+            bodies().toSet(),
+        )
+    }
+
+    @Test
+    fun aRunOfLettersThatIsNeverQuietIsStillSentWithinFiveMinutesOfItsFirst() {
+        val id = group()
+        val dispatcher = dispatcher()
+
+        repeat(12) {
+            dispatcher.letterSent(id, bob)
+            scheduler.advance(30_000)
+        }
+
+        assertEquals(1, sender.sent.size)
+        assertTrue("letters" in sender.sent.single().body)
+    }
+
+    @Test
+    fun aLetterBeforeTheDrawNotifiesNobodyAndASwitchedOffSantaIsNotTold() {
+        val pending = group(pending = true)
+        dispatcher().letterSent(pending, bob)
+        scheduler.advance(61_000)
+        assertEquals(emptyList(), sender.sent)
+    }
+
+    @Test
     fun theRecipientIsWorkedOutWhenTheNotificationIsDue() {
         val id = group()
         val dispatcher = dispatcher()

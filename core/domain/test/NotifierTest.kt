@@ -223,6 +223,42 @@ class NotifierTest {
     }
 
     @Test
+    fun aLetterTellsTheSantaAndSeveralArePlural() {
+        val g = group(GroupState.ACTIVE)
+        names.forEach { register(it) }
+
+        notifier.letterSent(g.id, receiver = u("bob"))
+        notifier.letterSent(g.id, receiver = u("bob"), count = 3)
+
+        val group = "\"${g.details.name}\""
+        assertEquals(listOf("alice-phone", "alice-phone"), sender.sent.map { it.token })
+        assertEquals(listOf(NotificationCategory.LETTERS, NotificationCategory.LETTERS), sender.sent.map { it.category })
+        assertEquals(listOf("Your receiver sent you a letter in $group", "Your receiver sent you letters in $group"), sender.sent.map { it.body })
+    }
+
+    @Test
+    fun aSantaWhoSwitchedLettersOffIsNotTold() {
+        val g = group(GroupState.ACTIVE)
+        names.forEach { register(it) }
+        settings.save(u("alice"), NotificationSettings(letters = false))
+
+        notifier.letterSent(g.id, receiver = u("bob"))
+        notifier.questionAnswered(g.id, receiver = u("bob"))
+
+        assertEquals(listOf(NotificationCategory.ANSWERS), sender.sent.map { it.category })
+    }
+
+    @Test
+    fun noLetterTextCarriesNumbersNamesOrContent() {
+        for (count in listOf(1, 2, 9)) {
+            val text = NotificationTexts.letterSent("\"Party\"", count)
+            assertFalse(names.any { it in text }, text)
+            assertEquals(1, Regex("\"Party\"").findAll(text).count())
+        }
+        assertFalse(Regex("[0-9]").containsMatchIn(NotificationTexts.letterSent("\"G\"", 12)))
+    }
+
+    @Test
     fun noTextNamesTheSantaOrCarriesPrivateContent() {
         val g = group(GroupState.ACTIVE)
         names.forEach { register(it) }

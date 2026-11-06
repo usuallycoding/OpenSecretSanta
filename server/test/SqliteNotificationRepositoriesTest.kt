@@ -106,6 +106,16 @@ class SqliteNotificationRepositoriesTest {
     }
 
     @Test
+    fun theLettersSwitchIsSavedAndRead() {
+        settings.save(alice, NotificationSettings(letters = false))
+
+        val saved = settings.find(alice)
+        assertFalse(saved.allows(NotificationCategory.LETTERS))
+        assertTrue(saved.allows(NotificationCategory.QUESTIONS))
+        assertTrue(settings.find(bob).allows(NotificationCategory.LETTERS))
+    }
+
+    @Test
     fun savingAgainReplacesTheChoices() {
         settings.save(alice, NotificationSettings(questions = false, answers = false))
         settings.save(alice, NotificationSettings(answers = true, wishlist = false))

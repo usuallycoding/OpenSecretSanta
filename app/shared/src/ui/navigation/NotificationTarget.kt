@@ -16,6 +16,8 @@ object NotificationTarget {
             // the receiver's answer and wishlist are read by the Santa, on the page for what they give
             "answers" -> add(GifterRoute(groupId, questions = true))
             "wishlist" -> add(GifterRoute(groupId))
+            // the receiver's letters are read by the Santa, in the inbox
+            "letters" -> add(InboxRoute(groupId))
         }
     }
 }

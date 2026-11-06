@@ -71,6 +71,12 @@ import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminUserRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminUsersRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.GifterRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.InboxRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.SendLetterRoute
+import com.usuallycoding.opensecretsanta.ui.letters.InboxScreen
+import com.usuallycoding.opensecretsanta.ui.letters.InboxViewModel
+import com.usuallycoding.opensecretsanta.ui.letters.SendLetterScreen
+import com.usuallycoding.opensecretsanta.ui.letters.SendLetterViewModel
 import com.usuallycoding.opensecretsanta.ui.navigation.GroupRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.GroupsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.DeliveryInfoRoute
@@ -171,6 +177,8 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                                 onBack = { navController.popBackStack() },
                                 onOpenGifter = { questions -> navController.navigate(GifterRoute(groupId, questions)) },
                                 onOpenReceiver = { questions -> navController.navigate(ReceiverRoute(groupId, questions)) },
+                                onSendLetter = { navController.navigate(SendLetterRoute(groupId)) },
+                                onOpenInbox = { navController.navigate(InboxRoute(groupId)) },
                                 onEditDeliveryInfo = { navController.navigate(DeliveryInfoRoute(groupId)) },
                             )
                         }
@@ -194,6 +202,21 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                                 onBack = { navController.popBackStack() },
                                 onTitle = { pageTitle = it },
                                 tab = route.tab,
+                            )
+                        }
+                        composable<SendLetterRoute> { entry ->
+                            val groupId = entry.toRoute<SendLetterRoute>().groupId
+                            SendLetterScreen(
+                                koinViewModel<SendLetterViewModel>(key = "send-letter-$groupId") { parametersOf(groupId) },
+                                onBack = { navController.popBackStack() },
+                            )
+                        }
+                        composable<InboxRoute> { entry ->
+                            val groupId = entry.toRoute<InboxRoute>().groupId
+                            InboxScreen(
+                                koinViewModel<InboxViewModel>(key = "inbox-$groupId") { parametersOf(groupId) },
+                                onBack = { navController.popBackStack() },
+                                onTitle = { pageTitle = it },
                             )
                         }
                         composable<DeliveryInfoRoute> { entry ->
@@ -267,6 +290,8 @@ private fun titleOf(view: AppView, destination: NavDestination?, pageTitle: Stri
     destination?.hasRoute<GifterRoute>() == true -> pageTitle ?: Strings.givingTo(null)
     destination?.hasRoute<ReceiverRoute>() == true -> pageTitle ?: Strings.TITLE_YOUR_WISHLIST
     destination?.hasRoute<DeliveryInfoRoute>() == true -> Strings.TITLE_DELIVERY_INFO
+    destination?.hasRoute<SendLetterRoute>() == true -> Strings.TITLE_SEND_LETTER
+    destination?.hasRoute<InboxRoute>() == true -> pageTitle ?: Strings.TITLE_INBOX
     else -> Strings.TITLE_GROUPS
 }
 
@@ -299,7 +324,8 @@ private fun NavDestination.ownView(): AppView? = when {
 }
 
 private fun NavDestination.belowGroups(): Boolean =
-    hasRoute<GroupRoute>() || hasRoute<GifterRoute>() || hasRoute<ReceiverRoute>() || hasRoute<DeliveryInfoRoute>()
+    hasRoute<GroupRoute>() || hasRoute<GifterRoute>() || hasRoute<ReceiverRoute>() || hasRoute<DeliveryInfoRoute>() ||
+        hasRoute<SendLetterRoute>() || hasRoute<InboxRoute>()
 
 private fun NavDestination.belowAdminGroups(): Boolean =
     hasRoute<AdminGroupNewRoute>() || hasRoute<AdminGroupRoute>() || hasRoute<AdminGroupEditRoute>() || hasRoute<AdminUserRoute>()

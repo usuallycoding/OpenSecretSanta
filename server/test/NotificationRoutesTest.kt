@@ -67,7 +67,7 @@ class NotificationRoutesTest {
     fun everythingIsOnByDefaultAndPushIsReportedUnavailableWithoutAKey() = testApplication {
         startApp()
 
-        assertEquals(NotificationSettingsDto(available = false, announcements = true, wishlist = true, questions = true, answers = true), client.settings("alice"))
+        assertEquals(NotificationSettingsDto(available = false, announcements = true, wishlist = true, questions = true, answers = true, letters = true), client.settings("alice"))
     }
 
     @Test
@@ -88,6 +88,45 @@ class NotificationRoutesTest {
         assertEquals(expected, Json.decodeFromString<NotificationSettingsDto>(response.bodyAsText()))
         assertEquals(expected, client.settings("alice"))
         assertEquals(true, client.settings("bob").wishlist, "someone else's switches are untouched")
+    }
+
+    @Test
+    fun theLettersSwitchIsSavedAndLeavesTheOtherFourAlone() = testApplication {
+        startApp()
+
+        val response = client.send(
+            "PUT", ApiRoutes.NOTIFICATIONS, fx.token("alice"),
+            NotificationSettingsRequest(announcements = true, wishlist = true, questions = true, answers = true, letters = false),
+        )
+
+        assertEquals(HttpStatusCode.OK, response.status, response.bodyAsText())
+        val saved = client.settings("alice")
+        assertEquals(false, saved.letters)
+        assertEquals(listOf(true, true, true, true), listOf(saved.announcements, saved.wishlist, saved.questions, saved.answers))
+        assertEquals(true, client.settings("bob").letters, "someone else's letters switch is untouched")
+    }
+
+    @Test
+    fun anOlderClientThatSendsOnlyFourSwitchesIsAcceptedAndLettersIsOn() = testApplication {
+        startApp()
+        client.send("PUT", ApiRoutes.NOTIFICATIONS, fx.token("alice"), NotificationSettingsRequest(true, true, true, true, letters = false))
+
+        val response = client.rawSend("PUT", ApiRoutes.NOTIFICATIONS, fx.token("alice"), """{"announcements":true,"wishlist":false,"questions":true,"answers":true}""")
+
+        assertEquals(HttpStatusCode.OK, response.status, response.bodyAsText())
+        val saved = client.settings("alice")
+        assertEquals(true, saved.letters)
+        assertEquals(false, saved.wishlist)
+    }
+
+    @Test
+    fun aLettersValueThatIsNotABooleanIsRefusedAndChangesNothing() = testApplication {
+        startApp()
+        for (value in listOf(""""yes"""", "null", "1")) {
+            val response = client.rawSend("PUT", ApiRoutes.NOTIFICATIONS, fx.token("alice"), """{"announcements":false,"wishlist":false,"questions":false,"answers":false,"letters":$value}""")
+            assertEquals(HttpStatusCode.BadRequest, response.status, value)
+        }
+        assertEquals(true, client.settings("alice").announcements)
     }
 
     @Test

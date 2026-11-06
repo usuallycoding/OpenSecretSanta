@@ -5,11 +5,15 @@ import com.usuallycoding.opensecretsanta.contract.QuestionDto
 import com.usuallycoding.opensecretsanta.contract.SharedWishlistItemDto
 import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupViewModel
+import com.usuallycoding.opensecretsanta.ui.admin.AdminPairLettersViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminPairThreadViewModel
+import com.usuallycoding.opensecretsanta.ui.letters.lettersOf
 import com.usuallycoding.opensecretsanta.ui.admin.AdminParticipantDeliveryInfoViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminParticipantWishlistViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminUserViewModel
+import com.usuallycoding.opensecretsanta.contract.AdminLetterBoxDto
 import com.usuallycoding.opensecretsanta.contract.DeliveryInfoDto
+import com.usuallycoding.opensecretsanta.contract.LetterDto
 import com.usuallycoding.opensecretsanta.ui.admin.DrawState
 import com.usuallycoding.opensecretsanta.ui.admin.GroupSheet
 import com.usuallycoding.opensecretsanta.ui.groups.formatInstant
@@ -34,6 +38,14 @@ class AdminOversightViewModelTest {
 
     private suspend fun delivery(id: Long, username: String) =
         AdminParticipantDeliveryInfoViewModel(id, username, server.api, immediateScope()).also { it.refresh().join() }
+
+    private suspend fun pairLetters(id: Long) =
+        AdminPairLettersViewModel(id, server.api, immediateScope()).also { it.refresh().join() }
+
+    private fun box(santa: String, receiver: String, vararg titles: String) = AdminLetterBoxDto(
+        santa, receiver,
+        titles.mapIndexed { index, title -> LetterDto(index + 1, title, "Text of $title", "2026-12-04T09:00:00Z") },
+    )
 
     private suspend fun thread(id: Long, santa: String, receiver: String) =
         AdminPairThreadViewModel(id, santa, receiver, server.api, immediateScope()).also { it.refresh().join() }
@@ -245,6 +257,61 @@ class AdminOversightViewModelTest {
         assertEquals("https://shop.example/x", items[1].url)
     }
 
+    // --- the letters in the pair sheet -------------------------------------------------------------------
+
+    @Test
+    fun thePairSheetsLettersAreThoseOfItsReceiverOnlyNewestFirst() = runTest {
+        val id = groups.add("Party", "active", listOf("alice", "bob", "carol"))
+        oversight.letterBoxes(id, box("alice", "bob", "First", "Second"), box("bob", "carol", "Carols"), box("carol", "alice"))
+
+        val boxes = pairLetters(id).state.value.value!!
+
+        assertEquals(listOf("Second", "First"), boxes.lettersOf("bob").map { it.title })
+        assertEquals(listOf("Carols"), boxes.lettersOf("carol").map { it.title })
+        assertEquals(emptyList(), boxes.lettersOf("alice"))
+        assertEquals(emptyList(), boxes.lettersOf("nobody"))
+        assertEquals("4 Dec 2026, 11:00", boxes.lettersOf("bob").first().sent)
+    }
+
+    @Test
+    fun theLettersOfAGroupThatIsNotDrawnAreNotReadable() = runTest {
+        val id = groups.add("Soon", "pending", listOf("alice"))
+
+        val error = pairLetters(id).state.value.error
+
+        assertEquals(409, (error as ApiError.Rejected).status)
+    }
+
+    @Test
+    fun theLettersAreOnlyEverRead() = runTest {
+        val id = groups.add("Party", "archived", listOf("alice", "bob"))
+        oversight.letterBoxes(id, box("alice", "bob", "Kept"))
+
+        pairLetters(id)
+
+        assertTrue(server.calls.filter { it.contains("/letters") }.all { it.startsWith("GET") })
+        assertEquals("GET /admin/groups/$id/letters", server.calls.last { it.contains("/letters") })
+    }
+
+    @Test
+    fun theLettersFailingLeavesTheWishlistAndTheThreadLoaded() = runTest {
+        val id = groups.add("Party", "active", listOf("alice", "bob"))
+        oversight.wishlist(id, "bob", "Socks")
+        oversight.threads(id, AdminQuestionThreadDto("alice", "bob", emptyList()))
+        oversight.letterBoxes(id, box("alice", "bob", "Hello"))
+        val wishes = wishlist(id, "bob")
+        val thread = thread(id, "alice", "bob")
+        // two failures, because the letters view model loads once when it is made and once more when the test refreshes it
+        oversight.failNextWith(HttpStatusCode.InternalServerError, "internal_error")
+        oversight.failNextWith(HttpStatusCode.InternalServerError, "internal_error")
+        val letters = pairLetters(id)
+
+        assertEquals(listOf("Socks"), wishes.state.value.value!!.map { it.title })
+        assertEquals(emptyList(), thread.state.value.value!!.questions)
+        assertNull(letters.state.value.value)
+        assertTrue(letters.state.value.error != null)
+    }
+
     // --- a participant's delivery info in the user sheet -------------------------------------------------
 
     @Test
@@ -282,6 +349,8 @@ class AdminOversightViewModelTest {
     fun theDeliveryInfoFailingLeavesTheAccountPartLoaded() = runTest {
         val id = groups.add("Soon", "pending", listOf("alice", "bob"))
         server.adminUsers.add("bob", temporary = "tmp-pass")
+        // two, because the view model loads once when it is made and once more when the test asks it to refresh
+        oversight.failNextWith(HttpStatusCode.InternalServerError, "internal_error")
         oversight.failNextWith(HttpStatusCode.InternalServerError, "internal_error")
 
         val delivery = delivery(id, "bob")

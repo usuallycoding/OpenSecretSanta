@@ -32,7 +32,7 @@ class WishlistMigrationTest {
 
     @Test
     fun schemaVersionIsLatest() {
-        assertEquals(10, database.schemaVersion())
+        assertEquals(11, database.schemaVersion())
     }
 
     @Test

@@ -21,11 +21,14 @@ import com.usuallycoding.opensecretsanta.ui.login.LoginViewModel
 import com.usuallycoding.opensecretsanta.ui.notifications.NotificationsViewModel
 import com.usuallycoding.opensecretsanta.ui.password.ChangePasswordViewModel
 import com.usuallycoding.opensecretsanta.ui.delivery.DeliveryInfoViewModel
+import com.usuallycoding.opensecretsanta.ui.letters.InboxViewModel
+import com.usuallycoding.opensecretsanta.ui.letters.SendLetterViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupFormViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AnnouncementViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupsViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminPairThreadViewModel
+import com.usuallycoding.opensecretsanta.ui.admin.AdminPairLettersViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminParticipantDeliveryInfoViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminParticipantWishlistViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminUserViewModel
@@ -64,6 +67,8 @@ fun appModules(baseUrl: String, pushDevice: PushDevice = UnsupportedPushDevice):
         viewModel { (account: com.usuallycoding.opensecretsanta.data.session.Account) -> ShellViewModel(account, get(), viewModelScope()) }
         viewModel { GroupsViewModel(get(), viewModelScope()) }
         viewModel { (groupId: Long) -> DeliveryInfoViewModel(groupId, get(), viewModelScope()) }
+        viewModel { (groupId: Long) -> SendLetterViewModel(groupId, get(), viewModelScope()) }
+        viewModel { (groupId: Long) -> InboxViewModel(groupId, get(), viewModelScope()) }
         viewModel { NotificationsViewModel(get(), get(), viewModelScope()) }
         viewModel { (groupId: Long) -> WishlistViewModel(groupId, get(), viewModelScope()) }
         viewModel { AdminGroupsViewModel(get(), viewModelScope()) }
@@ -75,6 +80,7 @@ fun appModules(baseUrl: String, pushDevice: PushDevice = UnsupportedPushDevice):
         viewModel { (groupId: Long, groupName: String) -> AnnouncementViewModel(groupId, groupName, get(), viewModelScope()) }
         viewModel { (groupId: Long, username: String) -> AdminParticipantWishlistViewModel(groupId, username, get(), viewModelScope()) }
         viewModel { (groupId: Long, username: String) -> AdminParticipantDeliveryInfoViewModel(groupId, username, get(), viewModelScope()) }
+        viewModel { (groupId: Long) -> AdminPairLettersViewModel(groupId, get(), viewModelScope()) }
         viewModel { (groupId: Long, santa: String, receiver: String) -> AdminPairThreadViewModel(groupId, santa, receiver, get(), viewModelScope()) }
         viewModel { (groupId: Long) -> ReceiverViewModel(groupId, get(), viewModelScope()) }
         viewModel { (groupId: Long) -> SantaQuestionsViewModel(groupId, get(), viewModelScope()) }

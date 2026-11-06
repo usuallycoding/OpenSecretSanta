@@ -28,7 +28,7 @@ firebase.messaging().onBackgroundMessage(function (payload) {
     });
 });
 
-// The page a notification opens, by its kind: a question is answered on the Receiver page, an answer and a wishlist are read
+// The page a notification opens, by its kind: a question is answered on the Receiver page, a letter is read in the inbox, an answer and a wishlist are read
 // on the Gifter page, and anything else opens the group. The app has the same mapping (NotificationTarget); these are its addresses.
 function addressOf(groupId, category) {
     if (!groupId) return '#/groups';
@@ -37,6 +37,7 @@ function addressOf(groupId, category) {
         case 'questions': return group + '/receiver/questions';
         case 'answers': return group + '/gifter/questions';
         case 'wishlist': return group + '/gifter';
+        case 'letters': return group + '/inbox';
         default: return group;
     }
 }

@@ -5,6 +5,7 @@ import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.AskQuestionRequest
 import com.usuallycoding.opensecretsanta.contract.AssignmentDto
 import com.usuallycoding.opensecretsanta.contract.DeliveryInfoDto
+import com.usuallycoding.opensecretsanta.contract.SendLetterRequest
 import com.usuallycoding.opensecretsanta.contract.ErrorResponse
 import com.usuallycoding.opensecretsanta.contract.HealthResponse
 import com.usuallycoding.opensecretsanta.contract.AdminQuestionThreadDto
@@ -62,6 +63,7 @@ class AdminOversightPrivacyTest {
         val g = group.toLong()
         for (n in names) {
             assertEquals(HttpStatusCode.Created, send("POST", ApiRoutes.groupWishlistItems(g), fx.token(n), WishlistItemRequest("SECRET-WISH-$n")).status)
+            assertEquals(HttpStatusCode.Created, send("POST", ApiRoutes.groupSantaLetters(g), fx.token(n), SendLetterRequest("SECRET-LETTER-$n", "SECRET-LETTER-TEXT-$n")).status)
             assertEquals(HttpStatusCode.OK, send("PUT", ApiRoutes.groupDeliveryInfo(g), fx.token(n), DeliveryInfoDto("Name $n", "$n@secret.example", "SECRET-PHONE-$n", "SECRET-ADDRESS-$n", "SECRET-NOTE-$n")).status)
         }
         for ((index, pair) in listOf("owner" to "alice", "alice" to "bob", "bob" to "carol", "carol" to "owner").withIndex()) {
@@ -77,6 +79,7 @@ class AdminOversightPrivacyTest {
         val paths = listOf(
             ApiRoutes.group(g), ApiRoutes.groupDeliveryInfo(g), ApiRoutes.groupWishlist(g), ApiRoutes.groupReceiver(g), ApiRoutes.groupReceiverWishlist(g),
             ApiRoutes.groupReceiverQuestions(g), ApiRoutes.groupSantaQuestions(g), ApiRoutes.groupSanta(g),
+            ApiRoutes.groupSantaLetters(g), ApiRoutes.groupReceiverLetters(g),
         )
         return names.flatMap { n -> paths.map { p -> "$n $p" to getAs(p, fx.token(n)).let { "${it.status.value} ${it.bodyAsText()}" } } }.toMap()
     }
@@ -87,6 +90,7 @@ class AdminOversightPrivacyTest {
             for (n in names) assertEquals(HttpStatusCode.OK, getAs(ApiRoutes.adminGroupParticipantWishlist(group.toLong(), n), owner).status)
             for (n in names) assertEquals(HttpStatusCode.OK, getAs(ApiRoutes.adminGroupParticipantDeliveryInfo(group.toLong(), n), owner).status)
             assertEquals(HttpStatusCode.OK, getAs(ApiRoutes.adminGroupQuestions(group.toLong()), owner).status)
+            assertEquals(HttpStatusCode.OK, getAs(ApiRoutes.adminGroupLetters(group.toLong()), owner).status)
             assertEquals(HttpStatusCode.OK, getAs(ApiRoutes.adminGroupAssignments(group.toLong()), owner).status)
         }
     }
@@ -180,6 +184,6 @@ class AdminOversightPrivacyTest {
 
         val health = Json.decodeFromString<HealthResponse>(client.getAs(ApiRoutes.HEALTH, null).bodyAsText())
 
-        assertEquals(HealthResponse("ok", schemaVersion = 10), health)
+        assertEquals(HealthResponse("ok", schemaVersion = 11), health)
     }
 }

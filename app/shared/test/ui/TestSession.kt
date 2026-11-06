@@ -3,6 +3,8 @@ package com.usuallycoding.opensecretsanta.ui
 import com.usuallycoding.opensecretsanta.contract.AnnouncementRequest
 import com.usuallycoding.opensecretsanta.contract.AnnouncementResponse
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
+import com.usuallycoding.opensecretsanta.contract.SendLetterRequest
+import com.usuallycoding.opensecretsanta.contract.LetterDto
 import com.usuallycoding.opensecretsanta.contract.PushSummaryDto
 import com.usuallycoding.opensecretsanta.contract.EmailSummaryDto
 import com.usuallycoding.opensecretsanta.contract.ErrorResponse
@@ -24,6 +26,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import com.usuallycoding.opensecretsanta.contract.AccountDto
 import com.usuallycoding.opensecretsanta.contract.AdminGroupDto
+import com.usuallycoding.opensecretsanta.contract.AdminLetterBoxDto
 import com.usuallycoding.opensecretsanta.contract.AdminQuestionThreadDto
 import com.usuallycoding.opensecretsanta.contract.AssignmentDto
 import com.usuallycoding.opensecretsanta.contract.ManagedUserDto
@@ -78,6 +81,9 @@ class ScriptedServer {
     /** The receiver, the two question threads and the reveal as the server keeps and answers them. */
     val gift = FakeGift()
 
+    /** The letters between a receiver and their Santa, as the server keeps and answers them. */
+    val letters = FakeLetters(gift)
+
     /** The notification switches and registered devices as the server keeps and answers them. */
     val notifications = FakeNotifications()
 
@@ -123,6 +129,7 @@ class ScriptedServer {
                 adminGroups.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 announcements.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 gift.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
+                letters.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 notifications.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 val wishlistAnswer = wishlist.answer(request.method.value, path, bodies.last())
                 if (wishlistAnswer != null) return@MockEngine json(wishlistAnswer.first, wishlistAnswer.second)
@@ -337,6 +344,64 @@ class FakeGift {
                 HttpStatusCode.OK to Json.encodeToString(updated)
             }
             else -> null
+        }
+    }
+}
+
+/**
+ * The letters between a receiver and their Santa as the server keeps and answers them. The group's state is the [gift] fake's, as for
+ * the questions. A test can queue a failure for the next send.
+ */
+class FakeLetters(private val gift: FakeGift) {
+    private val sent = mutableListOf<LetterDto>()
+    private val inbox = mutableListOf<LetterDto>()
+    private val failures = ArrayDeque<Pair<HttpStatusCode, String>>()
+
+    /** The letters the person has sent their Santa. */
+    val mySent: List<LetterDto> get() = sent
+
+    /** The letters the person's receiver has sent them. */
+    val received: List<LetterDto> get() = inbox
+
+    fun receiverSends(title: String, text: String) {
+        inbox += LetterDto(inbox.size + 1, title, text, "2026-12-04T09:00:00Z")
+    }
+
+    fun sentBehindTheScenes(count: Int) {
+        repeat(count) { sent += LetterDto(sent.size + 1, "Letter ${sent.size + 1}", "Text", "2026-12-04T09:00:00Z") }
+    }
+
+    fun failNextSendWith(status: HttpStatusCode, code: String, message: String = "refused", field: String? = null) {
+        val extra = if (field != null) ""","field":"$field"""" else ""
+        failures += status to """{"code":"$code","message":"$message"$extra}"""
+    }
+
+    private fun error(status: HttpStatusCode, code: String, message: String, field: String? = null) =
+        status to """{"code":"$code","message":"$message"${if (field != null) ""","field":"$field"""" else ""}}"""
+
+    private val started get() = gift.state == "active" || gift.state == "archived"
+
+    /** The answer to a request under `/groups/{id}` about letters, or null for anything else. */
+    fun answer(method: String, path: String, body: String): Pair<HttpStatusCode, String>? {
+        val match = Regex("/groups/\\d+/(receiver|santa)/letters").matchEntire(path) ?: return null
+        val side = match.groupValues[1]
+        if (method == "GET") {
+            if (!started) return error(HttpStatusCode.Conflict, "invalid_state", "Letters start once the group is active.")
+            return HttpStatusCode.OK to Json.encodeToString(if (side == "santa") sent.toList() else inbox.toList())
+        }
+        if (method != "POST" || side != "santa") return null
+        failures.removeFirstOrNull()?.let { return it }
+        if (gift.state != "active") return error(HttpStatusCode.Conflict, "invalid_state", "Letters can only be sent while the group is active.")
+        val request = Json.decodeFromString<SendLetterRequest>(body)
+        return when {
+            request.title.isBlank() || request.title.trim().length > 100 -> error(HttpStatusCode.BadRequest, "validation_failed", "Title must be 1 to 100 characters long.", "title")
+            request.text.isBlank() || request.text.trim().length > 2000 -> error(HttpStatusCode.BadRequest, "validation_failed", "Text must be 1 to 2000 characters long.", "text")
+            sent.size >= 30 -> error(HttpStatusCode.Conflict, "invalid_state", "The letter limit has been reached.")
+            else -> {
+                val letter = LetterDto(sent.size + 1, request.title.trim(), request.text.trim(), "2026-12-04T10:00:00Z")
+                sent += letter
+                HttpStatusCode.Created to Json.encodeToString(letter)
+            }
         }
     }
 }
@@ -624,6 +689,7 @@ class FakeAdminUsers(val me: String = "admin") {
 class FakeAdminOversight(private val groups: FakeAdminGroups) {
     private val wishlists = mutableMapOf<Pair<Long, String>, List<SharedWishlistItemDto>>()
     private val deliveries = mutableMapOf<Pair<Long, String>, DeliveryInfoDto>()
+    private val letterBoxes = mutableMapOf<Long, List<AdminLetterBoxDto>>()
     private val pairs = mutableMapOf<Long, List<AssignmentDto>>()
     private val threads = mutableMapOf<Long, List<AdminQuestionThreadDto>>()
     private val failures = ArrayDeque<Pair<HttpStatusCode, String>>()
@@ -644,6 +710,10 @@ class FakeAdminOversight(private val groups: FakeAdminGroups) {
         deliveries[groupId to username] = info
     }
 
+    fun letterBoxes(groupId: Long, vararg box: AdminLetterBoxDto) {
+        letterBoxes[groupId] = box.toList()
+    }
+
     fun threads(groupId: Long, vararg thread: AdminQuestionThreadDto) {
         threads[groupId] = thread.toList()
     }
@@ -657,7 +727,7 @@ class FakeAdminOversight(private val groups: FakeAdminGroups) {
 
     /** The answer to a request under `/admin/groups/{id}` about the draw, a wishlist or the threads, or null for anything else. */
     fun answer(method: String, path: String): Pair<HttpStatusCode, String>? {
-        val match = Regex("/admin/groups/(\\d+)/(assignments|questions|participants/([^/]+)/(wishlist|delivery-info))").matchEntire(path) ?: return null
+        val match = Regex("/admin/groups/(\\d+)/(assignments|questions|letters|participants/([^/]+)/(wishlist|delivery-info))").matchEntire(path) ?: return null
         if (method != "GET") return null
         failures.removeFirstOrNull()?.let { return it }
         val id = match.groupValues[1].toLong()
@@ -670,6 +740,9 @@ class FakeAdminOversight(private val groups: FakeAdminGroups) {
             "questions" ->
                 if (started) HttpStatusCode.OK to Json.encodeToString(threads[id].orEmpty())
                 else error(HttpStatusCode.Conflict, "invalid_state", "There are no questions yet.")
+            "letters" ->
+                if (started) HttpStatusCode.OK to Json.encodeToString(letterBoxes[id].orEmpty())
+                else error(HttpStatusCode.Conflict, "invalid_state", "There are no letters yet.")
             else -> {
                 val username = match.groupValues[3]
                 val delivery = match.groupValues[4] == "delivery-info"
@@ -723,7 +796,7 @@ class FakeNotifications {
         failures += status to """{"code":"$code","message":"$message"}"""
     }
 
-    private fun dto() = NotificationSettingsDto(available, settings.announcements, settings.wishlist, settings.questions, settings.answers)
+    private fun dto() = NotificationSettingsDto(available, settings.announcements, settings.wishlist, settings.questions, settings.answers, settings.letters)
 
     fun answer(method: String, path: String, body: String): Pair<HttpStatusCode, String>? = when {
         path == ApiRoutes.NOTIFICATIONS && method == "GET" -> HttpStatusCode.OK to Json.encodeToString(dto())

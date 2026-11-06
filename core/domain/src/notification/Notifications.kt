@@ -3,8 +3,8 @@ package com.usuallycoding.opensecretsanta.domain.notification
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 import com.usuallycoding.opensecretsanta.domain.user.Username
 
-/** The four kinds of notification a person can switch on or off. */
-enum class NotificationCategory { ANNOUNCEMENTS, WISHLIST, QUESTIONS, ANSWERS }
+/** The five kinds of notification a person can switch on or off. */
+enum class NotificationCategory { ANNOUNCEMENTS, WISHLIST, QUESTIONS, ANSWERS, LETTERS }
 
 /** Where a registered device runs; iOS has none. */
 enum class DevicePlatform {
@@ -26,12 +26,15 @@ data class NotificationSettings(
     val wishlist: Boolean = true,
     val questions: Boolean = true,
     val answers: Boolean = true,
+    /** Letters from the person's receiver. */
+    val letters: Boolean = true,
 ) {
     fun allows(category: NotificationCategory): Boolean = when (category) {
         NotificationCategory.ANNOUNCEMENTS -> announcements
         NotificationCategory.WISHLIST -> wishlist
         NotificationCategory.QUESTIONS -> questions
         NotificationCategory.ANSWERS -> answers
+        NotificationCategory.LETTERS -> letters
     }
 }
 
@@ -52,7 +55,7 @@ interface DeviceRepository {
     fun devicesOf(usernames: Collection<Username>): List<RegisteredDevice>
 }
 
-/** Storage for each person's four switches. */
+/** Storage for each person's five switches. */
 interface NotificationSettingsRepository {
     /** The saved switches, or all on for someone who never changed them. */
     fun find(username: Username): NotificationSettings

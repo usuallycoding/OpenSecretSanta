@@ -19,6 +19,8 @@ object WebAddresses {
         is GifterRoute -> "#/groups/${route.groupId}/gifter" + tabSuffix(route.questions)
         is ReceiverRoute -> "#/groups/${route.groupId}/receiver" + tabSuffix(route.questions)
         is DeliveryInfoRoute -> "#/groups/${route.groupId}/delivery-info"
+        is SendLetterRoute -> "#/groups/${route.groupId}/letters"
+        is InboxRoute -> "#/groups/${route.groupId}/inbox"
         SettingsRoute -> "#/settings"
         AdminGroupsRoute -> "#/admin/groups"
         AdminGroupNewRoute -> "#/admin/groups/new"
@@ -56,6 +58,8 @@ object WebAddresses {
             listOf("receiver") -> ReceiverRoute(id)
             listOf("receiver", "questions") -> ReceiverRoute(id, questions = true)
             listOf("delivery-info") -> DeliveryInfoRoute(id)
+            listOf("letters") -> SendLetterRoute(id)
+            listOf("inbox") -> InboxRoute(id)
             else -> null
         }
     }
@@ -91,6 +95,8 @@ object WebAddresses {
             d.hasRoute<GifterRoute>() -> entry.toRoute<GifterRoute>()
             d.hasRoute<ReceiverRoute>() -> entry.toRoute<ReceiverRoute>()
             d.hasRoute<DeliveryInfoRoute>() -> entry.toRoute<DeliveryInfoRoute>()
+            d.hasRoute<SendLetterRoute>() -> entry.toRoute<SendLetterRoute>()
+            d.hasRoute<InboxRoute>() -> entry.toRoute<InboxRoute>()
             d.hasRoute<SettingsRoute>() -> SettingsRoute
             d.hasRoute<AdminGroupsRoute>() -> AdminGroupsRoute
             d.hasRoute<AdminGroupNewRoute>() -> AdminGroupNewRoute

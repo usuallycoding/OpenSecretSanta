@@ -3,9 +3,11 @@ package com.usuallycoding.opensecretsanta.server
 import com.usuallycoding.opensecretsanta.contract.AdminQuestionThreadDto
 import com.usuallycoding.opensecretsanta.contract.AnswerRequest
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
+import com.usuallycoding.opensecretsanta.contract.AdminLetterBoxDto
 import com.usuallycoding.opensecretsanta.contract.AskQuestionRequest
 import com.usuallycoding.opensecretsanta.contract.DeliveryInfoDto
 import com.usuallycoding.opensecretsanta.contract.ErrorResponse
+import com.usuallycoding.opensecretsanta.contract.SendLetterRequest
 import com.usuallycoding.opensecretsanta.contract.SharedWishlistItemDto
 import com.usuallycoding.opensecretsanta.contract.WishlistItemRequest
 import io.ktor.client.HttpClient
@@ -27,6 +29,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -89,6 +92,14 @@ class AdminOversightRoutesTest {
         getAs(ApiRoutes.adminGroupParticipantDeliveryInfo(group.toLong(), who), token)
 
     private val bobsInfo = DeliveryInfoDto("Bob Brown", "bob@example.com", "0700", "1 Main St", "Ring twice")
+
+    private suspend fun HttpClient.letter(group: Int, user: String, title: String) {
+        val response = send("POST", ApiRoutes.groupSantaLetters(group.toLong()), fx.token(user), SendLetterRequest(title, "Text of $title"))
+        assertEquals(HttpStatusCode.Created, response.status, response.bodyAsText())
+    }
+
+    private suspend fun HttpClient.ownerReadsLetters(group: Int, token: String = fx.token("admin-a")) =
+        getAs(ApiRoutes.adminGroupLetters(group.toLong()), token)
 
     private suspend fun HttpClient.ownerReadsThreads(group: Int, token: String = fx.token("admin-a")) =
         getAs(ApiRoutes.adminGroupQuestions(group.toLong()), token)
@@ -239,6 +250,82 @@ class AdminOversightRoutesTest {
             assertTrue(response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.MethodNotAllowed, "$method -> ${response.status}")
         }
         assertEquals(bobsInfo, Json.decodeFromString<DeliveryInfoDto>(client.ownerReadsDelivery(id, "bob").bodyAsText()))
+    }
+
+    @Test
+    fun theOwnerReadsEveryPairsLettersInOrderNamingBothPeople() = testApplication {
+        startApp()
+        val id = world()
+        client.letter(id, "bob", "First")
+        client.letter(id, "bob", "Second")
+        client.letter(id, "dave", "From dave")
+
+        val response = client.ownerReadsLetters(id)
+
+        assertEquals(HttpStatusCode.OK, response.status, response.bodyAsText())
+        val boxes = Json.decodeFromString<List<AdminLetterBoxDto>>(response.bodyAsText())
+        assertEquals(listOf("alice" to "bob", "bob" to "carol", "carol" to "dave", "dave" to "alice"), boxes.map { it.santa to it.receiver })
+        assertEquals(listOf("First", "Second"), boxes[0].letters.map { it.title })
+        assertEquals(emptyList(), boxes[1].letters)
+        // dave is carol's receiver, so his letter sits in the pair carol gives to dave
+        assertEquals(listOf("From dave"), boxes[2].letters.map { it.title })
+        assertEquals(emptyList(), boxes[3].letters)
+        assertEquals("Text of First", boxes[0].letters[0].text)
+    }
+
+    @Test
+    fun anArchivedGroupsLettersAreStillReadableByTheOwner() = testApplication {
+        startApp()
+        val id = world()
+        client.letter(id, "bob", "Kept")
+        fx.sql("UPDATE groups SET state = 'archived' WHERE id = $id")
+
+        val boxes = Json.decodeFromString<List<AdminLetterBoxDto>>(client.ownerReadsLetters(id).bodyAsText())
+
+        assertEquals(listOf("Kept"), boxes[0].letters.map { it.title })
+    }
+
+    @Test
+    fun theLettersOfAGroupThatIsNotDrawnAreRefused() = testApplication {
+        startApp()
+        val pending = world(state = "pending")
+        val draft = fx.addGroup("admin-a", *names.toTypedArray(), state = "draft")
+
+        for (id in listOf(pending, draft)) {
+            val response = client.ownerReadsLetters(id)
+
+            assertEquals(HttpStatusCode.Conflict, response.status, "group $id")
+            assertEquals("invalid_state", error(response.bodyAsText()).code, "group $id")
+        }
+    }
+
+    @Test
+    fun onlyTheOwnerReadsLetters() = testApplication {
+        startApp()
+        val id = world()
+        client.letter(id, "bob", "Private")
+        fx.addUser("admin-b", admin = true)
+
+        val other = client.ownerReadsLetters(id, fx.token("admin-b"))
+        assertEquals(HttpStatusCode.NotFound, other.status)
+        assertFalse("Private" in other.bodyAsText())
+        assertEquals(HttpStatusCode.Forbidden, client.ownerReadsLetters(id, fx.token("alice")).status)
+        assertEquals(HttpStatusCode.Unauthorized, client.getAs(ApiRoutes.adminGroupLetters(id.toLong()), null).status)
+        assertEquals(HttpStatusCode.NotFound, client.ownerReadsLetters(9999).status)
+    }
+
+    @Test
+    fun noAdminRouteWritesLetters() = testApplication {
+        startApp()
+        val id = world()
+        client.letter(id, "bob", "Hello")
+        val path = ApiRoutes.adminGroupLetters(id.toLong())
+
+        for (method in listOf("POST", "PUT", "DELETE", "PATCH")) {
+            val response = client.send(method, path, fx.token("admin-a"), SendLetterRequest("Changed", "x"))
+            assertTrue(response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.MethodNotAllowed, "$method -> ${response.status}")
+        }
+        assertEquals("Hello", Json.decodeFromString<List<AdminLetterBoxDto>>(client.ownerReadsLetters(id).bodyAsText())[0].letters.single().title)
     }
 
     @Test

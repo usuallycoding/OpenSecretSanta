@@ -26,9 +26,10 @@ private fun NotificationState.toDto() = NotificationSettingsDto(
     wishlist = settings.wishlist,
     questions = settings.questions,
     answers = settings.answers,
+    letters = settings.letters,
 )
 
-/** A person's four notification switches and their devices. */
+/** A person's five notification switches and their devices. */
 fun Route.notificationRoutes(
     getSettings: GetNotificationSettings,
     updateSettings: UpdateNotificationSettings,
@@ -42,7 +43,7 @@ fun Route.notificationRoutes(
     put(ApiRoutes.NOTIFICATIONS) {
         val user = call.currentUser()
         val request = call.receive<NotificationSettingsRequest>()
-        val settings = NotificationSettings(request.announcements, request.wishlist, request.questions, request.answers)
+        val settings = NotificationSettings(request.announcements, request.wishlist, request.questions, request.answers, request.letters)
         call.respond(blocking { updateSettings(user, settings) }.toDto())
     }
     put(ApiRoutes.NOTIFICATION_DEVICES) {

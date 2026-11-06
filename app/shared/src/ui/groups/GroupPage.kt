@@ -42,6 +42,8 @@ fun GroupPage(
     onBack: () -> Unit,
     onOpenGifter: (questions: Boolean) -> Unit,
     onOpenReceiver: (questions: Boolean) -> Unit,
+    onSendLetter: () -> Unit,
+    onOpenInbox: () -> Unit,
     onEditDeliveryInfo: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
@@ -84,8 +86,8 @@ fun GroupPage(
         LoadSection(state, onRetry = { viewModel.refresh() }) { detail ->
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Header(detail)
-                SecretSantaCard(detail.phase, receiver, onRetry = { pair?.refresh() }, onOpenGifter, onSheet = { sheet = it })
-                YourStuffCard(detail.phase, unanswered, asksForDeliveryInfo, onOpenReceiver, onSheet = { sheet = it })
+                SecretSantaCard(detail.phase, receiver, onRetry = { pair?.refresh() }, onOpenGifter, onOpenInbox, onSheet = { sheet = it })
+                YourStuffCard(detail.phase, unanswered, asksForDeliveryInfo, onOpenReceiver, onSendLetter, onSheet = { sheet = it })
                 Participants(detail.participants)
             }
         }

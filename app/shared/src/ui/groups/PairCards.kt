@@ -39,6 +39,7 @@ internal fun SecretSantaCard(
     receiver: LoadState<ReceiverInfo>?,
     onRetry: () -> Unit,
     onOpenGifter: (questions: Boolean) -> Unit,
+    onOpenInbox: () -> Unit,
     onSheet: (PairSheet) -> Unit,
 ) {
     if (phase != GroupPhase.Pending && phase != GroupPhase.Active && phase != GroupPhase.Archived) return
@@ -68,6 +69,7 @@ internal fun SecretSantaCard(
                     Button(onClick = { onOpenGifter(false) }, enabled = known, modifier = Modifier.weight(1f)) { Text(Strings.SEE_WISHLIST) }
                     Button(onClick = { onOpenGifter(true) }, enabled = known, modifier = Modifier.weight(1f)) { Text(Strings.ASK_QUESTIONS) }
                 }
+                Button(onClick = onOpenInbox, enabled = known, modifier = Modifier.fillMaxWidth()) { Text(Strings.INBOX) }
                 OutlinedButton(onClick = { onSheet(PairSheet.Receiver) }, enabled = known, modifier = Modifier.fillMaxWidth()) { Text(Strings.DELIVERY_INFO) }
             }
         }
@@ -85,6 +87,7 @@ internal fun YourStuffCard(
     unanswered: Int,
     asksForDeliveryInfo: Boolean,
     onOpenReceiver: (questions: Boolean) -> Unit,
+    onSendLetter: () -> Unit,
     onSheet: (PairSheet) -> Unit,
 ) {
     if (phase != GroupPhase.Pending && phase != GroupPhase.Active && phase != GroupPhase.Archived) return
@@ -105,6 +108,8 @@ internal fun YourStuffCard(
                     }
                 }
             }
+            // from the draw on, the receiver can write to their Santa, who is never named
+            if (drawn) Button(onClick = onSendLetter, modifier = Modifier.fillMaxWidth()) { Text(Strings.SEND_LETTER) }
             if (phase == GroupPhase.Archived) {
                 OutlinedButton(onClick = { onSheet(PairSheet.Santa) }, modifier = Modifier.fillMaxWidth()) { Text(Strings.REVEAL_SANTA) }
             }

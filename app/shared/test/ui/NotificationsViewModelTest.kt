@@ -27,7 +27,7 @@ class NotificationsViewModelTest {
         return NotificationsViewModel(server.api, registration, immediateScope()).also { it.refresh().join() }
     }
 
-    private fun savedSwitches() = with(server.notifications.settings) { NotificationSwitches(announcements, wishlist, questions, answers) }
+    private fun savedSwitches() = with(server.notifications.settings) { NotificationSwitches(announcements, wishlist, questions, answers, letters) }
 
     // --- loading ---
 
@@ -158,7 +158,7 @@ class NotificationsViewModelTest {
         assertNull(model.setDevice(true))
     }
 
-    // --- the four toggles ---
+    // --- the five toggles ---
 
     @Test
     fun aToggleIsSavedAtOnceAndStillThereWhenTheSheetIsOpenedAgain() = runTest {
@@ -173,15 +173,51 @@ class NotificationsViewModelTest {
     }
 
     @Test
-    fun theFourTogglesAreIndependent() = runTest {
+    fun theFiveTogglesAreIndependent() = runTest {
         push.turnOn()
         val model = viewModel()
 
         NotificationCategory.entries.forEach { model.setSwitch(it, false)!!.join() }
-        assertEquals(NotificationSwitches(false, false, false, false), savedSwitches())
+        assertEquals(NotificationSwitches(false, false, false, false, false), savedSwitches())
 
         model.setSwitch(NotificationCategory.ANSWERS, true)!!.join()
-        assertEquals(NotificationSwitches(false, false, false, true), savedSwitches())
+        assertEquals(NotificationSwitches(false, false, false, true, false), savedSwitches())
+
+        model.setSwitch(NotificationCategory.LETTERS, true)!!.join()
+        assertEquals(NotificationSwitches(false, false, false, true, true), savedSwitches())
+    }
+
+    @Test
+    fun theLettersToggleIsOnByDefaultAndSavedAtOnce() = runTest {
+        push.turnOn()
+        val model = viewModel()
+        assertTrue(model.ui.value.switches.letters)
+
+        model.setSwitch(NotificationCategory.LETTERS, false)!!.join()
+
+        assertEquals(NotificationSwitches(letters = false), model.ui.value.switches)
+        assertEquals(NotificationSwitches(letters = false), savedSwitches())
+        assertEquals(NotificationSwitches(letters = false), viewModel().ui.value.switches)
+    }
+
+    @Test
+    fun theLettersToggleIsDisabledWhileTheDeviceSwitchIsOff() = runTest {
+        val model = viewModel()
+
+        assertFalse(model.ui.value.togglesEnabled)
+        assertNull(model.setSwitch(NotificationCategory.LETTERS, false))
+    }
+
+    @Test
+    fun aLettersToggleThatCannotBeSavedGoesBackAndSaysSo() = runTest {
+        push.turnOn()
+        val model = viewModel()
+        server.notifications.failNextSaveWith(HttpStatusCode.InternalServerError)
+
+        model.setSwitch(NotificationCategory.LETTERS, false)!!.join()
+
+        assertTrue(model.ui.value.switches.letters)
+        assertEquals(NotificationsMessage.SaveFailed, model.ui.value.message)
     }
 
     @Test

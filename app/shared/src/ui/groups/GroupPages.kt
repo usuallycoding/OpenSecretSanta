@@ -117,7 +117,7 @@ fun GifterPage(wishlist: ReceiverWishlistViewModel, questions: ReceiverViewModel
 
 /** Tells the top bar the page's title while the page is shown, and takes it back when the page is left. */
 @Composable
-private fun PageTitle(title: String, onTitle: (String?) -> Unit) {
+internal fun PageTitle(title: String, onTitle: (String?) -> Unit) {
     val latest by rememberUpdatedState(onTitle)
     LaunchedEffect(title) { latest(title) }
     DisposableEffect(Unit) { onDispose { latest(null) } }

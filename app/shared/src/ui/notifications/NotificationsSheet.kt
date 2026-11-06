@@ -68,6 +68,9 @@ fun NotificationsSheet(viewModel: NotificationsViewModel, onDismiss: () -> Unit)
                 SwitchRow(Strings.NOTIFICATIONS_ANSWERS, Strings.NOTIFICATIONS_ANSWERS_NOTE, ui.switches.answers, ui.togglesEnabled) {
                     viewModel.setSwitch(NotificationCategory.ANSWERS, it)
                 }
+                SwitchRow(Strings.NOTIFICATIONS_LETTERS, Strings.NOTIFICATIONS_LETTERS_NOTE, ui.switches.letters, ui.togglesEnabled) {
+                    viewModel.setSwitch(NotificationCategory.LETTERS, it)
+                }
                 ui.message?.let {
                     Text(it.text(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
                 }

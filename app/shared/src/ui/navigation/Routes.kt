@@ -35,6 +35,14 @@ data class ReceiverRoute(val groupId: Long, val questions: Boolean = false) {
     val tab: PageTab get() = if (questions) PageTab.Questions else PageTab.Wishlist
 }
 
+/** The page where a receiver reads the letters they have sent their Santa and writes new ones while the group is Active. */
+@Serializable
+data class SendLetterRoute(val groupId: Long)
+
+/** The page where a Santa reads the letters their receiver has sent them. */
+@Serializable
+data class InboxRoute(val groupId: Long)
+
 /** The administrator's own groups: the first screen of the admin view. */
 @Serializable
 data object AdminGroupsRoute

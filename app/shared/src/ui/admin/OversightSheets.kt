@@ -32,6 +32,9 @@ import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.form.PairLink
 import com.usuallycoding.opensecretsanta.ui.form.SnowCard
 import com.usuallycoding.opensecretsanta.ui.groups.DetailField
+import com.usuallycoding.opensecretsanta.ui.letters.LetterCard
+import com.usuallycoding.opensecretsanta.ui.letters.LetterItem
+import com.usuallycoding.opensecretsanta.ui.letters.lettersOf
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.load.LoadState
 import com.usuallycoding.opensecretsanta.ui.load.loadMessage
@@ -186,11 +189,15 @@ private fun DeliveryInfoPart(state: LoadState<OversightDeliveryInfo>, onRetry: (
 private fun PairSheet(groupId: Long, santa: String, receiver: String, title: AnnotatedString, onDismiss: () -> Unit) {
     val wishlist = koinViewModel<AdminParticipantWishlistViewModel>(key = "admin-wishlist-$groupId-$receiver") { parametersOf(groupId, receiver) }
     val thread = koinViewModel<AdminPairThreadViewModel>(key = "admin-thread-$groupId-$santa-$receiver") { parametersOf(groupId, santa, receiver) }
+    // the letters of every pair of the group are one request; the sheet shows the chosen pair's receiver's
+    val letters = koinViewModel<AdminPairLettersViewModel>(key = "admin-letters-$groupId") { parametersOf(groupId) }
     val wishes by wishlist.state.collectAsState()
     val asked by thread.state.collectAsState()
-    LaunchedEffect(wishlist, thread) {
+    val written by letters.state.collectAsState()
+    LaunchedEffect(wishlist, thread, letters) {
         wishlist.refresh()
         thread.refresh()
+        letters.refresh()
     }
 
     SheetFrame(onDismiss) {
@@ -207,7 +214,21 @@ private fun PairSheet(groupId: Long, santa: String, receiver: String, title: Ann
             Part(wishes, onRetry = { wishlist.refresh() }) { items -> WishlistItems(items) }
             Text(Strings.ADMIN_QUESTIONS_TITLE, style = MaterialTheme.typography.titleMedium)
             Part(asked, onRetry = { thread.refresh() }) { found -> ThreadQuestions(found) }
+            Text(Strings.adminLettersTitle(receiver), style = MaterialTheme.typography.titleMedium)
+            Part(written, onRetry = { letters.refresh() }) { boxes -> PairLetters(boxes.lettersOf(receiver)) }
         }
+    }
+}
+
+/** The letters the receiver of the pair sent their Santa, read-only, newest first. */
+@Composable
+private fun PairLetters(letters: List<LetterItem>) {
+    if (letters.isEmpty()) {
+        Text(Strings.ADMIN_LETTERS_NONE, style = MaterialTheme.typography.bodyMedium)
+        return
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        for (letter in letters) LetterCard(letter)
     }
 }
 

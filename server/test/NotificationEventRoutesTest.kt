@@ -8,6 +8,7 @@ import com.usuallycoding.opensecretsanta.contract.AssignmentDto
 import com.usuallycoding.opensecretsanta.contract.CreateGroupRequest
 import com.usuallycoding.opensecretsanta.contract.ParticipantsRequest
 import com.usuallycoding.opensecretsanta.contract.ReorderWishlistRequest
+import com.usuallycoding.opensecretsanta.contract.SendLetterRequest
 import com.usuallycoding.opensecretsanta.contract.WishlistItemDto
 import com.usuallycoding.opensecretsanta.contract.WishlistItemRequest
 import com.usuallycoding.opensecretsanta.domain.notification.DevicePlatform
@@ -186,6 +187,41 @@ class NotificationEventRoutesTest {
         scheduler.advance(61_000)
         assertEquals(listOf(santa), recipients())
         assertEquals(NotificationCategory.ANSWERS, sender.sent.single().category)
+    }
+
+    @Test
+    fun lettersNotifyTheSantaOnceAfterTheQuietPeriodWithoutTheirContent() = testApplication {
+        startApp()
+        setup()
+        val (group, receivers) = client.activeGroup()
+        val receiver = names[1]
+        val santa = receivers.entries.single { it.value == receiver }.key
+
+        repeat(3) { client.send("POST", ApiRoutes.groupSantaLetters(group), fx.token(receiver), SendLetterRequest("Zebra title $it", "Zebra text $it")) }
+        assertEquals(emptyList(), sender.sent, "held back for the quiet period")
+        scheduler.advance(61_000)
+
+        assertEquals(listOf(santa), recipients())
+        val message = sender.sent.single()
+        assertEquals(NotificationCategory.LETTERS, message.category)
+        assertTrue(message.body.startsWith("Your receiver sent you letters"), message.body)
+        assertTrue("Zebra" !in message.body && "Zebra" !in message.title)
+    }
+
+    @Test
+    fun aSantaWhoSwitchedLettersOffIsNotToldButTheLetterIsStored() = testApplication {
+        startApp()
+        setup()
+        val (group, receivers) = client.activeGroup()
+        val receiver = names[1]
+        val santa = receivers.entries.single { it.value == receiver }.key
+        SqliteNotificationSettingsRepository(fx.database).save(Username.parse(santa), NotificationSettings(letters = false))
+
+        val sent = client.send("POST", ApiRoutes.groupSantaLetters(group), fx.token(receiver), SendLetterRequest("Hello", "Text"))
+        scheduler.advance(61_000)
+
+        assertEquals(HttpStatusCode.Created, sent.status, sent.bodyAsText())
+        assertEquals(emptyList(), sender.sent)
     }
 
     @Test

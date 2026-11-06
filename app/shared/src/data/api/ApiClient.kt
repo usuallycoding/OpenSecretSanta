@@ -7,6 +7,9 @@ import com.usuallycoding.opensecretsanta.contract.AnswerRequest
 import com.usuallycoding.opensecretsanta.contract.AnnouncementRequest
 import com.usuallycoding.opensecretsanta.contract.AnnouncementResponse
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
+import com.usuallycoding.opensecretsanta.contract.SendLetterRequest
+import com.usuallycoding.opensecretsanta.contract.LetterDto
+import com.usuallycoding.opensecretsanta.contract.AdminLetterBoxDto
 import com.usuallycoding.opensecretsanta.contract.AskQuestionRequest
 import com.usuallycoding.opensecretsanta.contract.AssignmentDto
 import com.usuallycoding.opensecretsanta.contract.ChangePasswordRequest
@@ -142,6 +145,18 @@ class ApiClient(
     suspend fun answerQuestion(groupId: Long, number: Int, text: String): ApiResult<QuestionDto> =
         call(HttpMethod.Put, ApiRoutes.groupSantaQuestionAnswer(groupId, number), body = AnswerRequest(text))
 
+    /** The letters the person has sent their Santa, in the order sent, with nothing that names the Santa. */
+    suspend fun sentLetters(groupId: Long): ApiResult<List<LetterDto>> =
+        call(HttpMethod.Get, ApiRoutes.groupSantaLetters(groupId))
+
+    /** Sends the person's Santa a letter; the answer is the stored letter with its number. */
+    suspend fun sendLetter(groupId: Long, title: String, text: String): ApiResult<LetterDto> =
+        call(HttpMethod.Post, ApiRoutes.groupSantaLetters(groupId), body = SendLetterRequest(title, text))
+
+    /** The letters the person's receiver has sent them, in the order sent. */
+    suspend fun lettersFromReceiver(groupId: Long): ApiResult<List<LetterDto>> =
+        call(HttpMethod.Get, ApiRoutes.groupReceiverLetters(groupId))
+
     /** Who the person's Santa was; the server only answers once the group is archived. */
     suspend fun santa(groupId: Long): ApiResult<SantaRevealDto> = call(HttpMethod.Get, ApiRoutes.groupSanta(groupId))
 
@@ -216,6 +231,10 @@ class ApiClient(
     /** One participant's delivery info for the group, as the owner reads it: each field empty when not set. */
     suspend fun adminParticipantDeliveryInfo(id: Long, username: String): ApiResult<DeliveryInfoDto> =
         call(HttpMethod.Get, ApiRoutes.adminGroupParticipantDeliveryInfo(id, username))
+
+    /** Every pair's letters of an Active or Archived group, naming both people in each. */
+    suspend fun adminLetters(id: Long): ApiResult<List<AdminLetterBoxDto>> =
+        call(HttpMethod.Get, ApiRoutes.adminGroupLetters(id))
 
     /** Every question thread of an Active or Archived group, naming both people in each. */
     suspend fun adminQuestions(id: Long): ApiResult<List<AdminQuestionThreadDto>> =
