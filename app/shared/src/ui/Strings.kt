@@ -217,6 +217,7 @@ object Strings {
     const val TAB_RESPOND = "Respond to Secret Santa"
     const val COPY = "Copy"
     const val COPIED = "Copied"
+    const val COPY_ALL = "Copy all"
     const val COPY_FAILED = "Could not copy"
     const val OPEN_IN_BROWSER = "Open in browser"
     const val DELETE = "Delete"
