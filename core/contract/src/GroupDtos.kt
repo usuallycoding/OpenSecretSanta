@@ -37,10 +37,12 @@ data class ParticipantsRequest(
 data class ParticipantDto(
     val username: String,
     val hasAccount: Boolean,
-    /** True when the account has both a full name and an address. */
+    /** True when the participant's delivery info for the group has a full name, an email, a phone and an address. */
     val profileComplete: Boolean,
-    /** The account's full name, when it has one: what the owner can search a group's people by. */
+    /** The participant's full name for the group, when there is one: what the owner can search a group's people by. */
     val fullName: String? = null,
+    /** True when the account exists and still has a temporary password; false with no account. Only a flag. */
+    val mustChangePassword: Boolean = false,
 )
 
 /** [state] is one of `draft`, `pending`, `active`, `archived`. */

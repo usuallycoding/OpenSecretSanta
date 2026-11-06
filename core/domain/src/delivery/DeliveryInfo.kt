@@ -10,11 +10,26 @@ data class DeliveryInfo(
     val address: String? = null,
     val deliveryInfo: String? = null,
 ) {
-    /** Enough for a Santa to post a gift: a name and an address are both present. */
-    val isComplete: Boolean get() = fullName != null && address != null
+    /** The required fields that are not set, in the order they are asked: the delivery information is optional. */
+    val missingFields: List<String> get() = buildList {
+        if (fullName == null) add("fullName")
+        if (email == null) add("email")
+        if (phone == null) add("phone")
+        if (address == null) add("address")
+    }
+
+    /** Enough for a gift to reach the person: the full name, email, phone and address are all present. */
+    val isComplete: Boolean get() = missingFields.isEmpty()
+
+    /** Refuses details that lack a required field, naming the first one missing. */
+    fun requireComplete() {
+        val field = missingFields.firstOrNull() ?: return
+        throw DomainException.ValidationFailed(field, "${REQUIRED_LABELS.getValue(field)} is required.")
+    }
 
     companion object {
         const val MAX_LENGTH = 500
+        private val REQUIRED_LABELS = mapOf("fullName" to "Full name", "email" to "Email", "phone" to "Phone", "address" to "Address")
         private val EMAIL = Regex("[^@\\s]+@[^@\\s]+\\.[^@\\s]+")
 
         val EMPTY = DeliveryInfo()

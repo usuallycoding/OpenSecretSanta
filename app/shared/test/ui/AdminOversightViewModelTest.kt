@@ -102,6 +102,7 @@ class AdminOversightViewModelTest {
     @Test
     fun aUsernameWithAnIncompleteProfileIsFlaggedInEveryRowItIsIn() = runTest {
         groups.completeProfiles += setOf("alice", "carol", "admin")
+        groups.accounts += setOf("admin", "carol")
         val id = groups.add("Party", "active", listOf("admin", "alice", "bob", "carol"))
         oversight.draw(id, "alice" to "bob", "bob" to "carol", "carol" to "admin", "admin" to "alice")
 
@@ -109,6 +110,32 @@ class AdminOversightViewModelTest {
 
         assertEquals(listOf(false, true, false, false), pairs.map { it.santaIncomplete })
         assertEquals(listOf(true, false, false, false), pairs.map { it.receiverIncomplete })
+    }
+
+    @Test
+    fun aUsernameOnATemporaryPasswordIsFlaggedInEveryRowItIsIn() = runTest {
+        groups.completeProfiles += setOf("alice", "bob", "carol")
+        groups.accounts += setOf("carol")
+        groups.temporaryPasswords += setOf("bob", "carol")
+        val id = groups.add("Party", "active", listOf("alice", "bob", "carol"))
+        oversight.draw(id, "alice" to "bob", "bob" to "carol", "carol" to "alice")
+
+        val pairs = (group(id).draw.value as DrawState.Pairs).pairs
+
+        assertEquals(listOf(false, true, true), pairs.map { it.santaTemporary })
+        assertEquals(listOf(true, true, false), pairs.map { it.receiverTemporary })
+    }
+
+    @Test
+    fun theGroupViewCarriesWhoStillHasATemporaryPassword() = runTest {
+        groups.accounts += setOf("carol")
+        groups.temporaryPasswords += setOf("bob", "dave-new")
+        val id = groups.add("Party", "pending", listOf("alice", "bob", "carol", "dave-new"))
+
+        val participants = group(id).data.value.value!!.participants
+
+        // dave-new has no account, so there is no password to flag
+        assertEquals(mapOf("alice" to false, "bob" to true, "carol" to false, "dave-new" to false), participants.associate { it.username to it.mustChangePassword })
     }
 
     @Test

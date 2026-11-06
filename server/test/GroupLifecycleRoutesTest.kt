@@ -227,7 +227,7 @@ class GroupLifecycleRoutesTest {
         setup()
         people("alice", "bob")
         val group = client.draft("alice", "bob", "carol-new", "dave-new")
-        fx.deliveryInfos.save(group.id, Username.parse("alice"), DeliveryInfo(fullName = "Alice B", address = "1 Main St"))
+        fx.deliveryInfos.save(group.id, Username.parse("alice"), DeliveryInfo("Alice B", "alice@example.com", "123", "1 Main St"))
         client.change(ApiRoutes.adminGroupPending(group.id))
 
         val change = client.change(ApiRoutes.adminGroupActivate(group.id))

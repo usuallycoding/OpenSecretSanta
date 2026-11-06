@@ -142,7 +142,7 @@ class AccountRoutesTest {
         assertFalse(client.me(newToken).mustChangePassword)
         fx.addUser("boss", admin = true)
         val groupId = fx.addGroup("boss", "alice", state = "pending")
-        assertEquals(HttpStatusCode.OK, client.putJson(ApiRoutes.groupDeliveryInfo(groupId.toLong()), newToken, DeliveryInfoDto(fullName = "Now allowed")).status)
+        assertEquals(HttpStatusCode.OK, client.putJson(ApiRoutes.groupDeliveryInfo(groupId.toLong()), newToken, DeliveryInfoDto("Now Allowed", "a@b.co", "123", "1 Main St")).status)
     }
 
     @Test

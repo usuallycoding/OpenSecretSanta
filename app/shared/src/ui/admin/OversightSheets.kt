@@ -24,6 +24,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.usuallycoding.opensecretsanta.data.api.ApiError
@@ -40,20 +41,12 @@ import org.koin.core.parameter.parametersOf
 import com.usuallycoding.opensecretsanta.ui.gift.QuestionThread
 import com.usuallycoding.opensecretsanta.ui.form.SheetFrame
 
-/** A username as the owner reads it in the list: `alice`, `alice (you)`, `alice *` or `alice (you) *`. */
-internal fun usernameLabel(name: String, isMe: Boolean, incomplete: Boolean): String =
-    buildString {
-        append(name)
-        if (isMe) append(" (${Strings.ADMIN_YOU})")
-        if (incomplete) append(" *")
-    }
-
 /**
  * The single list of an Active or Archived group: one row per pair, `santa -> receiver`. A username opens
  * that person's sheet, the pair link between them opens the pair's sheet. Nothing here changes anything.
  */
 @Composable
-internal fun ColumnScope.PairList(draw: DrawState, query: String, onRetry: () -> Unit, onUser: (String) -> Unit, onPair: (AdminPair) -> Unit) {
+internal fun ColumnScope.PairList(draw: DrawState, query: String, counts: MarkCounts, onRetry: () -> Unit, onUser: (String) -> Unit, onPair: (AdminPair) -> Unit) {
     when (draw) {
         DrawState.None -> Unit
         DrawState.Failed -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -63,23 +56,22 @@ internal fun ColumnScope.PairList(draw: DrawState, query: String, onRetry: () ->
         is DrawState.Pairs -> {
             // the count is the whole group's, not the narrowed list's
             Text(Strings.adminDraw(draw.pairs.size), style = MaterialTheme.typography.titleMedium)
+            MarkCountLine(counts)
             val shown = filterPairs(draw.pairs, query)
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 if (shown.isEmpty()) Text(Strings.ADMIN_NO_PERSON_MATCH, style = MaterialTheme.typography.bodyMedium)
                 for (pair in shown) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         TextButton(onClick = { onUser(pair.santa) }, modifier = Modifier.weight(1f)) {
-                            Text(usernameLabel(pair.santa, pair.santaIsMe, pair.santaIncomplete), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+                            MarkedName(markedText(pair.santa, pair.santaIsMe, pair.santaMarks()), Modifier.fillMaxWidth(), TextAlign.Start)
                         }
                         PairLink(Strings.adminPair(pair.santa, pair.receiver), onClick = { onPair(pair) })
                         TextButton(onClick = { onUser(pair.receiver) }, modifier = Modifier.weight(1f)) {
-                            Text(usernameLabel(pair.receiver, pair.receiverIsMe, pair.receiverIncomplete), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.End)
+                            MarkedName(markedText(pair.receiver, pair.receiverIsMe, pair.receiverMarks(), marksBefore = true), Modifier.fillMaxWidth(), TextAlign.End)
                         }
                     }
                 }
-                if (draw.pairs.any { it.santaIncomplete || it.receiverIncomplete }) {
-                    Text(Strings.ADMIN_INCOMPLETE_LEGEND, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                MarkLegend(legendMarks(draw.pairs.flatMap { listOf(it.santaMarks(), it.receiverMarks()) }))
             }
         }
     }
@@ -92,9 +84,9 @@ internal fun GroupSheetHost(sheet: GroupSheet, groupId: Long, me: String, draw: 
         is GroupSheet.User -> UserSheet(groupId, sheet.username, me, onDismiss)
         is GroupSheet.Pair -> {
             val pair = (draw as? DrawState.Pairs)?.pairs?.firstOrNull { it.santa == sheet.santa && it.receiver == sheet.receiver }
-            val title = Strings.adminPair(
-                usernameLabel(sheet.santa, pair?.santaIsMe == true, pair?.santaIncomplete == true),
-                usernameLabel(sheet.receiver, pair?.receiverIsMe == true, pair?.receiverIncomplete == true),
+            val title = pairTitle(
+                markedText(sheet.santa, pair?.santaIsMe == true, pair?.santaMarks() ?: ParticipantMarks()),
+                markedText(sheet.receiver, pair?.receiverIsMe == true, pair?.receiverMarks() ?: ParticipantMarks(), marksBefore = true),
             )
             PairSheet(groupId, sheet.santa, sheet.receiver, title, onDismiss)
         }
@@ -180,6 +172,7 @@ private fun DeliveryInfoPart(state: LoadState<OversightDeliveryInfo>, onRetry: (
                             DetailField(Strings.RECEIVER_DELIVERY, info.deliveryInfo)
                         }
                     }
+                    info.missingLine?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.tertiary) }
                 }
             }
         }
@@ -190,7 +183,7 @@ private fun DeliveryInfoPart(state: LoadState<OversightDeliveryInfo>, onRetry: (
 
 /** The receiver's wishlist and what the Santa asked them, read-only. Each part loads, fails and retries on its own. */
 @Composable
-private fun PairSheet(groupId: Long, santa: String, receiver: String, title: String, onDismiss: () -> Unit) {
+private fun PairSheet(groupId: Long, santa: String, receiver: String, title: AnnotatedString, onDismiss: () -> Unit) {
     val wishlist = koinViewModel<AdminParticipantWishlistViewModel>(key = "admin-wishlist-$groupId-$receiver") { parametersOf(groupId, receiver) }
     val thread = koinViewModel<AdminPairThreadViewModel>(key = "admin-thread-$groupId-$santa-$receiver") { parametersOf(groupId, santa, receiver) }
     val wishes by wishlist.state.collectAsState()
@@ -209,7 +202,7 @@ private fun PairSheet(groupId: Long, santa: String, receiver: String, title: Str
         if (unavailable != null) {
             Unavailable(unavailable, onDismiss)
         } else {
-            Text(title, style = MaterialTheme.typography.titleLarge)
+            Text(title, style = MaterialTheme.typography.titleLarge, inlineContent = markIcons())
             Text(Strings.adminWishlistTitle(receiver), style = MaterialTheme.typography.titleMedium)
             Part(wishes, onRetry = { wishlist.refresh() }) { items -> WishlistItems(items) }
             Text(Strings.ADMIN_QUESTIONS_TITLE, style = MaterialTheme.typography.titleMedium)

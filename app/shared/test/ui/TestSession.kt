@@ -370,6 +370,9 @@ class FakeAdminGroups {
     val accounts = mutableSetOf("alice", "bob")
     val completeProfiles = mutableSetOf("alice")
 
+    /** The accounts that still have a temporary password. */
+    val temporaryPasswords = mutableSetOf<String>()
+
     val ids: List<Long> get() = groups.map { it.id }
 
     /** Whether each `DELETE` of a group carried `confirm=true`, in the order they came. */
@@ -419,7 +422,7 @@ class FakeAdminGroups {
 
     private fun dto(group: Group) = AdminGroupDto(
         group.id, "admin", group.name, group.description, group.location, group.date, group.time, group.state,
-        group.participants.map { ParticipantDto(it, it in accounts, it in completeProfiles) },
+        group.participants.map { ParticipantDto(it, it in accounts, it in completeProfiles, mustChangePassword = it in accounts && it in temporaryPasswords) },
         group.budget, group.currency,
     )
 

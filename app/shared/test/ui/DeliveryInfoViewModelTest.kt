@@ -58,7 +58,7 @@ class DeliveryInfoViewModelTest {
         val ui = viewModel().ui.value
 
         assertEquals(DeliveryForm(), ui.form)
-        assertFalse(ui.form.hasNameAndAddress)
+        assertFalse(ui.form.hasAllRequired)
         assertFalse(ui.canSave)
     }
 
@@ -94,17 +94,77 @@ class DeliveryInfoViewModelTest {
     }
 
     @Test
-    fun aClearedFieldIsSentAsClearedNotAsBlankText() = runTest {
+    fun aClearedDeliveryInformationIsSentAsClearedNotAsBlankText() = runTest {
         serverHas(account())
         val model = viewModel()
-        model.edit(DeliveryField.Phone, "   ")
-        server.deliveryInfoAnswer = HttpStatusCode.OK to account(phone = null)
+        model.edit(DeliveryField.DeliveryInfo, "   ")
+        server.deliveryInfoAnswer = HttpStatusCode.OK to account(deliveryInfo = null)
 
         model.save()?.join()
 
-        assertNull(Json.decodeFromString<DeliveryInfoDto>(putBodies().single()).phone)
-        assertEquals("", model.ui.value.form.phone)
+        assertNull(Json.decodeFromString<DeliveryInfoDto>(putBodies().single()).deliveryInfo)
+        assertEquals("", model.ui.value.form.deliveryInfo)
         assertFalse(model.ui.value.canSave)
+    }
+
+    @Test
+    fun eachRequiredFieldLeftBlankBlocksTheSaveAndSaysItIsRequired() = runTest {
+        for (field in listOf(DeliveryField.FullName, DeliveryField.Email, DeliveryField.Phone, DeliveryField.Address)) {
+            serverHas(account())
+            val model = viewModel()
+            model.edit(field, "  ")
+
+            assertNull(model.save(), field.label)
+
+            assertEquals(mapOf(field to "${field.label} is required."), model.ui.value.errors.fields, field.label)
+        }
+        assertTrue(putBodies().isEmpty())
+    }
+
+    @Test
+    fun everyProblemIsShownAtOnce() = runTest {
+        serverHas(account())
+        val model = viewModel()
+        model.edit(DeliveryField.Phone, "")
+        model.edit(DeliveryField.Address, "")
+        model.edit(DeliveryField.Email, "not-an-email")
+        model.edit(DeliveryField.DeliveryInfo, "x".repeat(501))
+
+        assertNull(model.save())
+
+        assertEquals(
+            mapOf(
+                DeliveryField.Email to "Email is not a valid address.",
+                DeliveryField.Phone to "Phone is required.",
+                DeliveryField.Address to "Address is required.",
+                DeliveryField.DeliveryInfo to "Delivery information must be at most 500 characters long.",
+            ),
+            model.ui.value.errors.fields,
+        )
+        assertTrue(putBodies().isEmpty())
+    }
+
+    @Test
+    fun theDeliveryInformationMayStayEmptyWhenTheOtherFourAreFilled() = runTest {
+        serverHas(account(deliveryInfo = null))
+        val model = viewModel()
+        model.edit(DeliveryField.Address, "2 Side Street")
+        server.deliveryInfoAnswer = HttpStatusCode.OK to account(address = "2 Side Street", deliveryInfo = null)
+
+        model.save()?.join()
+
+        val sent = Json.decodeFromString<DeliveryInfoDto>(putBodies().single())
+        assertEquals("2 Side Street", sent.address)
+        assertNull(sent.deliveryInfo)
+        assertTrue(model.ui.value.errors.fields.isEmpty())
+    }
+
+    @Test
+    fun onlyTheFourFieldsAreMarkedRequired() {
+        assertEquals(
+            listOf("Full name *", "Email *", "Phone *", "Address *", "Delivery information"),
+            DeliveryField.entries.map { it.shownLabel },
+        )
     }
 
     @Test
@@ -206,14 +266,18 @@ class DeliveryInfoViewModelTest {
     }
 
     @Test
-    fun theHintIsAboutNameAndAddressOnly() = runTest {
-        serverHas(account(fullName = "Alice", address = null))
+    fun theHintAsksForAllFourRequiredFieldsAndNotForTheDeliveryInformation() = runTest {
+        serverHas(account(phone = null, address = null, deliveryInfo = null))
         val model = viewModel()
-        assertFalse(model.ui.value.form.hasNameAndAddress)
+        assertFalse(model.ui.value.form.hasAllRequired)
+        assertEquals(listOf(DeliveryField.Phone, DeliveryField.Address), model.ui.value.form.missingRequired)
 
         model.edit(DeliveryField.Address, "1 Main St")
+        assertFalse(model.ui.value.form.hasAllRequired)
 
-        assertTrue(model.ui.value.form.hasNameAndAddress)
+        model.edit(DeliveryField.Phone, "555")
+
+        assertTrue(model.ui.value.form.hasAllRequired)
     }
 
     @Test

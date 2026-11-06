@@ -157,7 +157,7 @@ class LifecycleTest {
         users.add("alice")
         users.add("bob-b")
         val group = group(GroupState.PENDING, "alice", "bob-b", "carol", "dave")
-        infos.save(group.id, u("alice"), DeliveryInfo(fullName = "Alice", address = "1 Main St"))
+        infos.save(group.id, u("alice"), DeliveryInfo("Alice", "alice@example.com", "123", "1 Main St"))
 
         val view = activate(adminA, group.id)
 

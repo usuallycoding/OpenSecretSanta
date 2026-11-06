@@ -111,8 +111,8 @@ class GroupManagementTest {
         users.add("alice")
         users.add("bob")
         val group = groups.seed(adminA.username, GroupState.PENDING, u("alice"), u("bob"), u("carol-new"))
-        infos.save(group.id, u("alice"), DeliveryInfo(fullName = "Alice B", address = "1 Main St"))
-        infos.save(group.id, u("bob"), DeliveryInfo(fullName = "Bob", phone = "123"))
+        infos.save(group.id, u("alice"), DeliveryInfo("Alice B", "alice@example.com", "123", "1 Main St"))
+        infos.save(group.id, u("bob"), DeliveryInfo("Bob", "bob@example.com", null, "2 Side St"))
 
         val participants = get(adminA, group.id).participants.associateBy { it.username.value }
 
@@ -121,6 +121,21 @@ class GroupManagementTest {
         assertFalse(participants.getValue("bob").profileComplete)
         assertFalse(participants.getValue("carol-new").hasAccount)
         assertFalse(participants.getValue("carol-new").profileComplete)
+    }
+
+    @Test
+    fun viewFlagsWhoStillHasATemporaryPassword() {
+        users.add("alice", mustChange = true, tempPlain = "temp-alice")
+        users.add("bob")
+        val group = groups.seed(adminA.username, GroupState.PENDING, u("alice"), u("bob"), u("carol-new"))
+
+        fun flags() = get(adminA, group.id).participants.associate { it.username.value to it.mustChangePassword }
+
+        assertEquals(mapOf("alice" to true, "bob" to false, "carol-new" to false), flags())
+
+        users.replaceCredentials(u("alice"), "hash:own", null, mustChangePassword = false)
+
+        assertEquals(mapOf("alice" to false, "bob" to false, "carol-new" to false), flags())
     }
 
     @Test
@@ -136,11 +151,21 @@ class GroupManagementTest {
     }
 
     @Test
-    fun deliveryInfoNeedsBothNameAndAddressToBeComplete() {
+    fun deliveryInfoNeedsNameEmailPhoneAndAddressToBeComplete() {
         assertFalse(DeliveryInfo(fullName = "A").isComplete)
         assertFalse(DeliveryInfo(address = "x").isComplete)
         assertFalse(DeliveryInfo(phone = "1", deliveryInfo = "d").isComplete)
-        assertTrue(DeliveryInfo(fullName = "A", address = "x").isComplete)
+        assertFalse(DeliveryInfo("A", "a@b.co", null, "x").isComplete)
+        assertFalse(DeliveryInfo("A", null, "1", "x").isComplete)
+        assertTrue(DeliveryInfo("A", "a@b.co", "1", "x").isComplete)
+        assertTrue(DeliveryInfo("A", "a@b.co", "1", "x", "ring twice").isComplete)
+    }
+
+    @Test
+    fun theMissingFieldsAreNamedInTheOrderTheyAreAsked() {
+        assertEquals(listOf("fullName", "email", "phone", "address"), DeliveryInfo(deliveryInfo = "d").missingFields)
+        assertEquals(listOf("email", "phone"), DeliveryInfo("A", null, null, "x").missingFields)
+        assertEquals(emptyList(), DeliveryInfo("A", "a@b.co", "1", "x").missingFields)
     }
 
     @Test

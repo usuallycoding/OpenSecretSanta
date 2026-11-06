@@ -75,18 +75,56 @@ class DeliveryInfoRoutesTest {
         assertEquals(DeliveryInfoDto("Alice B", "a@b.co", "123", "1 Main St", "Ring twice"), Json.decodeFromString(client.read(id, token).bodyAsText()))
     }
 
+    private val complete = DeliveryInfoDto("Alice B", "a@b.co", "123", "1 Main St", "Ring twice")
+
     @Test
-    fun aBlankFieldIsCleared() = testApplication {
+    fun theDeliveryInformationCanBeClearedAndIsTheOnlyOptionalField() = testApplication {
         startApp()
         val id = world()
         val token = fx.token("alice")
-        client.write(id, token, DeliveryInfoDto(fullName = "Alice", phone = "123"))
+        client.write(id, token, complete)
 
-        client.write(id, token, DeliveryInfoDto(fullName = "Alice", phone = "   "))
+        val cleared = client.write(id, token, complete.copy(deliveryInfo = "   "))
 
+        assertEquals(HttpStatusCode.OK, cleared.status)
         val now = Json.decodeFromString<DeliveryInfoDto>(client.read(id, token).bodyAsText())
-        assertNull(now.phone)
-        assertEquals("Alice", now.fullName)
+        assertNull(now.deliveryInfo)
+        assertEquals("123", now.phone)
+    }
+
+    @Test
+    fun eachRequiredFieldIsRefusedWhenBlankNamingItAndNothingChanges() = testApplication {
+        startApp()
+        val id = world()
+        val token = fx.token("alice")
+        client.write(id, token, complete)
+        val blanked = mapOf(
+            "fullName" to complete.copy(fullName = null),
+            "email" to complete.copy(email = "  "),
+            "phone" to complete.copy(phone = ""),
+            "address" to complete.copy(address = null),
+        )
+
+        for ((field, info) in blanked) {
+            val response = client.write(id, token, info)
+
+            assertEquals(HttpStatusCode.BadRequest, response.status, field)
+            assertEquals("validation_failed", error(response.bodyAsText()).code, field)
+            assertEquals(field, error(response.bodyAsText()).field, field)
+        }
+        assertEquals(complete, Json.decodeFromString<DeliveryInfoDto>(client.read(id, token).bodyAsText()))
+    }
+
+    @Test
+    fun incompleteSavedDetailsAreReadableUntilAllFourAreGiven() = testApplication {
+        startApp()
+        val id = world()
+        val token = fx.token("alice")
+        fx.deliveryInfos.save(id.toLong(), Username.parse("alice"), DeliveryInfo(fullName = "Alice", address = "Old St"))
+
+        assertEquals("Old St", Json.decodeFromString<DeliveryInfoDto>(client.read(id, token).bodyAsText()).address)
+        assertEquals(HttpStatusCode.BadRequest, client.write(id, token, DeliveryInfoDto(fullName = "Alice", address = "New St")).status)
+        assertEquals(HttpStatusCode.OK, client.write(id, token, complete).status)
     }
 
     @Test
@@ -94,10 +132,10 @@ class DeliveryInfoRoutesTest {
         startApp()
         val id = world()
         val token = fx.token("alice")
-        client.write(id, token, DeliveryInfoDto(fullName = "Before"))
+        client.write(id, token, complete.copy(fullName = "Before"))
 
-        val email = client.write(id, token, DeliveryInfoDto(fullName = "After", email = "not-an-email"))
-        val long = client.write(id, token, DeliveryInfoDto(fullName = "After", address = "x".repeat(501)))
+        val email = client.write(id, token, complete.copy(fullName = "After", email = "not-an-email"))
+        val long = client.write(id, token, complete.copy(fullName = "After", address = "x".repeat(501)))
 
         assertEquals(HttpStatusCode.BadRequest, email.status)
         assertEquals("email", error(email.bodyAsText()).field)
@@ -113,7 +151,7 @@ class DeliveryInfoRoutesTest {
         fx.deliveryInfos.save(id.toLong(), Username.parse("alice"), DeliveryInfo(address = "Kept"))
         val token = fx.token("alice")
 
-        val refused = client.write(id, token, DeliveryInfoDto(address = "Too late"))
+        val refused = client.write(id, token, complete.copy(address = "Too late"))
 
         assertEquals(HttpStatusCode.Conflict, refused.status)
         assertEquals("invalid_state", error(refused.bodyAsText()).code)
@@ -125,7 +163,7 @@ class DeliveryInfoRoutesTest {
         startApp()
         val id = world("active")
 
-        assertEquals(HttpStatusCode.OK, client.write(id, fx.token("alice"), DeliveryInfoDto(address = "2 Side St")).status)
+        assertEquals(HttpStatusCode.OK, client.write(id, fx.token("alice"), complete.copy(address = "2 Side St")).status)
     }
 
     @Test
@@ -146,7 +184,7 @@ class DeliveryInfoRoutesTest {
         startApp()
         val first = world()
         val second = fx.addGroup("admin", "alice", "bob", "carol", "dave")
-        client.write(first, fx.token("alice"), DeliveryInfoDto(address = "Home"))
+        client.write(first, fx.token("alice"), complete.copy(address = "Home"))
 
         assertNull(Json.decodeFromString<DeliveryInfoDto>(client.read(second, fx.token("alice")).bodyAsText()).address)
     }
@@ -156,7 +194,7 @@ class DeliveryInfoRoutesTest {
         startApp()
         val id = world()
 
-        client.write(id, fx.token("alice"), DeliveryInfoDto(fullName = "Alice only"))
+        client.write(id, fx.token("alice"), complete.copy(fullName = "Alice only"))
 
         assertNull(Json.decodeFromString<DeliveryInfoDto>(client.read(id, fx.token("bob")).bodyAsText()).fullName)
     }

@@ -33,7 +33,10 @@ class GetMyDeliveryInfo(
     }
 }
 
-/** Replaces a participant's own delivery info for a group that is Pending or Active. */
+/**
+ * Replaces a participant's own delivery info for a group that is Pending or Active. The full name, email, phone and address must
+ * all be given; only the delivery information may be empty.
+ */
 class UpdateMyDeliveryInfo(
     private val loadParticipantGroup: ParticipantGroupLoader,
     private val deliveryInfos: DeliveryInfoRepository,
@@ -43,6 +46,7 @@ class UpdateMyDeliveryInfo(
         if (group.state != GroupState.PENDING && group.state != GroupState.ACTIVE) {
             throw DomainException.InvalidState("Delivery info can be changed while the group is pending or active.")
         }
+        info.requireComplete()
         deliveryInfos.save(group.id, user.username, info)
         return info
     }

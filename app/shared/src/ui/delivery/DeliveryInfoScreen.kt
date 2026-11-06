@@ -52,7 +52,7 @@ private fun DeliveryForm(ui: DeliveryUiState, viewModel: DeliveryInfoViewModel) 
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(Strings.DELIVERY_WHY, style = MaterialTheme.typography.bodyMedium)
-        if (!ui.form.hasNameAndAddress) {
+        if (!ui.form.hasAllRequired) {
             Text(Strings.DELIVERY_INCOMPLETE, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
         }
         Field(ui, viewModel, DeliveryField.FullName, ui.form.fullName, KeyboardType.Text, ImeAction.Next)
@@ -74,7 +74,7 @@ private fun MultiLineField(ui: DeliveryUiState, viewModel: DeliveryInfoViewModel
     MultiLineTextField(
         value = value,
         onValueChange = { viewModel.edit(field, it) },
-        label = field.label,
+        label = field.shownLabel,
         minLines = 2,
         error = ui.errors.fields[field],
     )
@@ -93,7 +93,7 @@ private fun Field(
     OutlinedTextField(
         value = value,
         onValueChange = { viewModel.edit(field, it) },
-        label = { Text(field.label) },
+        label = { Text(field.shownLabel) },
         isError = error != null,
         supportingText = error?.let { { Text(it) } },
         singleLine = true,

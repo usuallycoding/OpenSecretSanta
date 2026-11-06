@@ -8,7 +8,14 @@ import com.usuallycoding.opensecretsanta.domain.user.UserRepository
 import com.usuallycoding.opensecretsanta.domain.user.Username
 
 /** One participant as the owner sees them. */
-class ParticipantStatus(val username: Username, val hasAccount: Boolean, val profileComplete: Boolean, val fullName: String? = null)
+class ParticipantStatus(
+    val username: Username,
+    val hasAccount: Boolean,
+    val profileComplete: Boolean,
+    val fullName: String? = null,
+    /** True when the account exists and still has a temporary password; false with no account. Only a flag: the password is not here. */
+    val mustChangePassword: Boolean = false,
+)
 
 /** A group together with what the owner needs to know about each participant. */
 class GroupView(val group: Group, val participants: List<ParticipantStatus>)
@@ -32,7 +39,13 @@ class GroupViewer(private val users: UserRepository, private val deliveryInfos: 
             participants = group.participants.map { username ->
                 val account = accounts[username]
                 val info = infos[username]
-                ParticipantStatus(username, hasAccount = account != null, profileComplete = info?.isComplete == true, fullName = info?.fullName)
+                ParticipantStatus(
+                    username,
+                    hasAccount = account != null,
+                    profileComplete = info?.isComplete == true,
+                    fullName = info?.fullName,
+                    mustChangePassword = account?.mustChangePassword == true,
+                )
             },
         )
     }

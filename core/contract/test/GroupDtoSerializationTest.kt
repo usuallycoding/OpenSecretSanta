@@ -25,7 +25,7 @@ class GroupDtoSerializationTest {
         date = "2026-12-24",
         time = "18:30",
         state = "pending",
-        participants = listOf(ParticipantDto("alice", hasAccount = true, profileComplete = true), ParticipantDto("bob", false, false)),
+        participants = listOf(ParticipantDto("alice", hasAccount = true, profileComplete = true), ParticipantDto("bob", true, false, mustChangePassword = true), ParticipantDto("carol", false, false)),
         budget = 100,
         currency = "EUR",
     )
@@ -67,8 +67,10 @@ class GroupDtoSerializationTest {
     fun adminGroupNeverCarriesCredentials() {
         val text = roundTrip(adminGroup)
 
-        assertFalse(text.contains("password", ignoreCase = true))
+        // the only mention is the flag, never a password
+        assertFalse(text.replace("mustChangePassword", "").contains("password", ignoreCase = true))
         assertTrue(text.contains("profileComplete"))
+        assertTrue(text.contains("\"mustChangePassword\":true"))
     }
 
     @Test

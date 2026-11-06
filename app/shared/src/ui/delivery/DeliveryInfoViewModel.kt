@@ -26,16 +26,31 @@ data class DeliveryForm(
     val address: String = "",
     val deliveryInfo: String = "",
 ) {
-    /** What a Santa needs to post a gift. */
-    val hasNameAndAddress: Boolean get() = fullName.isNotBlank() && address.isNotBlank()
+    /** The required fields that are still blank, in the order they are asked. */
+    val missingRequired: List<DeliveryField>
+        get() = DeliveryField.entries.filter { it.required && valueOf(it).isBlank() }
+
+    /** What it takes for a gift to reach the person: the full name, email, phone and address are all filled in. */
+    val hasAllRequired: Boolean get() = missingRequired.isEmpty()
+
+    fun valueOf(field: DeliveryField): String = when (field) {
+        DeliveryField.FullName -> fullName
+        DeliveryField.Email -> email
+        DeliveryField.Phone -> phone
+        DeliveryField.Address -> address
+        DeliveryField.DeliveryInfo -> deliveryInfo
+    }
 }
 
-enum class DeliveryField(val key: String, val label: String) {
-    FullName("fullName", "Full name"),
-    Email("email", "Email"),
-    Phone("phone", "Phone"),
-    Address("address", "Address"),
-    DeliveryInfo("deliveryInfo", "Delivery information"),
+/** The five fields; all but the delivery information are [required] to save. [shownLabel] marks a required one with a `*`. */
+enum class DeliveryField(val key: String, val label: String, val required: Boolean) {
+    FullName("fullName", "Full name", true),
+    Email("email", "Email", true),
+    Phone("phone", "Phone", true),
+    Address("address", "Address", true),
+    DeliveryInfo("deliveryInfo", "Delivery information", false);
+
+    val shownLabel: String get() = if (required) "$label *" else label
 }
 
 /** Problems next to their fields, and one for problems that belong to none. */
@@ -112,19 +127,19 @@ class DeliveryInfoViewModel(
         )
     }
 
-    /** Checks what the server checks, then saves all five fields; returns the running work, or null when nothing is sent. */
+    /**
+     * Checks what the server checks (the four required fields, the email, the lengths), every problem at once next to its field,
+     * then saves all five fields; returns the running work, or null when nothing is sent.
+     */
     fun save(): Job? {
         val state = _ui.value
         if (!state.canSave) return null
-        val info = try {
-            with(state.form) { DeliveryInfo.of(fullName, email, phone, address, deliveryInfo) }
-        } catch (e: DomainException.ValidationFailed) {
-            val field = fieldOf(e.field)
-            _ui.update {
-                it.copy(errors = if (field != null) DeliveryErrors(mapOf(field to friendly(field, e.message.orEmpty()))) else DeliveryErrors(general = e.message))
-            }
+        val problems = problemsOf(state.form)
+        if (problems.isNotEmpty()) {
+            _ui.update { it.copy(errors = DeliveryErrors(problems)) }
             return null
         }
+        val info = with(state.form) { DeliveryInfo.of(fullName, email, phone, address, deliveryInfo) }
         _ui.update { it.copy(saving = true, justSaved = false, errors = DeliveryErrors()) }
         return scope.launch {
             val request = DeliveryInfoDto(
@@ -140,6 +155,28 @@ class DeliveryInfoViewModel(
                     _ui.update { it.copy(saving = false, justSaved = true, saved = saved, form = saved) }
                 }
                 is ApiResult.Failure -> _ui.update { it.copy(saving = false, errors = errorsFor(result.error)) }
+            }
+        }
+    }
+
+    /** One message per field that has a problem: blank when required, or what `DeliveryInfo.of` says about that field alone. */
+    private fun problemsOf(form: DeliveryForm): Map<DeliveryField, String> = buildMap {
+        for (field in DeliveryField.entries) {
+            if (field.required && form.valueOf(field).isBlank()) {
+                put(field, Strings.fieldRequired(field.label))
+                continue
+            }
+            val value = form.valueOf(field)
+            try {
+                when (field) {
+                    DeliveryField.FullName -> DeliveryInfo.of(value, null, null, null, null)
+                    DeliveryField.Email -> DeliveryInfo.of(null, value, null, null, null)
+                    DeliveryField.Phone -> DeliveryInfo.of(null, null, value, null, null)
+                    DeliveryField.Address -> DeliveryInfo.of(null, null, null, value, null)
+                    DeliveryField.DeliveryInfo -> DeliveryInfo.of(null, null, null, null, value)
+                }
+            } catch (e: DomainException.ValidationFailed) {
+                put(field, friendly(field, e.message.orEmpty()))
             }
         }
     }

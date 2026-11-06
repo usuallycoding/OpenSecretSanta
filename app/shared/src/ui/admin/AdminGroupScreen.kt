@@ -203,6 +203,7 @@ private fun ColumnScope.People(group: AdminGroup, viewModel: AdminGroupViewModel
         PairList(
             draw,
             viewModel.search,
+            markCounts(group.participants, draft = false),
             onRetry = { viewModel.refresh() },
             onUser = viewModel::openUserSheet,
             onPair = { viewModel.openPairSheet(it.santa, it.receiver) },
@@ -220,7 +221,8 @@ private fun ColumnScope.People(group: AdminGroup, viewModel: AdminGroupViewModel
         return
     }
     val draft = group.phase == AdminPhase.Draft
-    val legend = Strings.ADMIN_MARK_LEGEND.takeIf { group.participants.any { it.marked(draft) } }
+    val legend = legendMarks(group.participants.map { it.marks(draft) })
+    MarkCountLine(markCounts(group.participants, draft))
     if (viewModel.canReadPendingWishlists) {
         ParticipantSearchField(viewModel)
         val shown = filterParticipants(group.participants, viewModel.search)
@@ -233,27 +235,23 @@ private fun ColumnScope.People(group: AdminGroup, viewModel: AdminGroupViewModel
                         enabled = participant.hasAccount,
                         modifier = Modifier.weight(1f),
                     ) {
-                        Text(participant.label(draft), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+                        MarkedName(markedText(participant.username, isMe = false, marks = participant.marks(draft)), Modifier.fillMaxWidth(), TextAlign.Start)
                     }
                     IconButton(onClick = { viewModel.openWishlistSheet(participant.username) }, enabled = participant.hasAccount) {
                         Icon(GiftIcon, contentDescription = Strings.ADMIN_OPEN_WISHLIST)
                     }
                 }
             }
-            if (legend != null) Text(legend, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            MarkLegend(legend)
         }
     } else {
-        ParticipantChips(group.participants.map { ParticipantChip(it.label(draft)) }, legend)
+        // a Draft has no account yet for anyone, so the only mark is the missing account
+        ParticipantChips(
+            group.participants.map { ParticipantChip(if (it.marks(draft).noAccount) "${it.username} *" else it.username) },
+            Strings.ADMIN_LEGEND_NO_ACCOUNT.takeIf { Mark.NoAccount in legend },
+        )
     }
 }
-
-/**
- * A participant without an account, or in a Pending group one whose delivery info lacks a name or an address, is followed by
- * one `*`. In a Draft nobody can have filled it in yet, so only the missing account is marked.
- */
-internal fun AdminParticipant.marked(draft: Boolean) = !hasAccount || (!draft && !profileComplete)
-
-private fun AdminParticipant.label(draft: Boolean) = if (marked(draft)) "$username *" else username
 
 /** The second confirmation of a deletion, once the server has said what else would go: the data of the group, for good. */
 @Composable

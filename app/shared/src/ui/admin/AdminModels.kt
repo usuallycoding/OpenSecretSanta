@@ -22,7 +22,14 @@ fun adminPhase(state: String): AdminPhase = when (state.lowercase()) {
 }
 
 /** A participant as the owner sees them, with what is missing for the gift to reach them. */
-data class AdminParticipant(val username: String, val hasAccount: Boolean, val profileComplete: Boolean, val fullName: String? = null)
+data class AdminParticipant(
+    val username: String,
+    val hasAccount: Boolean,
+    val profileComplete: Boolean,
+    val fullName: String? = null,
+    /** The account still has a temporary password. */
+    val mustChangePassword: Boolean = false,
+)
 
 data class AdminGroup(
     val id: Long,
@@ -52,7 +59,7 @@ internal fun AdminGroupDto.toGroup() = AdminGroup(
     phase = adminPhase(state),
     stateKey = state.lowercase(),
     state = groupStateInfo(state),
-    participants = participants.map { AdminParticipant(it.username, it.hasAccount, it.profileComplete, it.fullName?.takeIf { name -> name.isNotBlank() }) },
+    participants = participants.map { AdminParticipant(it.username, it.hasAccount, it.profileComplete, it.fullName?.takeIf { name -> name.isNotBlank() }, it.mustChangePassword) },
     budget = budget,
     currency = currency?.takeIf { it.isNotBlank() },
 )

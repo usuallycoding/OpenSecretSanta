@@ -2,6 +2,7 @@ package com.usuallycoding.opensecretsanta.server
 
 import com.usuallycoding.opensecretsanta.contract.AdminGroupDto
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
+import com.usuallycoding.opensecretsanta.contract.ChangePasswordRequest
 import com.usuallycoding.opensecretsanta.contract.CreateGroupRequest
 import com.usuallycoding.opensecretsanta.contract.DeletionImpactDto
 import com.usuallycoding.opensecretsanta.contract.ErrorResponse
@@ -201,7 +202,8 @@ class GroupRoutesTest {
         fx.addUser("alice")
         fx.addUser("bob")
         val group = client.createGroup(fx.token("admin-a"), CreateGroupRequest("P", participants = listOf("alice", "bob", "carol-new")))
-        fx.deliveryInfos.save(group.id, Username.parse("alice"), DeliveryInfo(fullName = "Alice B", address = "1 Main St"))
+        fx.deliveryInfos.save(group.id, Username.parse("alice"), DeliveryInfo("Alice B", "alice@example.com", "123", "1 Main St"))
+        fx.deliveryInfos.save(group.id, Username.parse("bob"), DeliveryInfo("Bob", "bob@example.com", null, "2 Side St"))
 
         val view = Json.decodeFromString<AdminGroupDto>(client.getAs(ApiRoutes.adminGroup(group.id), fx.token("admin-a")).bodyAsText())
 
@@ -209,6 +211,52 @@ class GroupRoutesTest {
         assertEquals(true to true, flags["alice"])
         assertEquals(true to false, flags["bob"])
         assertEquals(false to false, flags["carol-new"])
+    }
+
+    @Test
+    fun viewFlagsWhoStillHasATemporaryPassword() = testApplication {
+        startApp()
+        admins()
+        fx.addUser("alice", password = "TempPass0001", mustChange = true, tempPlain = "TempPass0001")
+        fx.addUser("bob")
+        val group = client.createGroup(fx.token("admin-a"), CreateGroupRequest("P", participants = listOf("alice", "bob", "carol-new")))
+        suspend fun flags(): Map<String, Boolean> {
+            val view = Json.decodeFromString<AdminGroupDto>(client.getAs(ApiRoutes.adminGroup(group.id), fx.token("admin-a")).bodyAsText())
+            return view.participants.associate { it.username to it.mustChangePassword }
+        }
+
+        assertEquals(mapOf("alice" to true, "bob" to false, "carol-new" to false), flags())
+
+        val changed = client.send("PUT", ApiRoutes.ME_PASSWORD, fx.token("alice"), ChangePasswordRequest("TempPass0001", "my-own-password"))
+        assertEquals(HttpStatusCode.OK, changed.status, changed.bodyAsText())
+
+        assertEquals(mapOf("alice" to false, "bob" to false, "carol-new" to false), flags())
+    }
+
+    @Test
+    fun theListCarriesTheTemporaryPasswordFlagAndNeverThePassword() = testApplication {
+        startApp()
+        admins()
+        fx.addUser("alice", password = "TempPass0001", mustChange = true, tempPlain = "TempPass0001")
+        client.createGroup(fx.token("admin-a"), CreateGroupRequest("P", participants = listOf("alice")))
+
+        val body = client.getAs(ApiRoutes.ADMIN_GROUPS, fx.token("admin-a")).bodyAsText()
+
+        assertTrue("\"mustChangePassword\":true" in body, body)
+        assertFalse("TempPass0001" in body, body)
+    }
+
+    @Test
+    fun anotherAdminGetsNoFlagsForSomeoneElsesGroup() = testApplication {
+        startApp()
+        admins()
+        fx.addUser("alice", mustChange = true)
+        val group = client.createGroup(fx.token("admin-a"), CreateGroupRequest("P", participants = listOf("alice")))
+
+        val response = client.getAs(ApiRoutes.adminGroup(group.id), fx.token("admin-b"))
+
+        assertEquals(HttpStatusCode.NotFound, response.status)
+        assertFalse("mustChangePassword" in response.bodyAsText())
     }
 
     @Test
