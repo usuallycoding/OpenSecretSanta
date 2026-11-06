@@ -23,7 +23,7 @@ The detail of an Active or Archived group SHALL show one list of every Santa and
 
 #### Scenario: Incomplete profile
 - **WHEN** `bob`'s delivery info has no address and he gives to `carol` and receives from `alice`
-- **THEN** `bob` is followed by `*` in both rows and the legend "* delivery info incomplete" is shown
+- **THEN** `bob` is followed by the pin icon in both rows and the legend explains it as "delivery info incomplete"
 
 #### Scenario: Not yet drawn
 - **WHEN** the group is Pending
@@ -177,11 +177,35 @@ The label above the pair list SHALL read "Who gives to whom" followed by the num
 - **THEN** the label still reads "Who gives to whom (4 participants)"
 
 ### Requirement: Marks on usernames in the oversight lists
-The administrator's own username SHALL be marked "you" wherever it appears, and a username whose delivery info is incomplete SHALL be followed by `*` wherever it appears, with a legend "* delivery info incomplete" under the list.
+The administrator's own username SHALL be marked "you" wherever it appears. A username with no account SHALL be followed by `*`; one whose account is still on a temporary password by a key icon; one whose delivery info lacks a full name, email, phone or address by a pin icon. Each icon SHALL be named for assistive technology, and a legend under the list SHALL give each mark shown and its meaning, only those present.
 
 #### Scenario: Both marks
 - **WHEN** the administrator takes part in the group and their own delivery info is incomplete
-- **THEN** their username is marked "you" and followed by `*` wherever it appears
+- **THEN** their username is marked "you" and followed by the pin icon wherever it appears
+
+#### Scenario: Temporary password
+- **WHEN** `bob`'s account is still on a temporary password in a Pending, an Active or an Archived group
+- **THEN** `bob` is followed by the key icon wherever he appears and the legend says "temporary password"
+
+#### Scenario: Both icons
+- **WHEN** `bob` has a temporary password and incomplete delivery info
+- **THEN** `bob` is followed by the key icon and the pin icon, and the legend explains both
+
+#### Scenario: No account
+- **WHEN** a Pending group has a participant with no account
+- **THEN** that participant is followed by `*` only, with no key and no pin, and the legend says "no account"
+
+#### Scenario: Draft group
+- **WHEN** the group is a Draft
+- **THEN** no key or pin icon is shown, because no account exists for the group yet and nobody can fill delivery info in
+
+#### Scenario: A receiver's marks on the left
+- **WHEN** a pair row or a pair sheet title shows the receiver, who has a temporary password and incomplete delivery info
+- **THEN** the receiver's icons are on the left of the username, as in "pin key bob", while the Santa's stay on the right of the username
+
+#### Scenario: Spoken
+- **WHEN** a screen reader reads a username followed by the key icon
+- **THEN** it reads that the account is on a temporary password
 
 ### Requirement: No pair list before the draw
 A group that is Draft or Pending SHALL show no pair list, and the app SHALL NOT request it.
@@ -241,3 +265,41 @@ Below the account part, the user sheet SHALL show the person's delivery info for
 #### Scenario: Reloaded
 - **WHEN** the sheet is closed and opened again
 - **THEN** both parts load again and show what the server now says
+
+### Requirement: The marks are counted
+Above the list the group page SHALL say how many participants are on a temporary password and how many have incomplete delivery info, such as "2 on a temporary password, 3 with delivery info incomplete", leaving out a count of 0 and showing nothing when both are 0, in the same states as the icons. It SHALL be plain text with no filter and no tap.
+
+#### Scenario: Both counts
+- **WHEN** a Pending group has two participants on a temporary password and three with incomplete delivery info
+- **THEN** the line reads "2 on a temporary password, 3 with delivery info incomplete"
+
+#### Scenario: One count
+- **WHEN** nobody has incomplete delivery info and one person is on a temporary password
+- **THEN** the line reads "1 on a temporary password"
+
+#### Scenario: Nothing to count
+- **WHEN** nobody is on a temporary password and nobody has incomplete delivery info, or the group is a Draft
+- **THEN** no line is shown
+
+#### Scenario: Not a control
+- **WHEN** the person taps the line
+- **THEN** nothing happens and the list is not filtered
+
+### Requirement: The user sheet names the missing delivery info
+When the person has set something for the group but not all of the full name, email, phone and address, the delivery info part of the user sheet SHALL show a line "Missing: " naming the ones not set, as in "Missing: email, phone", besides what is set. When all four are set there SHALL be no such line, and when nothing is set the sheet SHALL only say the person has not added delivery info yet.
+
+#### Scenario: Some missing
+- **WHEN** `bob` set a full name and an address but no email or phone
+- **THEN** the sheet shows his name and address and the line "Missing: email, phone"
+
+#### Scenario: Only delivery information missing
+- **WHEN** `bob` set the four required fields and no delivery information
+- **THEN** the sheet shows no "Missing" line
+
+#### Scenario: Only delivery information set
+- **WHEN** `bob` set only the delivery information
+- **THEN** the sheet shows it and the line "Missing: full name, email, phone, address"
+
+#### Scenario: Nothing set
+- **WHEN** `bob` set nothing for the group
+- **THEN** the sheet only says he has not added delivery info yet

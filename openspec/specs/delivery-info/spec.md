@@ -6,7 +6,7 @@ What a participant tells a group about where and how a gift can reach them: five
 ## Requirements
 
 ### Requirement: Delivery info belongs to a group
-A participant SHALL have, for each group they take part in, delivery info: a full name, an email, a phone number, an address and delivery information, each optional and initially empty. It SHALL belong to that group alone and SHALL NOT be shared with the person's other groups.
+A participant SHALL have, for each group they take part in, delivery info: a full name, an email, a phone number, an address and delivery information, each initially empty. It SHALL belong to that group alone and SHALL NOT be shared with the person's other groups. The first four are required whenever it is saved, as `Edit own delivery info` says, and the delivery information is optional.
 
 #### Scenario: Nothing set yet
 - **WHEN** a person becomes a participant of a group
@@ -36,15 +36,23 @@ The server SHALL expose `GET /groups/{id}/delivery-info` to a participant of a P
 - **THEN** the response is 403 with code `password_change_required`
 
 ### Requirement: Edit own delivery info
-The server SHALL expose `PUT /groups/{id}/delivery-info` letting a participant replace their full name, email, phone, address and delivery information for the group while it is Pending or Active, any of which may be cleared. A given email SHALL be a syntactically valid address and each text field at most 500 characters. An Archived group SHALL NOT be changed.
+The server SHALL expose `PUT /groups/{id}/delivery-info` letting a participant replace their full name, email, phone, address and delivery information for the group while it is Pending or Active. The full name, email, phone and address SHALL each be given; the delivery information MAY be cleared. The email SHALL be a syntactically valid address and each text field at most 500 characters. An Archived group SHALL NOT be changed.
 
 #### Scenario: Updated
 - **WHEN** `alice` submits new values in a Pending group
 - **THEN** the response is 200 and a later `GET` of the route shows them
 
 #### Scenario: Field cleared
-- **WHEN** a participant submits a null or blank phone
-- **THEN** the phone becomes empty
+- **WHEN** a participant submits a null or blank delivery information and the other four fields
+- **THEN** the delivery information becomes empty and the response is 200
+
+#### Scenario: Required field missing
+- **WHEN** a participant submits a null or blank full name, email, phone or address
+- **THEN** the response is 400 with code `validation_failed` naming that field and nothing changes
+
+#### Scenario: Incomplete info stays readable
+- **WHEN** a participant whose saved delivery info lacks a phone reads it with `GET /groups/{id}/delivery-info`
+- **THEN** the response is 200 with what is saved, and a save succeeds only once all four required fields are given
 
 #### Scenario: Invalid email
 - **WHEN** a participant submits an email that is not a valid address

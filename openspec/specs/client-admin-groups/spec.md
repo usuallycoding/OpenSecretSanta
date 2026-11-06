@@ -152,23 +152,27 @@ Choosing a group SHALL open its detail, loaded with `GET /admin/groups/{id}`, sh
 - **THEN** their row shows the username and `*`, and choosing the username or the gift icon does nothing
 
 ### Requirement: Marks on participants
-In the participants list of a Draft or Pending group a participant without an account SHALL be followed by a single `*`, and so SHALL, in a Pending group, a participant whose delivery info lacks a name or an address, and the list SHALL end with the legend "* no account or delivery info incomplete", shown only when at least one participant has the mark.
+In the participants list of a Draft or Pending group a participant without an account SHALL be followed by a single `*`. In a Pending group a participant with an account SHALL also be followed by a key icon while still on a temporary password and by a pin icon while their delivery info lacks a full name, email, phone or address, as `client-admin-oversight` describes. The list SHALL end with a legend of the marks shown, only when at least one is.
 
 #### Scenario: Participants with marks
 - **WHEN** a Draft group has `alice` with an account and `newcomer` without one
-- **THEN** `alice` has no mark, `newcomer` is followed by `*` and the legend is shown
+- **THEN** `alice` has no mark, `newcomer` is followed by `*` and the legend "* no account" is shown
 
 #### Scenario: Incomplete profile
-- **WHEN** a Pending group has a participant whose delivery info has no address
-- **THEN** that participant is followed by `*`, the same as a participant without an account
+- **WHEN** a Pending group has a participant with an account whose delivery info has no address
+- **THEN** that participant is followed by the pin icon, not by `*`, and the legend explains the icon
 
 #### Scenario: Incomplete profile after the draw
 - **WHEN** an Active group has a participant whose delivery info has no address
-- **THEN** that username is followed by `*` in the pair list
+- **THEN** that username is followed by the pin icon in the pair list
 
 #### Scenario: Nobody marked
-- **WHEN** every participant has an account and, in a Pending group, complete delivery info
-- **THEN** no `*` and no legend are shown
+- **WHEN** every participant has an account, has changed their temporary password and, in a Pending group, has complete delivery info
+- **THEN** no mark and no legend are shown
+
+#### Scenario: Temporary password
+- **WHEN** a Pending group has a participant who has not changed their temporary password
+- **THEN** that participant is followed by the key icon and the legend explains it
 
 ### Requirement: Editing participants
 While a group is Draft or Pending the administrator SHALL be able to edit the participants in a bottom sheet: add a username, remove a username, then save with `PUT /admin/groups/{id}/participants`, which replaces the whole list. A username is checked before sending as the server checks it (3 to 32 characters of letters, digits, `.`, `_` or `-`, case ignored) and a name already in the list is not added twice. Once the group is Active or Archived the participants SHALL be shown read-only.
@@ -419,11 +423,11 @@ The whole page SHALL scroll as one: the details, the actions, the search field a
 - **THEN** the details, the actions and the search field scroll away with the people
 
 ### Requirement: Marks in the pair list
-In the pair list of an Active or Archived group a username whose delivery info lacks a name or an address SHALL be followed by `*`, as described in `client-admin-oversight`.
+In the pair list of an Active or Archived group a username SHALL carry the key icon while its account is on a temporary password and the pin icon while its delivery info lacks a full name, email, phone or address, as described in `client-admin-oversight`.
 
 #### Scenario: Pair list mark
 - **WHEN** `bob`'s delivery info has no address and the group is Active
-- **THEN** `bob` is followed by `*` in the pair list
+- **THEN** `bob` is followed by the pin icon in the pair list
 
 ### Requirement: Marks never block an action
 The marks SHALL NOT block any action.
