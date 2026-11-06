@@ -76,13 +76,14 @@ internal fun SecretSantaCard(
 
 /**
  * What is the person's own: the Receiver page on either tab and, last, their details sheet. "Respond to Santa" carries the number
- * of questions [unanswered] when there are some. The questions tab exists from Active on,
+ * of questions [unanswered] when there are some, and [asksForDeliveryInfo] puts a message above "Delivery Info". The questions tab exists from Active on,
  * and the Santa can be revealed only once the group is Archived, so nothing earlier offers either.
  */
 @Composable
 internal fun YourStuffCard(
     phase: GroupPhase,
     unanswered: Int,
+    asksForDeliveryInfo: Boolean,
     onOpenReceiver: (questions: Boolean) -> Unit,
     onSheet: (PairSheet) -> Unit,
 ) {
@@ -107,7 +108,11 @@ internal fun YourStuffCard(
             if (phase == GroupPhase.Archived) {
                 OutlinedButton(onClick = { onSheet(PairSheet.Santa) }, modifier = Modifier.fillMaxWidth()) { Text(Strings.REVEAL_SANTA) }
             }
-            OutlinedButton(onClick = { onSheet(PairSheet.Me) }, modifier = Modifier.fillMaxWidth()) { Text(Strings.DELIVERY_INFO) }
+            // a person who still has to give their delivery info is asked to, right above the button that shows it
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (asksForDeliveryInfo) Text(Strings.DELIVERY_INFO_NEEDED, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                OutlinedButton(onClick = { onSheet(PairSheet.Me) }, modifier = Modifier.fillMaxWidth()) { Text(Strings.DELIVERY_INFO) }
+            }
         }
     }
 }

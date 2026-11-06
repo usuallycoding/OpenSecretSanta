@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.usuallycoding.opensecretsanta.contract.DeliveryInfoDto
 import com.usuallycoding.opensecretsanta.data.api.ApiClient
 import com.usuallycoding.opensecretsanta.data.api.map
+import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfo
 import com.usuallycoding.opensecretsanta.ui.gift.ReceiverInfo
 import com.usuallycoding.opensecretsanta.ui.gift.toInfo
 import com.usuallycoding.opensecretsanta.ui.load.LoadState
@@ -38,6 +39,21 @@ data class MyDetails(
     val deliveryInfo: String?,
 ) {
     val hasProfile: Boolean get() = listOf(fullName, email, phone, address, deliveryInfo).any { it != null }
+
+    /** The full name, email, phone and address are all set: the one rule of `DeliveryInfo`, so the app has a single definition. */
+    val isComplete: Boolean get() = DeliveryInfo(fullName, email, phone, address, deliveryInfo).isComplete
+}
+
+/**
+ * Whether the "Your stuff:" card asks the person to fill in their delivery info: only while they can still edit it (a Pending or an
+ * Active group), once it has loaded, and while it lacks a required field. Loading, a failed load and a failed reload say nothing, as
+ * what is known is then not reliable.
+ */
+fun showsDeliveryNudge(phase: GroupPhase?, details: LoadState<MyDetails>?): Boolean {
+    if (phase != GroupPhase.Pending && phase != GroupPhase.Active) return false
+    if (details == null || details.error != null) return false
+    val loaded = details.value ?: return false
+    return !loaded.isComplete
 }
 
 private fun String?.clean(): String? = this?.trim()?.ifEmpty { null }

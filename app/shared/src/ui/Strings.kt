@@ -141,6 +141,7 @@ object Strings {
     const val TELL_YOUR_SANTA = "Tell your santa what you want and let them know you!"
     const val YOUR_STUFF = "Your stuff:"
     const val DELIVERY_INFO = "Delivery Info"
+    const val DELIVERY_INFO_NEEDED = "Please fill out your delivery info in order to be able to receive your secret gift!"
     const val EDIT_DELIVERY_INFO = "Edit Delivery Info"
     const val SEE_WISHLIST = "See Wishlist"
     const val ASK_QUESTIONS = "Ask Questions"

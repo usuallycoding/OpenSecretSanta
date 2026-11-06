@@ -52,7 +52,13 @@ fun GroupPage(
     } else {
         null
     }
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh(); santaQuestions?.refresh() }
+    // the person's own delivery info, which the sheet of the card shares, only while they can still fill it in
+    val myDetails = if (phase == GroupPhase.Pending || phase == GroupPhase.Active) {
+        koinViewModel<MyDetailsViewModel>(key = "my-details-${viewModel.groupId}") { parametersOf(viewModel.groupId, me) }
+    } else {
+        null
+    }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh(); santaQuestions?.refresh(); myDetails?.refresh() }
 
     if (state.isGone()) {
         GroupGone(onBack)
@@ -68,14 +74,18 @@ fun GroupPage(
     // unknown, so no badge, while the questions load and when they could not be loaded
     val unanswered = santaQuestions?.data?.collectAsState()?.value
         ?.takeIf { it.error == null }?.value?.let { unansweredCount(it.questions, it.canAnswer) } ?: 0
+    val asksForDeliveryInfo = showsDeliveryNudge(phase, myDetails?.details?.collectAsState()?.value)
     var sheet by remember { mutableStateOf<PairSheet?>(null) }
 
-    PullPage(loading = state.loading || receiver?.loading == true, onRefresh = { viewModel.refresh(); pair?.refresh(); santaQuestions?.refresh() }) {
+    PullPage(
+        loading = state.loading || receiver?.loading == true,
+        onRefresh = { viewModel.refresh(); pair?.refresh(); santaQuestions?.refresh(); myDetails?.refresh() },
+    ) {
         LoadSection(state, onRetry = { viewModel.refresh() }) { detail ->
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Header(detail)
                 SecretSantaCard(detail.phase, receiver, onRetry = { pair?.refresh() }, onOpenGifter, onSheet = { sheet = it })
-                YourStuffCard(detail.phase, unanswered, onOpenReceiver, onSheet = { sheet = it })
+                YourStuffCard(detail.phase, unanswered, asksForDeliveryInfo, onOpenReceiver, onSheet = { sheet = it })
                 Participants(detail.participants)
             }
         }
