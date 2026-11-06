@@ -18,7 +18,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -53,6 +52,13 @@ import com.usuallycoding.opensecretsanta.ui.form.ParticipantChips
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedIconButton
+import androidx.compose.foundation.BorderStroke
+import com.usuallycoding.opensecretsanta.ui.form.KeyIcon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.ui.text.style.TextAlign
 
 /** One of the administrator's groups: its details and people, and what can be done with it in its state. */
@@ -157,7 +163,7 @@ private fun AdminStep.label() = when (this) {
     AdminStep.Delete -> Strings.DELETE
 }
 
-/** The group's details and, in one row, everything that can be done with it: edit, the next step and (a Draft) delete. */
+/** The group's details and, in one row, everything that can be done with it: edit, announce, passwords, delete and, last, the next step. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Header(group: AdminGroup, viewModel: AdminGroupViewModel, busy: Boolean, onEdit: () -> Unit, onAnnounce: () -> Unit) {
@@ -171,22 +177,27 @@ private fun Header(group: AdminGroup, viewModel: AdminGroupViewModel, busy: Bool
         val step = viewModel.nextStep
         val blocked = viewModel.drawNeedsMorePeople
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            // the four actions are icons, each spoken by its label; the step, which moves the group forward, comes last
             if (viewModel.canEditDetails) {
-                OutlinedButton(onClick = onEdit) { Text(Strings.ADMIN_EDIT_DETAILS) }
+                OutlinedIconButton(onClick = onEdit) { Icon(Icons.Filled.Edit, contentDescription = Strings.ADMIN_EDIT_DETAILS) }
             }
             if (viewModel.canAnnounce) {
-                OutlinedButton(onClick = onAnnounce) { Text(Strings.ANNOUNCE_BUTTON) }
+                OutlinedIconButton(onClick = onAnnounce) { Icon(Icons.Filled.Notifications, contentDescription = Strings.ANNOUNCE_BUTTON) }
             }
             if (viewModel.canGetPasswords) {
-                OutlinedButton(onClick = { viewModel.getPasswords() }, enabled = !busy) { Text(Strings.GET_PASSWORDS) }
+                OutlinedIconButton(onClick = { viewModel.getPasswords() }, enabled = !busy) { Icon(KeyIcon, contentDescription = Strings.GET_PASSWORDS) }
+            }
+            if (viewModel.canDelete) {
+                OutlinedIconButton(
+                    onClick = { viewModel.ask(AdminStep.Delete) },
+                    enabled = !busy,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = if (busy) 0.12f else 1f)),
+                ) {
+                    Icon(Icons.Filled.Delete, contentDescription = Strings.DELETE, tint = MaterialTheme.colorScheme.error)
+                }
             }
             if (step != null) {
                 Button(onClick = { viewModel.ask(step) }, enabled = !busy && !blocked) { Text(step.label()) }
-            }
-            if (viewModel.canDelete) {
-                TextButton(onClick = { viewModel.ask(AdminStep.Delete) }, enabled = !busy) {
-                    Text(Strings.DELETE, color = MaterialTheme.colorScheme.error)
-                }
             }
         }
         if (step != null && blocked) {
