@@ -13,11 +13,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.form.CountBadged
 import com.usuallycoding.opensecretsanta.ui.form.SnowCard
+import com.usuallycoding.opensecretsanta.ui.gift.countBadgeText
 import com.usuallycoding.opensecretsanta.ui.gift.ReceiverInfo
 import com.usuallycoding.opensecretsanta.ui.load.LoadState
 import com.usuallycoding.opensecretsanta.ui.load.loadMessage
@@ -72,12 +75,14 @@ internal fun SecretSantaCard(
 }
 
 /**
- * What is the person's own: the Receiver page on either tab and, last, their details sheet. The questions tab exists from Active on,
+ * What is the person's own: the Receiver page on either tab and, last, their details sheet. "Respond to Santa" carries the number
+ * of questions [unanswered] when there are some. The questions tab exists from Active on,
  * and the Santa can be revealed only once the group is Archived, so nothing earlier offers either.
  */
 @Composable
 internal fun YourStuffCard(
     phase: GroupPhase,
+    unanswered: Int,
     onOpenReceiver: (questions: Boolean) -> Unit,
     onSheet: (PairSheet) -> Unit,
 ) {
@@ -89,7 +94,15 @@ internal fun YourStuffCard(
             Text(Strings.TELL_YOUR_SANTA, style = MaterialTheme.typography.bodyMedium, fontStyle = FontStyle.Italic)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = { onOpenReceiver(false) }, modifier = Modifier.weight(1f)) { Text(Strings.EDIT_WISHLIST) }
-                if (drawn) Button(onClick = { onOpenReceiver(true) }, modifier = Modifier.weight(1f)) { Text(Strings.RESPOND_TO_SANTA) }
+                if (drawn) {
+                    CountBadged(countBadgeText(unanswered), Modifier.weight(1f)) {
+                        Button(
+                            onClick = { onOpenReceiver(true) },
+                            // the badge says nothing of its own, so the button says how many wait
+                            modifier = Modifier.fillMaxWidth().semantics { if (unanswered > 0) contentDescription = Strings.withUnanswered(Strings.RESPOND_TO_SANTA, unanswered) },
+                        ) { Text(Strings.RESPOND_TO_SANTA) }
+                    }
+                }
             }
             if (phase == GroupPhase.Archived) {
                 OutlinedButton(onClick = { onSheet(PairSheet.Santa) }, modifier = Modifier.fillMaxWidth()) { Text(Strings.REVEAL_SANTA) }

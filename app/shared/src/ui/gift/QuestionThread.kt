@@ -32,6 +32,7 @@ import com.usuallycoding.opensecretsanta.ui.form.BadgeSize
 import com.usuallycoding.opensecretsanta.ui.form.NumberBadge
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
 import com.usuallycoding.opensecretsanta.ui.form.TimesLine
+import com.usuallycoding.opensecretsanta.ui.form.UnansweredPill
 
 private val LineGap = 6.dp
 private val LineElbow = 8.dp
@@ -40,7 +41,7 @@ private val LineWidth = 1.5.dp
 /**
  * A question with its answer: the number sits in a small circle at the start of the question, and a thin line runs from the
  * circle down and turns toward the answer, which is indented to line up with the question's text. An unanswered question
- * keeps the line, with [Strings.NOT_ANSWERED] in the answer's place. The line is decoration; the texts keep their own labels
+ * keeps the line, with [Strings.NOT_ANSWERED] in the answer's place, and with [needsAnswer] also a pill beside the time it was asked. The line is decoration; the texts keep their own labels
  * for screen readers.
  */
 @Composable
@@ -52,6 +53,7 @@ internal fun QuestionThread(
     answered: String?,
     answerChanged: String?,
     modifier: Modifier = Modifier,
+    needsAnswer: Boolean = false,
 ) {
     val lineColor = MaterialTheme.colorScheme.outlineVariant
     var answerTop by remember { mutableFloatStateOf(0f) }
@@ -78,7 +80,10 @@ internal fun QuestionThread(
             NumberBadge(number)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 ReadOnlyText(text, style = MaterialTheme.typography.titleSmall, label = "${Strings.QUESTION_LABEL} $number")
-                TimesLine(Strings.asked(asked))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    TimesLine(Strings.asked(asked), modifier = Modifier.weight(1f, fill = false))
+                    if (needsAnswer) UnansweredPill(Strings.UNANSWERED)
+                }
             }
         }
         Column(

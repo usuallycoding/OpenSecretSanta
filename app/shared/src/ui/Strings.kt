@@ -157,6 +157,7 @@ object Strings {
     const val ASK_QUESTION = "Ask a question"
     const val NO_QUESTIONS_ASKED = "You have not asked anything yet."
     const val NOT_ANSWERED = "Not answered yet"
+    const val UNANSWERED = "Unanswered"
     const val ANSWER = "Answer"
     const val CHANGE_ANSWER = "Change answer"
     const val YOUR_ANSWER = "Your answer"
@@ -330,6 +331,8 @@ object Strings {
     const val ADMIN_THREAD_EMPTY = "Nothing has been asked yet."
     fun added(time: String) = "Added $time"
     fun changed(time: String) = "Changed $time"
+    /** What a screen reader says for a button or tab that carries a count of unanswered questions. */
+    fun withUnanswered(name: String, count: Int) = "$name, $count unanswered"
     fun asked(time: String) = "Asked $time"
     fun answered(time: String) = "Answered $time"
     fun answerChanged(time: String) = "Answer changed $time"

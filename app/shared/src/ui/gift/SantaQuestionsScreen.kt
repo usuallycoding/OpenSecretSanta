@@ -49,7 +49,7 @@ fun SantaQuestionsSection(viewModel: SantaQuestionsViewModel) {
             } else {
                 Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     for (question in loaded.questions) {
-                        QuestionCard(question, action = if (loaded.canAnswer) {
+                        QuestionCard(question, needsAnswer = loaded.canAnswer && question.answer == null, action = if (loaded.canAnswer) {
                             {
                                 TextButton(onClick = { viewModel.openAnswer(question.number) }) {
                                     Text(if (question.answer == null) Strings.ANSWER else Strings.CHANGE_ANSWER)
