@@ -45,6 +45,7 @@ import com.usuallycoding.opensecretsanta.domain.group.Shuffler
 import com.usuallycoding.opensecretsanta.domain.group.UpdateGroupDetails
 import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfoRepository
 import com.usuallycoding.opensecretsanta.domain.delivery.GetMyDeliveryInfo
+import com.usuallycoding.opensecretsanta.domain.delivery.GetParticipantDeliveryInfo
 import com.usuallycoding.opensecretsanta.domain.delivery.UpdateMyDeliveryInfo
 import com.usuallycoding.opensecretsanta.server.data.delivery.SqliteDeliveryInfoRepository
 import com.usuallycoding.opensecretsanta.domain.wishlist.AddWishlistItem
@@ -221,6 +222,7 @@ val useCaseModule = module {
     single { GetReceiverWishlist(get(), get(), get()) }
 
     single { GetParticipantWishlist(get(), get()) }
+    single { GetParticipantDeliveryInfo(get(), get()) }
     single { ListQuestionThreads(get(), get(), get()) }
 
     single { GetNotificationSettings(get(), get()) }

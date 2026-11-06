@@ -213,6 +213,10 @@ class ApiClient(
     suspend fun adminParticipantWishlist(id: Long, username: String): ApiResult<List<SharedWishlistItemDto>> =
         call(HttpMethod.Get, ApiRoutes.adminGroupParticipantWishlist(id, username))
 
+    /** One participant's delivery info for the group, as the owner reads it: each field empty when not set. */
+    suspend fun adminParticipantDeliveryInfo(id: Long, username: String): ApiResult<DeliveryInfoDto> =
+        call(HttpMethod.Get, ApiRoutes.adminGroupParticipantDeliveryInfo(id, username))
+
     /** Every question thread of an Active or Archived group, naming both people in each. */
     suspend fun adminQuestions(id: Long): ApiResult<List<AdminQuestionThreadDto>> =
         call(HttpMethod.Get, ApiRoutes.adminGroupQuestions(id))

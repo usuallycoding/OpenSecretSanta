@@ -119,8 +119,9 @@ private fun SantaSheet(groupId: Long, onDismiss: () -> Unit) {
     }
 }
 
+/** One labelled value of a person's details, left out when it is not set. */
 @Composable
-private fun DetailField(label: String, value: String?) {
+internal fun DetailField(label: String, value: String?) {
     if (value == null) return
     Column {
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

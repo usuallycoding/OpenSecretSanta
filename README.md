@@ -216,10 +216,11 @@ The owner of a group can read what is going on inside it, even when they also ta
 | Method and path                                              | Who   | Purpose                                                                                      |
 |--------------------------------------------------------------|-------|----------------------------------------------------------------------------------------------|
 | `GET /admin/groups/{id}/participants/{username}/wishlist`    | owner | That participant's wishlist for the group (Pending, Active and Archived), without item ids   |
+| `GET /admin/groups/{id}/participants/{username}/delivery-info` | owner | That participant's delivery info for the group (Pending, Active and Archived): full name, email, phone, address and delivery information, each empty when not set |
 | `GET /admin/groups/{id}/questions`                           | owner | Every thread (Active and Archived): the Santa, the receiver and all questions with answers and times |
 | `GET /admin/groups/{id}/assignments`                         | owner | Every Santa and receiver pair (Active and Archived)                                          |
 
-A Draft group has no wishlists yet and a Draft or Pending group has no threads; asking answers `409` with the code `invalid_state`. A username that is not a participant answers `404`. An owner who is also a participant sees their own Santa through these routes before the group is archived; the participant routes (for example `GET /groups/{id}/santa`) still refuse until then. The owner cannot change any wishlist, question or answer.
+A Draft group has no wishlists or delivery info yet and a Draft or Pending group has no threads; asking answers `409` with the code `invalid_state`. A username that is not a participant answers `404`. An owner who is also a participant sees their own Santa through these routes before the group is archived; the participant routes (for example `GET /groups/{id}/santa`) still refuse until then. The owner cannot change any wishlist, delivery info, question or answer. The group view (`GET /admin/groups/{id}`) still carries only each participant's full name and the `profileComplete` flag; the rest of a person's delivery info is read one participant at a time, and the app shows it in the sheet opened from a username in the group.
 
 ### The app
 

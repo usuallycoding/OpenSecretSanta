@@ -2,6 +2,7 @@ package com.usuallycoding.opensecretsanta.ui.admin
 
 import com.usuallycoding.opensecretsanta.contract.AdminQuestionThreadDto
 import com.usuallycoding.opensecretsanta.contract.AssignmentDto
+import com.usuallycoding.opensecretsanta.contract.DeliveryInfoDto
 import com.usuallycoding.opensecretsanta.contract.QuestionDto
 import com.usuallycoding.opensecretsanta.contract.SharedWishlistItemDto
 import com.usuallycoding.opensecretsanta.ui.groups.changedTime
@@ -68,4 +69,23 @@ internal fun QuestionDto.toOversightQuestion() = OversightQuestion(
 
 internal fun AdminQuestionThreadDto.toThread(me: String) = OversightThread(
     santa, receiver, santa == me, receiver == me, questions.map { it.toOversightQuestion() },
+)
+
+/** What a participant told the group about where a gift can reach them, as the owner reads it: a field that is not set is null. */
+data class OversightDeliveryInfo(
+    val fullName: String?,
+    val email: String?,
+    val phone: String?,
+    val address: String?,
+    val deliveryInfo: String?,
+) {
+    val isEmpty: Boolean get() = listOf(fullName, email, phone, address, deliveryInfo).all { it == null }
+}
+
+internal fun DeliveryInfoDto.toOversight() = OversightDeliveryInfo(
+    fullName = fullName?.trim()?.ifEmpty { null },
+    email = email?.trim()?.ifEmpty { null },
+    phone = phone?.trim()?.ifEmpty { null },
+    address = address?.trim()?.ifEmpty { null },
+    deliveryInfo = deliveryInfo?.trim()?.ifEmpty { null },
 )

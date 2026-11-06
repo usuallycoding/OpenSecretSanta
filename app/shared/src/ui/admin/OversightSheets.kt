@@ -30,6 +30,7 @@ import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.form.PairLink
 import com.usuallycoding.opensecretsanta.ui.form.SnowCard
+import com.usuallycoding.opensecretsanta.ui.groups.DetailField
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.load.LoadState
 import com.usuallycoding.opensecretsanta.ui.load.loadMessage
@@ -88,7 +89,7 @@ internal fun ColumnScope.PairList(draw: DrawState, query: String, onRetry: () ->
 @Composable
 internal fun GroupSheetHost(sheet: GroupSheet, groupId: Long, me: String, draw: DrawState, onDismiss: () -> Unit) {
     when (sheet) {
-        is GroupSheet.User -> UserSheet(sheet.username, me, onDismiss)
+        is GroupSheet.User -> UserSheet(groupId, sheet.username, me, onDismiss)
         is GroupSheet.Pair -> {
             val pair = (draw as? DrawState.Pairs)?.pairs?.firstOrNull { it.santa == sheet.santa && it.receiver == sheet.receiver }
             val title = Strings.adminPair(
@@ -130,13 +131,21 @@ private fun <T : Any> Part(state: LoadState<T>, onRetry: () -> Unit, content: @C
 
 // --- the user sheet --------------------------------------------------------------------------------
 
-/** A person's details with the reset, as on the Users tab. It loads again each time it is opened. */
+/**
+ * A person's account with the reset, as on the Users tab, and below it what they told this group about where a gift can reach them.
+ * The two parts load apart and both load again each time the sheet is opened.
+ */
 @Composable
-private fun UserSheet(username: String, me: String, onDismiss: () -> Unit) {
+private fun UserSheet(groupId: Long, username: String, me: String, onDismiss: () -> Unit) {
     val viewModel = koinViewModel<AdminUserViewModel>(key = "admin-user-$username") { parametersOf(username, me) }
+    val delivery = koinViewModel<AdminParticipantDeliveryInfoViewModel>(key = "admin-delivery-$groupId-$username") { parametersOf(groupId, username) }
     val state by viewModel.data.collectAsState()
+    val deliveryState by delivery.state.collectAsState()
     val ui by viewModel.ui.collectAsState()
-    LaunchedEffect(viewModel) { viewModel.refresh() }
+    LaunchedEffect(viewModel, delivery) {
+        viewModel.refresh()
+        delivery.refresh()
+    }
 
     SheetFrame(onDismiss) {
         if (state.isGone()) {
@@ -144,9 +153,37 @@ private fun UserSheet(username: String, me: String, onDismiss: () -> Unit) {
         } else {
             UserNoticeRow(ui, viewModel)
             Part(state, onRetry = { viewModel.refresh() }) { user -> UserDetail(user, viewModel, ui.busy) }
+            DeliveryInfoPart(deliveryState, onRetry = { delivery.refresh() })
         }
     }
     UserDialogs(viewModel, ui)
+}
+
+/** The person's delivery info for the group, read-only; it fails, retries and says it is gone on its own, apart from the account part. */
+@Composable
+private fun DeliveryInfoPart(state: LoadState<OversightDeliveryInfo>, onRetry: () -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(Strings.DELIVERY_INFO, style = MaterialTheme.typography.titleMedium)
+        when {
+            state.value == null && state.isGone() -> Text(Strings.ADMIN_PARTICIPANT_GONE, style = MaterialTheme.typography.bodyMedium)
+            state.notReadable() -> Text(Strings.ADMIN_NOT_READABLE, style = MaterialTheme.typography.bodyMedium)
+            else -> Part(state, onRetry) { info ->
+                if (info.isEmpty) {
+                    Text(Strings.ADMIN_DELIVERY_EMPTY, style = MaterialTheme.typography.bodyMedium)
+                } else {
+                    SnowCard("delivery-${info.fullName}", Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            DetailField(Strings.USER_FIELD_NAME, info.fullName)
+                            DetailField(Strings.USER_FIELD_EMAIL, info.email)
+                            DetailField(Strings.RECEIVER_PHONE, info.phone)
+                            DetailField(Strings.RECEIVER_ADDRESS, info.address)
+                            DetailField(Strings.RECEIVER_DELIVERY, info.deliveryInfo)
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 // --- the pair and wishlist sheets -------------------------------------------------------------------

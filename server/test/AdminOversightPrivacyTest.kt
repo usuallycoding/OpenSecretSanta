@@ -4,6 +4,7 @@ import com.usuallycoding.opensecretsanta.contract.AnswerRequest
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.AskQuestionRequest
 import com.usuallycoding.opensecretsanta.contract.AssignmentDto
+import com.usuallycoding.opensecretsanta.contract.DeliveryInfoDto
 import com.usuallycoding.opensecretsanta.contract.ErrorResponse
 import com.usuallycoding.opensecretsanta.contract.HealthResponse
 import com.usuallycoding.opensecretsanta.contract.AdminQuestionThreadDto
@@ -61,6 +62,7 @@ class AdminOversightPrivacyTest {
         val g = group.toLong()
         for (n in names) {
             assertEquals(HttpStatusCode.Created, send("POST", ApiRoutes.groupWishlistItems(g), fx.token(n), WishlistItemRequest("SECRET-WISH-$n")).status)
+            assertEquals(HttpStatusCode.OK, send("PUT", ApiRoutes.groupDeliveryInfo(g), fx.token(n), DeliveryInfoDto("Name $n", "$n@secret.example", "SECRET-PHONE-$n", "SECRET-ADDRESS-$n", "SECRET-NOTE-$n")).status)
         }
         for ((index, pair) in listOf("owner" to "alice", "alice" to "bob", "bob" to "carol", "carol" to "owner").withIndex()) {
             val (santa, receiver) = pair
@@ -73,7 +75,7 @@ class AdminOversightPrivacyTest {
     private suspend fun HttpClient.participantResponses(group: Int): Map<String, String> {
         val g = group.toLong()
         val paths = listOf(
-            ApiRoutes.group(g), ApiRoutes.groupWishlist(g), ApiRoutes.groupReceiver(g), ApiRoutes.groupReceiverWishlist(g),
+            ApiRoutes.group(g), ApiRoutes.groupDeliveryInfo(g), ApiRoutes.groupWishlist(g), ApiRoutes.groupReceiver(g), ApiRoutes.groupReceiverWishlist(g),
             ApiRoutes.groupReceiverQuestions(g), ApiRoutes.groupSantaQuestions(g), ApiRoutes.groupSanta(g),
         )
         return names.flatMap { n -> paths.map { p -> "$n $p" to getAs(p, fx.token(n)).let { "${it.status.value} ${it.bodyAsText()}" } } }.toMap()
@@ -83,6 +85,7 @@ class AdminOversightPrivacyTest {
         val owner = fx.token("owner")
         repeat(3) {
             for (n in names) assertEquals(HttpStatusCode.OK, getAs(ApiRoutes.adminGroupParticipantWishlist(group.toLong(), n), owner).status)
+            for (n in names) assertEquals(HttpStatusCode.OK, getAs(ApiRoutes.adminGroupParticipantDeliveryInfo(group.toLong(), n), owner).status)
             assertEquals(HttpStatusCode.OK, getAs(ApiRoutes.adminGroupQuestions(group.toLong()), owner).status)
             assertEquals(HttpStatusCode.OK, getAs(ApiRoutes.adminGroupAssignments(group.toLong()), owner).status)
         }
@@ -120,6 +123,8 @@ class AdminOversightPrivacyTest {
         ).map { it.bodyAsText() }
 
         for (body in bodies) assertFalse("SECRET" in body, body)
+        // the owner's group view still has only the full name and the completeness flag, never the other delivery info
+        for (body in bodies) assertFalse("@secret.example" in body, body)
     }
 
     @Test

@@ -6,7 +6,10 @@ import com.usuallycoding.opensecretsanta.contract.SharedWishlistItemDto
 import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminPairThreadViewModel
+import com.usuallycoding.opensecretsanta.ui.admin.AdminParticipantDeliveryInfoViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminParticipantWishlistViewModel
+import com.usuallycoding.opensecretsanta.ui.admin.AdminUserViewModel
+import com.usuallycoding.opensecretsanta.contract.DeliveryInfoDto
 import com.usuallycoding.opensecretsanta.ui.admin.DrawState
 import com.usuallycoding.opensecretsanta.ui.admin.GroupSheet
 import com.usuallycoding.opensecretsanta.ui.groups.formatInstant
@@ -28,6 +31,9 @@ class AdminOversightViewModelTest {
 
     private suspend fun wishlist(id: Long, username: String) =
         AdminParticipantWishlistViewModel(id, username, server.api, immediateScope()).also { it.refresh().join() }
+
+    private suspend fun delivery(id: Long, username: String) =
+        AdminParticipantDeliveryInfoViewModel(id, username, server.api, immediateScope()).also { it.refresh().join() }
 
     private suspend fun thread(id: Long, santa: String, receiver: String) =
         AdminPairThreadViewModel(id, santa, receiver, server.api, immediateScope()).also { it.refresh().join() }
@@ -210,6 +216,68 @@ class AdminOversightViewModelTest {
         assertEquals("5 Dec 2026, 10:30", items[1].changed)
         assertEquals("Blue", items[1].note)
         assertEquals("https://shop.example/x", items[1].url)
+    }
+
+    // --- a participant's delivery info in the user sheet -------------------------------------------------
+
+    @Test
+    fun theDeliveryInfoShowsEveryFieldTheParticipantSetAndNothingElse() = runTest {
+        val id = groups.add("Soon", "pending", listOf("alice", "bob"))
+        oversight.deliveryInfo(id, "bob", DeliveryInfoDto(fullName = " Bob Brown ", email = "bob@example.com", phone = "  ", address = "1 Main St", deliveryInfo = null))
+
+        val info = delivery(id, "bob").state.value.value!!
+
+        assertEquals("Bob Brown", info.fullName)
+        assertEquals("bob@example.com", info.email)
+        assertNull(info.phone)
+        assertEquals("1 Main St", info.address)
+        assertNull(info.deliveryInfo)
+        assertFalse(info.isEmpty)
+    }
+
+    @Test
+    fun aParticipantWhoSetNothingHasEmptyDeliveryInfo() = runTest {
+        val id = groups.add("Soon", "active", listOf("alice", "bob"))
+
+        assertTrue(delivery(id, "alice").state.value.value!!.isEmpty)
+    }
+
+    @Test
+    fun deliveryInfoOfAParticipantWhoLeftIsGoneAndOfADraftIsNotReadable() = runTest {
+        val soon = groups.add("Soon", "pending", listOf("alice"))
+        val draft = groups.add("Idea", "draft", listOf("alice"))
+
+        assertTrue(delivery(soon, "zed").state.value.isGone())
+        assertEquals(409, (delivery(draft, "alice").state.value.error as ApiError.Rejected).status)
+    }
+
+    @Test
+    fun theDeliveryInfoFailingLeavesTheAccountPartLoaded() = runTest {
+        val id = groups.add("Soon", "pending", listOf("alice", "bob"))
+        server.adminUsers.add("bob", temporary = "tmp-pass")
+        oversight.failNextWith(HttpStatusCode.InternalServerError, "internal_error")
+
+        val delivery = delivery(id, "bob")
+        val account = AdminUserViewModel("bob", "admin", server.api, immediateScope()).also { it.refresh().join() }
+
+        assertNull(delivery.state.value.value)
+        assertTrue(delivery.state.value.error != null)
+        assertEquals("bob", account.data.value.value!!.username)
+        assertEquals("tmp-pass", account.data.value.value!!.temporaryPassword)
+        assertNull(account.data.value.error)
+    }
+
+    @Test
+    fun theAccountFailingLeavesTheDeliveryInfoLoaded() = runTest {
+        val id = groups.add("Soon", "pending", listOf("alice", "bob"))
+        oversight.deliveryInfo(id, "bob", DeliveryInfoDto(fullName = "Bob Brown"))
+
+        val account = AdminUserViewModel("bob", "admin", server.api, immediateScope()).also { it.refresh().join() }
+        val delivery = delivery(id, "bob")
+
+        // bob is in a group but is not a user this administrator manages, so the account part is gone
+        assertTrue(account.data.value.isGone())
+        assertEquals("Bob Brown", delivery.state.value.value!!.fullName)
     }
 
     @Test

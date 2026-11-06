@@ -4,6 +4,7 @@ import com.usuallycoding.opensecretsanta.contract.AdminQuestionThreadDto
 import com.usuallycoding.opensecretsanta.contract.AnswerRequest
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.AskQuestionRequest
+import com.usuallycoding.opensecretsanta.contract.DeliveryInfoDto
 import com.usuallycoding.opensecretsanta.contract.ErrorResponse
 import com.usuallycoding.opensecretsanta.contract.SharedWishlistItemDto
 import com.usuallycoding.opensecretsanta.contract.WishlistItemRequest
@@ -27,6 +28,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class AdminOversightRoutesTest {
     private val fx = TestFixtures()
@@ -77,6 +79,16 @@ class AdminOversightRoutesTest {
 
     private suspend fun HttpClient.ownerReadsWishlist(group: Int, who: String, token: String = fx.token("admin-a")) =
         getAs(ApiRoutes.adminGroupParticipantWishlist(group.toLong(), who), token)
+
+    private suspend fun HttpClient.setDelivery(group: Int, user: String, info: DeliveryInfoDto) {
+        val response = send("PUT", ApiRoutes.groupDeliveryInfo(group.toLong()), fx.token(user), info)
+        assertEquals(HttpStatusCode.OK, response.status, response.bodyAsText())
+    }
+
+    private suspend fun HttpClient.ownerReadsDelivery(group: Int, who: String, token: String = fx.token("admin-a")) =
+        getAs(ApiRoutes.adminGroupParticipantDeliveryInfo(group.toLong(), who), token)
+
+    private val bobsInfo = DeliveryInfoDto("Bob Brown", "bob@example.com", "0700", "1 Main St", "Ring twice")
 
     private suspend fun HttpClient.ownerReadsThreads(group: Int, token: String = fx.token("admin-a")) =
         getAs(ApiRoutes.adminGroupQuestions(group.toLong()), token)
@@ -141,6 +153,92 @@ class AdminOversightRoutesTest {
         assertEquals(HttpStatusCode.NotFound, client.ownerReadsWishlist(id, "x").status)
         assertEquals(HttpStatusCode.NotFound, client.ownerReadsWishlist(9999, "bob").status)
         assertEquals(HttpStatusCode.NotFound, client.getAs("/admin/groups/abc/participants/bob/wishlist", fx.token("admin-a")).status)
+    }
+
+    @Test
+    fun theOwnerReadsAParticipantsWholeDeliveryInfo() = testApplication {
+        startApp()
+        val id = world()
+        client.setDelivery(id, "bob", bobsInfo)
+
+        val response = client.ownerReadsDelivery(id, "bob")
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals(bobsInfo, Json.decodeFromString<DeliveryInfoDto>(response.bodyAsText()))
+    }
+
+    @Test
+    fun nothingSetIsOkWithEveryFieldEmpty() = testApplication {
+        startApp()
+        val id = world()
+
+        val response = client.ownerReadsDelivery(id, "alice")
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals(DeliveryInfoDto(), Json.decodeFromString<DeliveryInfoDto>(response.bodyAsText()))
+    }
+
+    @Test
+    fun deliveryInfoIsReadableWhilePendingAndOnceArchived() = testApplication {
+        startApp()
+        val id = world(state = "pending")
+        client.setDelivery(id, "bob", bobsInfo)
+
+        assertEquals(bobsInfo, Json.decodeFromString<DeliveryInfoDto>(client.ownerReadsDelivery(id, "bob").bodyAsText()))
+
+        fx.sql("UPDATE groups SET state = 'archived' WHERE id = $id")
+
+        assertEquals(bobsInfo, Json.decodeFromString<DeliveryInfoDto>(client.ownerReadsDelivery(id, "bob").bodyAsText()))
+    }
+
+    @Test
+    fun aDraftHasNoDeliveryInfo() = testApplication {
+        startApp()
+        val id = world(state = "draft")
+
+        val response = client.ownerReadsDelivery(id, "bob")
+
+        assertEquals(HttpStatusCode.Conflict, response.status)
+        assertEquals("invalid_state", error(response.bodyAsText()).code)
+    }
+
+    @Test
+    fun deliveryInfoOfANonParticipantAnInvalidNameAnUnknownGroupAndANonNumericIdIsNotFound() = testApplication {
+        startApp()
+        val id = world()
+        fx.addUser("erin")
+
+        assertEquals(HttpStatusCode.NotFound, client.ownerReadsDelivery(id, "erin").status)
+        assertEquals(HttpStatusCode.NotFound, client.ownerReadsDelivery(id, "nobody").status)
+        assertEquals(HttpStatusCode.NotFound, client.ownerReadsDelivery(id, "x").status)
+        assertEquals(HttpStatusCode.NotFound, client.ownerReadsDelivery(9999, "bob").status)
+        assertEquals(HttpStatusCode.NotFound, client.getAs("/admin/groups/abc/participants/bob/delivery-info", fx.token("admin-a")).status)
+    }
+
+    @Test
+    fun onlyTheOwnerReadsDeliveryInfo() = testApplication {
+        startApp()
+        val id = world()
+        client.setDelivery(id, "bob", bobsInfo)
+        fx.addUser("admin-b", admin = true)
+
+        assertEquals(HttpStatusCode.NotFound, client.ownerReadsDelivery(id, "bob", fx.token("admin-b")).status)
+        assertEquals(HttpStatusCode.Forbidden, client.ownerReadsDelivery(id, "bob", fx.token("alice")).status)
+        assertEquals(HttpStatusCode.Unauthorized, client.getAs(ApiRoutes.adminGroupParticipantDeliveryInfo(id.toLong(), "bob"), null).status)
+    }
+
+    @Test
+    fun noAdminRouteWritesDeliveryInfo() = testApplication {
+        startApp()
+        val id = world()
+        client.setDelivery(id, "bob", bobsInfo)
+        val path = ApiRoutes.adminGroupParticipantDeliveryInfo(id.toLong(), "bob")
+
+        for (method in listOf("PUT", "POST", "DELETE", "PATCH")) {
+            val response = client.send(method, path, fx.token("admin-a"), DeliveryInfoDto(fullName = "Changed"))
+            assertTrue(response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.MethodNotAllowed, "$method -> ${response.status}")
+        }
+        assertEquals(bobsInfo, Json.decodeFromString<DeliveryInfoDto>(client.ownerReadsDelivery(id, "bob").bodyAsText()))
     }
 
     @Test

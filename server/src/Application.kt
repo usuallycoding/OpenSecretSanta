@@ -52,6 +52,7 @@ import com.usuallycoding.opensecretsanta.domain.group.MoveToPending
 import com.usuallycoding.opensecretsanta.domain.group.SetParticipants
 import com.usuallycoding.opensecretsanta.domain.group.Shuffler
 import com.usuallycoding.opensecretsanta.domain.group.UpdateGroupDetails
+import com.usuallycoding.opensecretsanta.domain.delivery.GetParticipantDeliveryInfo
 import com.usuallycoding.opensecretsanta.domain.wishlist.AddWishlistItem
 import com.usuallycoding.opensecretsanta.domain.wishlist.DeleteWishlistItem
 import com.usuallycoding.opensecretsanta.domain.wishlist.GetMyWishlist
@@ -166,7 +167,7 @@ fun Application.module(
             wishlistRoutes(get<GetMyWishlist>(), get<AddWishlistItem>(), get<UpdateWishlistItem>(), get<DeleteWishlistItem>(), get<ReorderWishlist>(), get<NotificationDispatcher>())
             receiverWishlistRoutes(get<GetReceiverWishlist>())
             notificationRoutes(get<GetNotificationSettings>(), get<UpdateNotificationSettings>(), get<RegisterDevice>(), get<UnregisterDevice>())
-            adminOversightRoutes(get<GetParticipantWishlist>(), get<ListQuestionThreads>())
+            adminOversightRoutes(get<GetParticipantWishlist>(), get<GetParticipantDeliveryInfo>(), get<ListQuestionThreads>())
         }
     }
 }

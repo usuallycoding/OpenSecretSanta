@@ -7,6 +7,7 @@ import com.usuallycoding.opensecretsanta.contract.PushSummaryDto
 import com.usuallycoding.opensecretsanta.contract.EmailSummaryDto
 import com.usuallycoding.opensecretsanta.contract.ErrorResponse
 import com.usuallycoding.opensecretsanta.contract.DeletionImpactDto
+import com.usuallycoding.opensecretsanta.contract.DeliveryInfoDto
 import com.usuallycoding.opensecretsanta.data.api.ApiClient
 import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.data.api.AuthContext
@@ -109,7 +110,7 @@ class ScriptedServer {
             ApiRoutes.GROUPS -> json(groupsAnswer.first, groupsAnswer.second)
             else -> {
                 val path = request.url.encodedPath
-                if (path.endsWith("/delivery-info")) {
+                if (path.endsWith("/delivery-info") && !path.startsWith("/admin/")) {
                     return@MockEngine if (request.method == HttpMethod.Put) {
                         deliveryInfoAnswer?.let { json(it.first, it.second) } ?: json(HttpStatusCode.OK, bodies.last())
                     } else {
@@ -619,6 +620,7 @@ class FakeAdminUsers(val me: String = "admin") {
  */
 class FakeAdminOversight(private val groups: FakeAdminGroups) {
     private val wishlists = mutableMapOf<Pair<Long, String>, List<SharedWishlistItemDto>>()
+    private val deliveries = mutableMapOf<Pair<Long, String>, DeliveryInfoDto>()
     private val pairs = mutableMapOf<Long, List<AssignmentDto>>()
     private val threads = mutableMapOf<Long, List<AdminQuestionThreadDto>>()
     private val failures = ArrayDeque<Pair<HttpStatusCode, String>>()
@@ -635,6 +637,10 @@ class FakeAdminOversight(private val groups: FakeAdminGroups) {
         wishlists[groupId to username] = items
     }
 
+    fun deliveryInfo(groupId: Long, username: String, info: DeliveryInfoDto) {
+        deliveries[groupId to username] = info
+    }
+
     fun threads(groupId: Long, vararg thread: AdminQuestionThreadDto) {
         threads[groupId] = thread.toList()
     }
@@ -648,7 +654,7 @@ class FakeAdminOversight(private val groups: FakeAdminGroups) {
 
     /** The answer to a request under `/admin/groups/{id}` about the draw, a wishlist or the threads, or null for anything else. */
     fun answer(method: String, path: String): Pair<HttpStatusCode, String>? {
-        val match = Regex("/admin/groups/(\\d+)/(assignments|questions|participants/([^/]+)/wishlist)").matchEntire(path) ?: return null
+        val match = Regex("/admin/groups/(\\d+)/(assignments|questions|participants/([^/]+)/(wishlist|delivery-info))").matchEntire(path) ?: return null
         if (method != "GET") return null
         failures.removeFirstOrNull()?.let { return it }
         val id = match.groupValues[1].toLong()
@@ -663,9 +669,11 @@ class FakeAdminOversight(private val groups: FakeAdminGroups) {
                 else error(HttpStatusCode.Conflict, "invalid_state", "There are no questions yet.")
             else -> {
                 val username = match.groupValues[3]
+                val delivery = match.groupValues[4] == "delivery-info"
                 when {
                     username !in group.participants -> error(HttpStatusCode.NotFound, "not_found", "Participant not found.")
-                    group.state == "draft" -> error(HttpStatusCode.Conflict, "invalid_state", "A Draft group has no wishlists yet.")
+                    group.state == "draft" -> error(HttpStatusCode.Conflict, "invalid_state", "A Draft group has nothing of this yet.")
+                    delivery -> HttpStatusCode.OK to Json.encodeToString(deliveries[id to username] ?: DeliveryInfoDto())
                     else -> HttpStatusCode.OK to Json.encodeToString(wishlists[id to username].orEmpty())
                 }
             }

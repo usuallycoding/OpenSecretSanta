@@ -1,6 +1,7 @@
 package com.usuallycoding.opensecretsanta.ui
 
 import com.usuallycoding.opensecretsanta.contract.AdminQuestionThreadDto
+import com.usuallycoding.opensecretsanta.contract.DeliveryInfoDto
 import com.usuallycoding.opensecretsanta.contract.QuestionDto
 import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.data.api.ApiResult
@@ -39,6 +40,26 @@ class AdminOversightApiTest {
 
         assertEquals(listOf("Socks", "Book"), items.map { it.title })
         assertEquals("GET /admin/groups/$id/participants/bob/wishlist", server.calls.last())
+    }
+
+    @Test
+    fun aParticipantsDeliveryInfoIsReadForThatGroup() = runTest {
+        val id = server.adminGroups.add("Party", state = "active", participants = listOf("alice", "bob"))
+        oversight.deliveryInfo(id, "bob", DeliveryInfoDto("Bob Brown", "bob@example.com", "0700", "1 Main St", "Ring twice"))
+
+        val info = success(api.adminParticipantDeliveryInfo(id, "bob"))
+
+        assertEquals(DeliveryInfoDto("Bob Brown", "bob@example.com", "0700", "1 Main St", "Ring twice"), info)
+        assertEquals("GET /admin/groups/$id/participants/bob/delivery-info", server.calls.last())
+    }
+
+    @Test
+    fun deliveryInfoOfADraftIsRefusedAndOfAStrangerIsNotFound() = runTest {
+        val draft = server.adminGroups.add("Idea", state = "draft", participants = listOf("alice"))
+        val pending = server.adminGroups.add("Soon", state = "pending", participants = listOf("alice"))
+
+        assertEquals(409, (failure(api.adminParticipantDeliveryInfo(draft, "alice")) as ApiError.Rejected).status)
+        assertEquals(404, (failure(api.adminParticipantDeliveryInfo(pending, "zed")) as ApiError.Rejected).status)
     }
 
     @Test

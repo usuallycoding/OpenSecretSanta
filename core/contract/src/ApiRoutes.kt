@@ -28,6 +28,7 @@ object ApiRoutes {
     const val ADMIN_GROUP_ARCHIVE = "/admin/groups/{id}/archive"
     const val ADMIN_GROUP_ASSIGNMENTS = "/admin/groups/{id}/assignments"
     const val ADMIN_GROUP_PARTICIPANT_WISHLIST = "/admin/groups/{id}/participants/{username}/wishlist"
+    const val ADMIN_GROUP_PARTICIPANT_DELIVERY_INFO = "/admin/groups/{id}/participants/{username}/delivery-info"
     const val ADMIN_GROUP_QUESTIONS = "/admin/groups/{id}/questions"
 
     const val GROUPS = "/groups"
@@ -67,6 +68,7 @@ object ApiRoutes {
     fun adminGroupArchive(id: Long) = "$ADMIN_GROUPS/$id/archive"
     fun adminGroupAssignments(id: Long) = "$ADMIN_GROUPS/$id/assignments"
     fun adminGroupParticipantWishlist(id: Long, username: String) = "$ADMIN_GROUPS/$id/participants/$username/wishlist"
+    fun adminGroupParticipantDeliveryInfo(id: Long, username: String) = "$ADMIN_GROUPS/$id/participants/$username/delivery-info"
     fun adminGroupQuestions(id: Long) = "$ADMIN_GROUPS/$id/questions"
     fun group(id: Long) = "$GROUPS/$id"
 

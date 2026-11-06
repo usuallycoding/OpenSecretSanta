@@ -328,6 +328,7 @@ object Strings {
     const val ADMIN_OPEN_WISHLIST = "Read wishlist"
     fun adminWishlistTitle(username: String) = "$username's wishlist"
     const val ADMIN_WISHLIST_EMPTY = "This person has not added anything yet."
+    const val ADMIN_DELIVERY_EMPTY = "This person has not added delivery info yet."
     const val ADMIN_THREAD_EMPTY = "Nothing has been asked yet."
     fun added(time: String) = "Added $time"
     fun changed(time: String) = "Changed $time"

@@ -2,6 +2,7 @@ package com.usuallycoding.opensecretsanta.domain.delivery
 
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 import com.usuallycoding.opensecretsanta.domain.group.GroupState
+import com.usuallycoding.opensecretsanta.domain.group.OwnedGroupLoader
 import com.usuallycoding.opensecretsanta.domain.group.ParticipantGroupLoader
 import com.usuallycoding.opensecretsanta.domain.user.User
 import com.usuallycoding.opensecretsanta.domain.user.Username
@@ -44,5 +45,24 @@ class UpdateMyDeliveryInfo(
         }
         deliveryInfos.save(group.id, user.username, info)
         return info
+    }
+}
+
+/**
+ * The group owner reads one participant's delivery info for the group: whatever the person saved, or empty details. Read-only,
+ * and it records nothing, so the participant cannot tell it happened.
+ */
+class GetParticipantDeliveryInfo(
+    private val loadOwned: OwnedGroupLoader,
+    private val deliveryInfos: DeliveryInfoRepository,
+) {
+    operator fun invoke(actor: User, groupId: Long, rawUsername: String): DeliveryInfo {
+        val group = loadOwned(actor, groupId)
+        if (group.state == GroupState.DRAFT) {
+            throw DomainException.InvalidState("Delivery info exists once the group has left Draft.")
+        }
+        val participant = Username.parseOrNull(rawUsername)?.takeIf { it in group.participants }
+            ?: throw DomainException.NotFound("Participant not found.")
+        return deliveryInfos.find(group.id, participant)
     }
 }
