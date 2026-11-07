@@ -12,9 +12,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +39,30 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 
 /** A multi-line field grows with its text up to this many rows, then stops growing and scrolls inside itself. */
 const val MULTILINE_MAX_ROWS = 3
+
+/**
+ * Whether an outlined text field is on a screen, where the snow falls behind the interface, and so is filled. Inside a bottom
+ * sheet or a dialog, which are opaque and over the snow, fields keep their usual look: [AppBottomSheet] and the app's dialogs
+ * turn this off for what they hold.
+ */
+val LocalFieldsOverSnow = compositionLocalOf { true }
+
+/**
+ * The colours of an outlined text field of the app. On a screen the field is filled with the theme's background colour, in every
+ * state, so the snow behind the interface never shows inside it or behind what is typed in it; the colour is read where the field
+ * is drawn, so the light and dark themes and dynamic colours are followed. In a sheet or a dialog the usual colours are used.
+ */
+@Composable
+fun appFieldColors(): TextFieldColors {
+    if (!LocalFieldsOverSnow.current) return OutlinedTextFieldDefaults.colors()
+    val fill = MaterialTheme.colorScheme.background
+    return OutlinedTextFieldDefaults.colors(
+        focusedContainerColor = fill,
+        unfocusedContainerColor = fill,
+        disabledContainerColor = fill,
+        errorContainerColor = fill,
+    )
+}
 
 /**
  * A text field that owns its selection. The text still lives in the caller (it comes in as [value] and goes out
@@ -90,6 +118,7 @@ fun SheetTextField(
         trailingIcon = trailingIcon,
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
+        colors = appFieldColors(),
         modifier = modifier.fillMaxWidth().touchesOfAField(),
     )
 }

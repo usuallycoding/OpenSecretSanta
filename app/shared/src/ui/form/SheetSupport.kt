@@ -15,6 +15,7 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -100,7 +101,10 @@ private fun SheetContent(hider: KeyboardHider, keyboardOpen: Boolean, onKeyboard
     val connection = remember { scrollHook(countConsumed = false) { if (keyboardOpen) hider.hide() } }
     Column(
         Modifier.fillMaxWidth().nestedScroll(connection).watchGestures(tracker, onDrag = { if (keyboardOpen) hider.hide() }, onTap = null),
-    ) { content() }
+    ) {
+        // a sheet is over the snow and opaque: its fields keep their usual look
+        CompositionLocalProvider(LocalFieldsOverSnow provides false) { content() }
+    }
 }
 
 /**

@@ -46,21 +46,22 @@ fun App(
     val settings = koinInject<AppearanceSettings>()
     val appearance by settings.appearance.collectAsState()
     AppTheme(appearance) {
-        // the snow is drawn over every screen, the sign-in ones too, and lets every touch through
         Box(Modifier.fillMaxSize()) {
-            gate { AppContent(onNavigationReady) }
-            if (appearance.snow) SnowOverlay()
+            gate { AppContent(onNavigationReady, snow = appearance.snow) }
         }
     }
 }
 
 @Composable
-private fun AppContent(onNavigationReady: suspend (NavController, isAdmin: Boolean) -> Unit) {
+private fun AppContent(onNavigationReady: suspend (NavController, isAdmin: Boolean) -> Unit, snow: Boolean) {
     val session = koinInject<SessionManager>()
     val state by session.state.collectAsState()
     LaunchedEffect(session) { session.restore() }
 
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        // the snow is the first layer over the background, under every screen (the sign-in ones too): it shows in the open space and
+        // passes behind whatever has a fill, and it lets every touch through
+        if (snow) SnowOverlay()
         // a swipe or a tap outside a text field closes the keyboard, on the shell and on the sign-in screens alike
         KeyboardDismissRoot {
             when (val current = state) {

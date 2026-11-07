@@ -17,12 +17,14 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.input.ImeAction
+import com.usuallycoding.opensecretsanta.ui.form.LocalFieldsOverSnow
 import com.usuallycoding.opensecretsanta.ui.form.PasswordField
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -108,8 +110,11 @@ private fun HandOverDialog(viewModel: AdminUserViewModel, ui: AdminUserUi) {
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(Strings.handOverBody(viewModel.username))
-                PasswordField(Strings.HANDOVER_PASSWORD, password, { password = it }, ui.handOverError, ImeAction.Done) {
-                    viewModel.confirmHandOver(password)
+                // a dialog is over the snow and opaque: its field keeps its usual look
+                CompositionLocalProvider(LocalFieldsOverSnow provides false) {
+                    PasswordField(Strings.HANDOVER_PASSWORD, password, { password = it }, ui.handOverError, ImeAction.Done) {
+                        viewModel.confirmHandOver(password)
+                    }
                 }
             }
         },

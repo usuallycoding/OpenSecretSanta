@@ -2,7 +2,6 @@ package com.usuallycoding.opensecretsanta.ui.shell
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
@@ -40,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -153,7 +153,8 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
     // the administrator's groups, which the Groups screen lists and, on a wide window, so does the sidebar; only an administrator may ask for them
     val adminGroups = if (viewModel.account.isAdmin) koinViewModel<AdminGroupsViewModel>(key = "admin-groups-${viewModel.account.username}") else null
     val pageActions = remember { PageActionHost() }
-    BoxWithConstraints(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    // no fill of its own: the app's background is behind it, and the snow, if it is on, is over that background and under this
+    BoxWithConstraints(Modifier.fillMaxSize()) {
         val wide = isWide(maxWidth)
         CompositionLocalProvider(LocalWideLayout provides wide, LocalPageActions provides if (wide) pageActions else null) {
             Row(Modifier.fillMaxSize()) {
@@ -165,6 +166,8 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                 Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
                     Scaffold(
                         modifier = Modifier.widthIn(max = if (wide) Dp.Unspecified else STANDARD_CONTENT_WIDTH).fillMaxSize(),
+                        // open space shows the snow; the bars below keep their own fills and hide it
+                        containerColor = Color.Transparent,
                         topBar = {
                             CenterAlignedTopAppBar(
                                 title = { Text(titleOf(view, destination, pageTitle)) },

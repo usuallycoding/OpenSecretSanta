@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.ui.admin
 
+import com.usuallycoding.opensecretsanta.ui.form.appFieldColors
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -100,6 +101,7 @@ private fun PickerField(label: String, value: String, error: String?, openLabel:
             { IconButton(onClick = onClear) { Icon(Icons.Filled.Close, contentDescription = Strings.CLEAR_FIELD) } }
         },
         interactionSource = interactions,
+        colors = appFieldColors(),
         modifier = Modifier.fillMaxWidth().semantics {
             role = Role.Button
             onClick(label = openLabel) { onOpen(); true }

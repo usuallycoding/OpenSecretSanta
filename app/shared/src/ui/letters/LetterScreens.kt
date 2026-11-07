@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.ui.letters
 
+import com.usuallycoding.opensecretsanta.ui.form.appFieldColors
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -141,6 +142,7 @@ internal fun LetterSheet(
                 isError = editor.titleError != null,
                 supportingText = editor.titleError?.let { { Text(it) } },
                 singleLine = true,
+                colors = appFieldColors(),
                 modifier = Modifier.fillMaxWidth().touchesOfAField(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
             )

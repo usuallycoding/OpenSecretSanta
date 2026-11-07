@@ -54,6 +54,7 @@ internal fun PasswordField(
                 )
             }
         },
+        colors = appFieldColors(),
         modifier = Modifier.fillMaxWidth().touchesOfAField(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ime),
         keyboardActions = KeyboardActions(onDone = { onDone() }),

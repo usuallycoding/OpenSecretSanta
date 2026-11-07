@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.ui.login
 
+import com.usuallycoding.opensecretsanta.ui.form.appFieldColors
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -69,6 +70,7 @@ fun LoginScreen(viewModel: LoginViewModel, sessionEnded: Boolean) {
             onValueChange = viewModel::onUsernameChange,
             label = { Text(Strings.USERNAME) },
             singleLine = true,
+            colors = appFieldColors(),
             modifier = Modifier.fillMaxWidth().touchesOfAField(),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
         )

@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.ui.admin
 
+import com.usuallycoding.opensecretsanta.ui.form.appFieldColors
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
@@ -91,6 +92,7 @@ private fun Field(label: String, value: String, error: String?, singleLine: Bool
         keyboardOptions = if (numeric) KeyboardOptions(keyboardType = KeyboardType.Number) else KeyboardOptions.Default,
         isError = error != null,
         supportingText = error?.let { { Text(it) } },
+        colors = appFieldColors(),
         modifier = Modifier.fillMaxWidth().touchesOfAField(),
     )
 }
