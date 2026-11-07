@@ -90,6 +90,14 @@ class AdminGroupViewModel(
         if (canReadPendingWishlists) _ui.update { it.copy(sheet = GroupSheet.Wishlist(username)) }
     }
 
+    /** The rules can be read in every state but Draft, and changed in a Pending group. */
+    val canOpenRules: Boolean get() = current?.phase.let { it == AdminPhase.Pending || it == AdminPhase.Active || it == AdminPhase.Archived }
+
+    /** Shows the rules in the pane (or sheet) of this screen, for a window that has room for it. */
+    fun openRulesPane() {
+        if (canOpenRules) _ui.update { it.copy(sheet = GroupSheet.Rules, drawRefused = null) }
+    }
+
     fun dismissSheet() = _ui.update { it.copy(sheet = null) }
 
     /** Reads the draw for a group that has one; a group that has none is not asked. */
@@ -268,6 +276,10 @@ class AdminGroupViewModel(
 
     fun dismissEmails() = _ui.update { it.copy(emails = null) }
 
+    fun dismissRulesDeleted() = _ui.update { it.copy(rulesDeleted = emptyList()) }
+
+    fun dismissDrawRefused() = _ui.update { it.copy(drawRefused = null) }
+
     // --- internals ----------------------------------------------------------------------------------------
 
     /** The server's answer replaces the group; accounts it created are shown once and kept nowhere else. */
@@ -277,6 +289,8 @@ class AdminGroupViewModel(
         loadDraw(group.phase, group.participants)
         val created = change.createdAccounts.map { CreatedAccount(it.username, it.temporaryPassword) }
         if (created.isNotEmpty()) _ui.update { it.copy(passwords = created, passwordsAskedFor = false) }
+        val deleted = change.deletedRules.mapNotNull { it.toItem() }
+        if (deleted.isNotEmpty()) _ui.update { it.copy(rulesDeleted = deleted) }
     }
 
     private suspend fun participantsFailed(error: ApiError) {
@@ -291,6 +305,9 @@ class AdminGroupViewModel(
 
     private suspend fun stepFailed(error: ApiError) {
         when {
+            // the rules cannot be met by the people now in the group: the group stays as it is, and the owner is told why
+            error is ApiError.Rejected && error.status == 409 && error.code == "rules_conflict" ->
+                _ui.update { it.copy(busy = false, drawRefused = error.message) }
             error is ApiError.Rejected && error.status == 404 -> reloadWith(null)
             error is ApiError.Rejected && error.status == 409 -> reloadWith(AdminNotice.ChangedElsewhere)
             error is ApiError.Validation -> reloadWith(AdminNotice.ChangedElsewhere)

@@ -44,7 +44,7 @@ class QuestionsTest {
 
     private fun activeGroup(): Long {
         val g = groups.seed(admin.username, GroupState.PENDING, *names.map { u(it) }.toTypedArray())
-        ActivateGroup(OwnedGroupLoader(groups), groups, AssignmentPlanner(IdentityShuffler()), GroupViewer(users, FakeDeliveryInfos()))(admin, g.id)
+        ActivateGroup(OwnedGroupLoader(groups), groups, AssignmentPlanner(IdentityShuffler()), InMemoryDrawRules(), GroupViewer(users, FakeDeliveryInfos()))(admin, g.id)
         return g.id
     }
 

@@ -47,7 +47,7 @@ class GiftVisibilityTest {
 
     private fun activeGroup(): Long {
         val g = group(GroupState.PENDING, *names.toTypedArray())
-        ActivateGroup(OwnedGroupLoader(groups), groups, AssignmentPlanner(IdentityShuffler()), GroupViewer(users, infos))(admin, g.id)
+        ActivateGroup(OwnedGroupLoader(groups), groups, AssignmentPlanner(IdentityShuffler()), InMemoryDrawRules(), GroupViewer(users, infos))(admin, g.id)
         fill(g.id)
         return g.id
     }

@@ -11,3 +11,4 @@ V009__group_budget.sql
 V010__group_delivery_info.sql
 V011__letters.sql
 V012__read_marks.sql
+V013__draw_rules.sql

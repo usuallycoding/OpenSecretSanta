@@ -32,13 +32,14 @@ class MoveToPending(
 
 /**
  * Pending to Active: needs [MIN_PARTICIPANTS] participants (with fewer, a participant could work out
- * who their Santa is) and draws the assignments in the same step. Incomplete profiles never stop it;
+ * who their Santa is) and draws the assignments, honouring the group's draw rules, in the same step. Incomplete profiles never stop it;
  * they are only flagged in the returned view.
  */
 class ActivateGroup(
     private val loadOwned: OwnedGroupLoader,
     private val groups: GroupRepository,
     private val assignmentPlanner: AssignmentPlanner,
+    private val rules: DrawRuleRepository,
     private val viewer: GroupViewer,
 ) {
     operator fun invoke(actor: User, id: Long): GroupView {
@@ -50,7 +51,8 @@ class ActivateGroup(
                 "At least $MIN_PARTICIPANTS participants are needed to activate a group.",
             )
         }
-        return viewer(groups.activate(group.id, assignmentPlanner.plan(group.participants)))
+        // planned before anything is stored: rules no draw can satisfy leave the group Pending
+        return viewer(groups.activate(group.id, assignmentPlanner.plan(group.participants, rules.list(group.id))))
     }
 
     companion object {

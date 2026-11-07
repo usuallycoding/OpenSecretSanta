@@ -4,6 +4,7 @@ import com.usuallycoding.opensecretsanta.data.BackendConfig
 import com.usuallycoding.opensecretsanta.di.initKoin
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupFormViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupViewModel
+import com.usuallycoding.opensecretsanta.ui.admin.DrawRulesViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminPairThreadViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminPairLettersViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminParticipantDeliveryInfoViewModel
@@ -80,6 +81,7 @@ class AppModulesTest {
             assertEquals(7L, koin.get<SendLetterViewModel> { parametersOf(7L) }.groupId)
             assertEquals(7L, koin.get<InboxViewModel> { parametersOf(7L) }.groupId)
             assertEquals(7L, koin.get<AdminGroupViewModel> { parametersOf(7L, "admin") }.groupId)
+            assertEquals(7L, koin.get<DrawRulesViewModel> { parametersOf(7L, "admin") }.groupId)
             assertEquals("bob", koin.get<AdminParticipantWishlistViewModel> { parametersOf(7L, "bob") }.username)
             assertEquals("bob", koin.get<AdminParticipantDeliveryInfoViewModel> { parametersOf(7L, "bob") }.username)
             assertEquals(7L, koin.get<AdminPairLettersViewModel> { parametersOf(7L) }.groupId)

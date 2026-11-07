@@ -1,7 +1,10 @@
 package com.usuallycoding.opensecretsanta.data.api
 
 import com.usuallycoding.opensecretsanta.contract.AccountDto
+import com.usuallycoding.opensecretsanta.contract.AddDrawRuleRequest
 import com.usuallycoding.opensecretsanta.contract.AdminGroupDto
+import com.usuallycoding.opensecretsanta.contract.DrawRuleDto
+import com.usuallycoding.opensecretsanta.contract.DrawRulesDto
 import com.usuallycoding.opensecretsanta.contract.AdminQuestionThreadDto
 import com.usuallycoding.opensecretsanta.contract.AnswerRequest
 import com.usuallycoding.opensecretsanta.contract.AnnouncementRequest
@@ -228,6 +231,17 @@ class ApiClient(
     /** Sends a Pending or Active group's participants a message of the owner's, by email, push notification or both. */
     suspend fun announce(id: Long, request: AnnouncementRequest): ApiResult<AnnouncementResponse> =
         call(HttpMethod.Post, ApiRoutes.adminGroupAnnouncements(id), body = request)
+
+    // --- administrator: draw rules (owner only; changed in a Pending group, read afterwards) ---------
+
+    suspend fun adminRules(id: Long): ApiResult<DrawRulesDto> = call(HttpMethod.Get, ApiRoutes.adminGroupRules(id))
+
+    /** Adds a rule, or with [AddDrawRuleRequest.bothWays] two; the answer lists what was stored. A set no draw could satisfy is a 409 `rules_conflict`. */
+    suspend fun addAdminRule(id: Long, request: AddDrawRuleRequest): ApiResult<List<DrawRuleDto>> =
+        call(HttpMethod.Post, ApiRoutes.adminGroupRules(id), body = request)
+
+    suspend fun deleteAdminRule(id: Long, ruleId: Long): ApiResult<Unit> =
+        call(HttpMethod.Delete, ApiRoutes.adminGroupRule(id, ruleId))
 
     // --- administrator: oversight (owner only, read-only) --------------------------------------
 

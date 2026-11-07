@@ -26,6 +26,7 @@ import com.usuallycoding.opensecretsanta.ui.letters.InboxViewModel
 import com.usuallycoding.opensecretsanta.ui.letters.SendLetterViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupFormViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupViewModel
+import com.usuallycoding.opensecretsanta.ui.admin.DrawRulesViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AnnouncementViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupsViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminPairThreadViewModel
@@ -79,6 +80,7 @@ fun appModules(baseUrl: String, pushDevice: PushDevice = UnsupportedPushDevice):
         viewModel { (groupId: Long) -> AdminGroupFormViewModel(groupId.takeIf { it != AdminGroupFormViewModel.NEW_GROUP }, get(), viewModelScope()) }
         viewModel { (groupId: Long, me: String) -> AdminGroupViewModel(groupId, me, get(), viewModelScope()) }
         viewModel { (groupId: Long, groupName: String) -> AnnouncementViewModel(groupId, groupName, get(), viewModelScope()) }
+        viewModel { (groupId: Long, me: String) -> DrawRulesViewModel(groupId, me, get(), viewModelScope()) }
         viewModel { (groupId: Long, username: String) -> AdminParticipantWishlistViewModel(groupId, username, get(), viewModelScope()) }
         viewModel { (groupId: Long, username: String) -> AdminParticipantDeliveryInfoViewModel(groupId, username, get(), viewModelScope()) }
         viewModel { (groupId: Long) -> AdminPairLettersViewModel(groupId, get(), viewModelScope()) }

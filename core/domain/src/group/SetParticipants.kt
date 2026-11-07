@@ -15,17 +15,21 @@ class GroupChange(
     val view: GroupView,
     val createdAccounts: List<TemporaryCredentials>,
     val added: List<Username> = emptyList(),
+    /** The draw rules that went with removed participants. */
+    val deletedRules: List<DrawRule> = emptyList(),
 )
 
 /**
  * Replaces a group's participant list. In Draft the list is just names; in Pending every name
- * without an account gets one straight away, while removed participants keep theirs.
+ * without an account gets one straight away, while removed participants keep theirs. The draw rules that name a
+ * removed participant are deleted with them (by the repository, in the same step) and reported back.
  */
 class SetParticipants(
     private val loadOwned: OwnedGroupLoader,
     private val groups: GroupRepository,
     private val users: UserRepository,
     private val planner: NewAccountPlanner,
+    private val rules: DrawRuleRepository,
     private val viewer: GroupViewer,
 ) {
     operator fun invoke(actor: User, id: Long, rawParticipants: List<String>): GroupChange {
@@ -40,8 +44,9 @@ class SetParticipants(
         } else {
             emptyList()
         }
+        val deleted = if (group.state == GroupState.PENDING) rules.list(group.id).filter { it.giver !in participants || it.receiver !in participants } else emptyList()
         val updated = groups.replaceParticipants(group.id, participants, planned.map { it.newUser })
         val added = if (group.state == GroupState.PENDING) participants.filter { it !in group.participants } else emptyList()
-        return GroupChange(viewer(updated), planned.map { TemporaryCredentials(it.username, it.temporaryPassword) }, added)
+        return GroupChange(viewer(updated), planned.map { TemporaryCredentials(it.username, it.temporaryPassword) }, added, deleted)
     }
 }

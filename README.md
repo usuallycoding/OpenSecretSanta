@@ -170,6 +170,9 @@ Draft --> Pending --> Active --> Archived
 | `POST /admin/groups/{id}/activate`     | owner | Pending to Active; draws the assignments                             |
 | `POST /admin/groups/{id}/archive`      | owner | Active to Archived                                                   |
 | `GET /admin/groups/{id}/assignments`   | owner | Every Santa and receiver pair (Active and Archived)                  |
+| `GET /admin/groups/{id}/rules`         | owner | The draw rules (Pending, Active and Archived) and `fewDraws`, whether fewer than 10 draws satisfy them |
+| `POST /admin/groups/{id}/rules`        | owner | Add a `must` or `never` rule (`giver`, `receiver`, `kind`, `bothWays`) in a Pending group; a set no draw could satisfy answers `409 rules_conflict` naming the rules |
+| `DELETE /admin/groups/{id}/rules/{ruleId}` | owner | Delete a rule (Pending only)                                     |
 | `GET /groups`, `GET /groups/{id}`      | any user | The non-Draft groups you participate in: details and participant usernames only |
 
 `profileComplete` means the participant's delivery info for that group has a full name, an email, a phone and an address (the delivery information is optional); it is always false in a Draft, where nobody can fill it in yet. `mustChangePassword` is true while the participant's account still has a temporary password (false with no account). Both are only flags: activation is never blocked by them, and the second reveals no password. A move that the current state does not allow answers `409` with the code `invalid_state`; activating with fewer than 4 participants answers `400` naming `participants`.
@@ -230,6 +233,8 @@ The owner of a group can read what is going on inside it, even when they also ta
 | `GET /admin/groups/{id}/questions`                           | owner | Every thread (Active and Archived): the Santa, the receiver and all questions with answers and times |
 | `GET /admin/groups/{id}/assignments`                         | owner | Every Santa and receiver pair (Active and Archived)                                          |
 
+Draw rules let the owner of a Pending group say who must give to whom (`must`) or must not (`never`); a rule is one-way, and the app's "Both ways" switch adds the two directions as two rules. The server refuses a rule when no draw could satisfy the set (two musts for one giver or receiver, a must closing a small circle, nevers that leave nobody to give to) with `409 rules_conflict`; activating answers the same way if the roster changed under the rules, and the group stays Pending. Removing a participant deletes the rules that name them and lists them in the answer as `deletedRules`. Rules are read-only once the group is Active and are never shown to participants. They are opened from the gavel button on the group's page, as a page on a narrow window or beside the page on a wide one.
+
 A Draft group has no wishlists or delivery info yet and a Draft or Pending group has no threads or letters; asking answers `409` with the code `invalid_state`. A username that is not a participant answers `404`. An owner who is also a participant sees their own Santa through these routes before the group is archived; the participant routes (for example `GET /groups/{id}/santa`) still refuse until then. The owner cannot change any wishlist, delivery info, letter, question or answer. The group view (`GET /admin/groups/{id}`) still carries only each participant's full name and the `profileComplete` flag; the rest of a person's delivery info is read one participant at a time, and the app shows it in the sheet opened from a username in the group.
 
 ### The app
@@ -276,7 +281,7 @@ The web addresses are the part after the `#`, so the web host needs nothing spec
 | `#/groups/{id}/outbox` | the Send letter page of a group: the letters you sent your Santa |
 | `#/groups/{id}/inbox` | the Inbox page of a group: the letters your receiver sent you |
 | `#/groups/{id}/giver`, `#/groups/{id}/receiver` | the Gifter page (your receiver's wishlist and your questions) and the Receiver page (your wishlist and your Santa's questions) |
-| `#/admin/groups`, `#/admin/groups/new`, `#/admin/groups/{id}`, `#/admin/groups/{id}/edit` | the administrator's groups, a new group, a group, its details |
+| `#/admin/groups`, `#/admin/groups/new`, `#/admin/groups/{id}`, `#/admin/groups/{id}/edit`, `#/admin/groups/{id}/rules` | the administrator's groups, a new group, a group, its details, its draw rules |
 | `#/admin/users`, `#/admin/users/{username}` | the users, one user |
 
 Run it with `./kotlin run -m androidApp` or `./kotlin run -m iosApp --platform=iosSimulatorArm64 -d <simulator id>`; the web app runs with `docker compose up --build` and is on `http://localhost:8080` (`WEB_PORT` changes the port).

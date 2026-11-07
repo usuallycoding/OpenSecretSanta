@@ -32,7 +32,7 @@ interface GroupRepository {
     /** What [delete] would take besides the details and participants; `NotFound` when there is no such group. */
     fun impact(id: Long): DeletionImpact
 
-    /** Allowed in Draft and Pending; inserts [newUsers] in the same transaction. */
+    /** Allowed in Draft and Pending; inserts [newUsers], and deletes the draw rules that name anyone no longer a participant, in the same transaction. */
     fun replaceParticipants(id: Long, participants: List<Username>, newUsers: List<NewUser>): Group
 
     /** Draft to Pending, inserting [newUsers] in the same transaction. */
@@ -51,4 +51,16 @@ interface GroupRepository {
 
     /** Who gives to [receiver] in this group, or null when there is no such assignment. */
     fun santaOf(groupId: Long, receiver: Username): Username?
+}
+
+/** Storage for the draw rules of groups. Who may change them, and when, is decided by the use cases. */
+interface DrawRuleRepository {
+    /** The rules of a group, in the order they were added. */
+    fun list(groupId: Long): List<DrawRule>
+
+    /** Stores [rules] together, all or none, and returns them with their ids. */
+    fun add(groupId: Long, rules: List<NewDrawRule>): List<DrawRule>
+
+    /** `NotFound` when the group has no such rule. */
+    fun delete(groupId: Long, ruleId: Long)
 }

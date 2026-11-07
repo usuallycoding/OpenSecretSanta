@@ -21,6 +21,7 @@ class WebAddressesTest {
         AdminGroupNewRoute to "#/admin/groups/new",
         AdminGroupRoute(2) to "#/admin/groups/2",
         AdminGroupEditRoute(2) to "#/admin/groups/2/edit",
+        AdminGroupRulesRoute(2) to "#/admin/groups/2/rules",
         AdminUsersRoute to "#/admin/users",
         AdminUserRoute("alice.b_c-1") to "#/admin/users/alice.b_c-1",
     )

@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.form.AppBottomSheet
 import com.usuallycoding.opensecretsanta.ui.form.PairLink
 import com.usuallycoding.opensecretsanta.ui.form.SnowCard
 import com.usuallycoding.opensecretsanta.ui.groups.DetailField
@@ -93,6 +94,7 @@ internal fun GroupSheetHost(sheet: GroupSheet, groupId: Long, me: String, draw: 
         is GroupSheet.User -> UserSheet(groupId, sheet.username, me, onDismiss)
         is GroupSheet.Pair -> PairSheet(groupId, sheet.santa, sheet.receiver, pairSheetTitle(sheet, draw), onDismiss)
         is GroupSheet.Wishlist -> WishlistSheet(groupId, sheet.username, onDismiss)
+        is GroupSheet.Rules -> RulesSheet(groupId, me, onDismiss)
     }
 }
 
@@ -106,15 +108,16 @@ private fun pairSheetTitle(sheet: GroupSheet.Pair, draw: DrawState): AnnotatedSt
 }
 
 /** Whether [sheet] is shown in a pane beside the group page on a wide window, rather than in a dialog. */
-internal fun GroupSheet.opensInPane(): Boolean = this is GroupSheet.Wishlist || this is GroupSheet.Pair
+internal fun GroupSheet.opensInPane(): Boolean = this is GroupSheet.Wishlist || this is GroupSheet.Pair || this is GroupSheet.Rules
 
 /** The pane beside the group page on a wide window, for the sheets that [opensInPane]. */
 @Composable
-internal fun GroupPane(sheet: GroupSheet, groupId: Long, draw: DrawState, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+internal fun GroupPane(sheet: GroupSheet, groupId: Long, me: String, draw: DrawState, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
     PaneFrame(onDismiss, modifier) {
         when (sheet) {
             is GroupSheet.Wishlist -> WishlistContent(groupId, sheet.username, onDismiss)
             is GroupSheet.Pair -> PairContent(groupId, sheet.santa, sheet.receiver, pairSheetTitle(sheet, draw), onDismiss)
+            is GroupSheet.Rules -> RulesContent(rulesViewModel(groupId, me))
             is GroupSheet.User -> Unit
         }
     }
@@ -323,6 +326,20 @@ private fun ThreadQuestions(thread: PairThread) {
                     QuestionThread(question.number, question.text, question.asked, question.answer, question.answered, question.answerChanged)
                 }
             }
+        }
+    }
+}
+
+@Composable
+internal fun rulesViewModel(groupId: Long, me: String): DrawRulesViewModel =
+    koinViewModel<DrawRulesViewModel>(key = "admin-rules-$groupId") { parametersOf(groupId, me) }
+
+/** The rules in a sheet, for a window with no room for the pane. */
+@Composable
+private fun RulesSheet(groupId: Long, me: String, onDismiss: () -> Unit) {
+    AppBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp)) {
+            RulesContent(rulesViewModel(groupId, me))
         }
     }
 }

@@ -107,6 +107,8 @@ data class GroupChangeResponse(
     val group: AdminGroupDto,
     val createdAccounts: List<CreatedAccountDto> = emptyList(),
     val emails: EmailSummaryDto? = null,
+    /** The draw rules that were deleted because the participants they name left the group. */
+    val deletedRules: List<DrawRuleDto> = emptyList(),
 )
 
 /** What a participant sees of a group: details, state and the other participants' usernames. */
@@ -128,4 +130,29 @@ data class MemberGroupDto(
 data class AssignmentDto(
     val santa: String,
     val receiver: String,
+)
+
+/** One draw rule; [kind] is `must` (the giver gives to the receiver) or `never` (does not). */
+@Serializable
+data class DrawRuleDto(
+    val id: Long,
+    val giver: String,
+    val receiver: String,
+    val kind: String,
+)
+
+/** The rules of a group, and whether fewer than 10 different draws satisfy them. */
+@Serializable
+data class DrawRulesDto(
+    val rules: List<DrawRuleDto>,
+    val fewDraws: Boolean = false,
+)
+
+/** Adds a rule; with [bothWays] also the rule for the other direction. */
+@Serializable
+data class AddDrawRuleRequest(
+    val giver: String,
+    val receiver: String,
+    val kind: String,
+    val bothWays: Boolean = false,
 )

@@ -361,6 +361,27 @@ object Strings {
     fun adminDraw(participants: Int) = "Who gives to whom ($participants participants)"
     const val ADMIN_DRAW_FAILED = "The draw could not be loaded."
     const val ADMIN_SHEET_CLOSE = "Close"
+
+    // --- draw rules
+    const val RULES_BUTTON = "Draw rules"
+    const val RULES_TITLE = "Draw rules"
+    const val RULES_NONE = "No rules yet. Rules fix or forbid who gives to whom when the names are drawn."
+    const val RULES_ADD_TITLE = "Add a rule"
+    const val RULES_GIVER = "Giver"
+    const val RULES_RECEIVER = "Receiver"
+    const val RULES_MUST = "Must give to"
+    const val RULES_NEVER = "Must not give to"
+    const val RULES_BOTH_WAYS = "Both ways"
+    const val RULES_DELETE = "Delete rule"
+    const val RULES_FIXED = "The names have been drawn, so these rules are fixed."
+    const val RULES_FEW_DRAWS = "These rules leave very few possible draws. Someone who knows them could work out who gives to whom."
+    const val RULES_OWNER_TAKES_PART = "You take part in this group, so the rules show you part of the draw."
+    const val RULES_OPEN = "Open rules"
+    const val RULES_GONE = "These rules cannot be read any more."
+    fun ruleSentence(giver: String, receiver: String, must: Boolean) =
+        if (must) "$giver must give to $receiver" else "$giver must not give to $receiver"
+    fun rulesDeletedNotice(rules: List<String>) =
+        "These rules were deleted because someone left the group: ${rules.joinToString("; ")}."
     const val ADMIN_QUESTIONS_TITLE = "Questions"
     const val ADMIN_YOU = "you"
     fun adminPair(santa: String, receiver: String) = "$santa $ADMIN_GIVES_TO $receiver"

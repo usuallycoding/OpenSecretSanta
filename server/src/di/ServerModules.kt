@@ -34,6 +34,10 @@ import com.usuallycoding.opensecretsanta.domain.gift.SendLetter
 import com.usuallycoding.opensecretsanta.domain.gift.ListQuestionsFromMySanta
 import com.usuallycoding.opensecretsanta.domain.gift.QuestionRepository
 import com.usuallycoding.opensecretsanta.domain.group.ActivateGroup
+import com.usuallycoding.opensecretsanta.domain.group.AddDrawRules
+import com.usuallycoding.opensecretsanta.domain.group.DeleteDrawRule
+import com.usuallycoding.opensecretsanta.domain.group.DrawRuleRepository
+import com.usuallycoding.opensecretsanta.domain.group.ListDrawRules
 import com.usuallycoding.opensecretsanta.domain.group.ArchiveGroup
 import com.usuallycoding.opensecretsanta.domain.group.AssignmentPlanner
 import com.usuallycoding.opensecretsanta.domain.group.CreateGroup
@@ -95,6 +99,7 @@ import com.usuallycoding.opensecretsanta.server.data.group.SqliteGroupMembership
 import com.usuallycoding.opensecretsanta.server.data.notification.SqliteDeviceRepository
 import com.usuallycoding.opensecretsanta.server.data.notification.SqliteNotificationSettingsRepository
 import com.usuallycoding.opensecretsanta.server.data.push.FcmPushSender
+import com.usuallycoding.opensecretsanta.server.data.group.SqliteDrawRuleRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteGroupRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteLetterRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteQuestionRepository
@@ -139,6 +144,7 @@ val repositoryModule = module {
     single<GroupMembershipRepository> { SqliteGroupMembershipRepository(get()) }
     single<LoginAttemptTracker> { SqliteLoginAttemptTracker(get()) }
     single<GroupRepository> { SqliteGroupRepository(get()) }
+    single<DrawRuleRepository> { SqliteDrawRuleRepository(get()) }
     single<QuestionRepository> { SqliteQuestionRepository(get()) }
     single<LetterRepository> { SqliteLetterRepository(get()) }
     single<ReadMarkRepository> { SqliteReadMarkRepository(get()) }
@@ -208,9 +214,12 @@ val useCaseModule = module {
     single { DeleteGroup(get(), get()) }
     single { ListOwnedGroups(get(), get()) }
     single { GetOwnedGroup(get(), get()) }
-    single { SetParticipants(get(), get(), get(), get(), get()) }
+    single { SetParticipants(get(), get(), get(), get(), get(), get()) }
     single { MoveToPending(get(), get(), get(), get(), get()) }
-    single { ActivateGroup(get(), get(), get(), get()) }
+    single { ActivateGroup(get(), get(), get(), get(), get()) }
+    single { ListDrawRules(get(), get()) }
+    single { AddDrawRules(get(), get()) }
+    single { DeleteDrawRule(get(), get()) }
     single { ArchiveGroup(get(), get(), get()) }
     single { ListAssignments(get(), get()) }
     single { ListMyGroups(get()) }

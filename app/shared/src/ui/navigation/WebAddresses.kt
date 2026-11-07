@@ -26,6 +26,7 @@ object WebAddresses {
         AdminGroupNewRoute -> "#/admin/groups/new"
         is AdminGroupRoute -> "#/admin/groups/${route.id}"
         is AdminGroupEditRoute -> "#/admin/groups/${route.id}/edit"
+        is AdminGroupRulesRoute -> "#/admin/groups/${route.id}/rules"
         AdminUsersRoute -> "#/admin/users"
         is AdminUserRoute -> "#/admin/users/${route.username}"
         else -> null
@@ -74,6 +75,7 @@ object WebAddresses {
                     id == null -> null
                     parts.size == 2 -> AdminGroupRoute(id)
                     parts.size == 3 && parts[2] == "edit" -> AdminGroupEditRoute(id)
+                    parts.size == 3 && parts[2] == "rules" -> AdminGroupRulesRoute(id)
                     else -> null
                 }
             }
@@ -102,6 +104,7 @@ object WebAddresses {
             d.hasRoute<AdminGroupNewRoute>() -> AdminGroupNewRoute
             d.hasRoute<AdminGroupRoute>() -> entry.toRoute<AdminGroupRoute>()
             d.hasRoute<AdminGroupEditRoute>() -> entry.toRoute<AdminGroupEditRoute>()
+            d.hasRoute<AdminGroupRulesRoute>() -> entry.toRoute<AdminGroupRulesRoute>()
             d.hasRoute<AdminUsersRoute>() -> AdminUsersRoute
             d.hasRoute<AdminUserRoute>() -> entry.toRoute<AdminUserRoute>()
             else -> return null
@@ -113,4 +116,4 @@ object WebAddresses {
 /** Whether a screen belongs to the admin view. */
 fun NavDestination.isAdminScreen(): Boolean =
     hasRoute<AdminGroupsRoute>() || hasRoute<AdminGroupNewRoute>() || hasRoute<AdminGroupRoute>() ||
-        hasRoute<AdminGroupEditRoute>() || hasRoute<AdminUsersRoute>() || hasRoute<AdminUserRoute>()
+        hasRoute<AdminGroupEditRoute>() || hasRoute<AdminGroupRulesRoute>() || hasRoute<AdminUsersRoute>() || hasRoute<AdminUserRoute>()

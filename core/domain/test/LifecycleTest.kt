@@ -31,7 +31,7 @@ class LifecycleTest {
     private val adminB = users.add("admin-b", admin = true).let { users.userNamed("admin-b") }
 
     private val toPending = MoveToPending(loader, groups, users, NewAccountPlanner(FakeHasher(), FakeSecretBox(), SequenceTempPasswords()), viewer)
-    private val activate = ActivateGroup(loader, groups, AssignmentPlanner(IdentityShuffler()), viewer)
+    private val activate = ActivateGroup(loader, groups, AssignmentPlanner(IdentityShuffler()), InMemoryDrawRules(), viewer)
     private val archive = ArchiveGroup(loader, groups, viewer)
     private val listAssignments = ListAssignments(loader, groups)
     private val myGroups = ListMyGroups(groups)

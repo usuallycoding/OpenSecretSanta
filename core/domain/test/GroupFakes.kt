@@ -2,6 +2,9 @@ package com.usuallycoding.opensecretsanta.domain
 
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 import com.usuallycoding.opensecretsanta.domain.group.Assignment
+import com.usuallycoding.opensecretsanta.domain.group.DrawRule
+import com.usuallycoding.opensecretsanta.domain.group.DrawRuleRepository
+import com.usuallycoding.opensecretsanta.domain.group.NewDrawRule
 import com.usuallycoding.opensecretsanta.domain.group.DeletionImpact
 import com.usuallycoding.opensecretsanta.domain.group.Group
 import com.usuallycoding.opensecretsanta.domain.group.GroupDetails
@@ -12,7 +15,7 @@ import com.usuallycoding.opensecretsanta.domain.user.User
 import com.usuallycoding.opensecretsanta.domain.user.Username
 
 /** In-memory repository that applies the same state rules as the real one. */
-class InMemoryGroups(private val users: InMemoryUsers) : GroupRepository {
+class InMemoryGroups(private val users: InMemoryUsers, private val rules: InMemoryDrawRules? = null) : GroupRepository {
     private val groups = linkedMapOf<Long, Group>()
     private val assignmentsByGroup = mutableMapOf<Long, List<Assignment>>()
     private var nextId = 1L
@@ -69,6 +72,7 @@ class InMemoryGroups(private val users: InMemoryUsers) : GroupRepository {
         val group = require(id)
         expect(group, GroupState.DRAFT, GroupState.PENDING)
         users.insertAll(newUsers)
+        rules?.dropNaming(id, keeping = participants)
         return group.copy(participants = participants).also { groups[id] = it }
     }
 
@@ -130,3 +134,26 @@ class InMemoryGroups(private val users: InMemoryUsers) : GroupRepository {
 }
 
 fun InMemoryUsers.userNamed(name: String): User = find(u(name))!!
+
+/** In-memory draw rules; [InMemoryGroups] drops the rules of removed participants through [dropNaming], as the real repository does. */
+class InMemoryDrawRules : DrawRuleRepository {
+    private val byGroup = mutableMapOf<Long, MutableList<DrawRule>>()
+    private var nextId = 1L
+
+    override fun list(groupId: Long): List<DrawRule> = byGroup[groupId].orEmpty().toList()
+
+    override fun add(groupId: Long, rules: List<NewDrawRule>): List<DrawRule> {
+        val stored = rules.map { DrawRule(nextId++, it.giver, it.receiver, it.kind) }
+        byGroup.getOrPut(groupId) { mutableListOf() }.addAll(stored)
+        return stored
+    }
+
+    override fun delete(groupId: Long, ruleId: Long) {
+        val removed = byGroup[groupId]?.removeAll { it.id == ruleId } ?: false
+        if (!removed) throw DomainException.NotFound("Rule not found.")
+    }
+
+    fun dropNaming(groupId: Long, keeping: List<Username>) {
+        byGroup[groupId]?.removeAll { it.giver !in keeping || it.receiver !in keeping }
+    }
+}

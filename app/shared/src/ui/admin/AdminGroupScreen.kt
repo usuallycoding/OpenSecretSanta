@@ -60,6 +60,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.foundation.BorderStroke
+import com.usuallycoding.opensecretsanta.ui.form.GavelIcon
 import com.usuallycoding.opensecretsanta.ui.form.KeyIcon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -77,6 +78,7 @@ fun AdminGroupScreen(
     viewModel: AdminGroupViewModel,
     onBack: () -> Unit,
     onEdit: () -> Unit,
+    onRules: () -> Unit,
     onDeleted: () -> Unit,
 ) {
     val state by viewModel.data.collectAsState()
@@ -104,7 +106,8 @@ fun AdminGroupScreen(
         return
     }
     // on a wide window a participant's wishlist and a pair open in a pane beside the page, which keeps its place
-    val pane = if (LocalWideLayout.current) ui.sheet?.takeIf { it.opensInPane() } else null
+    val wide = LocalWideLayout.current
+    val pane = if (wide) ui.sheet?.takeIf { it.opensInPane() } else null
     Row(Modifier.fillMaxSize()) {
         Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
             Box(Modifier.widthIn(max = STANDARD_CONTENT_WIDTH).fillMaxSize()) {
@@ -127,9 +130,22 @@ fun AdminGroupScreen(
                             TextButton(onClick = viewModel::dismissEmails) { Text(Strings.OK) }
                         }
                     }
+                    if (ui.rulesDeleted.isNotEmpty()) {
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text(Strings.rulesDeletedNotice(ui.rulesDeleted.map { it.sentence }), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                            TextButton(onClick = viewModel::dismissRulesDeleted) { Text(Strings.OK) }
+                        }
+                    }
+                    ui.drawRefused?.let { message ->
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text(message, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                            TextButton(onClick = { viewModel.dismissDrawRefused(); if (wide) viewModel.openRulesPane() else onRules() }) { Text(Strings.RULES_OPEN) }
+                            TextButton(onClick = viewModel::dismissDrawRefused) { Text(Strings.OK) }
+                        }
+                    }
                     LoadSection(state, onRetry = { viewModel.refresh() }) { group ->
                         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Header(group, viewModel, ui.busy, onEdit) { announcing = true }
+                            Header(group, viewModel, ui.busy, onEdit, onRules = { if (wide) viewModel.openRulesPane() else onRules() }) { announcing = true }
                             People(group, viewModel, draw)
                         }
                     }
@@ -138,7 +154,7 @@ fun AdminGroupScreen(
         }
         if (pane != null) {
             VerticalDivider()
-            GroupPane(pane, viewModel.groupId, draw, onDismiss = viewModel::dismissSheet, modifier = Modifier.width(PANE_WIDTH).fillMaxHeight())
+            GroupPane(pane, viewModel.groupId, viewModel.me, draw, onDismiss = viewModel::dismissSheet, modifier = Modifier.width(PANE_WIDTH).fillMaxHeight())
         }
     }
     ui.participants?.let { ParticipantsSheet(it, viewModel) }
@@ -184,10 +200,10 @@ private fun AdminStep.label() = when (this) {
     AdminStep.Delete -> Strings.DELETE
 }
 
-/** The group's details and, in one row, everything that can be done with it: edit, announce, passwords, delete and, last, the next step. */
+/** The group's details and, in one row, everything that can be done with it: edit, announce, passwords, rules, delete and, last, the next step. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Header(group: AdminGroup, viewModel: AdminGroupViewModel, busy: Boolean, onEdit: () -> Unit, onAnnounce: () -> Unit) {
+private fun Header(group: AdminGroup, viewModel: AdminGroupViewModel, busy: Boolean, onEdit: () -> Unit, onRules: () -> Unit, onAnnounce: () -> Unit) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ReadOnlyText(group.name, style = MaterialTheme.typography.headlineSmall, label = Strings.GROUP_NAME, maxLines = 1, copy = false)
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -207,6 +223,9 @@ private fun Header(group: AdminGroup, viewModel: AdminGroupViewModel, busy: Bool
             }
             if (viewModel.canGetPasswords) {
                 OutlinedIconButton(onClick = { viewModel.getPasswords() }, enabled = !busy) { Icon(KeyIcon, contentDescription = Strings.GET_PASSWORDS) }
+            }
+            if (viewModel.canOpenRules) {
+                OutlinedIconButton(onClick = onRules) { Icon(GavelIcon, contentDescription = Strings.RULES_BUTTON) }
             }
             if (viewModel.canDelete) {
                 OutlinedIconButton(

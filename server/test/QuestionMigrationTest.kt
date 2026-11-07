@@ -30,7 +30,7 @@ class QuestionMigrationTest {
 
     @Test
     fun schemaVersionIsLatest() {
-        assertEquals(12, database.schemaVersion())
+        assertEquals(13, database.schemaVersion())
     }
 
     @Test

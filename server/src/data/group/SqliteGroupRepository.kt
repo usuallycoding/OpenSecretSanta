@@ -69,7 +69,7 @@ class SqliteGroupRepository(private val database: Database) : GroupRepository {
         load(c, id)!!
     }
 
-    /** The participants, draw, wishlist items, questions and answers go with the group through their `ON DELETE CASCADE`. */
+    /** The participants, draw, draw rules, wishlist items, questions and answers go with the group through their `ON DELETE CASCADE`. */
     override fun delete(id: Long) {
         database.transaction { c ->
             val changed = c.prepareStatement("DELETE FROM groups WHERE id = ?").use { s ->
@@ -103,6 +103,17 @@ class SqliteGroupRepository(private val database: Database) : GroupRepository {
                 s.executeUpdate()
             }
             writeParticipants(c, id, participants)
+            // the draw rules that name someone who left go with them, in this same transaction
+            c.prepareStatement(
+                "DELETE FROM draw_rules WHERE group_id = ? AND (" +
+                    "giver NOT IN (SELECT username FROM group_participants WHERE group_id = ?) OR " +
+                    "receiver NOT IN (SELECT username FROM group_participants WHERE group_id = ?))",
+            ).use { s ->
+                s.setLong(1, id)
+                s.setLong(2, id)
+                s.setLong(3, id)
+                s.executeUpdate()
+            }
             if (newUsers.isNotEmpty()) insertUsers(c, newUsers)
             load(c, id)!!
         }

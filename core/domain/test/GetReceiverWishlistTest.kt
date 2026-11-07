@@ -37,7 +37,7 @@ class GetReceiverWishlistTest {
     /** Activates a group with the given shuffler: identity gives alice -> bob -> carol -> dave -> alice. */
     private fun activeGroup(shuffler: Shuffler = IdentityShuffler()): Long {
         val g = groups.seed(admin.username, GroupState.PENDING, *names.map { u(it) }.toTypedArray())
-        ActivateGroup(OwnedGroupLoader(groups), groups, AssignmentPlanner(shuffler), GroupViewer(users, FakeDeliveryInfos()))(admin, g.id)
+        ActivateGroup(OwnedGroupLoader(groups), groups, AssignmentPlanner(shuffler), InMemoryDrawRules(), GroupViewer(users, FakeDeliveryInfos()))(admin, g.id)
         return g.id
     }
 

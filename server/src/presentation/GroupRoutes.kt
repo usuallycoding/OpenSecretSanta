@@ -52,6 +52,7 @@ fun GroupView.toDto() = AdminGroupDto(
 fun GroupChange.toDto() = GroupChangeResponse(
     group = view.toDto(),
     createdAccounts = createdAccounts.map { CreatedAccountDto(it.username.value, it.temporaryPassword) },
+    deletedRules = deletedRules.map { it.toDto() },
 )
 
 /** What a participant may see: details, state and the other participants' usernames. */

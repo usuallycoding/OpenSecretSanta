@@ -84,7 +84,7 @@ class NotifierTest {
     private fun group(state: GroupState): Group {
         val seeded = groups.seed(owner.username, GroupState.PENDING, *names.map(::u).toTypedArray())
         if (state == GroupState.ACTIVE) {
-            ActivateGroup(OwnedGroupLoader(groups), groups, AssignmentPlanner(IdentityShuffler()), GroupViewer(users, FakeDeliveryInfos()))(owner, seeded.id)
+            ActivateGroup(OwnedGroupLoader(groups), groups, AssignmentPlanner(IdentityShuffler()), InMemoryDrawRules(), GroupViewer(users, FakeDeliveryInfos()))(owner, seeded.id)
         }
         return groups.find(seeded.id)!!
     }

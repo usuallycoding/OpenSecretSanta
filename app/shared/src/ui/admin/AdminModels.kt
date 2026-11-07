@@ -108,6 +108,9 @@ sealed interface GroupSheet {
 
     /** One participant's wishlist, in a Pending group. */
     data class Wishlist(val username: String) : GroupSheet
+
+    /** The group's draw rules, in the pane beside the group page or, when there is no pane, a sheet. */
+    data object Rules : GroupSheet
 }
 
 data class AdminGroupUi(
@@ -125,6 +128,10 @@ data class AdminGroupUi(
     val sheet: GroupSheet? = null,
     /** The group was deleted: the screen goes back to the list. */
     val deleted: Boolean = false,
+    /** The draw rules that went with participants who were removed, until the owner dismisses the notice. */
+    val rulesDeleted: List<DrawRuleItem> = emptyList(),
+    /** The server's explanation of why it would not draw the names because of the rules, until dismissed. */
+    val drawRefused: String? = null,
 )
 
 /** A user the administrator manages, and whether they still have a temporary password. */

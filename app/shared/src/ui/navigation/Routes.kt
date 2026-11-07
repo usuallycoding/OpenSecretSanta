@@ -66,3 +66,7 @@ data class AdminGroupRoute(val id: Long)
 /** The form for the details of an existing group. */
 @Serializable
 data class AdminGroupEditRoute(val id: Long)
+
+/** The draw rules of one of the administrator's groups, as a page of its own on a narrow window. */
+@Serializable
+data class AdminGroupRulesRoute(val id: Long)

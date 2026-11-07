@@ -13,6 +13,8 @@ sealed class DomainException(val code: String, message: String) : RuntimeExcepti
     /** The group has data that deleting it would destroy, and the caller has not said that is fine. */
     class ConfirmationRequired(val impact: DeletionImpact) :
         DomainException("confirmation_required", "Deleting this group also deletes its draw, wishlist items, questions and answers. Confirm to go on.")
+    /** The draw rules of a group cannot all be satisfied, by any draw that keeps one chain through everybody. */
+    class RulesConflict(message: String) : DomainException("rules_conflict", message)
     class ValidationFailed(val field: String, message: String) : DomainException("validation_failed", message)
     class TooManyAttempts(val retryAfterSeconds: Long) :
         DomainException("too_many_attempts", "Too many attempts. Try again later.")

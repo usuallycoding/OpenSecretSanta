@@ -16,7 +16,7 @@ fun DomainException.httpStatus(): HttpStatusCode = when (this) {
     is DomainException.InvalidCredentials, is DomainException.Unauthorized -> HttpStatusCode.Unauthorized
     is DomainException.PasswordChangeRequired, is DomainException.Forbidden -> HttpStatusCode.Forbidden
     is DomainException.NotFound -> HttpStatusCode.NotFound
-    is DomainException.InvalidState, is DomainException.ConfirmationRequired -> HttpStatusCode.Conflict
+    is DomainException.InvalidState, is DomainException.ConfirmationRequired, is DomainException.RulesConflict -> HttpStatusCode.Conflict
     is DomainException.ValidationFailed -> HttpStatusCode.BadRequest
     is DomainException.TooManyAttempts -> HttpStatusCode.TooManyRequests
 }

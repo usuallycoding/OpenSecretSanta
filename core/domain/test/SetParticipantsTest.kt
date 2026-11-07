@@ -4,6 +4,8 @@ import com.usuallycoding.opensecretsanta.domain.admin.NewAccountPlanner
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 import com.usuallycoding.opensecretsanta.domain.group.GroupState
 import com.usuallycoding.opensecretsanta.domain.group.GroupViewer
+import com.usuallycoding.opensecretsanta.domain.group.NewDrawRule
+import com.usuallycoding.opensecretsanta.domain.group.RuleKind
 import com.usuallycoding.opensecretsanta.domain.group.OwnedGroupLoader
 import com.usuallycoding.opensecretsanta.domain.group.SetParticipants
 import kotlin.test.Test
@@ -15,7 +17,8 @@ import kotlin.test.assertTrue
 
 class SetParticipantsTest {
     private val users = InMemoryUsers()
-    private val groups = InMemoryGroups(users)
+    private val rules = InMemoryDrawRules()
+    private val groups = InMemoryGroups(users, rules)
     private val adminA = users.add("admin-a", admin = true).let { users.userNamed("admin-a") }
     private val adminB = users.add("admin-b", admin = true).let { users.userNamed("admin-b") }
     private val set = SetParticipants(
@@ -23,6 +26,7 @@ class SetParticipantsTest {
         groups,
         users,
         NewAccountPlanner(FakeHasher(), FakeSecretBox(), SequenceTempPasswords()),
+        rules,
         GroupViewer(users, FakeDeliveryInfos()),
     )
 
@@ -194,4 +198,45 @@ class SetParticipantsTest {
         assertEquals(emptyList(), set(adminA, group.id, listOf("bob-b", "alice")).added)
     }
 
+}
+
+class SetParticipantsRulesTest {
+    private val users = InMemoryUsers()
+    private val rules = InMemoryDrawRules()
+    private val groups = InMemoryGroups(users, rules)
+    private val admin = users.add("admin-a", admin = true).let { users.userNamed("admin-a") }
+    private val set = SetParticipants(
+        OwnedGroupLoader(groups),
+        groups,
+        users,
+        NewAccountPlanner(FakeHasher(), FakeSecretBox(), SequenceTempPasswords()),
+        rules,
+        GroupViewer(users, FakeDeliveryInfos()),
+    )
+
+    @Test
+    fun removingAParticipantDeletesTheirRulesAndReportsThem() {
+        val g = groups.seed(admin.username, GroupState.PENDING, u("ana"), u("bob"), u("cyd"), u("dee"))
+        val named = rules.add(g.id, listOf(
+            NewDrawRule(u("ana"), u("bob"), RuleKind.MUST),
+            NewDrawRule(u("bob"), u("cyd"), RuleKind.NEVER),
+            NewDrawRule(u("ana"), u("cyd"), RuleKind.NEVER),
+        ))
+
+        val change = set(admin, g.id, listOf("ana", "cyd", "dee"))
+
+        assertEquals(named.take(2), change.deletedRules)
+        assertEquals(listOf(named[2]), rules.list(g.id))
+    }
+
+    @Test
+    fun addingParticipantsDeletesNothing() {
+        val g = groups.seed(admin.username, GroupState.PENDING, u("ana"), u("bob"), u("cyd"))
+        rules.add(g.id, listOf(NewDrawRule(u("ana"), u("bob"), RuleKind.MUST)))
+
+        val change = set(admin, g.id, listOf("ana", "bob", "cyd", "dee"))
+
+        assertEquals(emptyList(), change.deletedRules)
+        assertEquals(1, rules.list(g.id).size)
+    }
 }

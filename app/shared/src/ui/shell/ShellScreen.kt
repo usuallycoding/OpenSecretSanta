@@ -67,6 +67,8 @@ import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupFormScreen
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupFormViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupScreen
+import com.usuallycoding.opensecretsanta.ui.admin.DrawRulesScreen
+import com.usuallycoding.opensecretsanta.ui.admin.rulesViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupsViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupsScreen
@@ -82,6 +84,7 @@ import com.usuallycoding.opensecretsanta.ui.groups.GroupsScreen
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupEditRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupNewRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupRulesRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminUserRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminUsersRoute
@@ -302,8 +305,25 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                                 koinViewModel<AdminGroupViewModel>(key = "admin-group-$groupId") { parametersOf(groupId, viewModel.account.username) },
                                 onBack = { navController.popBackStack() },
                                 onEdit = { navController.navigate(AdminGroupEditRoute(groupId)) },
+                                onRules = { navController.navigate(AdminGroupRulesRoute(groupId)) },
                                 onDeleted = { navController.popBackStack() },
                             )
+                        }
+                        composable<AdminGroupRulesRoute> { entry ->
+                            val groupId = entry.toRoute<AdminGroupRulesRoute>().id
+                            if (LocalWideLayout.current) {
+                                // there is room for the pane: the rules show beside the group page, which this address opens
+                                val group = koinViewModel<AdminGroupViewModel>(key = "admin-group-$groupId") { parametersOf(groupId, viewModel.account.username) }
+                                LaunchedEffect(groupId) {
+                                    group.openRulesPane()
+                                    navController.navigate(AdminGroupRoute(groupId)) {
+                                        popUpTo<AdminGroupRulesRoute> { inclusive = true }
+                                        launchSingleTop = true
+                                    }
+                                }
+                            } else {
+                                DrawRulesScreen(rulesViewModel(groupId, viewModel.account.username))
+                            }
                         }
                         composable<AdminGroupEditRoute> { entry ->
                             val groupId = entry.toRoute<AdminGroupEditRoute>().id
@@ -330,6 +350,7 @@ private fun titleOf(view: AppView, destination: NavDestination?, pageTitle: Stri
     destination?.hasRoute<AdminUsersRoute>() == true -> Strings.ADMIN_TAB_USERS
     destination?.hasRoute<AdminGroupNewRoute>() == true -> Strings.ADMIN_NEW_GROUP
     destination?.hasRoute<AdminGroupEditRoute>() == true -> Strings.ADMIN_EDIT_GROUP
+    destination?.hasRoute<AdminGroupRulesRoute>() == true -> Strings.RULES_TITLE
     destination?.hasRoute<AdminGroupRoute>() == true -> Strings.ADMIN_GROUP
     view == AppView.Admin -> Strings.ADMIN_GROUPS
     destination?.hasRoute<GroupRoute>() == true -> Strings.TITLE_GROUP
@@ -374,7 +395,7 @@ private fun NavDestination.belowGroups(): Boolean =
         hasRoute<SendLetterRoute>() || hasRoute<InboxRoute>()
 
 private fun NavDestination.belowAdminGroups(): Boolean =
-    hasRoute<AdminGroupNewRoute>() || hasRoute<AdminGroupRoute>() || hasRoute<AdminGroupEditRoute>() || hasRoute<AdminUserRoute>()
+    hasRoute<AdminGroupNewRoute>() || hasRoute<AdminGroupRoute>() || hasRoute<AdminGroupEditRoute>() || hasRoute<AdminGroupRulesRoute>() || hasRoute<AdminUserRoute>()
 
 /** The admin view's tabs: the groups and the users the administrator manages, and the settings both views share. */
 @Composable

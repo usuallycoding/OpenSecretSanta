@@ -46,6 +46,9 @@ import com.usuallycoding.opensecretsanta.domain.gift.ListQuestionThreads
 import com.usuallycoding.opensecretsanta.domain.gift.SendLetter
 import com.usuallycoding.opensecretsanta.domain.gift.ListQuestionsFromMySanta
 import com.usuallycoding.opensecretsanta.domain.group.ActivateGroup
+import com.usuallycoding.opensecretsanta.domain.group.AddDrawRules
+import com.usuallycoding.opensecretsanta.domain.group.DeleteDrawRule
+import com.usuallycoding.opensecretsanta.domain.group.ListDrawRules
 import com.usuallycoding.opensecretsanta.domain.group.ArchiveGroup
 import com.usuallycoding.opensecretsanta.domain.group.CreateGroup
 import com.usuallycoding.opensecretsanta.domain.group.DeleteGroup
@@ -76,6 +79,7 @@ import com.usuallycoding.opensecretsanta.server.presentation.adminOversightRoute
 import com.usuallycoding.opensecretsanta.server.presentation.adminRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.giftVisibilityRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.announcementRoutes
+import com.usuallycoding.opensecretsanta.server.presentation.drawRuleRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.groupLifecycleRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.memberGroupRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.letterRoutes
@@ -168,6 +172,7 @@ fun Application.module(
                 get<NotificationDispatcher>(),
             )
             groupLifecycleRoutes(get<MoveToPending>(), get<ActivateGroup>(), get<ArchiveGroup>(), get<ListAssignments>(), get<SendDrawEmails>(), get<NotificationDispatcher>())
+            drawRuleRoutes(get<ListDrawRules>(), get<AddDrawRules>(), get<DeleteDrawRule>())
             announcementRoutes(get<SendAnnouncement>(), get<NotificationDispatcher>())
             memberGroupRoutes(get<ListMyGroups>(), get<GetMyGroup>())
             giftVisibilityRoutes(get<GetMyReceiver>(), get<GetMySanta>())

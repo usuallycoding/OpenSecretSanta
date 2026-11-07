@@ -1,6 +1,9 @@
 package com.usuallycoding.opensecretsanta.ui
 
+import com.usuallycoding.opensecretsanta.contract.AddDrawRuleRequest
 import com.usuallycoding.opensecretsanta.contract.AnnouncementRequest
+import com.usuallycoding.opensecretsanta.contract.DrawRuleDto
+import com.usuallycoding.opensecretsanta.contract.DrawRulesDto
 import com.usuallycoding.opensecretsanta.contract.AnnouncementResponse
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.ReadMarksDto
@@ -131,6 +134,7 @@ class ScriptedServer {
                 }
                 adminUsers.answer(request.method.value, path)?.let { return@MockEngine json(it.first, it.second) }
                 oversight.answer(request.method.value, path)?.let { return@MockEngine json(it.first, it.second) }
+                adminGroups.rulesAnswer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 adminGroups.confirmed = request.url.parameters["confirm"] == "true"
                 adminGroups.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 announcements.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
@@ -537,8 +541,56 @@ class FakeAdminGroups {
         group.budget, group.currency,
     )
 
-    private fun response(group: Group, created: List<CreatedAccountDto> = emptyList(), emails: EmailSummaryDto? = null) =
-        HttpStatusCode.OK to Json.encodeToString(GroupChangeResponse(dto(group), created, emails))
+    private fun response(group: Group, created: List<CreatedAccountDto> = emptyList(), emails: EmailSummaryDto? = null, deletedRules: List<DrawRuleDto> = emptyList()) =
+        HttpStatusCode.OK to Json.encodeToString(GroupChangeResponse(dto(group), created, emails, deletedRules))
+
+    // --- draw rules: kept as given (the server's checks are the server's own tests), with the answers a test asks for ---
+
+    private val rules = mutableMapOf<Long, MutableList<DrawRuleDto>>()
+    private var nextRuleId = 1L
+
+    /** What `GET .../rules` says about few possible draws. */
+    var fewDraws = false
+
+    /** The rules of a group as the server keeps them; a test can seed them. */
+    fun rulesOf(id: Long): List<DrawRuleDto> = rules[id].orEmpty()
+
+    fun addRule(id: Long, giver: String, receiver: String, kind: String): DrawRuleDto =
+        DrawRuleDto(nextRuleId++, giver, receiver, kind).also { rules.getOrPut(id) { mutableListOf() } += it }
+
+    /** The next add of a rule is refused with this explanation, as a conflict. */
+    var nextRuleConflict: String? = null
+
+    /** The next draw of the names is refused because of the rules, with this explanation. */
+    var nextDrawConflict: String? = null
+
+    /** The answer to a request under `/admin/groups/{id}/rules`, or null when the request is about something else. */
+    fun rulesAnswer(method: String, path: String, body: String): Pair<HttpStatusCode, String>? {
+        val match = Regex("/admin/groups/(\\d+)/rules(?:/(\\d+))?").matchEntire(path) ?: return null
+        val group = visible(match.groupValues[1].toLong()) ?: return error(HttpStatusCode.NotFound, "not_found", "Group not found.")
+        val ruleId = match.groupValues[2].toLongOrNull()
+        val notNow = error(HttpStatusCode.Conflict, "invalid_state", "Draw rules can only be changed while the group is Pending.")
+        return when {
+            group.state == "draft" -> error(HttpStatusCode.Conflict, "invalid_state", "A Draft group has no draw rules yet.")
+            method == "GET" && ruleId == null -> HttpStatusCode.OK to Json.encodeToString(DrawRulesDto(rulesOf(group.id), fewDraws && group.state == "pending"))
+            group.state != "pending" -> notNow
+            method == "POST" && ruleId == null -> {
+                nextRuleConflict?.let { message -> nextRuleConflict = null; return error(HttpStatusCode.Conflict, "rules_conflict", message) }
+                val request = Json.decodeFromString<AddDrawRuleRequest>(body)
+                val made = buildList {
+                    add(addRule(group.id, request.giver, request.receiver, request.kind))
+                    if (request.bothWays) add(addRule(group.id, request.receiver, request.giver, request.kind))
+                }
+                HttpStatusCode.Created to Json.encodeToString(made)
+            }
+            method == "DELETE" && ruleId != null -> if (rules[group.id]?.removeAll { it.id == ruleId } == true) {
+                HttpStatusCode.NoContent to ""
+            } else {
+                error(HttpStatusCode.NotFound, "not_found", "Rule not found.")
+            }
+            else -> null
+        }
+    }
 
     /** What the server says about the emails of a draw; null (the default) is a server with email off. */
     var drawEmails: EmailSummaryDto? = null
@@ -594,7 +646,9 @@ class FakeAdminGroups {
                     return error(HttpStatusCode.BadRequest, "validation_failed", "Username must be 3 to 32 characters long.", "participants")
                 }
                 group.participants = names.map { it.lowercase() }.distinct()
-                response(group, if (group.state == "pending") createMissingAccounts(group) else emptyList())
+                val gone = rulesOf(group.id).filter { it.giver !in group.participants || it.receiver !in group.participants }
+                rules[group.id]?.removeAll(gone)
+                response(group, if (group.state == "pending") createMissingAccounts(group) else emptyList(), deletedRules = gone)
             }
             method == "DELETE" && action.isEmpty() -> {
                 deleteRequests += confirmed
@@ -617,6 +671,7 @@ class FakeAdminGroups {
             method == "POST" && action == "activate" -> when {
                 group.state != "pending" -> notNow
                 group.participants.size < 4 -> error(HttpStatusCode.BadRequest, "validation_failed", "A group needs at least 4 participants.", "participants")
+                nextDrawConflict != null -> error(HttpStatusCode.Conflict, "rules_conflict", nextDrawConflict!!).also { nextDrawConflict = null }
                 else -> {
                     group.state = "active"
                     response(group, emails = drawEmails)

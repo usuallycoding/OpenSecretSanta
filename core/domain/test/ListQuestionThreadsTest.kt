@@ -42,7 +42,7 @@ class ListQuestionThreadsTest {
 
     private fun activate(owner: User, vararg participants: String): Long {
         val g = groups.seed(owner.username, GroupState.PENDING, *participants.map { u(it) }.toTypedArray())
-        ActivateGroup(ownedLoader, groups, AssignmentPlanner(IdentityShuffler()), GroupViewer(users, FakeDeliveryInfos()))(owner, g.id)
+        ActivateGroup(ownedLoader, groups, AssignmentPlanner(IdentityShuffler()), InMemoryDrawRules(), GroupViewer(users, FakeDeliveryInfos()))(owner, g.id)
         return g.id
     }
 
