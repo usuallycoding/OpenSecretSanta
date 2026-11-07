@@ -79,11 +79,11 @@ While a groups screen loads, the app SHALL show a progress indicator. When the s
 - **THEN** the app handles it as for any request: the sign-in screen is shown with the note that the person was signed out
 
 ### Requirement: Group page
-Choosing a group SHALL open its page, loaded with `GET /groups/{id}`, showing its name on one row with an ellipsis when it is longer, then its state and state note, description, date, time and location, then the two cards of `client-group-pages`, and at the end every participant's username as a chip, with the person's own chip highlighted. Parts the group does not have SHALL be left out.
+Choosing a group SHALL open its page, loaded with `GET /groups/{id}`, showing its name, centered horizontally, on one row with an ellipsis when it is longer, then its state and state note, description, date, time and location, then the two cards of `client-group-pages`, and at the end every participant's username as a chip, with the person's own chip highlighted. Parts the group does not have SHALL be left out.
 
 #### Scenario: Opening a group
 - **WHEN** the person chooses a group in the list
-- **THEN** the page shows its details, the two cards and, at the end, a chip for every participant's username with their own highlighted
+- **THEN** the page shows its name centered, its details, the two cards and, at the end, a chip for every participant's username with their own highlighted
 
 #### Scenario: Back to the list
 - **WHEN** the person goes back from the group page
@@ -110,11 +110,11 @@ Choosing a group SHALL open its page, loaded with `GET /groups/{id}`, showing it
 - **THEN** her chip is highlighted and has no "you" text, and the other chips are not highlighted
 
 ### Requirement: Group information is shown in a card
-On the group page the group's date and time, location and budget SHALL be shown together in one card, in that order, below the name, the state with its note and the description and above the Secret Santa card. Parts the group does not have SHALL be left out, and a group with none of them SHALL show no card.
+On the group page the group's date and time, location and budget SHALL be shown together in one card, in that order, below the name, the state with its note and the description card and above the Secret Santa card. Parts the group does not have SHALL be left out, and a group with none of them SHALL show no card.
 
 #### Scenario: All three present
 - **WHEN** a group has a description, the date `2026-12-24`, the time `18:30`, the location "Grandma's house" and the budget 100 in `RON`
-- **THEN** the description is above the card, and one card shows the date and time, the location and the budget, in that order
+- **THEN** the description is in a card of its own above this card, and this card shows the date and time, the location and the budget, in that order
 
 #### Scenario: Parts left out
 - **WHEN** a group has a budget and nothing else of the three
@@ -122,7 +122,7 @@ On the group page the group's date and time, location and budget SHALL be shown 
 
 #### Scenario: Nothing to show
 - **WHEN** a group has no date, no time, no location and no budget, with or without a description
-- **THEN** no card is shown
+- **THEN** no card for these is shown (a description has its own card)
 
 ### Requirement: The card marks the date and the location with icons
 In the card the date and time SHALL be on a line that starts with a calendar icon, followed by the date and time as `Dates and times are shown as the group has them` describes, and the location on a line that starts with a map pin icon, followed by the location. The icons SHALL take the place of the words "When?" and "Where?", which SHALL NOT be shown.
@@ -182,17 +182,17 @@ In the card the budget SHALL be on a line that starts with a bank icon, followed
 - **WHEN** a screen reader reads the card
 - **THEN** it reads the budget line as "Budget? - " followed by the budget and the currency, and the icon announces nothing of its own
 
-### Requirement: The description is shown outside the card
-The group's description SHALL be shown above the card, under the name and the state with its note, as plain text and not in a card, labelled "Description" for screen readers. A group without a description SHALL show nothing in its place.
+### Requirement: The description is shown in a card of its own
+The group's description SHALL be shown in a card of its own, above the card with the date and time, location and budget and under the name and the state with its note, labelled "Description" for screen readers. A group without a description SHALL show no description card and nothing in its place.
 
-#### Scenario: Description above the card
+#### Scenario: Description card above the information card
 - **WHEN** a group has a description and a location
-- **THEN** the description is shown as text above the card and is not inside it
+- **THEN** the description is in a card of its own above the card with the location, and not inside that card
 
 #### Scenario: Description alone
 - **WHEN** a group has a description and no date, time, location or budget
-- **THEN** the description is shown and no card is shown
+- **THEN** the description card is shown and no information card is shown
 
 #### Scenario: No description
 - **WHEN** a group has no description
-- **THEN** nothing is shown between the state and the card
+- **THEN** no description card is shown and nothing is shown between the state and the information card
