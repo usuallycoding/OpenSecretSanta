@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.ui.login
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +17,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.usuallycoding.opensecretsanta.APP_VERSION
@@ -25,9 +29,22 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Row
+import com.usuallycoding.opensecretsanta.resources.Res
+import com.usuallycoding.opensecretsanta.resources.app_logo_dark
+import com.usuallycoding.opensecretsanta.resources.app_logo_light
 import com.usuallycoding.opensecretsanta.ui.Strings
+import org.jetbrains.compose.resources.painterResource
 import com.usuallycoding.opensecretsanta.ui.form.touchesOfAField
 import com.usuallycoding.opensecretsanta.ui.form.PasswordField
+
+/** How wide the logo is at most; the picture is three times as wide, so it stays sharp. */
+private val LOGO_MAX_WIDTH = 280.dp
+
+/**
+ * Whether the dark version of the logo is the one to show on [background]. The app picks its own theme (its Light, Dark or System
+ * setting against the device's, and dynamic colours that replace the palette), so the colour being drawn on decides, not a setting.
+ */
+fun logoIsDark(background: Color): Boolean = background.luminance() < 0.5f
 
 @Composable
 fun LoginScreen(viewModel: LoginViewModel, sessionEnded: Boolean) {
@@ -37,7 +54,14 @@ fun LoginScreen(viewModel: LoginViewModel, sessionEnded: Boolean) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(Strings.APP_NAME, style = MaterialTheme.typography.headlineMedium)
+        // the logo has the name in it; it comes in a light and a dark version, whichever the theme being drawn needs
+        val dark = logoIsDark(MaterialTheme.colorScheme.background)
+        Image(
+            painterResource(if (dark) Res.drawable.app_logo_dark else Res.drawable.app_logo_light),
+            contentDescription = Strings.APP_NAME,
+            modifier = Modifier.widthIn(max = LOGO_MAX_WIDTH).fillMaxWidth(),
+            contentScale = ContentScale.Fit,
+        )
         Spacer(Modifier.height(8.dp))
         if (sessionEnded) Text(Strings.SESSION_ENDED, color = MaterialTheme.colorScheme.primary)
         OutlinedTextField(

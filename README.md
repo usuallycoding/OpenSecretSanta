@@ -381,6 +381,17 @@ scripts/generate-icons.sh --source other.svg       # another drawing
 
 To change the artwork, replace the SVG and run the script, then commit what it wrote: the results are in the repository, so building the apps and the Docker images needs neither the script nor its tools. The script needs `rsvg-convert` and ImageMagick (`brew install librsvg imagemagick`), stops before changing anything when one is missing, and gives the same files when run again. The hat is transparent in the drawing, so the script puts it on the background colour wherever a platform wants an opaque icon. The current SVG holds a bitmap (614×680 pixels) rather than vector paths: it is sharp at the 1024 canvas, and a true vector drawing would allow bigger or crisper icons. The status-bar notification icon (`drawable/ic_notification.xml`) is a plain white shape and is not made by the script.
 
+#### The logo
+
+The logo on the sign-in screen is `assets/app-logo.svg`, as it was drawn. `scripts/generate-logo.sh` makes its two pictures, one for the light theme and one for the dark (the same artwork with its black outline made light), and writes them in place as `app/shared/composeResources/drawable/app_logo_light.png` and `app_logo_dark.png`, 840 pixels wide and transparent. The words in the drawing are first turned into outlines, because the font they use is only on some computers. The screen shows the picture that fits the colours it is drawn on, whatever chose them: the app's Light, Dark or System setting, the device, or dynamic colours.
+
+```
+scripts/generate-logo.sh                       # from assets/app-logo.svg
+scripts/generate-logo.sh --source other.svg    # another drawing
+```
+
+The pictures are in the repository too, so building needs neither the script nor its tools (`python3`, `inkscape`, `rsvg-convert` and ImageMagick: `brew install --cask inkscape && brew install librsvg imagemagick`).
+
 ### Testing
 
 Run the project's tests with `./kotlin test`, or `./kotlin test -m <module>` for a single module.
