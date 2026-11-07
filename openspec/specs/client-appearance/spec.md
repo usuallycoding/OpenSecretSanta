@@ -66,25 +66,6 @@ On Android 12 or later the Appearance sheet SHALL offer a "Dynamic colours" swit
 - **WHEN** the sheet is opened on iOS, on the web or on Android 11 or earlier
 - **THEN** there is no "Dynamic colours" switch
 
-### Requirement: Make it snow
-The Appearance sheet SHALL have a "Make it snow" switch on every platform, off by default, that applies at once. While it is on, snow SHALL fall over the whole app, in front of the content, on every screen including the sign-in screens.
-
-#### Scenario: Off by default
-- **WHEN** the app is installed and the Appearance sheet is opened
-- **THEN** "Make it snow" is off and nothing falls
-
-#### Scenario: Switched on
-- **WHEN** the person switches "Make it snow" on
-- **THEN** snow starts falling over the screen at once, including behind the sheet that is open
-
-#### Scenario: Switched off again
-- **WHEN** the person switches it off
-- **THEN** the snow stops at once and nothing is drawn
-
-#### Scenario: Every screen
-- **WHEN** the snow is on and the person moves between the sign-in screen, the groups, a group and Settings
-- **THEN** snow falls over each of them
-
 ### Requirement: The snow looks like snow
 The snow SHALL be small, soft and fairly faint flakes of different sizes and speeds that sway as they fall and start again at the top when they reach the bottom, with smaller flakes slower and fainter than larger ones. The flakes SHALL be white on the dark theme and a pale blue-grey on the light theme, and a large window SHALL have no more flakes than its size calls for.
 
@@ -120,7 +101,7 @@ The snow SHALL NOT take or block any tap, scroll or key, SHALL NOT be presented 
 - **THEN** it is shown over the snow
 
 ### Requirement: The choice is remembered on the device
-The choice of appearance, the dynamic-colours switch and the "Make it snow" switch SHALL be kept on the device across restarts, signing out and signing in as someone else, SHALL belong to the device and not to an account, and SHALL be read before the first screen is drawn so that the wrong theme is never shown first. When the device's storage cannot be read or written the app SHALL follow the device each run and the snow SHALL be off.
+The choice of appearance, the dynamic-colours switch and the "Make it snow" switch SHALL be kept on the device across restarts, signing out and signing in as someone else, SHALL belong to the device and not to an account, and SHALL be read before the first screen is drawn so that the wrong theme is never shown first. When the device's storage cannot be read or written the app SHALL follow the device each run and the snow SHALL be on, as it is by default.
 
 #### Scenario: After a restart
 - **WHEN** the person chose "Dark", closes the app and opens it again
@@ -137,6 +118,10 @@ The choice of appearance, the dynamic-colours switch and the "Make it snow" swit
 #### Scenario: Snow after a restart
 - **WHEN** the person switched "Make it snow" on, closes the app and opens it again
 - **THEN** snow is already falling on the first screen
+
+#### Scenario: Snow switched off stays off
+- **WHEN** the person switched "Make it snow" off, closes the app and opens it again
+- **THEN** no snow falls on the first screen
 
 #### Scenario: Snow after signing out
 - **WHEN** the snow is on and the person signs out and another person signs in on the same device
@@ -198,3 +183,22 @@ A card SHALL show the same pattern every time it is shown for the same thing, in
 #### Scenario: Different cards
 - **WHEN** two cards in a list are looked at side by side
 - **THEN** their patterns differ
+
+### Requirement: Snow falls unless it is switched off
+The Appearance sheet SHALL have a "Make it snow" switch on every platform, on by default, that applies at once. While it is on, snow SHALL fall over the whole app, in front of the content, on every screen including the sign-in screens.
+
+#### Scenario: On by default
+- **WHEN** the app is installed and opened, before anything has been chosen
+- **THEN** snow is already falling, and the Appearance sheet shows "Make it snow" on
+
+#### Scenario: Switched on
+- **WHEN** the person switches "Make it snow" on
+- **THEN** snow starts falling over the screen at once, including behind the sheet that is open
+
+#### Scenario: Switched off again
+- **WHEN** the person switches it off
+- **THEN** the snow stops at once and nothing is drawn
+
+#### Scenario: Every screen
+- **WHEN** the snow is on and the person moves between the sign-in screen, the groups, a group and Settings
+- **THEN** snow falls over each of them
