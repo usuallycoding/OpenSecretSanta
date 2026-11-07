@@ -19,6 +19,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.ImeAction
+import com.usuallycoding.opensecretsanta.ui.form.PasswordField
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -63,7 +68,11 @@ internal fun UserNoticeRow(ui: AdminUserUi, viewModel: AdminUserViewModel) {
     ui.notice?.let { notice ->
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (notice == UserNotice.Unreachable) Strings.SERVER_UNREACHABLE else Strings.NOTICE_RESET_FAILED,
+                when (notice) {
+                    UserNotice.Unreachable -> Strings.SERVER_UNREACHABLE
+                    UserNotice.HandOverRefused -> Strings.NOTICE_HANDOVER_REFUSED
+                    UserNotice.Failed -> Strings.NOTICE_RESET_FAILED
+                },
                 modifier = Modifier.weight(1f),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium,
@@ -85,7 +94,32 @@ internal fun UserDialogs(viewModel: AdminUserViewModel, ui: AdminUserUi) {
             dismissButton = { TextButton(onClick = viewModel::cancelReset) { Text(Strings.CANCEL) } },
         )
     }
+    if (ui.handingOver) HandOverDialog(viewModel, ui)
     ui.created?.let { PasswordsDialog(Strings.RESET_DONE_TITLE, Strings.RESET_DONE_BODY, listOf(it), viewModel::dismissCreated) }
+}
+
+/** The confirmation of a handover: what moves, and the administrator's own password, kept here and sent only when confirmed. */
+@Composable
+private fun HandOverDialog(viewModel: AdminUserViewModel, ui: AdminUserUi) {
+    var password by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = viewModel::cancelHandOver,
+        title = { Text(Strings.HANDOVER_TITLE) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(Strings.handOverBody(viewModel.username))
+                PasswordField(Strings.HANDOVER_PASSWORD, password, { password = it }, ui.handOverError, ImeAction.Done) {
+                    viewModel.confirmHandOver(password)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { viewModel.confirmHandOver(password) }, enabled = password.isNotEmpty() && !ui.busy) {
+                Text(Strings.HANDOVER_CONFIRM, color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = { TextButton(onClick = viewModel::cancelHandOver) { Text(Strings.CANCEL) } },
+    )
 }
 
 /** A user's username, their temporary password while it is temporary, and the reset: the Users tab and the group sheet show the same thing. */
@@ -105,6 +139,10 @@ internal fun UserDetail(user: ManagedUser, viewModel: AdminUserViewModel, busy: 
         }
         if (viewModel.canReset) {
             OutlinedButton(onClick = viewModel::askReset, enabled = !busy) { Text(Strings.RESET_PASSWORD) }
+        }
+        if (viewModel.canHandOver) {
+            OutlinedButton(onClick = viewModel::askHandOver, enabled = !busy && !viewModel.handOverBlocked) { Text(Strings.HANDOVER_BUTTON) }
+            if (viewModel.handOverBlocked) Text(Strings.handOverBlocked(user.username), style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

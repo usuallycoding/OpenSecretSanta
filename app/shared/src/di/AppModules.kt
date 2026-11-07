@@ -75,7 +75,7 @@ fun appModules(baseUrl: String, pushDevice: PushDevice = UnsupportedPushDevice):
         viewModel { (groupId: Long) -> WishlistViewModel(groupId, get(), viewModelScope()) }
         viewModel { AdminGroupsViewModel(get(), viewModelScope()) }
         viewModel { AdminUsersViewModel(get(), viewModelScope()) }
-        viewModel { (username: String, me: String) -> AdminUserViewModel(username, me, get(), viewModelScope()) }
+        viewModel { (username: String, me: String) -> AdminUserViewModel(username, me, get(), get(), viewModelScope()) }
         // a new group has no id: the form is given NEW_GROUP, which Koin can carry where it could not carry null
         viewModel { (groupId: Long) -> AdminGroupFormViewModel(groupId.takeIf { it != AdminGroupFormViewModel.NEW_GROUP }, get(), viewModelScope()) }
         viewModel { (groupId: Long, me: String) -> AdminGroupViewModel(groupId, me, get(), viewModelScope()) }

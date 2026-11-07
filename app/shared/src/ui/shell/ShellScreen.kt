@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -208,7 +209,16 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
             val spread = wide && destination?.let {
                 it.hasRoute<AdminGroupRoute>() || it.hasRoute<GifterRoute>() || it.hasRoute<ReceiverRoute>()
             } == true
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
+            Column(Modifier.fillMaxSize().padding(padding)) {
+            val handedOverTo by viewModel.handedOverTo.collectAsState()
+            handedOverTo?.takeIf { participant }?.let { name ->
+                // said once, on the Groups tab the person lands on after handing the administrator role over
+                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(Strings.handedOverNotice(name), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                    TextButton(onClick = viewModel::dismissHandedOver) { Text(Strings.OK) }
+                }
+            }
+            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
                 Box(Modifier.widthIn(max = if (wide && !spread) STANDARD_CONTENT_WIDTH else Dp.Unspecified).fillMaxSize()) {
                     NavHost(navController, startDestination = startRoute) {
                         composable<GroupsRoute> {
@@ -335,6 +345,7 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                         }
                     }
                 }
+            }
             }
         }
                 }

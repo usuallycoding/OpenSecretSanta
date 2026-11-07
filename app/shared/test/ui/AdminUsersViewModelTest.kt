@@ -22,7 +22,7 @@ class AdminUsersViewModelTest {
     private suspend fun list() = AdminUsersViewModel(server.api, immediateScope()).also { it.refresh().join() }
 
     private suspend fun detail(username: String, me: String = "admin") =
-        AdminUserViewModel(username, me, server.api, immediateScope()).also { it.refresh().join() }
+        AdminUserViewModel(username, me, server.api, server.session(), immediateScope()).also { it.refresh().join() }
 
     private fun resets() = server.calls.count { it.startsWith("POST") && it.endsWith("/reset-password") }
 

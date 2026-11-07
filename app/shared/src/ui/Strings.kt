@@ -335,6 +335,18 @@ object Strings {
     const val PASSWORDS_ASKED_FOR_BODY = "These people have not changed their password yet. Give each their password. They must change it when they first sign in."
     const val PASSWORDS_NOBODY = "Nobody in this group has a temporary password."
     const val PASSWORDS_BODY = "Give each person their password. They must change it when they first sign in. You can look it up again under Users until they do."
+    const val HANDOVER_BUTTON = "Hand over administration"
+    const val HANDOVER_TITLE = "Hand over administration?"
+    fun handOverBody(username: String) =
+        "$username will become the administrator and you will stop being one. Every group you own and every account you created will belong to $username, and only $username can hand the role back."
+    const val HANDOVER_PASSWORD = "Your password"
+    const val HANDOVER_CONFIRM = "Hand over"
+    fun handOverBlocked(username: String) = "$username must first change their temporary password before taking over."
+    fun handedOverNotice(username: String) = "$username is now the administrator. You can keep using the app as a participant."
+    const val NOTICE_HANDOVER_REFUSED = "That person cannot take over the administrator role right now. Please reload and try again."
+    fun handOverPaused(minutes: Int?) =
+        if (minutes == null) "Too many attempts. Please try again later."
+        else "Too many attempts. Please try again in about $minutes ${if (minutes == 1) "minute" else "minutes"}."
     const val RESET_PASSWORD = "Reset password"
     const val RESET_TITLE = "Reset the password?"
     fun resetBody(username: String) = "The old password and any sign-in of $username stop working. A new temporary password is made, which they must change when they next sign in."

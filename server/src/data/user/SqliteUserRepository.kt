@@ -73,6 +73,25 @@ class SqliteUserRepository(private val database: Database) : UserRepository {
         } == 1
     }
 
+    override fun handOverAdmin(from: Username, to: Username): Boolean = database.transaction { c ->
+        fun update(sql: String, vararg values: String): Int = c.prepareStatement(sql).use { s ->
+            values.forEachIndexed { index, value -> s.setString(index + 1, value) }
+            s.executeUpdate()
+        }
+        // each step repeats its own condition and the first already holds the write lock, so a role or a password that
+        // changed since the use case looked leaves everything as it was
+        if (update("UPDATE users SET is_admin = 0 WHERE username = ? AND is_admin = 1", from.value) != 1) return@transaction false
+        if (update("UPDATE users SET is_admin = 1 WHERE username = ? AND is_admin = 0 AND must_change_password = 0", to.value) != 1) {
+            c.rollback()
+            return@transaction false
+        }
+        update("UPDATE groups SET owner_username = ? WHERE owner_username = ?", to.value, from.value)
+        update("UPDATE users SET created_by = ? WHERE created_by = ?", to.value, from.value)
+        update("UPDATE users SET created_by = NULL WHERE username = ?", to.value)
+        update("UPDATE users SET created_by = ? WHERE username = ?", to.value, from.value)
+        true
+    }
+
     override fun replaceCredentials(
         username: Username,
         passwordHash: String,

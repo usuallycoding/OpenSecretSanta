@@ -38,6 +38,29 @@ class SessionManager(
 
     private var accessToken: String? = null
 
+    private val _handedOverTo = MutableStateFlow<String?>(null)
+
+    /** Who the signed-in person has just handed the administrator role to, until the message about it is dismissed. */
+    val handedOverTo: StateFlow<String?> = _handedOverTo.asStateFlow()
+
+    fun dismissHandedOver() {
+        _handedOverTo.value = null
+    }
+
+    /**
+     * The signed-in person has handed the administrator role to [newAdministrator]: the account is read again, which is no
+     * longer an administrator's, and the app moves on to the participant view without a new sign-in. When the server cannot be
+     * asked, the outcome is already known, so the account is set as a participant's at once.
+     */
+    suspend fun handedOver(newAdministrator: String) {
+        val current = (_state.value as? SessionState.SignedIn)?.account ?: return
+        _handedOverTo.value = newAdministrator
+        when (val result = api.value.account()) {
+            is ApiResult.Success -> _state.value = result.value.toState()
+            is ApiResult.Failure -> if (_state.value is SessionState.SignedIn) _state.value = SessionState.SignedIn(Account(current.username, isAdmin = false))
+        }
+    }
+
     override val token: String? get() = accessToken
 
     /** Checks a stored token with the server. Call once at start; a missing or rejected token means signed out. */

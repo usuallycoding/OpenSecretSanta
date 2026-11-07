@@ -10,6 +10,7 @@ import com.usuallycoding.opensecretsanta.server.data.db.Migration
 import com.usuallycoding.opensecretsanta.server.data.db.MigrationRunner
 import com.usuallycoding.opensecretsanta.server.di.serverModules
 import com.usuallycoding.opensecretsanta.domain.admin.DeleteUser
+import com.usuallycoding.opensecretsanta.domain.admin.HandOverAdmin
 import com.usuallycoding.opensecretsanta.domain.admin.GetManagedUser
 import com.usuallycoding.opensecretsanta.domain.admin.SeedDefaultAdmin
 import com.usuallycoding.opensecretsanta.domain.announcement.Channels
@@ -161,7 +162,7 @@ fun Application.module(
             install(PasswordChangeGate)
             accountRoutes(get<ChangePassword>(), get<Channels>())
             deliveryInfoRoutes(get<GetMyDeliveryInfo>(), get<UpdateMyDeliveryInfo>())
-            adminRoutes(get<ListManagedUsers>(), get<GetManagedUser>(), get<ResetPassword>(), get<DeleteUser>())
+            adminRoutes(get<ListManagedUsers>(), get<GetManagedUser>(), get<ResetPassword>(), get<DeleteUser>(), get<HandOverAdmin>())
             adminGroupRoutes(
                 get<CreateGroup>(),
                 get<ListOwnedGroups>(),

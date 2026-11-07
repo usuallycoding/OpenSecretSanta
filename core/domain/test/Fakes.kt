@@ -125,6 +125,23 @@ class InMemoryUsers : UserRepository {
         return true
     }
 
+    /** Makes the next hand-over report that it was not applied, as when a role or password changed since it was checked. */
+    var refuseHandOver = false
+
+    /** Ownership of groups is not kept here; the real repository moves it, and its own tests prove that. */
+    override fun handOverAdmin(from: Username, to: Username): Boolean {
+        if (refuseHandOver) return false
+        val old = rows[from] ?: return false
+        val new = rows[to] ?: return false
+        if (!old.user.isAdmin || new.user.isAdmin || new.user.mustChangePassword) return false
+        old.user = old.user.copy(isAdmin = false)
+        new.user = new.user.copy(isAdmin = true)
+        rows.values.filter { it.createdBy == from }.forEach { it.createdBy = to }
+        new.createdBy = null
+        old.createdBy = to
+        return true
+    }
+
     override fun replaceCredentials(
         username: Username,
         passwordHash: String,

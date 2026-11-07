@@ -37,6 +37,14 @@ interface UserRepository {
      */
     fun deleteUnassigned(username: Username, createdBy: Username): Boolean
 
+    /**
+     * Hands the administrator role from [from] to [to] in one step: [from] stops being an administrator and [to] becomes
+     * one, every group [from] owns and every account [from] created pass to [to], [to] has no creator any more and
+     * [from] is recorded as created by [to]. Applied only if [from] is an administrator and [to] is not and has no
+     * temporary password, all decided in the same transaction; returns whether it was applied (nothing changes if not).
+     */
+    fun handOverAdmin(from: Username, to: Username): Boolean
+
     /** Replaces the credentials and increments the user's token version; returns the updated user. */
     fun replaceCredentials(
         username: Username,

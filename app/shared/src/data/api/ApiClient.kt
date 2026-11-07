@@ -3,6 +3,7 @@ package com.usuallycoding.opensecretsanta.data.api
 import com.usuallycoding.opensecretsanta.contract.AccountDto
 import com.usuallycoding.opensecretsanta.contract.AddDrawRuleRequest
 import com.usuallycoding.opensecretsanta.contract.AdminGroupDto
+import com.usuallycoding.opensecretsanta.contract.HandOverAdminRequest
 import com.usuallycoding.opensecretsanta.contract.DrawRuleDto
 import com.usuallycoding.opensecretsanta.contract.DrawRulesDto
 import com.usuallycoding.opensecretsanta.contract.AdminQuestionThreadDto
@@ -276,6 +277,10 @@ class ApiClient(
     /** Gives a managed user a new temporary password, which they must change at their next sign-in. */
     /** Deletes a user the administrator created who is in no group; refused with 409 for anyone else the administrator can see. */
     suspend fun deleteUser(username: String): ApiResult<Unit> = call(HttpMethod.Delete, ApiRoutes.adminUser(username))
+
+    /** Hands the administrator role to [username], proving who is asking with the caller's own [password]; the server answers 204. */
+    suspend fun handOverAdmin(username: String, password: String): ApiResult<Unit> =
+        call(HttpMethod.Post, ApiRoutes.adminUserHandOverAdmin(username), body = HandOverAdminRequest(password))
 
     suspend fun resetPassword(username: String): ApiResult<ResetPasswordResponse> =
         call(HttpMethod.Post, ApiRoutes.adminUserResetPassword(username))

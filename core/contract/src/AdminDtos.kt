@@ -16,3 +16,9 @@ data class ResetPasswordResponse(
     val username: String,
     val temporaryPassword: String,
 )
+
+/** Hands the administrator role over to the user named in the route; [password] is the signed-in administrator's own. */
+@Serializable
+data class HandOverAdminRequest(
+    val password: String,
+)

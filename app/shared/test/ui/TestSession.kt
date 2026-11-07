@@ -1,6 +1,7 @@
 package com.usuallycoding.opensecretsanta.ui
 
 import com.usuallycoding.opensecretsanta.contract.AddDrawRuleRequest
+import com.usuallycoding.opensecretsanta.contract.HandOverAdminRequest
 import com.usuallycoding.opensecretsanta.contract.AnnouncementRequest
 import com.usuallycoding.opensecretsanta.contract.DrawRuleDto
 import com.usuallycoding.opensecretsanta.contract.DrawRulesDto
@@ -132,7 +133,7 @@ class ScriptedServer {
                         json(HttpStatusCode.OK, deliveryInfoBody)
                     }
                 }
-                adminUsers.answer(request.method.value, path)?.let { return@MockEngine json(it.first, it.second) }
+                adminUsers.answer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 oversight.answer(request.method.value, path)?.let { return@MockEngine json(it.first, it.second) }
                 adminGroups.rulesAnswer(request.method.value, path, bodies.last())?.let { return@MockEngine json(it.first, it.second) }
                 adminGroups.confirmed = request.url.parameters["confirm"] == "true"
@@ -741,6 +742,12 @@ class FakeAdminUsers(val me: String = "admin") {
 
     fun failNextDeleteWith(status: HttpStatusCode, code: String, message: String = "refused") = failNextResetWith(status, code, message)
 
+    /** The administrator's own password, which a hand-over must carry. */
+    var ownPassword = "own-secret"
+
+    /** The people the role was handed to, in order, as the server accepted them. */
+    val handedOver = mutableListOf<String>()
+
     fun failNextResetWith(status: HttpStatusCode, code: String, message: String = "refused") {
         failures += status to """{"code":"$code","message":"$message"}"""
     }
@@ -752,18 +759,33 @@ class FakeAdminUsers(val me: String = "admin") {
     )
 
     /** The answer to a request under `/admin/users`, or null when the request is about something else. */
-    fun answer(method: String, path: String): Pair<HttpStatusCode, String>? {
-        val match = Regex("/admin/users(?:/([a-z0-9._-]+)(?:/(reset-password))?)?").matchEntire(path) ?: return null
+    fun answer(method: String, path: String, lastBody: String = ""): Pair<HttpStatusCode, String>? {
+        val match = Regex("/admin/users(?:/([a-z0-9._-]+)(?:/(reset-password|hand-over-admin))?)?").matchEntire(path) ?: return null
         val username = match.groupValues[1]
-        val reset = match.groupValues[2].isNotEmpty()
+        val reset = match.groupValues[2] == "reset-password"
+        val handOver = match.groupValues[2] == "hand-over-admin"
         if (username.isEmpty()) {
             return if (method == "GET") HttpStatusCode.OK to Json.encodeToString(rows.filter { it.username in managed }.map(::dto)) else null
         }
         val row = rows.firstOrNull { it.username == username && it.username in managed }
             ?: return HttpStatusCode.NotFound to """{"code":"not_found","message":"User not found."}"""
         return when {
-            method == "GET" && !reset -> HttpStatusCode.OK to Json.encodeToString(dto(row))
-            method == "DELETE" && !reset -> {
+            method == "POST" && handOver -> {
+                failures.removeFirstOrNull()?.let { return it }
+                val given = Json.decodeFromString<HandOverAdminRequest>(lastBody).password
+                when {
+                    row.username == me || row.mustChange ->
+                        HttpStatusCode.Conflict to """{"code":"invalid_state","message":"That person cannot take over."}"""
+                    given != ownPassword ->
+                        HttpStatusCode.BadRequest to """{"code":"validation_failed","message":"That password is not right.","field":"password"}"""
+                    else -> {
+                        handedOver += row.username
+                        HttpStatusCode.NoContent to ""
+                    }
+                }
+            }
+            method == "GET" && !reset && !handOver -> HttpStatusCode.OK to Json.encodeToString(dto(row))
+            method == "DELETE" && !reset && !handOver -> {
                 failures.removeFirstOrNull()?.let { return it }
                 if (!row.deletable) return HttpStatusCode.Conflict to """{"code":"invalid_state","message":"Only an account you created that is in no group can be deleted."}"""
                 rows.remove(row)

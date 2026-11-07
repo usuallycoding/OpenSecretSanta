@@ -18,6 +18,7 @@ object ApiRoutes {
     const val ADMIN_USERS = "/admin/users"
     const val ADMIN_USER = "/admin/users/{username}"
     const val ADMIN_USER_RESET_PASSWORD = "/admin/users/{username}/reset-password"
+    const val ADMIN_USER_HAND_OVER_ADMIN = "/admin/users/{username}/hand-over-admin"
 
     const val ADMIN_GROUPS = "/admin/groups"
     const val ADMIN_GROUP = "/admin/groups/{id}"
@@ -88,4 +89,5 @@ object ApiRoutes {
 
     fun adminUser(username: String) = "$ADMIN_USERS/$username"
     fun adminUserResetPassword(username: String) = "$ADMIN_USERS/$username/reset-password"
+    fun adminUserHandOverAdmin(username: String) = "$ADMIN_USERS/$username/hand-over-admin"
 }

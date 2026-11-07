@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.domain.admin
 
+import com.usuallycoding.opensecretsanta.domain.auth.AttemptLimiter
 import com.usuallycoding.opensecretsanta.domain.auth.LoginAttemptTracker
 import com.usuallycoding.opensecretsanta.domain.auth.PasswordHasher
 import com.usuallycoding.opensecretsanta.domain.auth.SecretBox
@@ -100,6 +101,43 @@ class DeleteUser(
         }
         if (!users.deleteUnassigned(target, actor.username)) {
             throw DomainException.InvalidState("Only an account you created that is in no group can be deleted.")
+        }
+    }
+}
+
+/**
+ * Hands the administrator role over to a person the caller manages, who then is the administrator and the caller is not.
+ * The caller proves who they are with their password, spending the same failed-attempt budget as signing in. A person
+ * who still has a temporary password cannot take over: the caller can read it and would keep access to the account that
+ * holds the role. The repository checks the roles and the temporary password again as it moves everything in one step.
+ */
+class HandOverAdmin(
+    private val users: UserRepository,
+    private val access: AccessPolicy,
+    private val hasher: PasswordHasher,
+    private val limiter: AttemptLimiter,
+) {
+    operator fun invoke(actor: User, rawTarget: String, password: String) {
+        requireAdmin(actor)
+        val target = targetUsername(rawTarget)
+        if (!access.canManage(actor.username, target)) throw DomainException.NotFound("User not found.")
+        val person = users.find(target) ?: throw DomainException.NotFound("User not found.")
+        if (target == actor.username) throw DomainException.InvalidState("You are already the administrator.")
+        if (person.isAdmin) throw DomainException.InvalidState("That person is already an administrator.")
+        if (person.mustChangePassword) {
+            throw DomainException.InvalidState("That person must first change their temporary password.")
+        }
+
+        val previous = limiter.check(actor.username)
+        val credentials = users.credentials(actor.username) ?: throw DomainException.NotFound("User not found.")
+        if (password.isEmpty() || !hasher.verify(password, credentials.passwordHash)) {
+            limiter.recordFailure(actor.username, previous)
+            throw DomainException.ValidationFailed("password", "That password is not right.")
+        }
+        limiter.clear(actor.username)
+
+        if (!users.handOverAdmin(actor.username, target)) {
+            throw DomainException.InvalidState("The role could not be handed over because something changed. Try again.")
         }
     }
 }

@@ -152,7 +152,7 @@ internal fun com.usuallycoding.opensecretsanta.contract.ManagedUserDto.toManaged
 )
 
 /** Something that went wrong with a reset, said once. */
-enum class UserNotice { Unreachable, Failed }
+enum class UserNotice { Unreachable, Failed, HandOverRefused }
 
 /** Something that went wrong with a deletion on the Users list, said once. */
 enum class UsersNotice { Unreachable, DeleteFailed, DeleteRefused }
@@ -170,4 +170,8 @@ data class AdminUserUi(
     /** The new temporary password after a reset, shown in its dialog until it is closed. */
     val created: CreatedAccount? = null,
     val notice: UserNotice? = null,
+    /** The hand-over confirmation is open; the password typed in it is kept by the dialog, not here. */
+    val handingOver: Boolean = false,
+    /** What the server said about the password or the attempts, shown in the open confirmation. */
+    val handOverError: String? = null,
 )

@@ -354,7 +354,7 @@ class AdminOversightViewModelTest {
         oversight.failNextWith(HttpStatusCode.InternalServerError, "internal_error")
 
         val delivery = delivery(id, "bob")
-        val account = AdminUserViewModel("bob", "admin", server.api, immediateScope()).also { it.refresh().join() }
+        val account = AdminUserViewModel("bob", "admin", server.api, server.session(), immediateScope()).also { it.refresh().join() }
 
         assertNull(delivery.state.value.value)
         assertTrue(delivery.state.value.error != null)
@@ -368,7 +368,7 @@ class AdminOversightViewModelTest {
         val id = groups.add("Soon", "pending", listOf("alice", "bob"))
         oversight.deliveryInfo(id, "bob", DeliveryInfoDto(fullName = "Bob Brown"))
 
-        val account = AdminUserViewModel("bob", "admin", server.api, immediateScope()).also { it.refresh().join() }
+        val account = AdminUserViewModel("bob", "admin", server.api, server.session(), immediateScope()).also { it.refresh().join() }
         val delivery = delivery(id, "bob")
 
         // bob is in a group but is not a user this administrator manages, so the account part is gone

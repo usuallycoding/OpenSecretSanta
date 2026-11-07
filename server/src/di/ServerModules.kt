@@ -7,10 +7,12 @@ import com.usuallycoding.opensecretsanta.domain.admin.GroupMembershipRepository
 import com.usuallycoding.opensecretsanta.domain.admin.ListManagedUsers
 import com.usuallycoding.opensecretsanta.domain.admin.NewAccountPlanner
 import com.usuallycoding.opensecretsanta.domain.admin.DeleteUser
+import com.usuallycoding.opensecretsanta.domain.admin.HandOverAdmin
 import com.usuallycoding.opensecretsanta.domain.admin.ResetPassword
 import com.usuallycoding.opensecretsanta.domain.admin.SeedDefaultAdmin
 import com.usuallycoding.opensecretsanta.domain.auth.ChangePassword
 import com.usuallycoding.opensecretsanta.domain.auth.Clock
+import com.usuallycoding.opensecretsanta.domain.auth.AttemptLimiter
 import com.usuallycoding.opensecretsanta.domain.auth.Login
 import com.usuallycoding.opensecretsanta.domain.auth.LoginAttemptTracker
 import com.usuallycoding.opensecretsanta.domain.auth.PasswordHasher
@@ -196,7 +198,9 @@ fun notificationModule(executor: Executor? = null, scheduler: Scheduler? = null)
 
 val useCaseModule = module {
     single { AccessPolicy(get()) }
+    single { AttemptLimiter(get(), get()) }
     single { Login(get(), get(), get(), get(), get()) }
+    single { HandOverAdmin(get(), get(), get(), get()) }
     single { ChangePassword(get(), get(), get()) }
     single { ListManagedUsers(get(), get(), get()) }
     single { GetManagedUser(get(), get(), get()) }

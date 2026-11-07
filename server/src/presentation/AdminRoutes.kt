@@ -1,13 +1,16 @@
 package com.usuallycoding.opensecretsanta.server.presentation
 
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
+import com.usuallycoding.opensecretsanta.contract.HandOverAdminRequest
 import com.usuallycoding.opensecretsanta.contract.ResetPasswordResponse
 import com.usuallycoding.opensecretsanta.domain.admin.DeleteUser
 import com.usuallycoding.opensecretsanta.domain.admin.GetManagedUser
+import com.usuallycoding.opensecretsanta.domain.admin.HandOverAdmin
 import com.usuallycoding.opensecretsanta.domain.admin.ListManagedUsers
 import com.usuallycoding.opensecretsanta.domain.admin.ResetPassword
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
+import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
@@ -22,6 +25,7 @@ fun Route.adminRoutes(
     getUser: GetManagedUser,
     resetPassword: ResetPassword,
     deleteUser: DeleteUser,
+    handOverAdmin: HandOverAdmin,
 ) {
     get(ApiRoutes.ADMIN_USERS) {
         val actor = call.currentUser()
@@ -40,5 +44,11 @@ fun Route.adminRoutes(
         val actor = call.currentUser()
         val credentials = blocking { resetPassword(actor, call.targetUsername()) }
         call.respond(ResetPasswordResponse(credentials.username.value, credentials.temporaryPassword))
+    }
+    post(ApiRoutes.ADMIN_USER_HAND_OVER_ADMIN) {
+        val actor = call.currentUser()
+        val request = call.receive<HandOverAdminRequest>()
+        blocking { handOverAdmin(actor, call.targetUsername(), request.password) }
+        call.respond(HttpStatusCode.NoContent)
     }
 }

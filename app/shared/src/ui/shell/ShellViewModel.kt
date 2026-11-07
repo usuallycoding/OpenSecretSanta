@@ -24,6 +24,11 @@ class ShellViewModel(
 
     val canSwitch: Boolean get() = account.isAdmin
 
+    /** Who this person has just handed the administrator role to, said once on the screen they land on. */
+    val handedOverTo: StateFlow<String?> = session.handedOverTo
+
+    fun dismissHandedOver() = session.dismissHandedOver()
+
     fun select(view: AppView) {
         if (view == AppView.Admin && !account.isAdmin) return
         _view.value = view

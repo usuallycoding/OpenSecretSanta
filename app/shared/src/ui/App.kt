@@ -65,8 +65,9 @@ private fun AppContent(onNavigationReady: suspend (NavController, isAdmin: Boole
         KeyboardDismissRoot {
             when (val current = state) {
                 // Signed in, the shell is its own screen with a bar at the top; a new person gets a fresh one.
-                is SessionState.SignedIn -> key(current.account.username) {
-                    ShellScreen(koinViewModel<ShellViewModel>(key = current.account.username) { parametersOf(current.account) }, onNavigationReady)
+                // a change of role (an administrator handing theirs over) gives a fresh shell too, with the other view's screens
+                is SessionState.SignedIn -> key(current.account.username, current.account.isAdmin) {
+                    ShellScreen(koinViewModel<ShellViewModel>(key = "${current.account.username}-${current.account.isAdmin}") { parametersOf(current.account) }, onNavigationReady)
                 }
                 else -> {
                     val scrollState = rememberScrollState()
