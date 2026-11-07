@@ -250,7 +250,7 @@ Pulling a tab down (on Android and iOS) SHALL reload that tab, and returning to 
 - **THEN** that tab reloads what it shows
 
 ### Requirement: The Secret Santa card
-Below the group's information the group page SHALL show, once the group is Active or Archived, a card headed "You're Secret Santa for:" with, on the next row in a bold title font, the receiver's username in capital letters, and under it the line "Shh... Keep it a secret!" in italics, then "See Wishlist" and "Ask Questions" on one row, then "Inbox" and, last, "Delivery Info", each on its own row. While the group is Pending there SHALL be no such card, as there is no receiver to tell about yet.
+Below the group's information the group page SHALL show, once the group is Active or Archived, a card headed "You're Secret Santa for:" with, on the next row in a bold title font, the receiver's username in capital letters, and under it the line "Shh... Keep it a secret!" in italics, then one row of four icon buttons, as `The card actions are icon buttons` describes: "See Wishlist", "Ask Questions", "Inbox" and, last, "Delivery Info". While the group is Pending there SHALL be no such card, as there is no receiver to tell about yet.
 
 #### Scenario: Pending
 - **WHEN** the group is Pending
@@ -262,7 +262,7 @@ Below the group's information the group page SHALL show, once the group is Activ
 
 #### Scenario: Active
 - **WHEN** the group is Active and the person's receiver is `bob`
-- **THEN** the card shows the heading, "BOB", the line "Shh... Keep it a secret!", the buttons "See Wishlist" and "Ask Questions", an "Inbox" button and, last, a "Delivery Info" button
+- **THEN** the card shows the heading, "BOB", the line "Shh... Keep it a secret!" and one row of four icon buttons: "See Wishlist", "Ask Questions", "Inbox" and, last, "Delivery Info"
 
 #### Scenario: Archived
 - **WHEN** the group is Archived
@@ -293,7 +293,7 @@ Below the group's information the group page SHALL show, once the group is Activ
 - **THEN** the name reads "..." and the four buttons are disabled, and a failure shows its message with "Try again"
 
 ### Requirement: The Your stuff card
-Below the Secret Santa card the group page SHALL show a card headed "Your stuff:", the line "Tell your santa what you want and let them know you!" in italics under it, "Edit Wishlist" and, from Active on, "Respond to Santa" on one row, then, from Active on, "Send letter" on its own row and, last, "Delivery Info" on its own row. In an Archived group it SHALL also have, above that, the "Reveal Santa" button of `The Santa stays hidden until the group is archived`.
+Below the Secret Santa card the group page SHALL show a card headed "Your stuff:", the line "Tell your santa what you want and let them know you!" in italics under it, one row of icon buttons, as `The card actions are icon buttons` describes: "Edit Wishlist" and, from Active on, "Respond to Santa" and "Send letter" and, last, "Delivery Info". In an Archived group it SHALL also have, above that row, the "Reveal Santa" text button of `The Santa stays hidden until the group is archived`.
 
 #### Scenario: The encouraging line
 - **WHEN** the card is shown in a Pending, an Active or an Archived group
@@ -408,19 +408,19 @@ The group page SHALL count the unanswered questions from `GET /groups/{id}/santa
 - **THEN** the badge counts it once the questions have reloaded
 
 ### Requirement: The Your stuff card asks for missing delivery info
-In a Pending or an Active group, when the person's delivery info for the group lacks the full name, email, phone or address, the "Your stuff:" card SHALL show the text "Please fill out your delivery info in order to be able to receive your secret gift!" in the theme's error colour, directly above the "Delivery Info" button. It SHALL be plain text, not a control, and SHALL NOT block any action.
+In a Pending or an Active group, when the person's delivery info for the group lacks the full name, email, phone or address, the "Your stuff:" card SHALL show the text "Please fill out your delivery info in order to be able to receive your secret gift!" in the theme's error colour, directly above the row of icon buttons, below "Reveal Santa" if that is shown, and while it is shown the "Delivery Info" icon button SHALL be drawn in the error colour too, its outline and its icon. The message SHALL be plain text, not a control, and nothing here SHALL block any action.
 
 #### Scenario: Incomplete in a Pending group
 - **WHEN** the group is Pending and the person has not set their phone
-- **THEN** the message is shown directly above the "Delivery Info" button
+- **THEN** the message is shown directly above the row of icon buttons, and the "Delivery Info" icon button is red
 
 #### Scenario: Incomplete in an Active group
 - **WHEN** the group is Active and the person has set nothing
-- **THEN** the message is shown directly above the "Delivery Info" button, below "Reveal Santa" if that is shown
+- **THEN** the message is shown directly above the row of icon buttons, below "Reveal Santa" if that is shown
 
 #### Scenario: Complete
 - **WHEN** the person has set their full name, email, phone and address
-- **THEN** no message is shown
+- **THEN** no message is shown and the "Delivery Info" icon button is drawn as the others are
 
 #### Scenario: Only the delivery information empty
 - **WHEN** the person has set the four required fields and left the delivery information empty
@@ -460,3 +460,41 @@ While the group is Pending or Active the group page SHALL load the person's own 
 #### Scenario: Draft group
 - **WHEN** the group is a Draft
 - **THEN** the person's delivery info is not requested
+
+### Requirement: The card actions are icon buttons
+The actions of the "You're Secret Santa for:" and "Your stuff:" cards, except "Reveal Santa", SHALL be outlined icon buttons with no text, in one row at the start of the card. The icons SHALL be the gift for "See Wishlist" and "Edit Wishlist", the Material "Send" paper plane for "Ask Questions" and "Respond to Santa", the mail icon for "Inbox" and "Send letter" and the outlined map pin for both "Delivery Info" buttons, in that order. "Reveal Santa" SHALL stay a text button.
+
+#### Scenario: Secret Santa card icons
+- **WHEN** the group is Active
+- **THEN** the "You're Secret Santa for:" card has one row of four outlined icon buttons, gift, send, mail and pin, with no text on them
+
+#### Scenario: Your stuff card icons
+- **WHEN** the group is Active
+- **THEN** the "Your stuff:" card has one row of four outlined icon buttons, gift (Edit Wishlist), send (Respond to Santa), mail (Send letter) and pin (Delivery Info), and no text on them
+
+#### Scenario: Before the draw
+- **WHEN** the group is Pending
+- **THEN** the "Your stuff:" card has only the gift and the pin buttons
+
+#### Scenario: Reveal Santa
+- **WHEN** the group is Archived
+- **THEN** "Reveal Santa" is still a text button, above the row of icon buttons in the "Your stuff:" card
+
+### Requirement: Card icon buttons keep their names, badges and states
+Each card icon button's former label SHALL be its spoken name and its tooltip, shown on hover and on a long press, so the requirements that name these buttons still describe them. The count badges of `client-read-marks` and `Respond to Santa counts unanswered questions` SHALL stay on the corner of their buttons with the count still spoken with the name, and a button SHALL be disabled where it was.
+
+#### Scenario: A tooltip
+- **WHEN** the person hovers a card icon button, or presses it for a long time on a touch screen
+- **THEN** a tooltip shows its name, such as "Ask Questions", and a short press still opens what it opens
+
+#### Scenario: Spoken name
+- **WHEN** a screen reader reads a card icon button
+- **THEN** it reads the name, such as "Inbox", and with new items "Inbox, 3 new"
+
+#### Scenario: Badges stay
+- **WHEN** three new letters wait for the Santa
+- **THEN** the mail button of the "You're Secret Santa for:" card has a badge showing 3 on its corner
+
+#### Scenario: Receiver not known
+- **WHEN** the receiver has not loaded
+- **THEN** the four icon buttons of the "You're Secret Santa for:" card are disabled
