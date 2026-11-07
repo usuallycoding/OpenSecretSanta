@@ -47,8 +47,8 @@ class AppearanceSettingsTest {
     }
 
     @Test
-    fun theSnowIsOffByDefault() {
-        assertEquals(false, AppearanceSettings(MemorySettingsStore()).appearance.value.snow)
+    fun theSnowIsOnByDefault() {
+        assertEquals(true, AppearanceSettings(MemorySettingsStore()).appearance.value.snow)
     }
 
     @Test
@@ -61,6 +61,14 @@ class AppearanceSettingsTest {
         assertEquals(true, AppearanceSettings(store).appearance.value.snow)
 
         settings.setSnow(false)
+        assertEquals(false, AppearanceSettings(store).appearance.value.snow)
+    }
+
+    @Test
+    fun aSnowSwitchedOffStaysOffAfterARestart() {
+        val store = MemorySettingsStore()
+        AppearanceSettings(store).setSnow(false)
+
         assertEquals(false, AppearanceSettings(store).appearance.value.snow)
     }
 

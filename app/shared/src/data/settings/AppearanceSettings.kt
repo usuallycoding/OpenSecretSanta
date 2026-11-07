@@ -16,7 +16,8 @@ class AppearanceSettings(private val store: SettingsStore) {
         Appearance(
             mode = store.get(MODE_KEY)?.let { stored -> ThemeMode.entries.firstOrNull { it.name == stored } } ?: ThemeMode.System,
             dynamicColor = store.get(DYNAMIC_KEY) == TRUE,
-            snow = store.get(SNOW_KEY) == TRUE,
+            // on unless the person switched it off: a missing or unreadable value is the default
+            snow = store.get(SNOW_KEY) != FALSE,
         ),
     )
 
@@ -33,7 +34,7 @@ class AppearanceSettings(private val store: SettingsStore) {
     }
 
     fun setSnow(on: Boolean) {
-        store.put(SNOW_KEY, if (on) TRUE else "false")
+        store.put(SNOW_KEY, if (on) TRUE else FALSE)
         _appearance.update { it.copy(snow = on) }
     }
 
@@ -42,5 +43,6 @@ class AppearanceSettings(private val store: SettingsStore) {
         const val DYNAMIC_KEY = "appearance.dynamic"
         const val SNOW_KEY = "appearance.snow"
         const val TRUE = "true"
+        const val FALSE = "false"
     }
 }

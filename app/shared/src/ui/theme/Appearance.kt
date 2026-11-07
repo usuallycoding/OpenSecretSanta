@@ -7,7 +7,7 @@ enum class ThemeMode { System, Light, Dark }
 data class Appearance(
     val mode: ThemeMode = ThemeMode.System,
     val dynamicColor: Boolean = false,
-    val snow: Boolean = false,
+    val snow: Boolean = true,
 )
 
 /** Dark when the mode says Dark, or says System and the device is dark. */
