@@ -5,7 +5,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
+import com.usuallycoding.opensecretsanta.ui.form.GiftIcon
+import com.usuallycoding.opensecretsanta.ui.form.MailIcon
+import com.usuallycoding.opensecretsanta.ui.form.PlaceIcon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -18,9 +22,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.usuallycoding.opensecretsanta.ui.Strings
-import com.usuallycoding.opensecretsanta.ui.form.CountBadged
 import com.usuallycoding.opensecretsanta.ui.form.SnowCard
-import com.usuallycoding.opensecretsanta.ui.gift.countBadgeText
 import com.usuallycoding.opensecretsanta.ui.gift.ReceiverInfo
 import com.usuallycoding.opensecretsanta.ui.load.LoadState
 import com.usuallycoding.opensecretsanta.ui.readmarks.UnreadCounts
@@ -62,12 +64,12 @@ internal fun SecretSantaCard(
                 OutlinedButton(onClick = onRetry) { Text(Strings.TRY_AGAIN) }
             }
             val known = name != null
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                UnreadButton(Strings.SEE_WISHLIST, unread?.wishlist ?: 0, Strings::withNewOrEdited, { onOpenGifter(false) }, known, Modifier.weight(1f))
-                UnreadButton(Strings.ASK_QUESTIONS, unread?.answers ?: 0, Strings::withNew, { onOpenGifter(true) }, known, Modifier.weight(1f))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                UnreadIconButton(GiftIcon, Strings.SEE_WISHLIST, unread?.wishlist ?: 0, Strings::withNewOrEdited, { onOpenGifter(false) }, known)
+                UnreadIconButton(Icons.AutoMirrored.Filled.Send, Strings.ASK_QUESTIONS, unread?.answers ?: 0, Strings::withNew, { onOpenGifter(true) }, known)
+                UnreadIconButton(MailIcon, Strings.INBOX, unread?.letters ?: 0, Strings::withNew, onOpenInbox, known)
+                CardIconButton(PlaceIcon, Strings.DELIVERY_INFO, { onSheet(PairSheet.Receiver) }, enabled = known)
             }
-            UnreadButton(Strings.INBOX, unread?.letters ?: 0, Strings::withNew, onOpenInbox, known, Modifier.fillMaxWidth())
-            OutlinedButton(onClick = { onSheet(PairSheet.Receiver) }, enabled = known, modifier = Modifier.fillMaxWidth()) { Text(Strings.DELIVERY_INFO) }
         }
     }
 }
@@ -92,40 +94,21 @@ internal fun YourStuffCard(
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(Strings.YOUR_STUFF, style = MaterialTheme.typography.titleMedium)
             Text(Strings.TELL_YOUR_SANTA, style = MaterialTheme.typography.bodyMedium, fontStyle = FontStyle.Italic)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { onOpenReceiver(false) }, modifier = Modifier.weight(1f)) { Text(Strings.EDIT_WISHLIST) }
-                if (drawn) {
-                    CountBadged(countBadgeText(unanswered), Modifier.weight(1f)) {
-                        Button(
-                            onClick = { onOpenReceiver(true) },
-                            // the badge says nothing of its own, so the button says how many wait
-                            modifier = Modifier.fillMaxWidth().semantics { if (unanswered > 0) contentDescription = Strings.withUnanswered(Strings.RESPOND_TO_SANTA, unanswered) },
-                        ) { Text(Strings.RESPOND_TO_SANTA) }
-                    }
-                }
-            }
-            // from the draw on, the receiver can write to their Santa, who is never named
-            if (drawn) Button(onClick = onSendLetter, modifier = Modifier.fillMaxWidth()) { Text(Strings.SEND_LETTER) }
+            // the Santa can be revealed only once the group is Archived; the text button stays above the row of icons
             if (phase == GroupPhase.Archived) {
                 OutlinedButton(onClick = { onSheet(PairSheet.Santa) }, modifier = Modifier.fillMaxWidth()) { Text(Strings.REVEAL_SANTA) }
             }
-            // a person who still has to give their delivery info is asked to, right above the button that shows it
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                if (asksForDeliveryInfo) Text(Strings.DELIVERY_INFO_NEEDED, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-                OutlinedButton(onClick = { onSheet(PairSheet.Me) }, modifier = Modifier.fillMaxWidth()) { Text(Strings.DELIVERY_INFO) }
+            // a person who still has to give their delivery info is asked to, right above the row, whose Delivery Info button turns red with it
+            if (asksForDeliveryInfo) Text(Strings.DELIVERY_INFO_NEEDED, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CardIconButton(GiftIcon, Strings.EDIT_WISHLIST, { onOpenReceiver(false) })
+                if (drawn) {
+                    UnreadIconButton(Icons.AutoMirrored.Filled.Send, Strings.RESPOND_TO_SANTA, unanswered, Strings::withUnanswered, { onOpenReceiver(true) })
+                    // from the draw on, the receiver can write to their Santa, who is never named
+                    CardIconButton(MailIcon, Strings.SEND_LETTER, onSendLetter)
+                }
+                CardIconButton(PlaceIcon, Strings.DELIVERY_INFO, { onSheet(PairSheet.Me) }, error = asksForDeliveryInfo)
             }
         }
-    }
-}
-
-/** A button with a badge for what is new to the Santa behind it: none for nothing, "9+" for many. The button says the count aloud. */
-@Composable
-private fun UnreadButton(label: String, count: Int, spoken: (String, Int) -> String, onClick: () -> Unit, enabled: Boolean, modifier: Modifier) {
-    CountBadged(countBadgeText(count), modifier) {
-        Button(
-            onClick = onClick,
-            enabled = enabled,
-            modifier = Modifier.fillMaxWidth().semantics { if (count > 0) contentDescription = spoken(label, count) },
-        ) { Text(label) }
     }
 }
