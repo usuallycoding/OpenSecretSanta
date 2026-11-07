@@ -33,11 +33,15 @@ The administrator's own detail SHALL offer no "Reset password".
 - **THEN** there is no "Reset password"
 
 ### Requirement: No way to make an administrator
-No screen of the app SHALL offer to make a user an administrator.
+The app SHALL offer no action that adds an administrator. The only action that gives anyone administrator rights SHALL be the handover of the signed-in administrator's own role, from a user's page, which takes it from them (see "Handing the administrator role over").
 
 #### Scenario: User detail
 - **WHEN** the administrator opens any user's detail
-- **THEN** there is no action that grants administrator rights
+- **THEN** there is no action that adds an administrator: the only one that gives the role also takes it from the administrator
+
+#### Scenario: Own page
+- **WHEN** the administrator opens their own detail
+- **THEN** there is no handover action
 
 ### Requirement: Loading, errors and refreshing
 Every admin user screen SHALL show that it is loading, SHALL show a message with "Try again" when the server cannot be reached or answers with an error, and SHALL keep what it already shows while a refresh fails. Each screen SHALL be refreshed as described in "Pulling a screen refreshes it" and "The web has no refresh control" and SHALL reload when the app returns to the foreground.
