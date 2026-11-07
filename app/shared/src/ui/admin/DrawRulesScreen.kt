@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.ui.admin
 
+import com.usuallycoding.opensecretsanta.ui.layout.ForwardOutsideScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,9 +46,11 @@ import com.usuallycoding.opensecretsanta.ui.load.loadMessage
 /** The rules page of a group on a narrow window: a page of its own, where the pane is not there. */
 @Composable
 fun DrawRulesScreen(viewModel: DrawRulesViewModel) {
+    val scroll = rememberScrollState()
+    ForwardOutsideScroll(scroll)
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(
-            Modifier.widthIn(max = STANDARD_CONTENT_WIDTH).fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+            Modifier.widthIn(max = STANDARD_CONTENT_WIDTH).fillMaxSize().verticalScroll(scroll).padding(16.dp),
         ) {
             RulesContent(viewModel)
         }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -25,9 +26,9 @@ import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
 import com.usuallycoding.opensecretsanta.ui.form.SnowCard
 
 /**
- * What a group says about itself: its description as plain text, then one card with a line for when, where and how much,
+ * What a group says about itself: its description in a card of its own, then one card with a line for when, where and how much,
  * each starting with an icon in place of a word. A part the group does not have is left out, and a group with none of the
- * three facts has no card. The group's name, state and actions are not part of it.
+ * three facts has no second card, and one with no description has no first. The group's name, state and actions are not part of it.
  */
 @Composable
 internal fun GroupInfoCard(description: String?, whenText: String?, location: String?, budget: String?, modifier: Modifier = Modifier) {
@@ -37,7 +38,11 @@ internal fun GroupInfoCard(description: String?, whenText: String?, location: St
     val spend = budget?.takeIf { it.isNotBlank() }
     if (about == null && schedule == null && where == null && spend == null) return
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        about?.let { ReadOnlyText(it, style = MaterialTheme.typography.bodyLarge, label = Strings.DESCRIPTION_LABEL) }
+        about?.let {
+            SnowCard("group-description", Modifier.fillMaxWidth()) {
+                Box(Modifier.padding(16.dp)) { ReadOnlyText(it, Modifier.fillMaxWidth(), style = MaterialTheme.typography.bodyLarge, label = Strings.DESCRIPTION_LABEL) }
+            }
+        }
         if (schedule != null || where != null || spend != null) {
             SnowCard("group-info", Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

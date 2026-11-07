@@ -205,7 +205,7 @@ private fun AdminStep.label() = when (this) {
 @Composable
 private fun Header(group: AdminGroup, viewModel: AdminGroupViewModel, busy: Boolean, onEdit: () -> Unit, onRules: () -> Unit, onAnnounce: () -> Unit) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        ReadOnlyText(group.name, style = MaterialTheme.typography.headlineSmall, label = Strings.GROUP_NAME, maxLines = 1, copy = false)
+        ReadOnlyText(group.name, Modifier.fillMaxWidth(), style = MaterialTheme.typography.headlineSmall, label = Strings.GROUP_NAME, maxLines = 1, copy = false, centered = true)
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(group.state.label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             group.phase.note()?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }

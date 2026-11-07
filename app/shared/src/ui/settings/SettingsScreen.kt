@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.ui.settings
 
+import com.usuallycoding.opensecretsanta.ui.layout.ForwardOutsideScroll
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -57,7 +58,9 @@ fun SettingsScreen(onSignOut: () -> Unit) {
     SheetBackHandler(enabled = choosingNotifications) { choosingNotifications = false }
     SheetBackHandler(enabled = changingPassword) { changingPassword = false }
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+    val scroll = rememberScrollState()
+    ForwardOutsideScroll(scroll)
+    Column(Modifier.fillMaxSize().verticalScroll(scroll)) {
         SettingsRow(Strings.APPEARANCE, supporting = appearance.mode.label()) { choosingAppearance = true }
         if (push.isOffered) SettingsRow(Strings.NOTIFICATIONS) { choosingNotifications = true }
         SettingsRow(Strings.CHANGE_PASSWORD) { changingPassword = true }

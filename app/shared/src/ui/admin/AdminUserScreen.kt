@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.ui.admin
 
+import com.usuallycoding.opensecretsanta.ui.layout.ForwardOutsideScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,7 +58,9 @@ fun AdminUserScreen(viewModel: AdminUserViewModel, onBack: () -> Unit) {
             UserNoticeRow(ui, viewModel)
             LoadContent(state, onRetry = { viewModel.refresh() }, onRefresh = { viewModel.refresh() }) { user ->
                 // the detail does not scroll by itself: the sheet that shows it scrolls as a whole
-                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { UserDetail(user, viewModel, ui.busy) }
+                val scroll = rememberScrollState()
+                ForwardOutsideScroll(scroll)
+                Column(Modifier.fillMaxSize().verticalScroll(scroll)) { UserDetail(user, viewModel, ui.busy) }
             }
         }
     }

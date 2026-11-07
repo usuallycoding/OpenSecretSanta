@@ -32,6 +32,11 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import com.usuallycoding.opensecretsanta.ui.layout.OutsideScroll
+import com.usuallycoding.opensecretsanta.ui.layout.LocalOutsideScroll
+import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.gestures.rememberScrollableState
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -153,10 +158,17 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
     // the administrator's groups, which the Groups screen lists and, on a wide window, so does the sidebar; only an administrator may ask for them
     val adminGroups = if (viewModel.account.isAdmin) koinViewModel<AdminGroupsViewModel>(key = "admin-groups-${viewModel.account.username}") else null
     val pageActions = remember { PageActionHost() }
+    // the scrollers of the pages that are shown, for the empty space beside a page to scroll
+    val outsideScroll = remember { OutsideScroll() }
+    val outsideScrollState = rememberScrollableState { delta -> outsideScroll.scrollBy(delta) }
     // no fill of its own: the app's background is behind it, and the snow, if it is on, is over that background and under this
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val wide = isWide(maxWidth)
-        CompositionLocalProvider(LocalWideLayout provides wide, LocalPageActions provides if (wide) pageActions else null) {
+        CompositionLocalProvider(
+            LocalWideLayout provides wide,
+            LocalPageActions provides if (wide) pageActions else null,
+            LocalOutsideScroll provides outsideScroll,
+        ) {
             Row(Modifier.fillMaxSize()) {
                 if (wide) {
                     if (participant) ParticipantSidebar(navController, backEntry, groups) else AdminSidebar(navController, backEntry, adminGroups)
@@ -164,6 +176,9 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                 // One standard width for the bars, content and buttons; on a wider window the rest is plain background. Beside a sidebar the
                 // top bar is as wide as the area and only the content keeps the standard width.
                 Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
+                    // behind the Scaffold: beside the capped column between 640 and 840dp, where the Scaffold is not (the one inside it covers
+                    // the Scaffold's own area); over a page its own scroller takes the gesture
+                    Box(Modifier.fillMaxSize().scrollable(outsideScrollState, Orientation.Vertical, reverseDirection = true))
                     Scaffold(
                         modifier = Modifier.widthIn(max = if (wide) Dp.Unspecified else STANDARD_CONTENT_WIDTH).fillMaxSize(),
                         // open space shows the snow; the bars below keep their own fills and hide it
@@ -222,6 +237,10 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                 }
             }
             Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                // The Scaffold is a surface, which takes every pointer event over its whole area, so the box behind it never sees one
+                // there: this one is inside it, behind the page and over the same area, and scrolls the page that is shown where nothing
+                // in front handles a wheel or a drag (the empty space beside a page that keeps a readable width)
+                Box(Modifier.fillMaxSize().scrollable(outsideScrollState, Orientation.Vertical, reverseDirection = true))
                 Box(Modifier.widthIn(max = if (wide && !spread) STANDARD_CONTENT_WIDTH else Dp.Unspecified).fillMaxSize()) {
                     NavHost(navController, startDestination = startRoute) {
                         composable<GroupsRoute> {

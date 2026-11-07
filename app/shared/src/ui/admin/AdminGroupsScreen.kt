@@ -1,5 +1,7 @@
 package com.usuallycoding.opensecretsanta.ui.admin
 
+import androidx.compose.foundation.lazy.rememberLazyListState
+import com.usuallycoding.opensecretsanta.ui.layout.ForwardOutsideScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -69,8 +71,11 @@ fun AdminGroupsScreen(viewModel: AdminGroupsViewModel, onOpen: (Long) -> Unit, o
                         if (shown.isEmpty()) {
                             NoMatchingGroups(onClear = viewModel.filter::clear)
                         } else {
+                            val listState = rememberLazyListState()
+                            ForwardOutsideScroll(listState)
                             LazyColumn(
                                 Modifier.fillMaxWidth(),
+                                state = listState,
                                 contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp + fabClearance()),
                                 verticalArrangement = Arrangement.spacedBy(12.dp),
                             ) {

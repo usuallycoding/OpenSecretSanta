@@ -125,7 +125,7 @@ internal fun GroupGone(onBack: () -> Unit) {
 @Composable
 private fun Header(group: GroupDetail) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        ReadOnlyText(group.name, style = MaterialTheme.typography.headlineSmall, label = Strings.GROUP_NAME, maxLines = 1, copy = false)
+        ReadOnlyText(group.name, Modifier.fillMaxWidth(), style = MaterialTheme.typography.headlineSmall, label = Strings.GROUP_NAME, maxLines = 1, copy = false, centered = true)
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(group.state.label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             group.state.note?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }

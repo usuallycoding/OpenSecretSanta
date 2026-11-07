@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.ui.load
 
+import com.usuallycoding.opensecretsanta.ui.layout.ForwardOutsideScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -143,6 +144,7 @@ fun PullPage(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val scroll = rememberScrollState()
+    ForwardOutsideScroll(scroll)
     val pageScroll = remember(scroll) { PageScroll(scroll) }
     val body: @Composable (Boolean) -> Unit = { pulled ->
         CompositionLocalProvider(LocalPullActive provides pulled, LocalPageScroll provides pageScroll) {

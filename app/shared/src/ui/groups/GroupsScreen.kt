@@ -1,5 +1,7 @@
 package com.usuallycoding.opensecretsanta.ui.groups
 
+import androidx.compose.foundation.lazy.rememberLazyListState
+import com.usuallycoding.opensecretsanta.ui.layout.ForwardOutsideScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,8 +48,11 @@ fun GroupsScreen(viewModel: GroupsViewModel, onOpen: (Long) -> Unit) {
                         if (shown.isEmpty()) {
                             NoMatchingGroups(onClear = viewModel.filter::clear)
                         } else {
+                            val listState = rememberLazyListState()
+                            ForwardOutsideScroll(listState)
                             LazyColumn(
                                 Modifier.fillMaxWidth(),
+                                state = listState,
                                 contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                                 verticalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
