@@ -67,10 +67,10 @@ fun Route.groupLifecycleRoutes(
 fun Route.memberGroupRoutes(listMyGroups: ListMyGroups, getMyGroup: GetMyGroup) {
     get(ApiRoutes.GROUPS) {
         val user = call.currentUser()
-        call.respond(blocking { listMyGroups(user) }.map { it.toMemberDto() })
+        call.respond(blocking { listMyGroups(user) }.map { it.group.toMemberDto(it.unreadAnnouncements) })
     }
     get(ApiRoutes.GROUP) {
         val user = call.currentUser()
-        call.respond(blocking { getMyGroup(user, call.groupId()) }.toMemberDto())
+        call.respond(blocking { getMyGroup(user, call.groupId()) }.let { it.group.toMemberDto(it.unreadAnnouncements) })
     }
 }

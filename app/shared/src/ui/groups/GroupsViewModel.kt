@@ -20,6 +20,8 @@ data class GroupRow(
     val whenText: String?,
     val location: String?,
     val participantCount: Int,
+    /** How many of the group's announcements the person has not seen. */
+    val unreadAnnouncements: Int = 0,
 ) : GroupListItem
 
 internal fun MemberGroupDto.toRow() = GroupRow(
@@ -31,6 +33,7 @@ internal fun MemberGroupDto.toRow() = GroupRow(
     whenText = formatWhen(date, time),
     location = location?.takeIf { it.isNotBlank() },
     participantCount = participants.size,
+    unreadAnnouncements = unreadAnnouncements,
 )
 
 /** The groups the person is in, in the order the server returns them (newest first), and the search and chips that narrow them. */

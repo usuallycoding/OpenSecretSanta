@@ -136,6 +136,8 @@ data class MemberGroupDto(
     val participants: List<String>,
     val budget: Int? = null,
     val currency: String? = null,
+    /** How many of the group's announcements this person has not seen; 0 when there are none or they have seen them all. */
+    val unreadAnnouncements: Int = 0,
 )
 
 @Serializable

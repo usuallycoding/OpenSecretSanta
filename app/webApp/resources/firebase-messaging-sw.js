@@ -30,7 +30,7 @@ firebase.messaging().onBackgroundMessage(function (payload) {
 
 // The page a notification opens, by its kind: a question is answered on the Receiver page, a letter is read in the inbox, an answer and a wishlist are read
 // on the Gifter page, an announcement the owner sent (the target 'messages', which the announcements kind alone does not say) is read on the
-// group notifications page, and anything else opens the group. The app has the same mapping (NotificationTarget); these are its addresses.
+// announcements page, and anything else opens the group. The app has the same mapping (NotificationTarget); these are its addresses.
 function addressOf(groupId, category, target) {
     if (!groupId) return '#/groups';
     const group = '#/groups/' + groupId;
@@ -39,7 +39,7 @@ function addressOf(groupId, category, target) {
         case 'answers': return group + '/giver/questions';
         case 'wishlist': return group + '/giver';
         case 'letters': return group + '/inbox';
-        case 'announcements': return target === 'messages' ? group + '/notifications' : group;
+        case 'announcements': return target === 'messages' ? group + '/announcements' : group;
         default: return group;
     }
 }

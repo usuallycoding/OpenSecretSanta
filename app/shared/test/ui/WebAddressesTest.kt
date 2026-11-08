@@ -16,14 +16,14 @@ class WebAddressesTest {
         DeliveryInfoRoute(2) to "#/groups/2/delivery-info",
         SendLetterRoute(2) to "#/groups/2/outbox",
         InboxRoute(2) to "#/groups/2/inbox",
-        AnnouncementsRoute(2) to "#/groups/2/notifications",
+        AnnouncementsRoute(2) to "#/groups/2/announcements",
         SettingsRoute to "#/settings",
         AdminGroupsRoute to "#/admin/groups",
         AdminGroupNewRoute to "#/admin/groups/new",
         AdminGroupRoute(2) to "#/admin/groups/2",
         AdminGroupEditRoute(2) to "#/admin/groups/2/edit",
         AdminGroupRulesRoute(2) to "#/admin/groups/2/rules",
-        AdminAnnouncementsRoute(2) to "#/admin/groups/2/notifications",
+        AdminAnnouncementsRoute(2) to "#/admin/groups/2/announcements",
         AdminUsersRoute to "#/admin/users",
         AdminUserRoute("alice.b_c-1") to "#/admin/users/alice.b_c-1",
     )
@@ -40,14 +40,14 @@ class WebAddressesTest {
     fun aTrailingSlashAndAMissingHashAreTolerated() {
         assertEquals(GroupRoute(2), WebAddresses.routeOf("#/groups/2/", false))
         assertEquals(DeliveryInfoRoute(2), WebAddresses.routeOf("/groups/2/delivery-info/", false))
-        assertEquals(AnnouncementsRoute(2), WebAddresses.routeOf("#/groups/2/notifications/", false))
-        assertEquals(AdminAnnouncementsRoute(2), WebAddresses.routeOf("/admin/groups/2/notifications/", true))
+        assertEquals(AnnouncementsRoute(2), WebAddresses.routeOf("#/groups/2/announcements/", false))
+        assertEquals(AdminAnnouncementsRoute(2), WebAddresses.routeOf("/admin/groups/2/announcements/", true))
         assertNull(WebAddresses.routeOf("#/profile", false)) // the Profile tab is gone, so its address names no screen
     }
 
     @Test
     fun unknownAndOldFormAddressesNameNothing() {
-        for (a in listOf("", "#", "#/", "#/nope", "#/groups/x", "#/groups/2/other", "#/groups/2/wishlist", "#/groups/2/receiver/wishlist", "#/groups/2/giver/wishlist", "#/groups/2/giver/questions/extra", "#/groups/2/receiver/questions/extra", "#/groups/2/questions", "#/groups/2/santa", "#/groups/2/outbox/extra", "#/groups/2/inbox/extra", "#/groups/2/notifications/extra", "#/admin/groups/2/notifications/extra", "#/groups/2/send-letter", "#/groups/2/gifter", "#/groups/2/gifter/questions", "#/groups/2/letters", "#/profile/x", "#/settings/extra", "#/admin", "#/admin/users/Al ice",
+        for (a in listOf("", "#", "#/", "#/nope", "#/groups/x", "#/groups/2/other", "#/groups/2/wishlist", "#/groups/2/receiver/wishlist", "#/groups/2/giver/wishlist", "#/groups/2/giver/questions/extra", "#/groups/2/receiver/questions/extra", "#/groups/2/questions", "#/groups/2/santa", "#/groups/2/outbox/extra", "#/groups/2/inbox/extra", "#/groups/2/announcements/extra", "#/admin/groups/2/announcements/extra", "#/groups/2/send-letter", "#/groups/2/gifter", "#/groups/2/gifter/questions", "#/groups/2/letters", "#/profile/x", "#/settings/extra", "#/admin", "#/admin/users/Al ice",
             "#com.usuallycoding.opensecretsanta.ui.navigation.GroupRoute/2")) {
             assertNull(WebAddresses.routeOf(a, true), a)
         }

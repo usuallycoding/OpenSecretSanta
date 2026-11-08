@@ -44,7 +44,7 @@ data class SendLetterRoute(val groupId: Long)
 data class InboxRoute(val groupId: Long)
 
 /**
- * The Group Notifications page, where a participant reads the announcements the group's owner has sent. A wide window has room for them beside the group's
+ * The Announcements page, where a participant reads the announcements the group's owner has sent. A wide window has room for them beside the group's
  * page, so this address opens that page with them in a pane.
  */
 @Serializable
@@ -78,6 +78,6 @@ data class AdminGroupEditRoute(val id: Long)
 @Serializable
 data class AdminGroupRulesRoute(val id: Long)
 
-/** The Group Notifications page for the group's owner, who reads the announcements from the admin overview; on a wide window they open in a pane there. */
+/** The Announcements page for the group's owner, who reads the announcements from the admin overview; on a wide window they open in a pane there. */
 @Serializable
 data class AdminAnnouncementsRoute(val id: Long)

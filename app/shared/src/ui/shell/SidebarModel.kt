@@ -15,10 +15,12 @@ internal data class SidebarItem(val label: String, val route: Any, val count: In
 /**
  * What an expanded group holds, by what its [phase] has to offer: its Overview, Giving (the receiver's wishlist, the questions for them
  * and the Inbox, side by side on one page) and Receiving (the person's own wishlist, Respond to Secret Santa and the Outbox, the same).
- * Giving carries what is new to the Santa and Receiving the questions that wait for an answer, as the group page's cards badge them.
+ * Giving carries what is new to the Santa and Receiving the questions that wait for an answer, as the group page's cards badge them, and
+ * Overview the [announcements] the person has not seen.
  */
-internal fun groupItems(groupId: Long, phase: GroupPhase, unread: UnreadCounts?, unanswered: Int): List<SidebarItem> {
-    val items = mutableListOf(SidebarItem(Strings.SIDEBAR_OVERVIEW, GroupRoute(groupId)))
+internal fun groupItems(groupId: Long, phase: GroupPhase, unread: UnreadCounts?, unanswered: Int, announcements: Int = 0): List<SidebarItem> {
+    val overview = announcements.takeIf { it > 0 }?.let { "${Strings.SIDEBAR_OVERVIEW}, ${Strings.newAnnouncements(it)}" }
+    val items = mutableListOf(SidebarItem(Strings.SIDEBAR_OVERVIEW, GroupRoute(groupId), announcements, overview))
     val drawn = phase == GroupPhase.Active || phase == GroupPhase.Archived
     if (drawn) {
         val new = unread?.let { it.wishlist + it.answers + it.letters } ?: 0

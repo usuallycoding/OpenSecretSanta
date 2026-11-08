@@ -77,4 +77,108 @@ class AnnouncementsViewModelTest {
         assertEquals(2, model.data.value.value!!.size)
         assertNotNull(model.data.value.error)
     }
+
+    // --- what is new ---
+
+    private fun keepThree() {
+        announcements.keep("2026-12-01T10:00:00Z")
+        announcements.keep("2026-12-02T10:00:00Z")
+        announcements.keep("2026-12-03T10:00:00Z")
+    }
+
+    private fun AnnouncementsViewModel.news() = data.value.value!!.associate { it.number to it.isNew }
+
+    @Test
+    fun whatWasSentAfterTheTimeSeenIsNew() = runTest {
+        keepThree()
+        announcements.seenUpTo = "2026-12-01T10:00:00Z"
+
+        assertEquals(mapOf(3 to true, 2 to true, 1 to false), page().news())
+    }
+
+    @Test
+    fun forAPersonWhoNeverLookedEverythingIsNew() = runTest {
+        keepThree()
+
+        assertEquals(mapOf(3 to true, 2 to true, 1 to true), page().news())
+    }
+
+    @Test
+    fun theMarksStayWhileThePageIsOpenAndAnArrivalIsMarkedToo() = runTest {
+        keepThree()
+        announcements.seenUpTo = "2026-12-02T10:00:00Z"
+        val model = page()
+        model.markSeen()?.join()
+        assertEquals(mapOf(3 to true, 2 to false, 1 to false), model.news())
+
+        announcements.keep("2026-12-04T10:00:00Z")
+        model.refresh().join()
+
+        assertEquals(mapOf(4 to true, 3 to true, 2 to false, 1 to false), model.news())
+    }
+
+    @Test
+    fun whenTheTimeSeenCannotBeReadNothingIsMarkedAndNothingIsSent() = runTest {
+        keepThree()
+        // the first load runs when the view model is made, and the page loads once more
+        announcements.failNextReadsWith(HttpStatusCode.InternalServerError)
+        announcements.failNextReadsWith(HttpStatusCode.InternalServerError)
+
+        val model = page()
+
+        assertEquals(mapOf(3 to false, 2 to false, 1 to false), model.news())
+        assertNull(model.markSeen())
+        assertTrue(announcements.marked.isEmpty())
+    }
+
+    @Test
+    fun theNewestTimeIsSentAsSeenOnceAndNotAgainForTheSameTime() = runTest {
+        keepThree()
+        val model = page()
+
+        model.markSeen()?.join()
+        assertEquals(listOf("2026-12-03T10:00:00Z"), announcements.marked)
+
+        model.refresh().join()
+        assertNull(model.markSeen())
+        assertEquals(1, announcements.marked.size)
+
+        announcements.keep("2026-12-05T10:00:00Z")
+        model.refresh().join()
+        model.markSeen()?.join()
+        assertEquals(listOf("2026-12-03T10:00:00Z", "2026-12-05T10:00:00Z"), announcements.marked)
+    }
+
+    @Test
+    fun aFailedMarkLeavesThemNewForTheNextVisit() = runTest {
+        keepThree()
+        announcements.failNextMarkWith(HttpStatusCode.InternalServerError)
+        page().markSeen()?.join()
+        assertEquals(null, announcements.seenUpTo)
+
+        val nextVisit = page()
+
+        assertEquals(mapOf(3 to true, 2 to true, 1 to true), nextVisit.news())
+        nextVisit.markSeen()?.join()
+        assertEquals("2026-12-03T10:00:00Z", announcements.seenUpTo)
+    }
+
+    @Test
+    fun anOpenedPageHasNothingNewAfterAMarkedVisit() = runTest {
+        keepThree()
+        page().markSeen()?.join()
+
+        assertEquals(mapOf(3 to false, 2 to false, 1 to false), page().news())
+    }
+
+    @Test
+    fun theOwnerHasNothingMarkedAndAsksForNoTime() = runTest {
+        keepThree()
+
+        val model = page(forOwner = true)
+
+        assertEquals(mapOf(3 to false, 2 to false, 1 to false), model.news())
+        assertNull(model.markSeen())
+        assertTrue(server.calls.none { it.contains("announcements/reads") })
+    }
 }

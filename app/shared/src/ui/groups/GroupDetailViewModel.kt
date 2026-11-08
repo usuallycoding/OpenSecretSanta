@@ -23,6 +23,8 @@ data class GroupDetail(
     val location: String?,
     val budget: String? = null,
     val participants: List<ParticipantItem>,
+    /** How many of the group's announcements the person has not seen. */
+    val unreadAnnouncements: Int = 0,
 )
 
 internal fun MemberGroupDto.toDetail(me: String) = GroupDetail(
@@ -34,6 +36,7 @@ internal fun MemberGroupDto.toDetail(me: String) = GroupDetail(
     location = location?.takeIf { it.isNotBlank() },
     budget = budgetLine(budget, currency),
     participants = participants.map { ParticipantItem(it, isMe(it, me)) },
+    unreadAnnouncements = unreadAnnouncements,
 )
 
 /** The server answers 404 for a group that is gone or that the person no longer belongs to. */

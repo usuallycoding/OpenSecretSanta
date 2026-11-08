@@ -158,7 +158,7 @@ private fun Header(group: GroupDetail, onOpenMessages: (() -> Unit)?) {
             Text(group.state.label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             group.state.note?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
         }
-        GroupInfoCard(group.description, group.whenText, group.location, group.budget, onOpenMessages = onOpenMessages)
+        GroupInfoCard(group.description, group.whenText, group.location, group.budget, onOpenMessages = onOpenMessages, unreadAnnouncements = group.unreadAnnouncements)
     }
 }
 

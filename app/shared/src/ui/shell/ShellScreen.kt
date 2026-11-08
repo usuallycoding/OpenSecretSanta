@@ -395,11 +395,11 @@ private fun titleOf(view: AppView, destination: NavDestination?, pageTitle: Stri
     destination?.hasRoute<AdminGroupNewRoute>() == true -> Strings.ADMIN_NEW_GROUP
     destination?.hasRoute<AdminGroupEditRoute>() == true -> Strings.ADMIN_EDIT_GROUP
     destination?.hasRoute<AdminGroupRulesRoute>() == true -> Strings.RULES_TITLE
-    destination?.hasRoute<AdminAnnouncementsRoute>() == true -> if (wide) Strings.ADMIN_GROUP else Strings.GROUP_NOTIFICATIONS
+    destination?.hasRoute<AdminAnnouncementsRoute>() == true -> if (wide) Strings.ADMIN_GROUP else Strings.ANNOUNCEMENTS
     destination?.hasRoute<AdminGroupRoute>() == true -> Strings.ADMIN_GROUP
     view == AppView.Admin -> Strings.ADMIN_GROUPS
     destination?.hasRoute<GroupRoute>() == true -> Strings.TITLE_GROUP
-    destination?.hasRoute<AnnouncementsRoute>() == true -> if (wide) Strings.TITLE_GROUP else Strings.GROUP_NOTIFICATIONS
+    destination?.hasRoute<AnnouncementsRoute>() == true -> if (wide) Strings.TITLE_GROUP else Strings.ANNOUNCEMENTS
     destination?.hasRoute<GifterRoute>() == true -> pageTitle ?: Strings.givingTo(null)
     destination?.hasRoute<ReceiverRoute>() == true -> pageTitle ?: Strings.TITLE_YOUR_WISHLIST
     destination?.hasRoute<DeliveryInfoRoute>() == true -> Strings.TITLE_DELIVERY_INFO

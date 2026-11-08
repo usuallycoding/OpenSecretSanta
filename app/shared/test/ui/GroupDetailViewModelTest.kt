@@ -24,6 +24,20 @@ class GroupDetailViewModelTest {
     private suspend fun viewModel(me: String = "alice") = GroupDetailViewModel(7, me, server.api, immediateScope()).also { it.refresh().join() }
 
     @Test
+    fun theDetailCarriesHowManyAnnouncementsAreNew() = runTest {
+        server.groupAnswer = { HttpStatusCode.OK to full.replace("\"participants\"", "\"unreadAnnouncements\":4,\"participants\"") }
+
+        assertEquals(4, viewModel().state.value.value!!.unreadAnnouncements)
+    }
+
+    @Test
+    fun theDetailHasNoNewAnnouncementsWhenTheServerSaysNothing() = runTest {
+        server.groupAnswer = { HttpStatusCode.OK to full }
+
+        assertEquals(0, viewModel().state.value.value!!.unreadAnnouncements)
+    }
+
+    @Test
     fun aFullGroupShowsEverythingTheDetailNeeds() = runTest {
         server.groupAnswer = { HttpStatusCode.OK to full }
 

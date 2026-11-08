@@ -161,6 +161,14 @@ class ApiClient(
     suspend fun markRead(groupId: Long, kind: String, seenUpTo: String): ApiResult<ReadMarkDto> =
         call(HttpMethod.Put, ApiRoutes.groupReceiverRead(groupId, kind), body = MarkReadRequest(seenUpTo))
 
+    /** How many of the group's announcements the person has not seen, and the time they have seen up to. */
+    suspend fun announcementReads(groupId: Long): ApiResult<ReadMarkDto> =
+        call(HttpMethod.Get, ApiRoutes.groupAnnouncementReads(groupId))
+
+    /** Says the person has seen the group's announcements up to [seenUpTo], an ISO-8601 instant. */
+    suspend fun markAnnouncementsRead(groupId: Long, seenUpTo: String): ApiResult<ReadMarkDto> =
+        call(HttpMethod.Put, ApiRoutes.groupAnnouncementReads(groupId), body = MarkReadRequest(seenUpTo))
+
     /** The letters the person has sent their Santa, in the order sent, with nothing that names the Santa. */
     suspend fun sentLetters(groupId: Long): ApiResult<List<LetterDto>> =
         call(HttpMethod.Get, ApiRoutes.groupSantaLetters(groupId))

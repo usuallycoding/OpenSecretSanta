@@ -14,7 +14,9 @@ import com.usuallycoding.opensecretsanta.domain.admin.HandOverAdmin
 import com.usuallycoding.opensecretsanta.domain.admin.GetManagedUser
 import com.usuallycoding.opensecretsanta.domain.admin.SeedDefaultAdmin
 import com.usuallycoding.opensecretsanta.domain.announcement.Channels
+import com.usuallycoding.opensecretsanta.domain.announcement.GetMyAnnouncementReads
 import com.usuallycoding.opensecretsanta.domain.announcement.ListAnnouncements
+import com.usuallycoding.opensecretsanta.domain.announcement.MarkAnnouncementsRead
 import com.usuallycoding.opensecretsanta.domain.announcement.SendAnnouncement
 import com.usuallycoding.opensecretsanta.domain.email.Mailer
 import com.usuallycoding.opensecretsanta.domain.notification.GetNotificationSettings
@@ -175,7 +177,7 @@ fun Application.module(
             )
             groupLifecycleRoutes(get<MoveToPending>(), get<ActivateGroup>(), get<ArchiveGroup>(), get<ListAssignments>(), get<SendDrawEmails>(), get<NotificationDispatcher>())
             drawRuleRoutes(get<ListDrawRules>(), get<AddDrawRules>(), get<DeleteDrawRule>())
-            announcementRoutes(get<SendAnnouncement>(), get<ListAnnouncements>(), get<NotificationDispatcher>())
+            announcementRoutes(get<SendAnnouncement>(), get<ListAnnouncements>(), get<GetMyAnnouncementReads>(), get<MarkAnnouncementsRead>(), get<NotificationDispatcher>())
             memberGroupRoutes(get<ListMyGroups>(), get<GetMyGroup>())
             giftVisibilityRoutes(get<GetMyReceiver>(), get<GetMySanta>())
             questionRoutes(get<AskQuestion>(), get<ListMyQuestions>(), get<ListQuestionsFromMySanta>(), get<AnswerQuestion>(), get<NotificationDispatcher>())

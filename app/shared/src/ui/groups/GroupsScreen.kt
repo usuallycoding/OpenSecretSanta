@@ -70,8 +70,10 @@ fun GroupsScreen(viewModel: GroupsViewModel, onOpen: (Long) -> Unit) {
 private fun GroupCard(group: GroupRow, onClick: () -> Unit) {
     SnowCard(group.id, onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(group.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                // the announcements the person has not seen, before the state, which keeps the card's edge
+                UnreadAnnouncementsCount(group.unreadAnnouncements)
                 Text(group.state.label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             }
             group.whenText?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }

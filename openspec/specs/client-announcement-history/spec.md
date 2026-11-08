@@ -1,7 +1,7 @@
 # client-announcement-history Specification
 
 ## Purpose
-How the app shows the announcements a group's owner has sent: an "Group Notifications" icon in the group information card, and the page or pane it opens, newest first, for the participants of the group and for its owner.
+How the app shows the announcements a group's owner has sent: an "Announcements" icon in the group information card, and the page or pane it opens, newest first, for the participants of the group and for its owner.
 
 ## Requirements
 

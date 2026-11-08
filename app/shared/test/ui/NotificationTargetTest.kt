@@ -66,6 +66,6 @@ class NotificationTargetTest {
         assertEquals(NotificationTarget.routesOf("answers", 7).last(), WebAddresses.routeOf("#/groups/7/giver/questions", false))
         assertEquals(NotificationTarget.routesOf("wishlist", 7).last(), WebAddresses.routeOf("#/groups/7/giver", false))
         assertEquals(NotificationTarget.routesOf("letters", 7).last(), WebAddresses.routeOf("#/groups/7/inbox", false))
-        assertEquals(NotificationTarget.routesOf("announcements", 7, NotificationData.TARGET_MESSAGES).last(), WebAddresses.routeOf("#/groups/7/notifications", false))
+        assertEquals(NotificationTarget.routesOf("announcements", 7, NotificationData.TARGET_MESSAGES).last(), WebAddresses.routeOf("#/groups/7/announcements", false))
     }
 }

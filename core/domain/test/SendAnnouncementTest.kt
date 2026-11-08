@@ -67,7 +67,7 @@ class SendAnnouncementTest {
         push: Boolean = false,
         appUrl: String? = "https://santa.example",
         actor: com.usuallycoding.opensecretsanta.domain.user.User = owner,
-    ) = SendAnnouncement(OwnedGroupLoader(groups), infos, announcements, mailer, notifier, clock, appUrl)(actor, group.id, title, body, email, push)
+    ) = SendAnnouncement(OwnedGroupLoader(groups), infos, announcements, announcements, mailer, notifier, clock, appUrl)(actor, group.id, title, body, email, push)
 
     private fun group(state: GroupState, details: GroupDetails = GroupDetails("Office Party")): Group {
         val seeded = groups.seed(owner.username, state, *names.map(::u).toTypedArray())
@@ -131,6 +131,60 @@ class SendAnnouncementTest {
 
         assertTrue(mailer.sent.isEmpty())
         assertEquals(AnnouncementLimits.MAX_PER_GROUP, announcements.list(g.id).size)
+    }
+
+    @Test
+    fun theSenderWhoTakesPartHasSeenWhatTheySendAndTheOthersHaveNot() {
+        val g = groups.seed(owner.username, GroupState.ACTIVE, owner.username, *names.map(::u).toTypedArray())
+        names.forEach { infos.save(g.id, u(it), DeliveryInfo(email = "$it@example.org")) }
+
+        announce(g)
+
+        assertEquals(0, announcements.unreadCounts(owner.username, listOf(g.id))[g.id])
+        assertEquals(1, announcements.unreadCounts(u("alice"), listOf(g.id))[g.id])
+    }
+
+    @Test
+    fun anAnnouncementByANewOwnerIsNewToThePreviousOwnerWhoTakesPart() {
+        val newOwner = users.add("newboss", admin = true).let { users.userNamed("newboss") }
+        val g = groups.seed(newOwner.username, GroupState.PENDING, owner.username, newOwner.username)
+
+        announce(g, email = false, push = true, actor = newOwner)
+
+        assertEquals(0, announcements.unreadCounts(newOwner.username, listOf(g.id))[g.id])
+        assertEquals(1, announcements.unreadCounts(owner.username, listOf(g.id))[g.id])
+    }
+
+    @Test
+    fun anOwnerWhoDoesNotTakePartKeepsNoMark() {
+        val g = group(GroupState.ACTIVE)
+
+        announce(g)
+
+        assertNull(announcements.seenUpTo(g.id, owner.username))
+    }
+
+    @Test
+    fun aRefusedAnnouncementLeavesTheSendersMarkAsItWas() {
+        val g = groups.seed(owner.username, GroupState.ACTIVE, owner.username)
+
+        assertFailsWith<DomainException.ValidationFailed> { announce(g, title = "") }
+
+        assertNull(announcements.seenUpTo(g.id, owner.username))
+    }
+
+    @Test
+    fun aFailureToMarkTheSenderNeitherUndoesNorStopsTheAnnouncement() {
+        val failing = object : com.usuallycoding.opensecretsanta.domain.announcement.AnnouncementReadRepository by announcements {
+            override fun markSeen(groupId: Long, username: com.usuallycoding.opensecretsanta.domain.user.Username, atMillis: Long): Long = error("the store failed")
+        }
+        val g = groups.seed(owner.username, GroupState.ACTIVE, owner.username, *names.map(::u).toTypedArray())
+        names.forEach { infos.save(g.id, u(it), DeliveryInfo(email = "$it@example.org")) }
+
+        val outcome = SendAnnouncement(OwnedGroupLoader(groups), infos, announcements, failing, mailer, notifier, clock)(owner, g.id, "Title", "Body", true, false)
+
+        assertEquals(EmailSummary(4, 0, 1), outcome.emails) // the owner takes part and told the group no address
+        assertEquals(1, announcements.list(g.id).size)
     }
 
     @Test

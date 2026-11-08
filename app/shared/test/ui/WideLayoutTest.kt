@@ -28,6 +28,30 @@ class WideLayoutTest {
     }
 
     @Test
+    fun theOverviewCarriesTheAnnouncementsThePersonHasNotSeenAndTheOtherItemsAreUnchanged() {
+        val items = groupItems(7, GroupPhase.Active, null, 0, announcements = 2)
+
+        val overview = items.first()
+        assertEquals(2, overview.count)
+        assertEquals("Overview, 2 new announcements", overview.spoken)
+        assertEquals(listOf(0, 0), items.drop(1).map { it.count })
+    }
+
+    @Test
+    fun theOverviewHasNoBadgeForNoNewAnnouncements() {
+        val overview = groupItems(7, GroupPhase.Active, null, 0).first()
+
+        assertEquals(0, overview.count)
+        assertNull(overview.spoken)
+    }
+
+    @Test
+    fun aPendingGroupsOverviewCarriesTheCountToo() {
+        assertEquals(1, groupItems(7, GroupPhase.Pending, null, 0, announcements = 1).first().count)
+        assertEquals("Overview, 1 new announcement", groupItems(7, GroupPhase.Pending, null, 0, announcements = 1).first().spoken)
+    }
+
+    @Test
     fun aDrawnGroupHoldsOverviewGivingAndReceiving() {
         val items = groupItems(7, GroupPhase.Active, null, 0)
 

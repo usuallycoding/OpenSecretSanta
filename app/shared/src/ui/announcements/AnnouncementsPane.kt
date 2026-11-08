@@ -25,8 +25,8 @@ import com.usuallycoding.opensecretsanta.ui.Strings
 fun AnnouncementsPane(viewModel: AnnouncementsViewModel, onClose: () -> Unit, modifier: Modifier = Modifier) {
     Column(modifier) {
         Row(Modifier.fillMaxWidth().padding(start = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(Strings.GROUP_NOTIFICATIONS, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
-            IconButton(onClick = onClose) { Icon(Icons.Filled.Close, contentDescription = Strings.GROUP_NOTIFICATIONS_CLOSE) }
+            Text(Strings.ANNOUNCEMENTS, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
+            IconButton(onClick = onClose) { Icon(Icons.Filled.Close, contentDescription = Strings.ANNOUNCEMENTS_CLOSE) }
         }
         Box(Modifier.weight(1f).fillMaxWidth()) { AnnouncementsPage(viewModel, onBack = onClose) }
     }

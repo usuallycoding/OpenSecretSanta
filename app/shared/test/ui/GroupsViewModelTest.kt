@@ -14,10 +14,10 @@ import kotlin.test.assertTrue
 class GroupsViewModelTest {
     private val server = ScriptedServer().also { it.session() }
 
-    private fun group(id: Int, name: String, state: String = "active", date: String? = "2026-12-24", time: String? = "18:30", location: String? = "Town Hall", participants: Int = 4, description: String? = "Bring snacks"): String {
+    private fun group(id: Int, name: String, state: String = "active", date: String? = "2026-12-24", time: String? = "18:30", location: String? = "Town Hall", participants: Int = 4, description: String? = "Bring snacks", unread: Int? = null): String {
         fun field(key: String, value: String?) = if (value == null) "" else ""","$key":"$value""""
         val names = (1..participants).joinToString(",") { "\"user$it\"" }
-        return """{"id":$id,"name":"$name","state":"$state"${field("description", description)}${field("date", date)}${field("time", time)}${field("location", location)},"participants":[$names]}"""
+        return """{"id":$id,"name":"$name","state":"$state"${field("description", description)}${field("date", date)}${field("time", time)}${field("location", location)},"participants":[$names]${if (unread == null) "" else ""","unreadAnnouncements":$unread"""}}"""
     }
 
     private fun answer(vararg groups: String) {
@@ -37,6 +37,15 @@ class GroupsViewModelTest {
             listOf(GroupRow(7, "Office party", "Bring snacks", "active", GroupStateInfo("Active", "The names have been drawn."), "24 Dec 2026, 18:30", "Town Hall", 4)),
             rows,
         )
+    }
+
+    @Test
+    fun aRowCarriesHowManyAnnouncementsAreNewAndNoneWhenTheServerSaysNothing() = runTest {
+        answer(group(1, "Busy", unread = 3), group(2, "Quiet", unread = 0), group(3, "Old server"))
+
+        val rows = viewModel().state.value.value!!
+
+        assertEquals(listOf(3, 0, 0), rows.map { it.unreadAnnouncements })
     }
 
     @Test

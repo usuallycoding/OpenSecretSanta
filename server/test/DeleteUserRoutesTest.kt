@@ -103,6 +103,8 @@ class DeleteUserRoutesTest {
         val group = fx.addGroup("admin-a", "alice", state = "pending", name = "Other")
         // what is left of a wishlist when someone was removed from a Pending group
         fx.sql("INSERT INTO wishlist_items (group_id, username, position, title, created_at, updated_at) VALUES ($group, 'erin', 0, 'Socks', 1, 1)")
+        // and of the mark of the announcements they had seen
+        fx.sql("INSERT INTO announcement_reads (group_id, username, seen_up_to) VALUES ($group, 'erin', 5)")
 
         val response = client.remove("erin", fx.token("admin-a"))
 
@@ -112,6 +114,7 @@ class DeleteUserRoutesTest {
         assertEquals(0, count("SELECT COUNT(*) FROM notification_prefs WHERE username = 'erin'"))
         assertEquals(0, count("SELECT COUNT(*) FROM login_attempts WHERE username = 'erin'"))
         assertEquals(0, count("SELECT COUNT(*) FROM wishlist_items WHERE username = 'erin'"))
+        assertEquals(0, count("SELECT COUNT(*) FROM announcement_reads WHERE username = 'erin'"))
         assertTrue(exists("alice") && exists("fred"))
     }
 

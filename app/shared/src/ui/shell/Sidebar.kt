@@ -100,6 +100,8 @@ internal fun NavBackStackEntry.sidebarRoute(): Any? = when {
 internal fun ParticipantSidebar(navController: NavController, entry: NavBackStackEntry?, groups: GroupsViewModel) {
     val state by groups.state.collectAsState()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { groups.refresh() }
+    // what the person just did on a page may have changed what is new in a group, as it may for the open group's own counts
+    LaunchedEffect(entry?.id) { groups.refresh() }
     val current = entry?.sidebarRoute()
     val openId = entry?.openGroupId()
     Sidebar(
@@ -114,7 +116,8 @@ internal fun ParticipantSidebar(navController: NavController, entry: NavBackStac
                 if (group.id == openId) {
                     OpenGroup(navController, group, current)
                 } else {
-                    SidebarRow(group.name, selected = false, indent = 1) { navController.openGroup(group.id) }
+                    val spoken = group.unreadAnnouncements.takeIf { it > 0 }?.let { "${group.name}, ${Strings.newAnnouncements(it)}" }
+                    SidebarRow(group.name, selected = false, indent = 1, count = group.unreadAnnouncements, spoken = spoken) { navController.openGroup(group.id) }
                 }
             }
         },
@@ -140,7 +143,7 @@ private fun OpenGroup(navController: NavController, group: GroupRow, current: An
     val unanswered = questions?.data?.collectAsState()?.value?.takeIf { it.error == null }?.value?.let { unansweredCount(it.questions, it.canAnswer) } ?: 0
 
     SidebarRow(group.name, selected = false, indent = 1, bold = true) { navController.openGroupItem(group.id, GroupRoute(group.id)) }
-    for (item in groupItems(group.id, phase, unread, unanswered)) {
+    for (item in groupItems(group.id, phase, unread, unanswered, group.unreadAnnouncements)) {
         SidebarRow(item.label, item.holds(current), indent = 2, count = item.count, spoken = item.spoken) {
             navController.openGroupItem(group.id, item.route)
         }

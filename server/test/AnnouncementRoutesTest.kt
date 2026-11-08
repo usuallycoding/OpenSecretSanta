@@ -8,7 +8,9 @@ import com.usuallycoding.opensecretsanta.contract.AnnouncementResponse
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.CreateGroupRequest
 import com.usuallycoding.opensecretsanta.contract.EmailSummaryDto
+import com.usuallycoding.opensecretsanta.contract.MarkReadRequest
 import com.usuallycoding.opensecretsanta.contract.ParticipantsRequest
+import com.usuallycoding.opensecretsanta.contract.ReadMarkDto
 import com.usuallycoding.opensecretsanta.contract.PushSummaryDto
 import com.usuallycoding.opensecretsanta.domain.email.EmailMessage
 import com.usuallycoding.opensecretsanta.domain.email.Mailer
@@ -371,5 +373,165 @@ class AnnouncementRoutesTest {
             assertTrue(status == HttpStatusCode.NotFound || status == HttpStatusCode.MethodNotAllowed, "$method gave $status")
         }
         assertEquals(1, client.read(group.id, fx.token("alice")).announcements().size)
+    }
+
+    // --- what each person has seen ---
+
+    private suspend fun HttpClient.reads(id: Long, token: String?): HttpResponse =
+        send<Unit>("GET", ApiRoutes.groupAnnouncementReads(id), token)
+
+    private suspend fun HttpClient.markSeen(id: Long, token: String?, seenUpTo: String?): HttpResponse =
+        send("PUT", ApiRoutes.groupAnnouncementReads(id), token, MarkReadRequest(seenUpTo))
+
+    private suspend fun HttpResponse.mark(): ReadMarkDto {
+        assertEquals(HttpStatusCode.OK, status, bodyAsText())
+        return Json.decodeFromString(bodyAsText())
+    }
+
+    private suspend fun HttpClient.announced(id: Long, count: Int): List<AnnouncementDto> {
+        repeat(count) { announce(id, AnnouncementRequest("Title $it", "Message $it", email = true)) }
+        return read(id, fx.token("alice")).announcements()
+    }
+
+    @Test
+    fun withNothingMarkedEveryAnnouncementIsUnread() = testApplication {
+        startApp()
+        setup()
+        val group = client.group()
+        client.announced(group.id, 3)
+
+        assertEquals(ReadMarkDto(3, null), client.reads(group.id, fx.token("alice")).mark())
+    }
+
+    @Test
+    fun markingTheNewestLeavesNothingUnreadAndEveryPersonHasTheirOwnMark() = testApplication {
+        startApp()
+        setup()
+        val group = client.group()
+        val sent = client.announced(group.id, 3)
+
+        val marked = client.markSeen(group.id, fx.token("alice"), sent.last().sentAt).mark()
+
+        assertEquals(ReadMarkDto(0, marked.seenUpTo), marked)
+        assertEquals(marked, client.reads(group.id, fx.token("alice")).mark())
+        assertEquals(ReadMarkDto(3, null), client.reads(group.id, fx.token("bob")).mark())
+    }
+
+    @Test
+    fun aMarkNeverGoesBackAndIsNeverAfterNow() = testApplication {
+        startApp()
+        setup()
+        val group = client.group()
+        val sent = client.announced(group.id, 2)
+        val later = client.markSeen(group.id, fx.token("alice"), sent.last().sentAt).mark()
+
+        val earlier = client.markSeen(group.id, fx.token("alice"), "2000-01-01T00:00:00Z").mark()
+        assertEquals(later.seenUpTo, earlier.seenUpTo)
+
+        val future = client.markSeen(group.id, fx.token("bob"), "2999-01-01T00:00:00Z").mark()
+        assertTrue(future.seenUpTo!! < "2999", future.seenUpTo)
+    }
+
+    @Test
+    fun aBadTimeIs400NamingSeenUpToAndStoresNothing() = testApplication {
+        startApp()
+        setup()
+        val group = client.group()
+        client.announced(group.id, 1)
+
+        for (bad in listOf(null, "", "yesterday", "2026-12-24")) {
+            val response = client.markSeen(group.id, fx.token("alice"), bad)
+            assertEquals(HttpStatusCode.BadRequest, response.status, "$bad")
+            assertTrue("\"seenUpTo\"" in response.bodyAsText(), response.bodyAsText())
+        }
+        assertEquals(ReadMarkDto(1, null), client.reads(group.id, fx.token("alice")).mark())
+    }
+
+    @Test
+    fun theMarksWorkInPendingAndArchivedGroupsAndForSomeoneRemovedAndAddedAgain() = testApplication {
+        startApp()
+        setup()
+        val group = client.group()
+        val sent = client.announced(group.id, 2)
+        assertEquals(2, client.reads(group.id, fx.token("alice")).mark().unread)
+        val kept = client.markSeen(group.id, fx.token("bob"), sent.last().sentAt).mark()
+
+        client.send("PUT", ApiRoutes.adminGroupParticipants(group.id), fx.token("admin"), ParticipantsRequest(names - "bob"))
+        client.send("PUT", ApiRoutes.adminGroupParticipants(group.id), fx.token("admin"), ParticipantsRequest(names))
+        assertEquals(kept, client.reads(group.id, fx.token("bob")).mark())
+
+        assertEquals(HttpStatusCode.OK, client.send<Unit>("POST", ApiRoutes.adminGroupActivate(group.id), fx.token("admin")).status)
+        assertEquals(HttpStatusCode.OK, client.send<Unit>("POST", ApiRoutes.adminGroupArchive(group.id), fx.token("admin")).status)
+        assertEquals(0, client.markSeen(group.id, fx.token("alice"), sent.last().sentAt).mark().unread)
+        assertEquals(kept, client.reads(group.id, fx.token("bob")).mark())
+    }
+
+    @Test
+    fun aStrangerADraftTheOwnerOutsideTheGroupAndAMissingGroupAreNotFound() = testApplication {
+        startApp()
+        setup()
+        fx.addUser("eve")
+        val pending = client.group()
+        val draft = client.group(pending = false)
+
+        for ((id, token) in listOf(pending.id to "eve", draft.id to "alice", pending.id to "admin", 9999L to "alice")) {
+            assertEquals(HttpStatusCode.NotFound, client.reads(id, fx.token(token)).status, "$id $token read")
+            assertEquals(HttpStatusCode.NotFound, client.markSeen(id, fx.token(token), "2026-12-24T18:30:00Z").status, "$id $token mark")
+        }
+        assertEquals(HttpStatusCode.Unauthorized, client.reads(pending.id, token = null).status)
+    }
+
+    // --- the count that comes with the group ---
+
+    private suspend fun HttpClient.memberGroups(token: String): List<com.usuallycoding.opensecretsanta.contract.MemberGroupDto> =
+        Json.decodeFromString(send<Unit>("GET", ApiRoutes.GROUPS, fx.token(token)).bodyAsText())
+
+    private suspend fun HttpClient.memberGroup(id: Long, token: String): com.usuallycoding.opensecretsanta.contract.MemberGroupDto =
+        Json.decodeFromString(send<Unit>("GET", ApiRoutes.group(id), fx.token(token)).bodyAsText())
+
+    @Test
+    fun theGroupAndTheListSayHowManyAnnouncementsAreNewToThePerson() = testApplication {
+        startApp()
+        setup()
+        val first = client.group()
+        val second = client.group()
+        val never = client.group()
+        client.announced(first.id, 2)
+        client.announced(second.id, 1)
+
+        val list = client.memberGroups("alice").associate { it.id to it.unreadAnnouncements }
+        assertEquals(mapOf(first.id to 2, second.id to 1, never.id to 0), list)
+        assertEquals(2, client.memberGroup(first.id, "alice").unreadAnnouncements)
+        assertEquals(1, client.memberGroup(second.id, "alice").unreadAnnouncements)
+        assertEquals(0, client.memberGroup(never.id, "alice").unreadAnnouncements)
+    }
+
+    @Test
+    fun seenAnnouncementsAreNotCountedAndOthersCountAsBefore() = testApplication {
+        startApp()
+        setup()
+        val group = client.group()
+        val sent = client.announced(group.id, 2)
+
+        client.markSeen(group.id, fx.token("alice"), sent.last().sentAt)
+
+        assertEquals(0, client.memberGroup(group.id, "alice").unreadAnnouncements)
+        assertEquals(0, client.memberGroups("alice").single { it.id == group.id }.unreadAnnouncements)
+        assertEquals(2, client.memberGroup(group.id, "bob").unreadAnnouncements)
+    }
+
+    @Test
+    fun anOwnerWhoAlsoTakesPartHasSeenTheirOwnAnnouncementButTheOthersHaveNot() = testApplication {
+        startApp()
+        setup()
+        val created = client.send("POST", ApiRoutes.ADMIN_GROUPS, fx.token("admin"), CreateGroupRequest("Party", participants = names + "admin"))
+        val group = Json.decodeFromString<AdminGroupDto>(created.bodyAsText())
+        names.forEach { fx.deliveryInfos.save(group.id, Username.parse(it), DeliveryInfo(email = "$it@example.org")) }
+        assertEquals(HttpStatusCode.OK, client.send<Unit>("POST", ApiRoutes.adminGroupPending(group.id), fx.token("admin")).status)
+
+        assertEquals(HttpStatusCode.OK, client.announce(group.id, both.copy(push = false)).status)
+
+        assertEquals(0, client.memberGroup(group.id, "admin").unreadAnnouncements)
+        assertEquals(1, client.memberGroup(group.id, "alice").unreadAnnouncements)
     }
 }

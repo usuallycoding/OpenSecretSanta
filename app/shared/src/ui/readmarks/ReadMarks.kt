@@ -4,6 +4,7 @@ import com.usuallycoding.opensecretsanta.contract.ReadMarkDto
 import com.usuallycoding.opensecretsanta.contract.ReadMarksDto
 import com.usuallycoding.opensecretsanta.data.api.ApiClient
 import com.usuallycoding.opensecretsanta.data.api.ApiResult
+import com.usuallycoding.opensecretsanta.data.api.map
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -71,11 +72,17 @@ const val KIND_LETTERS = "letters"
  * known. A failed mark changes nothing: the marks come back next time.
  */
 internal class ReadTracker(
-    private val api: ApiClient,
-    private val groupId: Long,
     private val scope: CoroutineScope,
-    private val kind: String,
+    private val readBaseline: suspend () -> ApiResult<ReadMarkDto>,
+    private val mark: suspend (String) -> Unit,
 ) {
+    /** The tracker of one kind of a Santa's receiver's things. */
+    constructor(api: ApiClient, groupId: Long, scope: CoroutineScope, kind: String) : this(
+        scope,
+        { api.readMarks(groupId).map { it.of(kind) } },
+        { time -> api.markRead(groupId, kind, time) },
+    )
+
     var baseline: SeenBaseline? = null
         private set
     private var latest: String? = null
@@ -84,8 +91,8 @@ internal class ReadTracker(
     /** Asks the server for the baseline unless it is already known. */
     suspend fun ensureBaseline() {
         if (baseline?.known == true) return
-        baseline = when (val result = api.readMarks(groupId)) {
-            is ApiResult.Success -> SeenBaseline(known = true, seenUpTo = parseTime(result.value.of(kind).seenUpTo))
+        baseline = when (val result = readBaseline()) {
+            is ApiResult.Success -> SeenBaseline(known = true, seenUpTo = parseTime(result.value.seenUpTo))
             is ApiResult.Failure -> SeenBaseline(known = false, seenUpTo = null)
         }
     }
@@ -100,6 +107,6 @@ internal class ReadTracker(
         val time = latest ?: return null
         if (baseline?.known != true || time == marked) return null
         marked = time
-        return scope.launch { api.markRead(groupId, kind, time) }
+        return scope.launch { mark(time) }
     }
 }

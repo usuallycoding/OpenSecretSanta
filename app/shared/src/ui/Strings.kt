@@ -163,12 +163,15 @@ object Strings {
     const val SAVED = "Saved."
 
     // --- the announcements the owner has sent, read by the people of the group ---
-    const val GROUP_NOTIFICATIONS = "Group Notifications"
-    const val NO_GROUP_NOTIFICATIONS = "No group notifications yet."
-    const val GROUP_NOTIFICATION_TITLE_LABEL = "Title"
-    const val GROUP_NOTIFICATION_TEXT_LABEL = "Message"
-    const val GROUP_NOTIFICATIONS_CLOSE = "Close group notifications"
-    fun groupNotificationSentAt(time: String) = "Sent $time"
+    const val ANNOUNCEMENTS = "Announcements"
+    const val NO_ANNOUNCEMENTS = "No announcements yet."
+    const val ANNOUNCEMENT_TITLE_LABEL = "Title"
+    const val ANNOUNCEMENT_TEXT_LABEL = "Message"
+    const val ANNOUNCEMENTS_CLOSE = "Close announcements"
+    fun announcementSentAt(time: String) = "Sent $time"
+
+    /** What a screen reader hears of the announcements a person has not seen, for a group's entry and its sidebar line. */
+    fun newAnnouncements(count: Int) = if (count == 1) "1 new announcement" else "$count new announcements"
 
     const val SECRET_SANTA_FOR = "You're Secret Santa for:"
     const val KEEP_IT_SECRET = "Shh... Keep it a secret!"

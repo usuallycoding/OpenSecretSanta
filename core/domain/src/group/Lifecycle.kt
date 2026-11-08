@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.domain.group
 
+import com.usuallycoding.opensecretsanta.domain.announcement.AnnouncementReadRepository
 import com.usuallycoding.opensecretsanta.domain.admin.NewAccountPlanner
 import com.usuallycoding.opensecretsanta.domain.admin.TemporaryCredentials
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
@@ -87,9 +88,16 @@ class ListAssignments(
     }
 }
 
-/** What a participant may see: non-Draft groups they belong to, never anything about assignments. */
-class ListMyGroups(private val groups: GroupRepository) {
-    operator fun invoke(user: User): List<Group> = groups.findVisibleTo(user.username)
+/** A group as one of its participants sees it, with how many of its announcements that person has not seen. */
+class MemberGroup(val group: Group, val unreadAnnouncements: Int)
+
+/** What a participant may see: non-Draft groups they belong to, never anything about assignments, and what is new to them in each. */
+class ListMyGroups(private val groups: GroupRepository, private val reads: AnnouncementReadRepository) {
+    operator fun invoke(user: User): List<MemberGroup> {
+        val visible = groups.findVisibleTo(user.username)
+        val unread = reads.unreadCounts(user.username, visible.map { it.id })
+        return visible.map { MemberGroup(it, unread[it.id] ?: 0) }
+    }
 }
 
 /** Loads a group for one of its participants; Drafts, strangers and missing groups all look the same. */
@@ -103,8 +111,11 @@ class ParticipantGroupLoader(private val groups: GroupRepository) {
     }
 }
 
-class GetMyGroup(groups: GroupRepository) {
+class GetMyGroup(groups: GroupRepository, private val reads: AnnouncementReadRepository) {
     private val load = ParticipantGroupLoader(groups)
 
-    operator fun invoke(user: User, id: Long): Group = load(user, id)
+    operator fun invoke(user: User, id: Long): MemberGroup {
+        val group = load(user, id)
+        return MemberGroup(group, reads.unreadCounts(user.username, listOf(group.id))[group.id] ?: 0)
+    }
 }

@@ -55,8 +55,8 @@ fun GroupChange.toDto() = GroupChangeResponse(
     deletedRules = deletedRules.map { it.toDto() },
 )
 
-/** What a participant may see: details, state and the other participants' usernames. */
-fun Group.toMemberDto() = MemberGroupDto(
+/** What a participant may see: details, state, the other participants' usernames and how many announcements they have not seen. */
+fun Group.toMemberDto(unreadAnnouncements: Int = 0) = MemberGroupDto(
     id = id,
     name = details.name,
     description = details.description,
@@ -67,6 +67,7 @@ fun Group.toMemberDto() = MemberGroupDto(
     participants = participants.map { it.value },
     budget = details.budget,
     currency = details.currency,
+    unreadAnnouncements = unreadAnnouncements,
 )
 
 private fun GroupDetailsRequest.toDetails() = GroupDetails.of(name, description, location, date, time, budget, currency)

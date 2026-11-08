@@ -901,9 +901,34 @@ class FakeAnnouncements {
         repeat(count) { kept += AnnouncementDto(kept.size + 1, "Title ${kept.size + 1}", "Message ${kept.size + 1}", "2026-12-04T09:00:00Z") }
     }
 
+    /** Puts one announcement in the group, sent at [sentAt]. */
+    fun keep(sentAt: String) {
+        kept += AnnouncementDto(kept.size + 1, "Title ${kept.size + 1}", "Message ${kept.size + 1}", sentAt)
+    }
+
     fun failNextReadWith(status: HttpStatusCode, code: String, message: String = "refused") {
         readFailures += status to """{"code":"$code","message":"$message"}"""
     }
+
+    /** The time the person has seen the announcements up to, as the server keeps it; null when they never marked it. */
+    var seenUpTo: String? = null
+    private val readsFailures = ArrayDeque<Pair<HttpStatusCode, String>>()
+    private val markFailures = ArrayDeque<Pair<HttpStatusCode, String>>()
+
+    /** The times the app sent as seen, in order. */
+    val marked = mutableListOf<String>()
+
+    fun failNextReadsWith(status: HttpStatusCode, code: String = "internal_error") {
+        readsFailures += status to """{"code":"$code","message":"refused"}"""
+    }
+
+    fun failNextMarkWith(status: HttpStatusCode, code: String = "internal_error") {
+        markFailures += status to """{"code":"$code","message":"refused"}"""
+    }
+
+    private fun unread(): Int = kept.count { announcement -> seenUpTo?.let { announcement.sentAt > it } ?: true }
+
+    private fun readMark() = ReadMarkDto(unread(), seenUpTo)
 
     var emails = EmailSummaryDto(sent = 4, failed = 0, noAddress = 0)
     var push = PushSummaryDto(reached = 3, notReached = 1)
@@ -914,6 +939,16 @@ class FakeAnnouncements {
     }
 
     fun answer(method: String, path: String, body: String): Pair<HttpStatusCode, String>? {
+        if (Regex("/groups/\\d+/announcements/reads").matches(path)) {
+            if (method == "GET") return readsFailures.removeFirstOrNull() ?: (HttpStatusCode.OK to Json.encodeToString(readMark()))
+            if (method == "PUT") {
+                markFailures.removeFirstOrNull()?.let { return it }
+                val time = Json.decodeFromString<MarkReadRequest>(body).seenUpTo.orEmpty()
+                marked += time
+                if (seenUpTo == null || time > seenUpTo!!) seenUpTo = time
+                return HttpStatusCode.OK to Json.encodeToString(readMark())
+            }
+        }
         if (method == "GET" && Regex("(/admin)?/groups/\\d+/announcements").matches(path)) {
             return readFailures.removeFirstOrNull() ?: (HttpStatusCode.OK to Json.encodeToString(kept.toList()))
         }

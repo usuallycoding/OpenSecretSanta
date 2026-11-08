@@ -21,14 +21,14 @@ object WebAddresses {
         is DeliveryInfoRoute -> "#/groups/${route.groupId}/delivery-info"
         is SendLetterRoute -> "#/groups/${route.groupId}/outbox"
         is InboxRoute -> "#/groups/${route.groupId}/inbox"
-        is AnnouncementsRoute -> "#/groups/${route.groupId}/notifications"
+        is AnnouncementsRoute -> "#/groups/${route.groupId}/announcements"
         SettingsRoute -> "#/settings"
         AdminGroupsRoute -> "#/admin/groups"
         AdminGroupNewRoute -> "#/admin/groups/new"
         is AdminGroupRoute -> "#/admin/groups/${route.id}"
         is AdminGroupEditRoute -> "#/admin/groups/${route.id}/edit"
         is AdminGroupRulesRoute -> "#/admin/groups/${route.id}/rules"
-        is AdminAnnouncementsRoute -> "#/admin/groups/${route.id}/notifications"
+        is AdminAnnouncementsRoute -> "#/admin/groups/${route.id}/announcements"
         AdminUsersRoute -> "#/admin/users"
         is AdminUserRoute -> "#/admin/users/${route.username}"
         else -> null
@@ -63,7 +63,7 @@ object WebAddresses {
             listOf("delivery-info") -> DeliveryInfoRoute(id)
             listOf("outbox") -> SendLetterRoute(id)
             listOf("inbox") -> InboxRoute(id)
-            listOf("notifications") -> AnnouncementsRoute(id)
+            listOf("announcements") -> AnnouncementsRoute(id)
             else -> null
         }
     }
@@ -79,7 +79,7 @@ object WebAddresses {
                     parts.size == 2 -> AdminGroupRoute(id)
                     parts.size == 3 && parts[2] == "edit" -> AdminGroupEditRoute(id)
                     parts.size == 3 && parts[2] == "rules" -> AdminGroupRulesRoute(id)
-                    parts.size == 3 && parts[2] == "notifications" -> AdminAnnouncementsRoute(id)
+                    parts.size == 3 && parts[2] == "announcements" -> AdminAnnouncementsRoute(id)
                     else -> null
                 }
             }

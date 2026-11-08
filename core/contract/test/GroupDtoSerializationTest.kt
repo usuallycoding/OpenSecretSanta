@@ -51,6 +51,7 @@ class GroupDtoSerializationTest {
         roundTrip(GroupChangeResponse(adminGroup))
         roundTrip(MemberGroupDto(7, "Office party", state = "active", participants = listOf("alice", "bob", "carol")))
         roundTrip(MemberGroupDto(7, "Office party", state = "active", participants = listOf("alice"), budget = 100, currency = "EUR"))
+        roundTrip(MemberGroupDto(7, "Office party", state = "active", participants = listOf("alice"), unreadAnnouncements = 3))
         roundTrip(AssignmentDto("alice", "bob"))
     }
 

@@ -58,7 +58,7 @@ class SqliteUserRepository(private val database: Database) : UserRepository {
         // person meanwhile keeps the account whole. The person is in no group, so what is left of their wishlist is stale.
         val eligible = "EXISTS (SELECT 1 FROM users u WHERE u.username = ? AND u.created_by = ? AND u.is_admin = 0 " +
             "AND NOT EXISTS (SELECT 1 FROM group_participants p WHERE p.username = u.username))"
-        for (table in listOf("wishlist_items", "group_delivery_info", "login_attempts")) {
+        for (table in listOf("wishlist_items", "group_delivery_info", "announcement_reads", "login_attempts")) {
             c.prepareStatement("DELETE FROM $table WHERE username = ? AND $eligible").use { s ->
                 s.setString(1, username.value)
                 s.setString(2, username.value)

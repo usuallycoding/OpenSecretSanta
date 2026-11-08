@@ -23,7 +23,7 @@ object NotificationTarget {
             "wishlist" -> add(GifterRoute(groupId))
             // the receiver's letters are read by the Santa, in the inbox
             "letters" -> add(InboxRoute(groupId))
-            // an announcement the owner sent is read on the Group Notifications page
+            // an announcement the owner sent is read on the Announcements page
             "announcements" -> if (target == NotificationData.TARGET_MESSAGES) add(AnnouncementsRoute(groupId))
         }
     }

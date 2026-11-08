@@ -30,7 +30,7 @@ import com.usuallycoding.opensecretsanta.ui.form.SnowCard
 
 /**
  * What a group says about itself: its description in a card of its own, then one card with a line for when, where and how much,
- * each starting with an icon in place of a word, and, at the card's end, the Group Notifications bell when [onOpenMessages] is given.
+ * each starting with an icon in place of a word, and, at the card's end, the Announcements bell, with a badge for the [unreadAnnouncements] the person has not seen, when [onOpenMessages] is given.
  * The card is always there, and a part the group does not have shows `TBD`; a group with no description has no first card.
  * The group's name, state and actions are not part of it.
  */
@@ -42,6 +42,7 @@ internal fun GroupInfoCard(
     budget: String?,
     modifier: Modifier = Modifier,
     onOpenMessages: (() -> Unit)? = null,
+    unreadAnnouncements: Int = 0,
 ) {
     val about = description?.takeIf { it.isNotBlank() }
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -57,7 +58,7 @@ internal fun GroupInfoCard(
                     InfoLine(PlaceIcon, Strings.WHERE_LABEL, shownOrTbd(location))
                     InfoLine(BankIcon, Strings.BUDGET_LABEL, shownOrTbd(budget))
                 }
-                onOpenMessages?.let { CardIconButton(Icons.Filled.Notifications, Strings.GROUP_NOTIFICATIONS, it) }
+                onOpenMessages?.let { UnreadIconButton(Icons.Filled.Notifications, Strings.ANNOUNCEMENTS, unreadAnnouncements, Strings::withNew, it) }
             }
         }
     }

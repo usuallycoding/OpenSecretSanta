@@ -34,8 +34,9 @@ class LifecycleTest {
     private val activate = ActivateGroup(loader, groups, AssignmentPlanner(IdentityShuffler()), InMemoryDrawRules(), viewer)
     private val archive = ArchiveGroup(loader, groups, viewer)
     private val listAssignments = ListAssignments(loader, groups)
-    private val myGroups = ListMyGroups(groups)
-    private val myGroup = GetMyGroup(groups)
+    private val announcements = InMemoryAnnouncements(groups)
+    private val myGroups = ListMyGroups(groups, announcements)
+    private val myGroup = GetMyGroup(groups, announcements)
 
     private fun group(state: GroupState, vararg participants: String) =
         groups.seed(adminA.username, state, *participants.map { u(it) }.toTypedArray())
@@ -248,6 +249,28 @@ class LifecycleTest {
     // --- participant view ---
 
     @Test
+    fun participantsSeeHowManyAnnouncementsAreNewToThemInEachGroup() {
+        users.add("alice")
+        users.add("bob-b")
+        val first = group(GroupState.PENDING, "alice", "bob-b")
+        val second = group(GroupState.ACTIVE, "alice", "bob-b")
+        val never = group(GroupState.PENDING, "alice")
+        announcements.seed(first.id, 2)
+        announcements.seed(second.id, 1)
+        val alice = users.userNamed("alice")
+        val bob = users.userNamed("bob-b")
+
+        assertEquals(mapOf(first.id to 2, second.id to 1, never.id to 0), myGroups(alice).associate { it.group.id to it.unreadAnnouncements })
+        assertEquals(2, myGroup(alice, first.id).unreadAnnouncements)
+
+        announcements.markSeen(first.id, alice.username, Long.MAX_VALUE)
+
+        assertEquals(0, myGroup(alice, first.id).unreadAnnouncements)
+        assertEquals(1, myGroup(alice, second.id).unreadAnnouncements)
+        assertEquals(2, myGroup(bob, first.id).unreadAnnouncements)
+    }
+
+    @Test
     fun participantsSeeNonDraftGroupsTheyBelongTo() {
         users.add("alice")
         val draft = group(GroupState.DRAFT, "alice")
@@ -256,8 +279,8 @@ class LifecycleTest {
         group(GroupState.PENDING, "someone-else")
         val alice = users.userNamed("alice")
 
-        assertEquals(listOf(pending.id, active.id), myGroups(alice).map { it.id })
-        assertEquals(pending.id, myGroup(alice, pending.id).id)
+        assertEquals(listOf(pending.id, active.id), myGroups(alice).map { it.group.id })
+        assertEquals(pending.id, myGroup(alice, pending.id).group.id)
         assertFailsWith<DomainException.NotFound> { myGroup(alice, draft.id) }
     }
 
