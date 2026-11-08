@@ -79,7 +79,7 @@ While a groups screen loads, the app SHALL show a progress indicator. When the s
 - **THEN** the app handles it as for any request: the sign-in screen is shown with the note that the person was signed out
 
 ### Requirement: Group page
-Choosing a group SHALL open its page, loaded with `GET /groups/{id}`, showing its name, centered horizontally, on one row with an ellipsis when it is longer, then its state and state note, description, date, time and location, then the two cards of `client-group-pages`, and at the end every participant's username as a chip, with the person's own chip highlighted. Parts the group does not have SHALL be left out.
+Choosing a group SHALL open its page, loaded with `GET /groups/{id}`, showing its name, centered horizontally, on one row with an ellipsis when it is longer, then its state and state note, its description, the card with its date and time, location and budget, then the two cards of `client-group-pages`, and at the end every participant's username as a chip, with the person's own chip highlighted. A description the group does not have SHALL be left out; the card shows `TBD` for the other parts it does not have.
 
 #### Scenario: Opening a group
 - **WHEN** the person chooses a group in the list
@@ -110,7 +110,7 @@ Choosing a group SHALL open its page, loaded with `GET /groups/{id}`, showing it
 - **THEN** her chip is highlighted and has no "you" text, and the other chips are not highlighted
 
 ### Requirement: Group information is shown in a card
-On the group page the group's date and time, location and budget SHALL be shown together in one card, in that order, below the name, the state with its note and the description card and above the Secret Santa card. Parts the group does not have SHALL be left out, and a group with none of them SHALL show no card.
+On the group page the group's date and time, location and budget SHALL be shown together in one card, in that order, below the name, the state with its note and the description card and above the Secret Santa card. The card SHALL always be shown, with a line for each of the three, and a line for a part the group does not have SHALL show `TBD` in place of its value.
 
 #### Scenario: All three present
 - **WHEN** a group has a description, the date `2026-12-24`, the time `18:30`, the location "Grandma's house" and the budget 100 in `RON`
@@ -118,18 +118,26 @@ On the group page the group's date and time, location and budget SHALL be shown 
 
 #### Scenario: Parts left out
 - **WHEN** a group has a budget and nothing else of the three
-- **THEN** the card shows only the budget line
+- **THEN** the card shows the date and time line and the location line with `TBD` and the budget line with the budget
 
 #### Scenario: Nothing to show
 - **WHEN** a group has no date, no time, no location and no budget, with or without a description
-- **THEN** no card for these is shown (a description has its own card)
+- **THEN** the card is shown with three lines, each with its icon and `TBD`
 
 ### Requirement: The card marks the date and the location with icons
-In the card the date and time SHALL be on a line that starts with a calendar icon, followed by the date and time as `Dates and times are shown as the group has them` describes, and the location on a line that starts with a map pin icon, followed by the location. The icons SHALL take the place of the words "When?" and "Where?", which SHALL NOT be shown.
+In the card the date and time SHALL be on a line that starts with a calendar icon, followed by the date and time as `Dates and times are shown as the group has them` describes, or `TBD` when the group has neither, and the location on a line that starts with a map pin icon, followed by the location, or `TBD` when the group has none. The icons SHALL take the place of the words "When?" and "Where?", which SHALL NOT be shown.
 
 #### Scenario: Date without a time
 - **WHEN** a group has a date and no time
 - **THEN** the card's date line is the calendar icon followed by the date alone
+
+#### Scenario: No date and no time
+- **WHEN** a group has neither a date nor a time
+- **THEN** the card's date line is the calendar icon followed by `TBD`
+
+#### Scenario: No location
+- **WHEN** a group has no location
+- **THEN** the card's location line is the map pin icon followed by `TBD`
 
 #### Scenario: No words
 - **WHEN** a group has a date and a location
@@ -137,14 +145,18 @@ In the card the date and time SHALL be on a line that starts with a calendar ico
 
 #### Scenario: Screen reader
 - **WHEN** a screen reader reads the card
-- **THEN** it reads the lines as "When? - " and "Where? - " followed by their values, and the icons announce nothing of their own
+- **THEN** it reads the lines as "When? - " and "Where? - " followed by their values, or by `TBD`, and the icons announce nothing of their own
 
 ### Requirement: Only the information is in the card
-The name, the state and its note, the description, the Secret Santa and Your stuff cards and the participant chips SHALL NOT be in the card.
+The name, the state and its note, the description, the Secret Santa and Your stuff cards and the participant chips SHALL NOT be in the card. The card SHALL hold the three information lines and, at its end, the Group Notifications icon, and nothing else.
 
 #### Scenario: Name and state stay outside
 - **WHEN** a group page is shown
 - **THEN** the name, the state and its note and the description are above the card and the two cards and the chips are below it, none of them inside it
+
+#### Scenario: The icon is inside
+- **WHEN** a Pending, an Active or an Archived group's page is shown
+- **THEN** the Group Notifications icon is in the card, at its end, and the three lines are in it too
 
 ### Requirement: A cut group name opens in full
 Choosing a name that was cut SHALL open a dialog with the whole name and the copy icon.
@@ -168,7 +180,7 @@ The chips SHALL NOT be tappable.
 - **THEN** nothing happens
 
 ### Requirement: The card marks the budget with an icon
-In the card the budget SHALL be on a line that starts with a bank icon, followed by the budget, a space and the currency, below the location line. The icon SHALL take the place of the word "Budget?", which SHALL NOT be shown. A group without a budget SHALL have no such line.
+In the card the budget SHALL be on a line that starts with a bank icon, followed by the budget, a space and the currency, below the location line. The icon SHALL take the place of the word "Budget?", which SHALL NOT be shown. A group without a budget SHALL show `TBD` after the icon.
 
 #### Scenario: Budget line
 - **WHEN** a group has the budget 100 and the currency `EUR`
@@ -176,11 +188,11 @@ In the card the budget SHALL be on a line that starts with a bank icon, followed
 
 #### Scenario: No budget
 - **WHEN** a group has no budget
-- **THEN** the card has no budget line
+- **THEN** the card's budget line is the bank icon followed by `TBD`
 
 #### Scenario: Screen reader
 - **WHEN** a screen reader reads the card
-- **THEN** it reads the budget line as "Budget? - " followed by the budget and the currency, and the icon announces nothing of its own
+- **THEN** it reads the budget line as "Budget? - " followed by the budget and the currency, or by `TBD`, and the icon announces nothing of its own
 
 ### Requirement: The description is shown in a card of its own
 The group's description SHALL be shown in a card of its own, above the card with the date and time, location and budget and under the name and the state with its note, labelled "Description" for screen readers. A group without a description SHALL show no description card and nothing in its place.
@@ -191,7 +203,7 @@ The group's description SHALL be shown in a card of its own, above the card with
 
 #### Scenario: Description alone
 - **WHEN** a group has a description and no date, time, location or budget
-- **THEN** the description card is shown and no information card is shown
+- **THEN** the description card is shown, and the information card below it shows its three lines with `TBD`
 
 #### Scenario: No description
 - **WHEN** a group has no description
