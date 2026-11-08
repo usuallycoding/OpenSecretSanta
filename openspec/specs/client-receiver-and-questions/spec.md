@@ -18,7 +18,7 @@ The Gifter page SHALL list the person's own questions to the receiver, loaded wi
 - **THEN** the questions and answers are shown and there is no way to ask
 
 ### Requirement: Asking a question
-While the group is Active the person SHALL be able to ask a question with the floating "Ask a question" button, in a bottom sheet; a successful `POST /groups/{id}/receiver/questions` SHALL close the sheet and show the question at the end of the list. A question is 1 to 1000 characters after trimming and a person asks at most 30 per group; at 30 asking SHALL be unavailable with an explanation.
+While the group is Active the person SHALL be able to ask a question with the floating "Ask a question" button, in a bottom sheet; a successful `POST /groups/{id}/receiver/questions` SHALL close the sheet and show the question at the end of the list. A question is 1 to 1000 characters after trimming and a person asks at most 200 per group; at 200 asking SHALL be unavailable with an explanation.
 
 #### Scenario: Ask a question
 - **WHEN** the person opens the ask sheet, enters a question and saves
@@ -29,7 +29,7 @@ While the group is Active the person SHALL be able to ask a question with the fl
 - **THEN** nothing is sent and the sheet shows what is wrong next to the field
 
 #### Scenario: Question limit
-- **WHEN** the person has asked 30 questions
+- **WHEN** the person has asked 200 questions
 - **THEN** asking is unavailable and the screen says the limit is reached
 
 #### Scenario: Group archived while asking

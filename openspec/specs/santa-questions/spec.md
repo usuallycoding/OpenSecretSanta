@@ -7,7 +7,7 @@ Defines the conversation between a Secret Santa and the person they give a gift 
 ## Requirements
 
 ### Requirement: Ask a question
-The server SHALL expose `POST /groups/{id}/receiver/questions` letting a participant of an Active group ask their receiver a question of 1 to 1000 characters. Each Santa SHALL be able to ask any number of questions up to 30 per group, and each question SHALL get a number counting up from 1 within that Santa's own thread.
+The server SHALL expose `POST /groups/{id}/receiver/questions` letting a participant of an Active group ask their receiver a question of 1 to 1000 characters. Each Santa SHALL be able to ask any number of questions up to 200 per group, and each question SHALL get a number counting up from 1 within that Santa's own thread.
 
 #### Scenario: First and second question
 - **WHEN** a Santa asks two questions in an Active group
@@ -22,7 +22,7 @@ The server SHALL expose `POST /groups/{id}/receiver/questions` letting a partici
 - **THEN** the response is 400 naming `text` and nothing is stored
 
 #### Scenario: Question limit
-- **WHEN** a Santa who has asked 30 questions in a group asks another
+- **WHEN** a Santa who has asked 200 questions in a group asks another
 - **THEN** the response is 409 with code `invalid_state` and no question is added
 
 ### Requirement: Questions only while Active

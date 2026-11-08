@@ -44,7 +44,7 @@ While the group is Active the Send letter page SHALL have a round "+" button tha
 - **THEN** that field says how long it may be, and nothing is sent
 
 #### Scenario: Letter limit reached
-- **WHEN** the server refuses because 30 letters were already sent
+- **WHEN** the server refuses because 200 letters were already sent
 - **THEN** the sheet says so, keeps what was typed and sends nothing
 
 #### Scenario: Archived group
