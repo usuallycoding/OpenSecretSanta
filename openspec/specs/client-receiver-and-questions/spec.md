@@ -7,22 +7,22 @@ How a participant asks their receiver questions anonymously, reads the answers, 
 ## Requirements
 
 ### Requirement: Your questions to the receiver
-The Gifter page SHALL list the person's own questions to the receiver, loaded with `GET /groups/{id}/receiver/questions`, in the order asked and numbered, each with the receiver's answer when there is one and "Not answered yet" when there is not. A question SHALL NOT be editable or deletable.
+The Gifter page SHALL list the person's own questions to the receiver, loaded with `GET /groups/{id}/receiver/questions`, newest first and numbered, each with the receiver's answer when there is one and "Not answered yet" when there is not. A question SHALL NOT be editable or deletable.
 
 #### Scenario: Questions and answers in order
 - **WHEN** the person has asked two questions and the receiver answered the first
-- **THEN** question 1 is shown with its answer and question 2 with "Not answered yet"
+- **THEN** question 2 is shown first with "Not answered yet", and question 1 below it with its answer
 
 #### Scenario: Archived group
 - **WHEN** the group is Archived
 - **THEN** the questions and answers are shown and there is no way to ask
 
 ### Requirement: Asking a question
-While the group is Active the person SHALL be able to ask a question with the floating "Ask a question" button, in a bottom sheet; a successful `POST /groups/{id}/receiver/questions` SHALL close the sheet and show the question at the end of the list. A question is 1 to 1000 characters after trimming and a person asks at most 200 per group; at 200 asking SHALL be unavailable with an explanation.
+While the group is Active the person SHALL be able to ask a question with the floating "Ask a question" button, in a bottom sheet; a successful `POST /groups/{id}/receiver/questions` SHALL close the sheet and show the question at the top of the list. A question is 1 to 1000 characters after trimming and a person asks at most 200 per group; at 200 asking SHALL be unavailable with an explanation.
 
 #### Scenario: Ask a question
 - **WHEN** the person opens the ask sheet, enters a question and saves
-- **THEN** the sheet closes and the question is the last one in the list
+- **THEN** the sheet closes and the question is the first one in the list
 
 #### Scenario: Empty or too long
 - **WHEN** the person saves a blank question or one over 1000 characters
@@ -41,11 +41,11 @@ While the group is Active the person SHALL be able to ask a question with the fl
 - **THEN** the sheet stays open with what they typed and says so
 
 ### Requirement: Questions from your Santa
-In an Active or Archived group the Receiver page SHALL list, below the wishlist, the questions the person's Santa asked, loaded with `GET /groups/{id}/santa/questions`, numbered and in order, each with the person's own answer when there is one. Nothing on the page SHALL identify the Santa. When the Santa has asked nothing the section SHALL say so.
+In an Active or Archived group the Receiver page SHALL list, below the wishlist, the questions the person's Santa asked, loaded with `GET /groups/{id}/santa/questions`, numbered and newest first, each with the person's own answer when there is one. Nothing on the page SHALL identify the Santa. When the Santa has asked nothing the section SHALL say so.
 
 #### Scenario: Questions shown
 - **WHEN** the Santa has asked two questions and the person answered the second
-- **THEN** question 1 is shown without an answer and an "Answer" action, and question 2 with the answer and a "Change answer" action
+- **THEN** question 2 is shown first with the answer and a "Change answer" action, and question 1 below it without an answer and an "Answer" action
 
 #### Scenario: Nothing asked
 - **WHEN** the Santa has not asked anything
