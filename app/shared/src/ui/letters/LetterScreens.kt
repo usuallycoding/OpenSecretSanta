@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -22,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
@@ -47,8 +47,8 @@ import com.usuallycoding.opensecretsanta.ui.groups.GroupPhase
 import com.usuallycoding.opensecretsanta.ui.groups.PageTitle
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.layout.LocalWideLayout
-import com.usuallycoding.opensecretsanta.ui.load.LoadSection
-import com.usuallycoding.opensecretsanta.ui.load.PullPage
+import com.usuallycoding.opensecretsanta.ui.load.LazyPullPage
+import com.usuallycoding.opensecretsanta.ui.load.loadItems
 
 /** A letter in a card: its title, its text, which is cut when long and opens in full, and when it was sent. */
 @Composable
@@ -88,24 +88,26 @@ fun SendLetterContent(viewModel: SendLetterViewModel) {
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
 
     Box(Modifier.fillMaxSize()) {
-        PullPage(loading = state.loading, onRefresh = { viewModel.refresh() }, bottomSpace = fabClearance()) {
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                ui.notice?.let { notice ->
+        LazyPullPage(loading = state.loading, onRefresh = { viewModel.refresh() }, bottomSpace = fabClearance()) {
+            ui.notice?.let { notice ->
+                item(key = "notice") {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(notice.text(), modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
                         TextButton(onClick = viewModel::dismissNotice) { Text(Strings.OK) }
                     }
                 }
-                LoadSection(state, onRetry = { viewModel.refresh() }) { data ->
-                    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        when {
-                            data.phase != GroupPhase.Active -> Text(Strings.LETTERS_CLOSED, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            !viewModel.canSend -> Text(Strings.letterLimit(LetterLimits.MAX_LETTERS_PER_RECEIVER), style = MaterialTheme.typography.bodyMedium)
-                        }
-                        if (data.letters.isEmpty()) Text(Strings.NO_LETTERS_SENT, style = MaterialTheme.typography.bodyLarge)
-                        for (letter in data.letters) key(letter.number) { LetterCard(letter) }
+            }
+            loadItems(state, onRetry = { viewModel.refresh() }) { data ->
+                when {
+                    data.phase != GroupPhase.Active -> item(key = "closed") {
+                        Text(Strings.LETTERS_CLOSED, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    !viewModel.canSend -> item(key = "limit") {
+                        Text(Strings.letterLimit(LetterLimits.MAX_LETTERS_PER_RECEIVER), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
+                if (data.letters.isEmpty()) item(key = "none") { Text(Strings.NO_LETTERS_SENT, style = MaterialTheme.typography.bodyLarge) }
+                items(data.letters, key = { it.number }) { letter -> LetterCard(letter) }
             }
         }
         if (state.value != null && viewModel.canSend) {
@@ -177,12 +179,10 @@ fun InboxContent(viewModel: InboxViewModel) {
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
     // the letters are marked as seen once they are on screen, so the next visit has none marked
     LaunchedEffect(state.value) { if (state.value != null) viewModel.markSeen() }
-    PullPage(loading = state.loading, onRefresh = { viewModel.refresh() }) {
-        LoadSection(state, onRetry = { viewModel.refresh() }) { data ->
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (data.letters.isEmpty()) Text(Strings.NO_LETTERS_RECEIVED, style = MaterialTheme.typography.bodyLarge)
-                for (letter in data.letters) key(letter.number) { LetterCard(letter) }
-            }
+    LazyPullPage(loading = state.loading, onRefresh = { viewModel.refresh() }) {
+        loadItems(state, onRetry = { viewModel.refresh() }) { data ->
+            if (data.letters.isEmpty()) item(key = "none") { Text(Strings.NO_LETTERS_RECEIVED, style = MaterialTheme.typography.bodyLarge) }
+            items(data.letters, key = { it.number }) { letter -> LetterCard(letter) }
         }
     }
 }

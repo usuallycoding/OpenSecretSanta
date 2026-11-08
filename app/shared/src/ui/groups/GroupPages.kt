@@ -100,7 +100,7 @@ fun ReceiverPage(
                     PullPage(loading = wishlistState.loading, onRefresh = { wishlist.refresh() }, bottomSpace = fabClearance()) { WishlistSection(wishlist) }
                     WishlistFab(wishlist)
                 }
-                1 -> PullPage(loading = questionsState?.loading == true, onRefresh = { questions.refresh() }) { SantaQuestionsSection(questions) }
+                1 -> SantaQuestionsSection(questions)
                 else -> SendLetterContent(letters)
             }
         }
@@ -118,7 +118,7 @@ fun ReceiverPage(
                 WishlistFab(wishlist)
             }
         } else {
-            PullPage(loading = questionsState?.loading == true, onRefresh = { questions.refresh() }) { SantaQuestionsSection(questions) }
+            SantaQuestionsSection(questions)
         }
     }
 }
@@ -150,9 +150,9 @@ fun GifterPage(
     if (LocalWideLayout.current && inbox != null) {
         WideColumns(listOf(Strings.receiverWishlistTab(receiver), Strings.receiverQuestionsTab(receiver), Strings.lettersFrom(receiver))) { index ->
             when (index) {
-                0 -> PullPage(loading = wishlistState.loading, onRefresh = { wishlist.refresh() }) { ReceiverWishlistSection(wishlist, true) }
+                0 -> ReceiverWishlistSection(wishlist, true)
                 1 -> Box(Modifier.fillMaxSize()) {
-                    PullPage(loading = questionsState.loading, onRefresh = { questions.refresh() }, bottomSpace = fabClearance()) { ReceiverQuestionsSection(questions, true) }
+                    ReceiverQuestionsSection(questions, true, bottomSpace = fabClearance())
                     AskQuestionFab(questions)
                 }
                 else -> InboxContent(inbox)
@@ -167,10 +167,10 @@ fun GifterPage(
         onShown = { page -> if (page == 0) wishlist.refresh() else questions.refresh() },
     ) { page, shown ->
         if (page == 0) {
-            PullPage(loading = wishlistState.loading, onRefresh = { wishlist.refresh() }) { ReceiverWishlistSection(wishlist, shown) }
+            ReceiverWishlistSection(wishlist, shown)
         } else {
             Box(Modifier.fillMaxSize()) {
-                PullPage(loading = questionsState.loading, onRefresh = { questions.refresh() }, bottomSpace = fabClearance()) { ReceiverQuestionsSection(questions, shown) }
+                ReceiverQuestionsSection(questions, shown, bottomSpace = fabClearance())
                 AskQuestionFab(questions)
             }
         }

@@ -5,6 +5,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -158,6 +162,68 @@ fun PullPage(
         }
     }
     if (getPlatform().hasPullToRefresh) PullRefresh(loading, onRefresh, modifier.fillMaxSize(), body) else Box(modifier.fillMaxSize()) { body(false) }
+}
+
+/**
+ * [PullPage] for a page that is one long list: the rows are the items of a [LazyColumn], so only those on screen are
+ * composed. It has no [LocalPageScroll], which only a section that drags items through the page needs.
+ */
+@Composable
+fun LazyPullPage(
+    loading: Boolean,
+    onRefresh: () -> Unit,
+    modifier: Modifier = Modifier,
+    bottomSpace: Dp = 0.dp,
+    content: LazyListScope.() -> Unit,
+) {
+    val listState = rememberLazyListState()
+    ForwardOutsideScroll(listState)
+    val body: @Composable (Boolean) -> Unit = { pulled ->
+        CompositionLocalProvider(LocalPullActive provides pulled) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                LazyColumn(
+                    Modifier.fillMaxSize(),
+                    state = listState,
+                    contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp + bottomSpace),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    content = content,
+                )
+            }
+        }
+    }
+    if (getPlatform().hasPullToRefresh) PullRefresh(loading, onRefresh, modifier.fillMaxSize(), body) else Box(modifier.fillMaxSize()) { body(false) }
+}
+
+/**
+ * [LoadSection] for the rows of a [LazyPullPage]: one item with progress while it first loads or the failure with
+ * "Try again", or, once there is something to show, the thin bar of a quiet reload and the failure of a reload that
+ * kept what it showed, then the rows [content] adds.
+ */
+fun <T : Any> LazyListScope.loadItems(state: LoadState<T>, onRetry: () -> Unit, content: LazyListScope.(T) -> Unit) {
+    val value = state.value
+    when {
+        value != null -> {
+            if (state.loading) item(key = "load-bar") { if (!LocalPullActive.current) LinearProgressIndicator(Modifier.fillMaxWidth()) }
+            state.error?.let { error ->
+                item(key = "load-error") {
+                    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(error.loadMessage(), color = MaterialTheme.colorScheme.error)
+                        OutlinedButton(onClick = onRetry) { Text(Strings.TRY_AGAIN) }
+                    }
+                }
+            }
+            content(value)
+        }
+        state.loading -> item(key = "load-progress") {
+            Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        }
+        else -> item(key = "load-failed") {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(state.error?.loadMessage() ?: Strings.SERVER_FAILED, color = MaterialTheme.colorScheme.error)
+                OutlinedButton(onClick = onRetry) { Text(Strings.TRY_AGAIN) }
+            }
+        }
+    }
 }
 
 /** The pull indicator stays at least this long, so a reload that finishes at once still shows that it happened. */

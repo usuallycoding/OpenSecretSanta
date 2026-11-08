@@ -1,6 +1,7 @@
 package com.usuallycoding.opensecretsanta.ui
 
 import com.usuallycoding.opensecretsanta.data.api.ApiError
+import com.usuallycoding.opensecretsanta.domain.wishlist.WishlistLimits
 import com.usuallycoding.opensecretsanta.ui.groups.GroupPhase
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.wishlist.WishField
@@ -267,8 +268,8 @@ class WishlistViewModelTest {
     }
 
     @Test
-    fun addingIsUnavailableAtFiftyItems() = runTest {
-        repeat(50) { server.wishlist.add("Item $it") }
+    fun addingIsUnavailableAtTheItemLimit() = runTest {
+        repeat(WishlistLimits.MAX_ITEMS) { server.wishlist.add("Item $it") }
         val model = viewModel()
 
         assertFalse(model.canAdd)
@@ -423,9 +424,9 @@ class WishlistViewModelTest {
 
     @Test
     fun aListThatFilledUpElsewhereSaysItIsFull() = runTest {
-        repeat(49) { server.wishlist.add("Item $it") }
+        repeat(WishlistLimits.MAX_ITEMS - 1) { server.wishlist.add("Item $it") }
         val model = viewModel()
-        server.wishlist.add("The fiftieth, from another device")
+        server.wishlist.add("The last one, from another device")
         model.openAdd()
         model.fill(title = "One too many")
 
@@ -433,7 +434,7 @@ class WishlistViewModelTest {
 
         assertEquals(WishlistNotice.ListFull, model.ui.value.notice)
         assertNull(model.ui.value.editor)
-        assertEquals(50, model.data.value.value!!.items.size)
+        assertEquals(WishlistLimits.MAX_ITEMS, model.data.value.value!!.items.size)
         assertFalse(model.canAdd)
     }
 

@@ -18,9 +18,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -29,32 +29,27 @@ import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.form.SnowCard
 import com.usuallycoding.opensecretsanta.ui.form.startAccentBar
 import com.usuallycoding.opensecretsanta.ui.groups.GroupPhase
-import com.usuallycoding.opensecretsanta.ui.load.LoadSection
+import com.usuallycoding.opensecretsanta.ui.load.LazyPullPage
+import com.usuallycoding.opensecretsanta.ui.load.loadItems
 import androidx.compose.foundation.layout.BoxScope
 import com.usuallycoding.opensecretsanta.ui.form.AppFab
 import com.usuallycoding.opensecretsanta.ui.form.QuestionIcon
 
-/** The person's questions to their receiver and the receiver's answers, as a section of the Gifter page. */
+/** The person's questions to their receiver and the receiver's answers, as a page of their own; [bottomSpace] keeps the last one clear of a floating button. */
 @Composable
-fun ReceiverQuestionsSection(viewModel: ReceiverViewModel, shown: Boolean = true) {
+fun ReceiverQuestionsSection(viewModel: ReceiverViewModel, shown: Boolean = true, bottomSpace: Dp = 0.dp) {
     val state by viewModel.data.collectAsState()
     val ui by viewModel.ui.collectAsState()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
     // the answers are marked as seen once they are on screen, not when the page opens on the other tab
     LaunchedEffect(shown, state.value) { if (shown && state.value != null) viewModel.markSeen() }
 
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        ui.notice?.let { Notice(it, onDismiss = viewModel::dismissNotice) }
-        LoadSection(state, onRetry = { viewModel.refresh() }) { data ->
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                QuestionsHeader(data, viewModel)
-                if (data.questions.isEmpty()) {
-                    Text(Strings.NO_QUESTIONS_ASKED, style = MaterialTheme.typography.bodyLarge)
-                }
-                for (question in data.questions) {
-                    key(question.number) { QuestionCard(question) }
-                }
-            }
+    LazyPullPage(loading = state.loading, onRefresh = { viewModel.refresh() }, bottomSpace = bottomSpace) {
+        ui.notice?.let { item(key = "notice") { Notice(it, onDismiss = viewModel::dismissNotice) } }
+        loadItems(state, onRetry = { viewModel.refresh() }) { data ->
+            if (data.phase != GroupPhase.Active || !viewModel.canAsk) item(key = "header") { QuestionsHeader(data, viewModel) }
+            if (data.questions.isEmpty()) item(key = "none") { Text(Strings.NO_QUESTIONS_ASKED, style = MaterialTheme.typography.bodyLarge) }
+            items(data.questions, key = { it.number }) { question -> QuestionCard(question) }
         }
     }
     ui.editor?.let { editor ->

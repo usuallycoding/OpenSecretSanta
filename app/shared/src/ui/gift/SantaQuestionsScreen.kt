@@ -23,42 +23,45 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.ui.Strings
-import com.usuallycoding.opensecretsanta.ui.load.LoadSection
+import com.usuallycoding.opensecretsanta.ui.load.LazyPullPage
+import com.usuallycoding.opensecretsanta.ui.load.loadItems
 
-/** The questions the person's Santa asked and the person's answers, as a section of the Receiver page. Nothing here says who the Santa is. */
+/** The questions the person's Santa asked and the person's answers, as a page of their own. Nothing here says who the Santa is. */
 @Composable
 fun SantaQuestionsSection(viewModel: SantaQuestionsViewModel) {
     val state by viewModel.data.collectAsState()
     val ui by viewModel.ui.collectAsState()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
 
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyPullPage(loading = state.loading, onRefresh = { viewModel.refresh() }) {
         val data = state.value
         if (data != null && !data.canAnswer) {
-            Text(Strings.THREAD_CLOSED, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        ui.notice?.let { notice ->
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(notice.text(), modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-                TextButton(onClick = viewModel::dismissNotice) { Text(Strings.OK) }
+            item(key = "closed") {
+                Text(Strings.THREAD_CLOSED, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        LoadSection(state, onRetry = { viewModel.refresh() }) { loaded ->
+        ui.notice?.let { notice ->
+            item(key = "notice") {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(notice.text(), modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                    TextButton(onClick = viewModel::dismissNotice) { Text(Strings.OK) }
+                }
+            }
+        }
+        loadItems(state, onRetry = { viewModel.refresh() }) { loaded ->
             if (loaded.questions.isEmpty()) {
-                Text(Strings.NO_SANTA_QUESTIONS, style = MaterialTheme.typography.bodyLarge)
+                item(key = "none") { Text(Strings.NO_SANTA_QUESTIONS, style = MaterialTheme.typography.bodyLarge) }
             } else {
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    for (question in loaded.questions) {
-                        QuestionCard(question, needsAnswer = loaded.canAnswer && question.answer == null, action = if (loaded.canAnswer) {
-                            {
-                                TextButton(onClick = { viewModel.openAnswer(question.number) }) {
-                                    Text(if (question.answer == null) Strings.ANSWER else Strings.CHANGE_ANSWER)
-                                }
+                items(loaded.questions, key = { it.number }) { question ->
+                    QuestionCard(question, needsAnswer = loaded.canAnswer && question.answer == null, action = if (loaded.canAnswer) {
+                        {
+                            TextButton(onClick = { viewModel.openAnswer(question.number) }) {
+                                Text(if (question.answer == null) Strings.ANSWER else Strings.CHANGE_ANSWER)
                             }
-                        } else {
-                            null
-                        })
-                    }
+                        }
+                    } else {
+                        null
+                    })
                 }
             }
         }
