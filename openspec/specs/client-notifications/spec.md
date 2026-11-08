@@ -105,7 +105,7 @@ A notification that arrives SHALL be shown by the system with the app's name and
 
 #### Scenario: Tap
 - **WHEN** the person taps an announcement about group 7, such as a message from the organiser
-- **THEN** the app opens on group 7
+- **THEN** the app opens on group 7's Announcements
 
 #### Scenario: Signed out
 - **WHEN** the person taps a notification while signed out
@@ -113,15 +113,15 @@ A notification that arrives SHALL be shown by the system with the app's name and
 
 #### Scenario: A question from the Santa
 - **WHEN** the person taps a question notification about group 7
-- **THEN** the app opens group 7's Receiver page on its "Respond to Secret Santa" tab
+- **THEN** the app opens group 7's "Respond to Secret Santa" page, on a wide window in the pane beside the group page
 
 #### Scenario: An answer from the receiver
 - **WHEN** the person taps an answer notification about group 7
-- **THEN** the app opens group 7's Gifter page on its "Questions for" tab
+- **THEN** the app opens group 7's "Questions for" page, on a wide window in the pane beside the group page
 
 #### Scenario: A change to the receiver's wishlist
 - **WHEN** the person taps a wishlist notification about group 7
-- **THEN** the app opens group 7's Gifter page on its wishlist tab
+- **THEN** the app opens group 7's receiver's wishlist page, on a wide window in the pane beside the group page
 
 #### Scenario: Back goes up one level
 - **WHEN** the person has opened a question notification and presses Back
@@ -133,7 +133,7 @@ A notification that arrives SHALL be shown by the system with the app's name and
 
 #### Scenario: Group not drawn any more
 - **WHEN** the person taps a question notification about a group that is now Archived
-- **THEN** the Receiver page opens on its questions tab, which shows them read-only
+- **THEN** the "Respond to Secret Santa" page opens, which shows them read-only
 
 #### Scenario: Unknown category
 - **WHEN** a notification arrives with a category the app does not know, or none
@@ -144,15 +144,15 @@ A notification that arrives SHALL be shown by the system with the app's name and
 - **THEN** the screen says the group is no longer available and offers the way back
 
 ### Requirement: Tapping a notification opens its screen
-Tapping a notification SHALL open the screen it is about with the group list and the group's page behind it: a question from the person's Santa opens the Receiver page on its questions tab, an answer from the person's receiver opens the Gifter page on its questions tab, a change to the receiver's wishlist opens the Gifter page on its wishlist tab, a letter from the person's receiver opens the Inbox page, an announcement the owner sent opens the Announcements page, and any other notification, or one with no known category, opens the group's page.
+Tapping a notification SHALL open the screen it is about with the group list and the group's page behind it: a question from the person's Santa opens the "Respond to Secret Santa" page, an answer from the person's receiver opens the "Questions for" page, a change to the receiver's wishlist opens the receiver's wishlist page, a letter from the person's receiver opens the Inbox page, an announcement the owner sent opens the Announcements page, and any other notification, or one with no known category, opens the group's page. On a wide window the page SHALL be in the pane beside the group's page.
 
 #### Scenario: A letter
 - **WHEN** a person taps the notification of a letter from their receiver
-- **THEN** the screens, from the bottom, are the group list, the group's page and the Inbox page
+- **THEN** the screens, from the bottom, are the group list, the group's page and the Inbox page, and on a wide window the group's page with the Inbox in the pane
 
 #### Scenario: Order of the screens
 - **WHEN** a person taps the notification of a question from their Santa
-- **THEN** the screens, from the bottom, are the group list, the group's page and the Receiver page on its questions tab
+- **THEN** the screens, from the bottom, are the group list, the group's page and the "Respond to Secret Santa" page, and on a wide window the group's page with it in the pane
 
 #### Scenario: An announcement from the owner
 - **WHEN** a person taps the notification of an announcement the owner sent

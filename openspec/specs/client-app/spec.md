@@ -345,33 +345,6 @@ On the web a screen SHALL offer no refresh control, because the browser's own re
 - **WHEN** a signed-in person refreshes the web page on a group's screen
 - **THEN** the same screen is shown with current data and the person is still signed in
 
-### Requirement: Readable web addresses
-In the web app each screen SHALL have a short, readable address after the `#` (for example `#/groups/2` for a group, `#/groups/2/giver` and `#/groups/2/receiver` for its Giver and Receiver pages, `#/groups/2/delivery-info`, `#/settings`, `#/admin/groups/2` and `#/admin/users/alice`), and the address bar SHALL follow the screens as the person moves between them.
-
-#### Scenario: A group
-- **WHEN** a signed-in person opens a group in the web app
-- **THEN** the address ends in `#/groups/` followed by the group's number
-
-#### Scenario: A user in the admin view
-- **WHEN** an administrator opens the user `alice` in the web app
-- **THEN** the address ends in `#/admin/users/alice`
-
-#### Scenario: Back and forward
-- **WHEN** the person moves between screens and uses the browser's back and forward buttons
-- **THEN** the screens and their addresses follow, as before
-
-#### Scenario: Sheet
-- **WHEN** a bottom sheet is open on a group's screen in the web app
-- **THEN** the address is still the group's address
-
-#### Scenario: A page on its questions tab
-- **WHEN** a signed-in person opens `#/groups/2/receiver/questions` or `#/groups/2/giver/questions`
-- **THEN** that page of group 2 opens on its questions tab
-
-#### Scenario: The tab is where the page opens
-- **WHEN** the person switches tabs on a page
-- **THEN** the address stays as it was, and a name for the wishlist tab such as `#/groups/2/receiver/wishlist` names no screen
-
 ### Requirement: Opening a web address
 In the web app, opening or refreshing an address, or typing one into the address bar while signed in, SHALL show the screen it names. An address that names no screen SHALL show the first screen of the person's view. An address of an admin screen opened by someone who is not an administrator SHALL show the first screen.
 
@@ -725,13 +698,6 @@ The admin status SHALL come from the server's `GET /me` and be refreshed wheneve
 - **WHEN** a person who has become an administrator signs in again
 - **THEN** the admin view is offered
 
-### Requirement: A questions tab has its own address
-A page that opens on its questions tab SHALL have the address of the page followed by `/questions`.
-
-#### Scenario: Questions suffix
-- **WHEN** a person opens the Receiver page of group 2 on its questions tab
-- **THEN** the address is `#/groups/2/receiver/questions`
-
 ### Requirement: Addresses are plain
 The addresses SHALL NOT contain the names of the app's classes. Bottom sheets SHALL NOT be part of the address.
 
@@ -792,3 +758,26 @@ On the web, the rules page of an administrator's group SHALL have the address `#
 #### Scenario: Not an administrator
 - **WHEN** someone who is not an administrator opens that address
 - **THEN** it names no screen, as any admin address does
+
+### Requirement: Screens have readable web addresses
+In the web app each screen SHALL have a short, readable address after the `#` (for example `#/groups/2` for a group, `#/groups/2/giver/wishlist` and `#/groups/2/receiver/questions` for the pages of its gift exchange, `#/groups/2/delivery-info`, `#/settings`, `#/admin/groups/2` and `#/admin/users/alice`), and the address bar SHALL follow the screens as the person moves between them.
+
+#### Scenario: A group
+- **WHEN** a signed-in person opens a group in the web app
+- **THEN** the address ends in `#/groups/` followed by the group's number
+
+#### Scenario: A user in the admin view
+- **WHEN** an administrator opens the user `alice` in the web app
+- **THEN** the address ends in `#/admin/users/alice`
+
+#### Scenario: Back and forward
+- **WHEN** the person moves between screens and uses the browser's back and forward buttons
+- **THEN** the screens and their addresses follow, as before
+
+#### Scenario: Sheet
+- **WHEN** a bottom sheet is open on a group's screen in the web app
+- **THEN** the address is still the group's address
+
+#### Scenario: A page of the gift exchange
+- **WHEN** a signed-in person opens `#/groups/2/receiver/questions` or `#/groups/2/giver/wishlist`
+- **THEN** that page of group 2 opens, as `client-giver-receiver-pages` describes

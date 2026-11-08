@@ -44,122 +44,6 @@ The "Delivery Info" button of the "Your stuff" card SHALL open a bottom sheet wi
 - **WHEN** the server answers that the group does not exist
 - **THEN** the sheet says the group is no longer available and offers to close
 
-### Requirement: Receiver page
-The Receiver page, the one for the relationship in which the person receives, SHALL open from the "Edit Wishlist" button of the "Your stuff" card, and from its "Respond to Santa" button once the group is Active or Archived. Nothing on the page SHALL identify the Santa.
-
-#### Scenario: Items in order
-- **WHEN** the person has three items
-- **THEN** the Wishlist tab shows them in the order the person chose, each with its title and, when present, its note and link
-
-#### Scenario: Empty list
-- **WHEN** the person has not added anything to this group
-- **THEN** the Wishlist tab says so and offers to add the first item
-
-#### Scenario: Separate per group
-- **WHEN** the person is in two groups
-- **THEN** each group's Receiver page shows only that group's items
-
-#### Scenario: Pending group
-- **WHEN** the group is Pending
-- **THEN** the page is titled "Your Wishlist", shows the wishlist and no tabs and no questions
-
-#### Scenario: Active group
-- **WHEN** the group is Active and the Santa has asked a question
-- **THEN** the page is titled "Receiving from Secret Santa", has the tabs "Your Wishlist" and "Respond to Secret Santa", and the "Respond to Secret Santa" tab shows the question with an "Answer" action
-
-#### Scenario: Archived group
-- **WHEN** the group is Archived
-- **THEN** the wishlist and the questions with the person's answers are shown in their tabs and nothing can be changed
-
-#### Scenario: Group phase not known yet
-- **WHEN** the page is opened and the group's phase has not loaded
-- **THEN** the page is titled "Your Wishlist" until the phase is known, and is then titled for that phase
-
-#### Scenario: Switching tabs
-- **WHEN** the person chooses the "Respond to Secret Santa" tab and then the "Your Wishlist" tab
-- **THEN** each shows its own content and the tab row stays in place
-
-#### Scenario: Swiping
-- **WHEN** the person swipes the "Your Wishlist" tab's content to the left
-- **THEN** the "Respond to Secret Santa" tab is shown and the tab row marks it
-
-### Requirement: Gifter page
-The Gifter page, the one for the relationship in which the person gives, SHALL open from the "See Wishlist" and "Ask Questions" buttons of the "Secret Santa" card once the group is Active or Archived and SHALL be titled "Giving to <receiver username>". Nothing the person does on the page SHALL be visible to the receiver.
-
-#### Scenario: Receiver's items
-- **WHEN** the person opens the page and the receiver has two items
-- **THEN** the Wishlist tab shows both in the receiver's order with their note and link, and no control changes them
-
-#### Scenario: Nothing added yet
-- **WHEN** the receiver has not added anything
-- **THEN** the Wishlist tab says the receiver has not added anything yet
-
-#### Scenario: Questions and answers
-- **WHEN** the person has asked two questions and the receiver answered the first
-- **THEN** the Questions tab shows question 1 with its answer and question 2 with "Not answered yet"
-
-#### Scenario: Ask from the page
-- **WHEN** the group is Active and the person chooses to ask a question on the Questions tab
-- **THEN** a bottom sheet opens, as `client-receiver-and-questions` describes
-
-#### Scenario: Named after the receiver
-- **WHEN** the person opens the Gifter page and their receiver is `bob`
-- **THEN** the page is titled "Giving to bob" and its tabs read "bob's Wishlist" and "Questions for bob"
-
-#### Scenario: Receiver not known yet
-- **WHEN** the receiver's username has not loaded, or cannot be loaded
-- **THEN** the page is titled "Giving to ..." and its tabs read "Wishlist" and "Questions", and they take the receiver's name once it loads
-
-#### Scenario: Opened from an address
-- **WHEN** the Gifter page is opened from its web address, with no earlier screen
-- **THEN** the title and tabs show the fallback until the receiver loads and then name the receiver
-
-#### Scenario: A long username
-- **WHEN** the receiver's username is too long for its tab
-- **THEN** the tab label stays on one line with an ellipsis, and a screen reader announces the whole label
-
-#### Scenario: Swiping
-- **WHEN** the person swipes the first tab's content to the left
-- **THEN** the second tab is shown and the tab row marks it
-
-### Requirement: Pages can open on a tab
-The Receiver and Gifter pages SHALL be able to open on either of their two tabs, the wishlist tab by default. A page that has no tabs, the Receiver page of a Pending group, SHALL show its wishlist whichever tab was asked for. Opening on a tab SHALL NOT change what the tab shows or how it loads.
-
-#### Scenario: Opens on the questions tab
-- **WHEN** the Receiver page is opened on its questions tab in an Active group
-- **THEN** the "Respond to Secret Santa" tab is shown and its questions load
-
-#### Scenario: Default tab
-- **WHEN** a page is opened without a tab
-- **THEN** its wishlist tab is shown
-
-#### Scenario: Pending group
-- **WHEN** the Receiver page is opened on its questions tab while the group is Pending
-- **THEN** the page shows the wishlist and no tabs
-
-#### Scenario: Other tab still works
-- **WHEN** a page opened on its questions tab is swiped to its wishlist tab
-- **THEN** the wishlist tab shows and loads as it does when it is opened first
-
-### Requirement: Page loading and refreshing
-Each tab of the Gifter and Receiver pages SHALL load on its own, show that it is loading, and show a message with "Try again" when the server cannot be reached or answers with an error, without affecting the other tab or what it already showed.
-
-#### Scenario: One section fails
-- **WHEN** the questions cannot be loaded and the wishlist can
-- **THEN** the Wishlist tab shows the list and the Questions tab shows the problem with "Try again"
-
-#### Scenario: Pull to refresh
-- **WHEN** the person pulls a tab down on Android or iOS
-- **THEN** that tab reloads and what is shown stays until the new data arrives
-
-#### Scenario: Choosing a tab
-- **WHEN** the person chooses a tab they have not looked at for a while
-- **THEN** its content reloads without clearing what it showed
-
-#### Scenario: Swiping to a tab
-- **WHEN** the person swipes to a tab they have not looked at for a while
-- **THEN** its content reloads without clearing what it showed
-
 ### Requirement: The receiver's username comes from the server
 The receiver's username SHALL come from `GET /groups/{id}/receiver`; while it loads the "Secret Santa" card SHALL show that, and when it fails the card SHALL say so with "Try again" and the rest of the page SHALL stay.
 
@@ -184,70 +68,6 @@ The sheets SHALL be part of the group page, not screens, so the web address stay
 #### Scenario: Address while a sheet is open
 - **WHEN** a person on the web opens a details sheet
 - **THEN** the address is still the group page's
-
-### Requirement: The Receiver page of a drawn group has two tabs
-Once the group is Active or Archived the page SHALL be titled "Receiving from Secret Santa" and show a tab row with two tabs, **Your Wishlist** and **Respond to Secret Santa**, and one tab at a time, which the person SHALL be able to change by choosing a tab or by swiping the content sideways, the tab row following the swipe. On a wide window the page SHALL have no tab row and no swiping: it shows both sections, with the Outbox, side by side as `client-layout` describes.
-
-#### Scenario: Title and tabs
-- **WHEN** the Receiver page of an Active group is opened
-- **THEN** it is titled "Receiving from Secret Santa" with the tabs Your Wishlist and Respond to Secret Santa
-
-#### Scenario: Wide window
-- **WHEN** the Receiver page of an Active group is opened on a wide window
-- **THEN** there is no tab row, and "Your Wishlist", "Respond to Secret Santa" and the Outbox are shown beside each other
-
-### Requirement: The Receiver page's wishlist tab
-The first tab SHALL show the person's own wishlist for the group, loaded with `GET /groups/{id}/wishlist`, with each item's title, note and link in the person's own order, or a short explanation that nothing has been added yet with the offer to add the first item; the list SHALL be edited as `client-wishlist` describes.
-
-#### Scenario: Loaded from the wishlist route
-- **WHEN** the first tab is shown
-- **THEN** the person's items come from `GET /groups/{id}/wishlist`
-
-### Requirement: The Receiver page's questions tab
-The second tab SHALL show the questions the person's Santa asked as `client-receiver-and-questions` describes, with the answering described there.
-
-#### Scenario: Questions with the way to answer
-- **WHEN** the second tab is shown for an Active group
-- **THEN** it lists the questions the Santa asked, with the way to answer them
-
-### Requirement: A pending group's Receiver page has no tabs
-While the group is Pending the page SHALL be titled "Your Wishlist" and show the wishlist only, without tabs.
-
-#### Scenario: Title and no tabs
-- **WHEN** the Receiver page of a Pending group is opened
-- **THEN** it is titled "Your Wishlist" and has no tab row
-
-### Requirement: The Gifter page has two tabs
-The Gifter page SHALL show a tab row with two tabs, **<receiver username>'s Wishlist** and **Questions for <receiver username>**, and one tab at a time, which the person SHALL be able to change by choosing a tab or by swiping the content sideways, the tab row following the swipe. On a wide window the page SHALL have no tab row and no swiping: it shows both sections, with the Inbox, side by side as `client-layout` describes.
-
-#### Scenario: Tab titles
-- **WHEN** the Gifter page for `alice` is opened
-- **THEN** its tabs are "alice's Wishlist" and "Questions for alice"
-
-#### Scenario: Wide window
-- **WHEN** the Gifter page for `alice` is opened on a wide window
-- **THEN** there is no tab row, and "alice's Wishlist", "Questions for alice" and the Inbox are shown beside each other
-
-### Requirement: The Gifter page's wishlist tab
-The first tab SHALL show the list the person's receiver keeps for the group, loaded with `GET /groups/{id}/receiver/wishlist`, read-only, in the receiver's order, with each item's title, note and link, or a short explanation that the receiver has not added anything yet.
-
-#### Scenario: Read-only list
-- **WHEN** the first tab is shown
-- **THEN** there is no control that adds, changes, deletes or moves an item
-
-### Requirement: The Gifter page's questions tab
-The second tab SHALL show the person's own questions to the receiver as `client-receiver-and-questions` describes, with the receiver's answers and, while the group is Active, the way to ask a new question.
-
-#### Scenario: Archived group
-- **WHEN** the group is Archived
-- **THEN** the questions and answers are shown and there is no way to ask a new question
-
-### Requirement: Tabs reload
-Pulling a tab down (on Android and iOS) SHALL reload that tab, and returning to the app and showing a tab, by choosing it or by swiping to it, SHALL reload what the tab shows, as "Pulling a screen refreshes it" and "The web has no refresh control" describe.
-
-#### Scenario: Returning to the app
-- **WHEN** a person returns to the app with a tab showing
-- **THEN** that tab reloads what it shows
 
 ### Requirement: The Secret Santa card
 Below the group's information the group page SHALL show, once the group is Active or Archived, a card headed "You're Secret Santa for:" with, on the next row in a bold title font, the receiver's username in capital letters, and under it the line "Shh... Keep it a secret!" in italics, then one row of four icon buttons, as `The card actions are icon buttons` describes: "See Wishlist", "Ask Questions", "Inbox" and, last, "Delivery Info". While the group is Pending there SHALL be no such card, as there is no receiver to tell about yet.
@@ -498,3 +318,80 @@ Each card icon button's former label SHALL be its spoken name and its tooltip, s
 #### Scenario: Receiver not known
 - **WHEN** the receiver has not loaded
 - **THEN** the four icon buttons of the "You're Secret Santa for:" card are disabled
+
+### Requirement: The Receiver side is the person's wishlist and the questions from their Santa
+The person's own wishlist and the questions from their Santa SHALL each be a page of their own, as `client-giver-receiver-pages` describes, opened from the "Edit Wishlist" button of the "Your stuff" card and, once the group is Active or Archived, from its "Respond to Santa" button. On a wide window the sidebar's Receiving item SHALL show them side by side with the Outbox. Nothing on them SHALL identify the Santa.
+
+#### Scenario: Items in order
+- **WHEN** the person has three items
+- **THEN** the wishlist page shows them in the order the person chose, each with its title and, when present, its note and link
+
+#### Scenario: Empty list
+- **WHEN** the person has not added anything to this group
+- **THEN** the wishlist page says so and offers to add the first item
+
+#### Scenario: Separate per group
+- **WHEN** the person is in two groups
+- **THEN** each group's wishlist page shows only that group's items
+
+#### Scenario: Pending group
+- **WHEN** the group is Pending
+- **THEN** the wishlist page, titled "Your Wishlist", is the only page, and there are no questions
+
+#### Scenario: Active group
+- **WHEN** the group is Active and the Santa has asked a question
+- **THEN** the "Respond to Secret Santa" page shows the question with an "Answer" action
+
+#### Scenario: Archived group
+- **WHEN** the group is Archived
+- **THEN** the wishlist and the questions with the person's answers are shown on their pages and nothing can be changed
+
+#### Scenario: Group phase not known yet
+- **WHEN** the wishlist page is opened and the group's phase has not loaded
+- **THEN** it is titled "Your Wishlist", shows the wishlist, and the questions page is offered once the phase is known
+
+### Requirement: The Gifter side is the receiver's wishlist and the person's questions to them
+The receiver's wishlist and the person's questions to them SHALL each be a page of their own, as `client-giver-receiver-pages` describes, opened from the "See Wishlist" and "Ask Questions" buttons of the "Secret Santa" card once the group is Active or Archived. On a wide window the sidebar's Giving item SHALL show them side by side with the Inbox, titled "Giving to <receiver username>". Nothing the person does there SHALL be visible to the receiver.
+
+#### Scenario: Receiver's items
+- **WHEN** the person opens the receiver's wishlist and the receiver has two items
+- **THEN** the page shows both in the receiver's order with their note and link, and no control changes them
+
+#### Scenario: Nothing added yet
+- **WHEN** the receiver has not added anything
+- **THEN** the wishlist page says the receiver has not added anything yet
+
+#### Scenario: Questions and answers
+- **WHEN** the person has asked two questions and the receiver answered the first
+- **THEN** the questions page shows question 1 with its answer and question 2 with "Not answered yet"
+
+#### Scenario: Ask from the page
+- **WHEN** the group is Active and the person chooses to ask a question on the questions page
+- **THEN** a bottom sheet opens, as `client-receiver-and-questions` describes
+
+#### Scenario: Receiver not known yet
+- **WHEN** the receiver's username has not loaded, or cannot be loaded
+- **THEN** the pages are titled "Wishlist" and "Questions", and the Giving page "Giving to ...", and they take the receiver's name once it loads
+
+#### Scenario: Opened from an address
+- **WHEN** the receiver's wishlist is opened from its web address, with no earlier screen
+- **THEN** the title shows the fallback until the receiver loads and then names the receiver
+
+#### Scenario: A long username
+- **WHEN** the receiver's username is too long for the title
+- **THEN** the title stays on one line with an ellipsis, and a screen reader announces the whole title
+
+### Requirement: The pages load, fail and refresh on their own
+Each of the pages, and each section of a Giving or Receiving page on a wide window, SHALL load on its own, show that it is loading, and show a message with "Try again" when the server cannot be reached or answers with an error, without affecting another page or what it already showed.
+
+#### Scenario: One page fails
+- **WHEN** the questions cannot be loaded and the wishlist can
+- **THEN** the wishlist page shows the list and the questions page shows the problem with "Try again"
+
+#### Scenario: Pull to refresh
+- **WHEN** the person pulls a page down on Android or iOS
+- **THEN** that page reloads and what is shown stays until the new data arrives
+
+#### Scenario: Returning to a page
+- **WHEN** the person opens a page they have not looked at for a while
+- **THEN** its content reloads without clearing what it showed

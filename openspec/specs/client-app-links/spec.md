@@ -6,7 +6,7 @@ How the Android app takes over the web app's group addresses, so that the link i
 ## Requirements
 
 ### Requirement: Group links open in the Android app
-On Android, an address of the web app that the release was built for (for example `https://santa.example.org`) that names a group (`/#/groups/<id>`, or the group's Giver or Receiver page with its tab) SHALL open in the installed app, and not in the browser, once the system has verified that the address belongs to the app.
+On Android, an address of the web app that the release was built for (for example `https://santa.example.org`) that names a group (`/#/groups/<id>`, the group's Giver or Receiver address, the address of one of the six pages of its gift exchange: `giver/wishlist`, `giver/questions`, `inbox`, `receiver/wishlist`, `receiver/questions` or `outbox`, or its `announcements`) SHALL open in the installed app, and not in the browser, once the system has verified that the address belongs to the app.
 
 #### Scenario: Link from an email
 - **WHEN** a signed-in person with the app installed taps `https://santa.example.org/#/groups/7` in an email
@@ -26,7 +26,15 @@ On Android, an address of the web app that the release was built for (for exampl
 
 #### Scenario: A Giver page
 - **WHEN** a link names `/#/groups/7/giver/questions`
-- **THEN** the Giver page of group 7 opens on its questions tab, with group 7's page and then the group list behind it
+- **THEN** the "Questions for" page of group 7 opens, with group 7's page and then the group list behind it
+
+#### Scenario: Each of the six
+- **WHEN** a link names `giver/wishlist`, `inbox`, `receiver/wishlist`, `receiver/questions` or `outbox` of group 7
+- **THEN** that page of group 7 opens, with group 7's page and then the group list behind it
+
+#### Scenario: The announcements
+- **WHEN** a link names `/#/groups/7/announcements`
+- **THEN** the Announcements page of group 7 opens, with group 7's page and then the group list behind it
 
 #### Scenario: A renamed address
 - **WHEN** a link names `/#/groups/7/gifter`
@@ -67,4 +75,4 @@ The app SHALL open the screen a link names with the group list behind it, as a t
 
 #### Scenario: A page of the group
 - **WHEN** a link names `/#/groups/7/receiver/questions`
-- **THEN** the Receiver page of group 7 opens on its questions tab, with group 7's page and then the group list behind it
+- **THEN** the "Respond to Secret Santa" page of group 7 opens, with group 7's page and then the group list behind it

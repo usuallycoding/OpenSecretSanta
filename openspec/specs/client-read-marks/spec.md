@@ -37,7 +37,7 @@ From Active on, the "See Wishlist", "Ask Questions" and "Inbox" buttons of the "
 - **THEN** the buttons are not there, so no badge is
 
 ### Requirement: New and edited wishlist items are marked
-On the Gifter page's wishlist tab an item created after the baseline SHALL show a "New" pill and an item created before it and changed after it an "Edited" pill, and each marked item's card SHALL have an accent bar on its start edge, the pills and the bar in the theme's tertiary colour. The baseline SHALL be the time seen up to that the server held when the page was opened, and SHALL not change while the page stays open.
+On the receiver's wishlist page, pane or column an item created after the baseline SHALL show a "New" pill and an item created before it and changed after it an "Edited" pill, and each marked item's card SHALL have an accent bar on its start edge, the pills and the bar in the theme's tertiary colour. The baseline SHALL be the time seen up to that the server held when the page was opened, and SHALL not change while the page stays open.
 
 #### Scenario: New item
 - **WHEN** the receiver added an item after the Santa last looked
@@ -64,7 +64,7 @@ On the Gifter page's wishlist tab an item created after the baseline SHALL show 
 - **THEN** every item is marked "New"
 
 ### Requirement: New answers are marked
-On the Gifter page's questions tab a question whose answer was given or changed after the baseline SHALL show a "New" pill beside the time of the answer, and its card SHALL have the accent bar, in the theme's tertiary colour. Unanswered questions and answers seen before SHALL look as they do now.
+On the questions page, pane or column of the Gifter side a question whose answer was given or changed after the baseline SHALL show a "New" pill beside the time of the answer, and its card SHALL have the accent bar, in the theme's tertiary colour. Unanswered questions and answers seen before SHALL look as they do now.
 
 #### Scenario: New answer
 - **WHEN** the receiver answered a question after the Santa last looked
@@ -90,7 +90,7 @@ On the Inbox page a letter sent after the baseline SHALL show a "New" pill besid
 - **THEN** it has no pill and no bar
 
 ### Requirement: Looking clears the marks for the next time
-When a page, or a tab of the Gifter page, has been shown with its list loaded, the app SHALL tell the server the newest time it showed, so that the next time the page is opened nothing that was marked is marked again. The marks SHALL stay until the page is left. A tab SHALL be marked seen only when it is shown, not when the page opens on the other tab. Marking that fails SHALL change nothing on screen.
+When a page, a pane or a column has been shown with its list loaded, the app SHALL tell the server the newest time it showed, so that the next time it is opened nothing that was marked is marked again. The marks SHALL stay until it is left or closed. A page SHALL be marked seen only when it is shown, not when another page of the same group is. Marking that fails SHALL change nothing on screen.
 
 #### Scenario: Gone the next time
 - **WHEN** the Santa opens the Inbox with two new letters, leaves it and opens it again
@@ -101,7 +101,7 @@ When a page, or a tab of the Gifter page, has been shown with its list loaded, t
 - **THEN** the pills and bars stay
 
 #### Scenario: Only the shown tab
-- **WHEN** the Santa opens the Gifter page on its questions tab and never shows the wishlist tab
+- **WHEN** the Santa opens the questions page and never opens the receiver's wishlist
 - **THEN** the wishlist badge on the group page is unchanged
 
 #### Scenario: New things after looking

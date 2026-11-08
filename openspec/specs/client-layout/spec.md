@@ -66,7 +66,7 @@ Giving SHALL carry a badge with how much is new to the person as a Santa, the ne
 - **THEN** Receiving carries a badge with 2
 
 ### Requirement: Giving and Receiving side by side
-On a wide window the Giving item SHALL open one page that shows, side by side and each under its own heading, "<receiver username>'s Wishlist", "Questions for <receiver username>" and the Inbox, and the Receiving item one page that shows "Your Wishlist", "Respond to Secret Santa" and the Outbox. Each column SHALL scroll and reload by itself and SHALL keep a readable width, and when all of them cannot, the page SHALL scroll sideways. A Pending group's Receiving page SHALL show only the wishlist, at the standard width.
+On a wide window the sidebar's Giving item SHALL open one page that shows, side by side and each under its own heading, "<receiver username>'s Wishlist", "Questions for <receiver username>" and the Inbox, and the Receiving item one page that shows "Your Wishlist", "Respond to Secret Santa" and the Outbox. Each column SHALL scroll and reload by itself and SHALL keep a readable width, and when all of them cannot, the page SHALL scroll sideways. A Pending group's Receiving page SHALL show only the wishlist, at the standard width. Only the sidebar and the addresses `#/groups/{id}/giver` and `#/groups/{id}/receiver` open these pages: the group page's buttons open a pane.
 
 #### Scenario: Giving page
 - **WHEN** the person chooses Giving for a group whose receiver is `alice` on a wide window
@@ -86,7 +86,7 @@ On a wide window the Giving item SHALL open one page that shows, side by side an
 
 #### Scenario: Buttons to open the Inbox and the Outbox
 - **WHEN** the person chooses the Inbox or the "Send letter" button on a group's Overview on a wide window
-- **THEN** the Giving or the Receiving page is shown
+- **THEN** the Inbox or the Outbox opens in a pane beside the group page, as `client-group-panes` describes, and not the Giving or the Receiving page
 
 ### Requirement: The admin sidebar
 In the admin view the sidebar SHALL have a Groups item, with the administrator's own groups listed under it one to a line, a Users item and a Settings item, in that order, the Groups item and the Users and Settings items staying in view while the groups scroll. Choosing a group SHALL open it in place of the group that is shown, and the group that is open SHALL be shown as selected. The switch between the admin and participant views SHALL stay in the top bar.
