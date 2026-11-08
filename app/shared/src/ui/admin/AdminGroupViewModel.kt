@@ -82,21 +82,12 @@ class AdminGroupViewModel(
         if (canReadDraw || canReadPendingWishlists) _ui.update { it.copy(sheet = GroupSheet.User(username)) }
     }
 
-    fun openPairSheet(santa: String, receiver: String) {
-        if (canReadDraw) _ui.update { it.copy(sheet = GroupSheet.Pair(santa, receiver)) }
-    }
-
     fun openWishlistSheet(username: String) {
         if (canReadPendingWishlists) _ui.update { it.copy(sheet = GroupSheet.Wishlist(username)) }
     }
 
     /** The rules can be read in every state but Draft, and changed in a Pending group. */
     val canOpenRules: Boolean get() = current?.phase.let { it == AdminPhase.Pending || it == AdminPhase.Active || it == AdminPhase.Archived }
-
-    /** Shows the rules in the pane (or sheet) of this screen, for a window that has room for it. */
-    fun openRulesPane() {
-        if (canOpenRules) _ui.update { it.copy(sheet = GroupSheet.Rules, drawRefused = null) }
-    }
 
     /** The announcements can be read in every state but Draft, which has none. */
     val canOpenAnnouncements: Boolean get() = canOpenRules

@@ -191,12 +191,7 @@ class DrawRulesViewModelTest {
         for (state in listOf("pending", "active", "archived")) {
             val model = group(fake.add(state, state = state, participants = four))
             assertTrue(model.canOpenRules, state)
-            model.openRulesPane()
-            assertEquals(GroupSheet.Rules, model.ui.value.sheet, state)
         }
-        val draft = group(fake.add("Draft again"))
-        draft.openRulesPane()
-        assertNull(draft.ui.value.sheet)
     }
 
     @Test

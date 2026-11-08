@@ -26,6 +26,7 @@ class WebAddressesTest {
         AdminGroupEditRoute(2) to "#/admin/groups/2/edit",
         AdminGroupRulesRoute(2) to "#/admin/groups/2/rules",
         AdminAnnouncementsRoute(2) to "#/admin/groups/2/announcements",
+        AdminGroupPairRoute(2, "alice", "bob.b") to "#/admin/groups/2/pairs/alice/bob.b",
         AdminUsersRoute to "#/admin/users",
         AdminUserRoute("alice.b_c-1") to "#/admin/users/alice.b_c-1",
     )
@@ -68,7 +69,7 @@ class WebAddressesTest {
 
     @Test
     fun unknownAndOldFormAddressesNameNothing() {
-        for (a in listOf("", "#", "#/", "#/nope", "#/groups/x", "#/groups/2/other", "#/groups/2/wishlist", "#/groups/2/giver/questions/extra", "#/groups/2/receiver/questions/extra", "#/groups/2/questions", "#/groups/2/santa", "#/groups/2/outbox/extra", "#/groups/2/inbox/extra", "#/groups/2/announcements/extra", "#/admin/groups/2/announcements/extra", "#/groups/2/send-letter", "#/groups/2/gifter", "#/groups/2/gifter/questions", "#/groups/2/letters", "#/profile/x", "#/settings/extra", "#/admin", "#/admin/users/Al ice",
+        for (a in listOf("", "#", "#/", "#/nope", "#/groups/x", "#/groups/2/other", "#/groups/2/wishlist", "#/groups/2/giver/questions/extra", "#/groups/2/receiver/questions/extra", "#/groups/2/questions", "#/groups/2/santa", "#/groups/2/outbox/extra", "#/groups/2/inbox/extra", "#/groups/2/announcements/extra", "#/admin/groups/2/announcements/extra", "#/admin/groups/2/pairs", "#/admin/groups/2/pairs/alice", "#/admin/groups/2/pairs/alice/bob/extra", "#/admin/groups/2/pairs/Al ice/bob", "#/groups/2/send-letter", "#/groups/2/gifter", "#/groups/2/gifter/questions", "#/groups/2/letters", "#/profile/x", "#/settings/extra", "#/admin", "#/admin/users/Al ice",
             "#com.usuallycoding.opensecretsanta.ui.navigation.GroupRoute/2")) {
             assertNull(WebAddresses.routeOf(a, true), a)
         }

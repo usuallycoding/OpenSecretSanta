@@ -172,7 +172,7 @@ class AdminOversightViewModelTest {
     // --- the sheets on the group's detail ------------------------------------------------------------
 
     @Test
-    fun aDrawnGroupOpensAUserSheetAndAPairSheetOneAtATime() = runTest {
+    fun aDrawnGroupOpensAUserSheetAndDismissesIt() = runTest {
         val id = groups.add("Party", "active", listOf("alice", "bob"))
         oversight.draw(id, "alice" to "bob", "bob" to "alice")
         val model = group(id)
@@ -180,19 +180,13 @@ class AdminOversightViewModelTest {
         model.openUserSheet("alice")
         assertEquals(GroupSheet.User("alice"), model.ui.value.sheet)
 
-        model.openPairSheet("alice", "bob")
-        assertEquals(GroupSheet.Pair("alice", "bob"), model.ui.value.sheet)
-
         model.dismissSheet()
         assertNull(model.ui.value.sheet)
     }
 
     @Test
-    fun aPendingGroupOpensTheUserSheetAndTheWishlistSheetButNoPairSheet() = runTest {
+    fun aPendingGroupOpensTheUserSheetAndTheWishlistSheet() = runTest {
         val model = group(groups.add("Soon", "pending", listOf("alice", "bob")))
-
-        model.openPairSheet("alice", "bob")
-        assertNull(model.ui.value.sheet)
 
         model.openUserSheet("alice")
         assertEquals(GroupSheet.User("alice"), model.ui.value.sheet)

@@ -55,6 +55,7 @@ import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.load.PullPage
 import com.usuallycoding.opensecretsanta.ui.load.LoadSection
 import com.usuallycoding.opensecretsanta.ui.form.GiftIcon
+import com.usuallycoding.opensecretsanta.ui.navigation.AdminPane
 import com.usuallycoding.opensecretsanta.ui.form.ParticipantChip
 import com.usuallycoding.opensecretsanta.ui.form.ParticipantChips
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
@@ -77,11 +78,10 @@ fun AdminGroupScreen(
     viewModel: AdminGroupViewModel,
     onBack: () -> Unit,
     onEdit: () -> Unit,
-    onRules: () -> Unit,
-    onAnnouncements: () -> Unit,
+    onOpenPane: (AdminPane) -> Unit,
+    onClosePane: () -> Unit,
     onDeleted: () -> Unit,
-    announcementsOpen: Boolean = false,
-    onCloseAnnouncements: () -> Unit = {},
+    pane: AdminPane? = null,
 ) {
     val state by viewModel.data.collectAsState()
     val draw by viewModel.draw.collectAsState()
@@ -109,9 +109,19 @@ fun AdminGroupScreen(
     }
     // on a wide window a participant's wishlist and a pair open in a pane beside the page, which keeps its place
     val wide = LocalWideLayout.current
-    val pane = if (wide) ui.sheet?.takeIf { it.opensInPane() } else null
+    val statePane = if (wide) ui.sheet?.takeIf { it.opensInPane() } else null
+    // the rules, a pair and the announcements are the route's pane; a group that has none of them gives the group's page
+    val paneAllowed = pane?.within(state.value?.phase, draw)
+    LaunchedEffect(pane, paneAllowed) { if (pane != null && paneAllowed == false) onClosePane() }
+    val routePane = pane?.takeIf { wide && paneAllowed == true }
+    // a pane opens in place of the other kind: the route's by a participant's wishlist, the wishlist's by the route's
+    LaunchedEffect(statePane) { if (statePane != null && pane != null) onClosePane() }
+    val openPane: (AdminPane) -> Unit = { to ->
+        if (ui.sheet?.opensInPane() == true) viewModel.dismissSheet()
+        onOpenPane(to)
+    }
     // with a pane open the page and the pane share the width equally
-    val paneOpen = pane != null || (wide && announcementsOpen && viewModel.canOpenAnnouncements)
+    val paneOpen = statePane != null || routePane != null
     Row(Modifier.fillMaxSize()) {
         Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
             Box((if (paneOpen) Modifier else Modifier.widthIn(max = STANDARD_CONTENT_WIDTH)).fillMaxSize()) {
@@ -143,7 +153,7 @@ fun AdminGroupScreen(
                     ui.drawRefused?.let { message ->
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Text(message, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-                            TextButton(onClick = { viewModel.dismissDrawRefused(); if (wide) viewModel.openRulesPane() else onRules() }) { Text(Strings.RULES_OPEN) }
+                            TextButton(onClick = { viewModel.dismissDrawRefused(); openPane(AdminPane.Rules) }) { Text(Strings.RULES_OPEN) }
                             TextButton(onClick = viewModel::dismissDrawRefused) { Text(Strings.OK) }
                         }
                     }
@@ -151,24 +161,26 @@ fun AdminGroupScreen(
                         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Header(
                                 group, viewModel, ui.busy, onEdit,
-                                onRules = { if (wide) viewModel.openRulesPane() else onRules() },
+                                onRules = { openPane(AdminPane.Rules) },
                                 // a pane that is open gives way: the announcements are shown in its place
-                                onMessages = { viewModel.dismissSheet(); onAnnouncements() },
+                                onMessages = { openPane(AdminPane.Announcements) },
                             ) { announcing = true }
-                            People(group, viewModel, draw)
+                            People(group, viewModel, draw, onPair = { openPane(AdminPane.Pair(it.santa, it.receiver)) })
                         }
                     }
                 }
             }
         }
-        if (pane != null) {
+        if (statePane != null) {
             VerticalDivider()
-            GroupPane(pane, viewModel.groupId, viewModel.me, draw, onDismiss = viewModel::dismissSheet, modifier = Modifier.weight(1f).fillMaxHeight())
-        } else if (wide && announcementsOpen && viewModel.canOpenAnnouncements) {
-            // the address names the announcements, so the pane is the route's; a pane above (rules, a wishlist) shows first and gives way when closed
+            GroupPane(statePane, viewModel.groupId, viewModel.me, draw, onDismiss = viewModel::dismissSheet, modifier = Modifier.weight(1f).fillMaxHeight())
+        } else if (routePane == AdminPane.Announcements) {
             VerticalDivider()
             val announcements = koinViewModel<AnnouncementsViewModel>(key = "announcements-${viewModel.groupId}-owner") { parametersOf(viewModel.groupId, true) }
-            AnnouncementsPane(announcements, onClose = onCloseAnnouncements, modifier = Modifier.weight(1f).fillMaxHeight())
+            AnnouncementsPane(announcements, onClose = onClosePane, modifier = Modifier.weight(1f).fillMaxHeight())
+        } else if (routePane != null) {
+            VerticalDivider()
+            AdminPaneContent(routePane, viewModel.groupId, viewModel.me, draw, onClose = onClosePane, modifier = Modifier.weight(1f).fillMaxHeight())
         }
     }
     ui.participants?.let { ParticipantsSheet(it, viewModel) }
@@ -180,7 +192,7 @@ fun AdminGroupScreen(
             announceKey++
         }
     }
-    ui.sheet?.takeIf { pane == null || !it.opensInPane() }?.let { GroupSheetHost(it, viewModel.groupId, viewModel.me, draw, viewModel::dismissSheet) }
+    ui.sheet?.takeIf { statePane == null || !it.opensInPane() }?.let { GroupSheetHost(it, viewModel.groupId, viewModel.me, draw, viewModel::dismissSheet) }
     ui.confirming?.let { step -> StepDialog(step, state.value?.name.orEmpty(), viewModel) }
     ui.confirmingDelete?.let { impact -> DeleteImpactDialog(impact, viewModel) }
     ui.passwords?.let { passwords ->
@@ -262,7 +274,7 @@ private fun Header(group: AdminGroup, viewModel: AdminGroupViewModel, busy: Bool
 
 /** Who takes part, at the end of the page: the participants, or once drawn the pairs. */
 @Composable
-private fun ColumnScope.People(group: AdminGroup, viewModel: AdminGroupViewModel, draw: DrawState) {
+private fun ColumnScope.People(group: AdminGroup, viewModel: AdminGroupViewModel, draw: DrawState, onPair: (AdminPair) -> Unit) {
     if (viewModel.canReadDraw) {
         if ((draw as? DrawState.Pairs)?.pairs?.isNotEmpty() == true) ParticipantSearchField(viewModel)
         PairList(
@@ -271,7 +283,7 @@ private fun ColumnScope.People(group: AdminGroup, viewModel: AdminGroupViewModel
             markCounts(group.participants, draft = false),
             onRetry = { viewModel.refresh() },
             onUser = viewModel::openUserSheet,
-            onPair = { viewModel.openPairSheet(it.santa, it.receiver) },
+            onPair = onPair,
         )
         return
     }

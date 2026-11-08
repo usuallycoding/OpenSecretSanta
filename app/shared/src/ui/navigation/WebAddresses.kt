@@ -26,6 +26,7 @@ object WebAddresses {
         is AdminGroupEditRoute -> "#/admin/groups/${route.id}/edit"
         is AdminGroupRulesRoute -> "#/admin/groups/${route.id}/rules"
         is AdminAnnouncementsRoute -> "#/admin/groups/${route.id}/announcements"
+        is AdminGroupPairRoute -> "#/admin/groups/${route.id}/pairs/${route.santa}/${route.receiver}"
         AdminUsersRoute -> "#/admin/users"
         is AdminUserRoute -> "#/admin/users/${route.username}"
         else -> null
@@ -70,6 +71,8 @@ object WebAddresses {
                     parts.size == 3 && parts[2] == "edit" -> AdminGroupEditRoute(id)
                     parts.size == 3 && parts[2] == "rules" -> AdminGroupRulesRoute(id)
                     parts.size == 3 && parts[2] == "announcements" -> AdminAnnouncementsRoute(id)
+                    parts.size == 5 && parts[2] == "pairs" && USERNAME.matches(parts[3]) && USERNAME.matches(parts[4]) ->
+                        AdminGroupPairRoute(id, parts[3], parts[4])
                     else -> null
                 }
             }
@@ -97,8 +100,7 @@ object WebAddresses {
             d.hasRoute<AdminGroupNewRoute>() -> AdminGroupNewRoute
             d.hasRoute<AdminGroupRoute>() -> entry.toRoute<AdminGroupRoute>()
             d.hasRoute<AdminGroupEditRoute>() -> entry.toRoute<AdminGroupEditRoute>()
-            d.hasRoute<AdminGroupRulesRoute>() -> entry.toRoute<AdminGroupRulesRoute>()
-            d.hasRoute<AdminAnnouncementsRoute>() -> entry.toRoute<AdminAnnouncementsRoute>()
+            d.isAdminPane() -> entry.adminPaneRoute() ?: return null
             d.hasRoute<AdminUsersRoute>() -> AdminUsersRoute
             d.hasRoute<AdminUserRoute>() -> entry.toRoute<AdminUserRoute>()
             else -> return null
@@ -110,4 +112,4 @@ object WebAddresses {
 /** Whether a screen belongs to the admin view. */
 fun NavDestination.isAdminScreen(): Boolean =
     hasRoute<AdminGroupsRoute>() || hasRoute<AdminGroupNewRoute>() || hasRoute<AdminGroupRoute>() ||
-        hasRoute<AdminGroupEditRoute>() || hasRoute<AdminGroupRulesRoute>() || hasRoute<AdminAnnouncementsRoute>() || hasRoute<AdminUsersRoute>() || hasRoute<AdminUserRoute>()
+        hasRoute<AdminGroupEditRoute>() || isAdminPane() || hasRoute<AdminUsersRoute>() || hasRoute<AdminUserRoute>()

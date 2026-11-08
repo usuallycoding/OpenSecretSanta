@@ -42,7 +42,9 @@ import com.usuallycoding.opensecretsanta.ui.groups.groupPhase
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupsViewModel
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupEditRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupNewRoute
-import com.usuallycoding.opensecretsanta.ui.navigation.AdminAnnouncementsRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.adminGroupIdOfPane
+import com.usuallycoding.opensecretsanta.ui.navigation.adminPaneRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.isAdminPane
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AnnouncementsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminUserRoute
@@ -150,7 +152,7 @@ private fun OpenGroup(navController: NavController, group: GroupRow, current: An
 private fun NavBackStackEntry.adminGroupId(): Long? = when {
     destination.hasRoute<AdminGroupRoute>() -> toRoute<AdminGroupRoute>().id
     destination.hasRoute<AdminGroupEditRoute>() -> toRoute<AdminGroupEditRoute>().id
-    destination.hasRoute<AdminAnnouncementsRoute>() -> toRoute<AdminAnnouncementsRoute>().id
+    destination.isAdminPane() -> adminPaneRoute()?.let(::adminGroupIdOfPane)
     else -> null
 }
 

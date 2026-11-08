@@ -73,8 +73,8 @@ import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupFormScreen
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupFormViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupScreen
-import com.usuallycoding.opensecretsanta.ui.admin.DrawRulesScreen
-import com.usuallycoding.opensecretsanta.ui.admin.rulesViewModel
+import com.usuallycoding.opensecretsanta.ui.admin.AdminPanePage
+import androidx.compose.material3.CircularProgressIndicator
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupsViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupsScreen
@@ -94,7 +94,13 @@ import com.usuallycoding.opensecretsanta.ui.announcements.AnnouncementsViewModel
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminAnnouncementsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AnnouncementsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupPairRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupRulesRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.AdminPane
+import com.usuallycoding.opensecretsanta.ui.navigation.adminPaneOf
+import com.usuallycoding.opensecretsanta.ui.navigation.closeAdminPane
+import com.usuallycoding.opensecretsanta.ui.navigation.isAdminPane
+import com.usuallycoding.opensecretsanta.ui.navigation.openAdminPane
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminUserRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminUsersRoute
@@ -244,7 +250,7 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
         ) { padding ->
             // On a wide window the content keeps one readable width beside the sidebar; the pages that lay out columns of their own use all of it
             val spread = wide && destination?.let {
-                it.hasRoute<AdminGroupRoute>() || it.hasRoute<AdminAnnouncementsRoute>() || it.hasRoute<GroupRoute>() || it.isGroupPane() || it.hasRoute<GifterRoute>() || it.hasRoute<ReceiverRoute>()
+                it.hasRoute<AdminGroupRoute>() || it.isAdminPane() || it.hasRoute<GroupRoute>() || it.isGroupPane() || it.hasRoute<GifterRoute>() || it.hasRoute<ReceiverRoute>()
             } == true
             Column(Modifier.fillMaxSize().padding(padding)) {
             val handedOverTo by viewModel.handedOverTo.collectAsState()
@@ -365,35 +371,17 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                             )
                         }
                         composable<AdminGroupRoute> { entry ->
-                            AdminGroupEntry(navController, viewModel.account.username, entry.toRoute<AdminGroupRoute>().id, announcementsOpen = false)
+                            AdminGroupEntry(navController, viewModel.account.username, entry.toRoute<AdminGroupRoute>().id, null)
                         }
                         composable<AdminAnnouncementsRoute> { entry ->
-                            val groupId = entry.toRoute<AdminAnnouncementsRoute>().id
-                            if (wide) {
-                                // there is room for the pane: the group's page with the announcements beside it, at the announcements' address
-                                AdminGroupEntry(navController, viewModel.account.username, groupId, announcementsOpen = true)
-                            } else {
-                                AnnouncementsPage(
-                                    koinViewModel<AnnouncementsViewModel>(key = "announcements-$groupId-owner") { parametersOf(groupId, true) },
-                                    onBack = { navController.popBackStack() },
-                                )
-                            }
+                            AdminPaneEntry(navController, viewModel.account.username, wide, AdminPane.Announcements, entry.toRoute<AdminAnnouncementsRoute>().id) { pageTitle = it }
                         }
                         composable<AdminGroupRulesRoute> { entry ->
-                            val groupId = entry.toRoute<AdminGroupRulesRoute>().id
-                            if (LocalWideLayout.current) {
-                                // there is room for the pane: the rules show beside the group page, which this address opens
-                                val group = koinViewModel<AdminGroupViewModel>(key = "admin-group-$groupId") { parametersOf(groupId, viewModel.account.username) }
-                                LaunchedEffect(groupId) {
-                                    group.openRulesPane()
-                                    navController.navigate(AdminGroupRoute(groupId)) {
-                                        popUpTo<AdminGroupRulesRoute> { inclusive = true }
-                                        launchSingleTop = true
-                                    }
-                                }
-                            } else {
-                                DrawRulesScreen(rulesViewModel(groupId, viewModel.account.username))
-                            }
+                            AdminPaneEntry(navController, viewModel.account.username, wide, AdminPane.Rules, entry.toRoute<AdminGroupRulesRoute>().id) { pageTitle = it }
+                        }
+                        composable<AdminGroupPairRoute> { entry ->
+                            val route = entry.toRoute<AdminGroupPairRoute>()
+                            AdminPaneEntry(navController, viewModel.account.username, wide, AdminPane.Pair(route.santa, route.receiver), route.id) { pageTitle = it }
                         }
                         composable<AdminGroupEditRoute> { entry ->
                             val groupId = entry.toRoute<AdminGroupEditRoute>().id
@@ -426,7 +414,8 @@ private fun titleOf(view: AppView, destination: NavDestination?, pageTitle: Stri
     destination?.hasRoute<AdminUsersRoute>() == true -> Strings.ADMIN_TAB_USERS
     destination?.hasRoute<AdminGroupNewRoute>() == true -> Strings.ADMIN_NEW_GROUP
     destination?.hasRoute<AdminGroupEditRoute>() == true -> Strings.ADMIN_EDIT_GROUP
-    destination?.hasRoute<AdminGroupRulesRoute>() == true -> Strings.RULES_TITLE
+    destination?.hasRoute<AdminGroupRulesRoute>() == true -> if (wide) Strings.ADMIN_GROUP else Strings.RULES_TITLE
+    destination?.hasRoute<AdminGroupPairRoute>() == true -> if (wide) Strings.ADMIN_GROUP else pageTitle ?: Strings.ADMIN_GROUP
     destination?.hasRoute<AdminAnnouncementsRoute>() == true -> if (wide) Strings.ADMIN_GROUP else Strings.ANNOUNCEMENTS
     destination?.hasRoute<AdminGroupRoute>() == true -> Strings.ADMIN_GROUP
     view == AppView.Admin -> Strings.ADMIN_GROUPS
@@ -470,7 +459,7 @@ private fun NavDestination.belowGroups(): Boolean =
     hasRoute<GroupRoute>() || hasRoute<GifterRoute>() || hasRoute<ReceiverRoute>() || hasRoute<DeliveryInfoRoute>() || isGroupPane()
 
 private fun NavDestination.belowAdminGroups(): Boolean =
-    hasRoute<AdminGroupNewRoute>() || hasRoute<AdminGroupRoute>() || hasRoute<AdminGroupEditRoute>() || hasRoute<AdminGroupRulesRoute>() || hasRoute<AdminAnnouncementsRoute>() || hasRoute<AdminUserRoute>()
+    hasRoute<AdminGroupNewRoute>() || hasRoute<AdminGroupRoute>() || hasRoute<AdminGroupEditRoute>() || isAdminPane() || hasRoute<AdminUserRoute>()
 
 /** The admin view's tabs: the groups and the users the administrator manages, and the settings both views share. */
 @Composable
@@ -552,22 +541,39 @@ private fun PaneEntry(navController: NavController, me: String, wide: Boolean, p
     }
 }
 
-/** The owner's group screen, with the announcements in a pane beside it when [announcementsOpen]; see [GroupEntry]. */
+/** The owner's group screen, with [pane] beside it on a wide window; see [GroupEntry]. */
 @Composable
-private fun AdminGroupEntry(navController: NavController, me: String, groupId: Long, announcementsOpen: Boolean) {
+private fun AdminGroupEntry(navController: NavController, me: String, groupId: Long, pane: AdminPane?) {
     AdminGroupScreen(
         koinViewModel<AdminGroupViewModel>(key = "admin-group-$groupId") { parametersOf(groupId, me) },
         onBack = { navController.popBackStack() },
         onEdit = { navController.navigate(AdminGroupEditRoute(groupId)) },
-        onRules = { navController.navigate(AdminGroupRulesRoute(groupId)) },
-        onAnnouncements = { navController.navigate(AdminAnnouncementsRoute(groupId)) { launchSingleTop = true } },
+        onOpenPane = { to -> navController.openAdminPane(pane, groupId, to) },
+        onClosePane = { pane?.let { navController.closeAdminPane(it, groupId) } },
         onDeleted = { navController.popBackStack() },
-        announcementsOpen = announcementsOpen,
-        onCloseAnnouncements = {
-            navController.navigate(AdminGroupRoute(groupId)) {
-                popUpTo<AdminAnnouncementsRoute> { inclusive = true }
-                launchSingleTop = true
-            }
-        },
+        pane = pane,
     )
+}
+
+/**
+ * An owner's pane route: the group's screen with the pane beside it on a wide window, the pane's page on a narrow one. A group that has
+ * nothing to show for the pane, or a pair that is not in its draw, gives the group's screen instead, once that is known.
+ */
+@Composable
+private fun AdminPaneEntry(navController: NavController, me: String, wide: Boolean, pane: AdminPane, groupId: Long, onTitle: (String?) -> Unit) {
+    if (wide) {
+        AdminGroupEntry(navController, me, groupId, pane)
+        return
+    }
+    val group = koinViewModel<AdminGroupViewModel>(key = "admin-group-$groupId") { parametersOf(groupId, me) }
+    val state by group.data.collectAsState()
+    val draw by group.draw.collectAsState()
+    LaunchedEffect(group) { group.refresh() }
+    val allowed = pane.within(state.value?.phase, draw)
+    LaunchedEffect(allowed) { if (allowed == false) navController.closeAdminPane(pane, groupId) }
+    if (allowed == true) {
+        AdminPanePage(pane, groupId, me, draw, onBack = { navController.popBackStack() }, onTitle = onTitle)
+    } else {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+    }
 }

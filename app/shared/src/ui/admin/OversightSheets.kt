@@ -11,6 +11,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.widthIn
+import com.usuallycoding.opensecretsanta.ui.layout.ForwardOutsideScroll
+import com.usuallycoding.opensecretsanta.ui.layout.STANDARD_CONTENT_WIDTH
+import com.usuallycoding.opensecretsanta.ui.navigation.AdminPane
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -92,23 +96,21 @@ internal fun ColumnScope.PairList(draw: DrawState, query: String, counts: MarkCo
 internal fun GroupSheetHost(sheet: GroupSheet, groupId: Long, me: String, draw: DrawState, onDismiss: () -> Unit) {
     when (sheet) {
         is GroupSheet.User -> UserSheet(groupId, sheet.username, me, onDismiss)
-        is GroupSheet.Pair -> PairSheet(groupId, sheet.santa, sheet.receiver, pairSheetTitle(sheet, draw), onDismiss)
         is GroupSheet.Wishlist -> WishlistSheet(groupId, sheet.username, onDismiss)
-        is GroupSheet.Rules -> RulesSheet(groupId, me, onDismiss)
     }
 }
 
-/** The pair sheet's title: both names, with the marks the pair list shows next to them. */
-private fun pairSheetTitle(sheet: GroupSheet.Pair, draw: DrawState): AnnotatedString {
-    val pair = (draw as? DrawState.Pairs)?.pairs?.firstOrNull { it.santa == sheet.santa && it.receiver == sheet.receiver }
+/** The pair's title: both names, with the marks the pair list shows next to them. */
+internal fun pairTitleOf(santa: String, receiver: String, draw: DrawState): AnnotatedString {
+    val pair = (draw as? DrawState.Pairs)?.pairs?.firstOrNull { it.santa == santa && it.receiver == receiver }
     return pairTitle(
-        markedText(sheet.santa, pair?.santaIsMe == true, pair?.santaMarks() ?: ParticipantMarks()),
-        markedText(sheet.receiver, pair?.receiverIsMe == true, pair?.receiverMarks() ?: ParticipantMarks(), marksBefore = true),
+        markedText(santa, pair?.santaIsMe == true, pair?.santaMarks() ?: ParticipantMarks()),
+        markedText(receiver, pair?.receiverIsMe == true, pair?.receiverMarks() ?: ParticipantMarks(), marksBefore = true),
     )
 }
 
 /** Whether [sheet] is shown in a pane beside the group page on a wide window, rather than in a dialog. */
-internal fun GroupSheet.opensInPane(): Boolean = this is GroupSheet.Wishlist || this is GroupSheet.Pair || this is GroupSheet.Rules
+internal fun GroupSheet.opensInPane(): Boolean = this is GroupSheet.Wishlist
 
 /** The pane beside the group page on a wide window, for the sheets that [opensInPane]. */
 @Composable
@@ -116,8 +118,6 @@ internal fun GroupPane(sheet: GroupSheet, groupId: Long, me: String, draw: DrawS
     PaneFrame(onDismiss, modifier) {
         when (sheet) {
             is GroupSheet.Wishlist -> WishlistContent(groupId, sheet.username, onDismiss)
-            is GroupSheet.Pair -> PairContent(groupId, sheet.santa, sheet.receiver, pairSheetTitle(sheet, draw), onDismiss)
-            is GroupSheet.Rules -> RulesContent(rulesViewModel(groupId, me))
             is GroupSheet.User -> Unit
         }
     }
@@ -212,12 +212,7 @@ private fun DeliveryInfoPart(state: LoadState<OversightDeliveryInfo>, onRetry: (
 
 /** The receiver's wishlist and what the Santa asked them, read-only. Each part loads, fails and retries on its own. */
 @Composable
-private fun PairSheet(groupId: Long, santa: String, receiver: String, title: AnnotatedString, onDismiss: () -> Unit) {
-    SheetFrame(onDismiss) { PairContent(groupId, santa, receiver, title, onDismiss) }
-}
-
-@Composable
-private fun PairContent(groupId: Long, santa: String, receiver: String, title: AnnotatedString, onDismiss: () -> Unit) {
+internal fun PairContent(groupId: Long, santa: String, receiver: String, title: AnnotatedString, onDismiss: () -> Unit) {
     val wishlist = koinViewModel<AdminParticipantWishlistViewModel>(key = "admin-wishlist-$groupId-$receiver") { parametersOf(groupId, receiver) }
     val thread = koinViewModel<AdminPairThreadViewModel>(key = "admin-thread-$groupId-$santa-$receiver") { parametersOf(groupId, santa, receiver) }
     // the letters of every pair of the group are one request; the sheet shows the chosen pair's receiver's
@@ -334,12 +329,29 @@ private fun ThreadQuestions(thread: PairThread) {
 internal fun rulesViewModel(groupId: Long, me: String): DrawRulesViewModel =
     koinViewModel<DrawRulesViewModel>(key = "admin-rules-$groupId") { parametersOf(groupId, me) }
 
-/** The rules in a sheet, for a window with no room for the pane. */
+/** The pane beside the group page for a route's [pane] that is the rules or a pair; the announcements have a pane of their own. */
 @Composable
-private fun RulesSheet(groupId: Long, me: String, onDismiss: () -> Unit) {
-    AppBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp)) {
-            RulesContent(rulesViewModel(groupId, me))
+internal fun AdminPaneContent(pane: AdminPane, groupId: Long, me: String, draw: DrawState, onClose: () -> Unit, modifier: Modifier = Modifier) {
+    PaneFrame(onClose, modifier) {
+        when (pane) {
+            AdminPane.Rules -> RulesContent(rulesViewModel(groupId, me))
+            is AdminPane.Pair -> PairContent(groupId, pane.santa, pane.receiver, pairTitleOf(pane.santa, pane.receiver, draw), onClose)
+            AdminPane.Announcements -> Unit
+        }
+    }
+}
+
+/** A pair as a page of its own, on a narrow window: the same content, scrolling, at the standard width. */
+@Composable
+internal fun PairPage(groupId: Long, santa: String, receiver: String, draw: DrawState, onBack: () -> Unit) {
+    val scroll = rememberScrollState()
+    ForwardOutsideScroll(scroll)
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        Column(
+            Modifier.widthIn(max = STANDARD_CONTENT_WIDTH).fillMaxSize().verticalScroll(scroll).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            PairContent(groupId, santa, receiver, pairTitleOf(santa, receiver, draw), onBack)
         }
     }
 }

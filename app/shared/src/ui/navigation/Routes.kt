@@ -87,6 +87,10 @@ data class AdminGroupEditRoute(val id: Long)
 @Serializable
 data class AdminGroupRulesRoute(val id: Long)
 
+/** One pair of the owner's drawn group, as a page on a narrow window and a pane beside the group's page on a wide one. */
+@Serializable
+data class AdminGroupPairRoute(val id: Long, val santa: String, val receiver: String)
+
 /** The Announcements page for the group's owner, who reads the announcements from the admin overview; on a wide window they open in a pane there. */
 @Serializable
 data class AdminAnnouncementsRoute(val id: Long)
