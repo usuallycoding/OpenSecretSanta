@@ -144,7 +144,7 @@ A notification that arrives SHALL be shown by the system with the app's name and
 - **THEN** the screen says the group is no longer available and offers the way back
 
 ### Requirement: Tapping a notification opens its screen
-Tapping a notification SHALL open the screen it is about with the group list and the group's page behind it: a question from the person's Santa opens the Receiver page on its questions tab, an answer from the person's receiver opens the Gifter page on its questions tab, a change to the receiver's wishlist opens the Gifter page on its wishlist tab, a letter from the person's receiver opens the Inbox page, an announcement the owner sent opens the Group Notifications page, and any other notification, or one with no known category, opens the group's page.
+Tapping a notification SHALL open the screen it is about with the group list and the group's page behind it: a question from the person's Santa opens the Receiver page on its questions tab, an answer from the person's receiver opens the Gifter page on its questions tab, a change to the receiver's wishlist opens the Gifter page on its wishlist tab, a letter from the person's receiver opens the Inbox page, an announcement the owner sent opens the Announcements page, and any other notification, or one with no known category, opens the group's page.
 
 #### Scenario: A letter
 - **WHEN** a person taps the notification of a letter from their receiver
@@ -156,11 +156,11 @@ Tapping a notification SHALL open the screen it is about with the group list and
 
 #### Scenario: An announcement from the owner
 - **WHEN** a person taps the notification of an announcement the owner sent
-- **THEN** the screens, from the bottom, are the group list, the group's page and the Group Notifications page, and on a wide window the group's page with the Group Notifications pane open
+- **THEN** the screens, from the bottom, are the group list, the group's page and the Announcements page, and on a wide window the group's page with the Announcements pane open
 
 #### Scenario: Added to a group, or the names drawn
 - **WHEN** a person taps the notification that they were added to a group, or that the names were drawn
-- **THEN** the group's page opens, not the Group Notifications page
+- **THEN** the group's page opens, not the Announcements page
 
 ### Requirement: A notification about a group that is not available
 When the group a tapped notification is about is not available to the person, the screen SHALL say so and offer the way back.

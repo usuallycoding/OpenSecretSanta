@@ -387,7 +387,7 @@ When no participant or pair matches, the page SHALL say so in place of the list 
 - **THEN** it has a control that empties it and shows everyone again
 
 ### Requirement: Admin group details are shown in a card
-On the admin group screen the group's name SHALL be centered horizontally, the group's description SHALL be shown in a card of its own above the card, and the date and time, location and budget in the card, with the same icons, as `client-groups` describes for the group page, below the name and the state with its note. The card SHALL always be shown, with `TBD` in place of a value the group does not have, and, outside a Draft group, SHALL have the Group Notifications icon at its end. The actions of the group (edit, announce, the next step and delete) SHALL be below the card and SHALL NOT be in it.
+On the admin group screen the group's name SHALL be centered horizontally, the group's description SHALL be shown in a card of its own above the card, and the date and time, location and budget in the card, with the same icons, as `client-groups` describes for the group page, below the name and the state with its note. The card SHALL always be shown, with `TBD` in place of a value the group does not have, and, outside a Draft group, SHALL have the Announcements icon at its end. The actions of the group (edit, announce, the next step and delete) SHALL be below the card and SHALL NOT be in it.
 
 #### Scenario: Details in the card
 - **WHEN** an administrator opens a group that has a description, a date and time, a location and a budget
@@ -403,7 +403,7 @@ On the admin group screen the group's name SHALL be centered horizontally, the g
 
 #### Scenario: The messages icon
 - **WHEN** the owner opens a Pending, an Active or an Archived group
-- **THEN** the card has the Group Notifications icon at its end, and a Draft group's card has none
+- **THEN** the card has the Announcements icon at its end, and a Draft group's card has none
 
 ### Requirement: Who takes part depends on the state
 For a Draft group who takes part SHALL be the participants as chips; for a Pending group the participants as rows; for an Active or Archived group the pair list of `client-admin-oversight`, which replaces the participants list. The chips of a Draft group SHALL wrap onto as many lines as needed and SHALL NOT be tappable.
