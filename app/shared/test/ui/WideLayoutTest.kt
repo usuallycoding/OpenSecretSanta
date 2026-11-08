@@ -6,9 +6,7 @@ import com.usuallycoding.opensecretsanta.ui.layout.isWide
 import com.usuallycoding.opensecretsanta.ui.navigation.GifterRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.GroupRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.GroupsRoute
-import com.usuallycoding.opensecretsanta.ui.navigation.InboxRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.ReceiverRoute
-import com.usuallycoding.opensecretsanta.ui.navigation.SendLetterRoute
 import com.usuallycoding.opensecretsanta.ui.readmarks.UnreadCounts
 import com.usuallycoding.opensecretsanta.ui.shell.groupItems
 import com.usuallycoding.opensecretsanta.ui.shell.holds
@@ -90,15 +88,24 @@ class WideLayoutTest {
     }
 
     @Test
-    fun theLettersPagesBelongToGivingAndReceiving() {
+    fun theThreeColumnPagesBelongToGivingAndReceivingAndTheGroupToItsOverview() {
         val (overview, giving, receiving) = groupItems(7, GroupPhase.Active, null, 0)
 
-        assertTrue(giving.holds(GifterRoute(7, questions = true)))
-        assertTrue(giving.holds(InboxRoute(7)))
+        assertTrue(giving.holds(GifterRoute(7)))
         assertTrue(receiving.holds(ReceiverRoute(7)))
-        assertTrue(receiving.holds(SendLetterRoute(7)))
         assertTrue(overview.holds(GroupRoute(7)))
-        assertFalse(giving.holds(SendLetterRoute(7)))
+        assertFalse(giving.holds(ReceiverRoute(7)))
+        assertFalse(receiving.holds(GifterRoute(7)))
         assertFalse(overview.holds(GroupsRoute))
+    }
+
+    @Test
+    fun aPanesRouteIsNotHeldByGivingOrReceivingBecauseTheSidebarMapsItToTheOverview() {
+        val (_, giving, receiving) = groupItems(7, GroupPhase.Active, null, 0)
+
+        for (pane in com.usuallycoding.opensecretsanta.ui.navigation.GroupPane.entries) {
+            assertFalse(giving.holds(pane.route(7)), pane.name)
+            assertFalse(receiving.holds(pane.route(7)), pane.name)
+        }
     }
 }

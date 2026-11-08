@@ -1,6 +1,7 @@
 package com.usuallycoding.opensecretsanta.ui
 
 import com.usuallycoding.opensecretsanta.ui.navigation.GifterRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.GroupPane
 import com.usuallycoding.opensecretsanta.ui.navigation.GroupRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.LinkTarget
 import com.usuallycoding.opensecretsanta.ui.navigation.ReceiverRoute
@@ -17,11 +18,17 @@ class LinkTargetTest {
     }
 
     @Test
-    fun aGifterOrReceiverPageOpensWithTheGroupBehindIt() {
+    fun theGivingAndReceivingAddressesOpenWithTheGroupBehindThem() {
         assertEquals(listOf(GroupRoute(7), GifterRoute(7)), LinkTarget.routesOf("/groups/7/giver"))
-        assertEquals(listOf(GroupRoute(7), GifterRoute(7, questions = true)), LinkTarget.routesOf("/groups/7/giver/questions"))
         assertEquals(listOf(GroupRoute(7), ReceiverRoute(7)), LinkTarget.routesOf("/groups/7/receiver"))
-        assertEquals(listOf(GroupRoute(7), ReceiverRoute(7, questions = true)), LinkTarget.routesOf("/groups/7/receiver/questions"))
+    }
+
+    @Test
+    fun theSixPagesAndTheAnnouncementsOpenWithTheGroupBehindThem() {
+        for (pane in GroupPane.entries) {
+            assertEquals(listOf(GroupRoute(7), pane.route(7)), LinkTarget.routesOf("/groups/7/${pane.segment}"), pane.name)
+            assertEquals(listOf(GroupRoute(7), pane.route(7)), LinkTarget.routesOf("#/groups/7/${pane.segment}/"), pane.name)
+        }
     }
 
     @Test

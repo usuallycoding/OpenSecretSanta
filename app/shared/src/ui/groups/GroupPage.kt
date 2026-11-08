@@ -8,10 +8,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.VerticalDivider
-import com.usuallycoding.opensecretsanta.ui.announcements.AnnouncementsPane
-import com.usuallycoding.opensecretsanta.ui.announcements.AnnouncementsViewModel
 import com.usuallycoding.opensecretsanta.ui.layout.LocalWideLayout
-import com.usuallycoding.opensecretsanta.ui.layout.PANE_WIDTH
+import com.usuallycoding.opensecretsanta.ui.navigation.GroupPane
 import com.usuallycoding.opensecretsanta.ui.layout.STANDARD_CONTENT_WIDTH
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +18,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,14 +51,11 @@ fun GroupPage(
     viewModel: GroupDetailViewModel,
     me: String,
     onBack: () -> Unit,
-    onOpenGifter: (questions: Boolean) -> Unit,
-    onOpenReceiver: (questions: Boolean) -> Unit,
-    onSendLetter: () -> Unit,
-    onOpenInbox: () -> Unit,
     onEditDeliveryInfo: () -> Unit,
-    onOpenAnnouncements: () -> Unit,
-    announcementsOpen: Boolean = false,
-    onCloseAnnouncements: () -> Unit = {},
+    onOpenPane: (GroupPane) -> Unit,
+    pane: GroupPane? = null,
+    onClosePane: () -> Unit = {},
+    onReplacePane: (GroupPane?) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     val phase = state.value?.phase
@@ -101,23 +97,30 @@ fun GroupPage(
     val asksForDeliveryInfo = showsDeliveryNudge(phase, myDetails?.details?.collectAsState()?.value)
     var sheet by remember { mutableStateOf<PairSheet?>(null) }
 
-    // on a wide window the announcements open in a pane beside the page, when the address is the announcements'; on a small screen they are a page
+    // on a wide window the page [pane] opens beside it, when the address is the pane's own; on a small screen the same is a page of its own
     val wide = LocalWideLayout.current
     val canOpenMessages = phase == GroupPhase.Pending || phase == GroupPhase.Active || phase == GroupPhase.Archived
-    val onOpenMessages: (() -> Unit)? = onOpenAnnouncements.takeIf { canOpenMessages }
+    val onOpenMessages: (() -> Unit)? = { onOpenPane(GroupPane.Announcements) }.takeIf { canOpenMessages }
+    // what a group in this phase has: a pane it has not is replaced by the one that stands in for it, or by the group's page
+    val shownPane = pane?.takeIf { phase != null && it.within(phase) == it }
+    LaunchedEffect(phase, pane) {
+        if (pane != null && phase != null && pane.within(phase) != pane) onReplacePane(pane.within(phase))
+    }
+    // with a pane open the page and the pane share the width equally
+    val paneOpen = wide && shownPane != null
     Row(Modifier.fillMaxSize()) {
         Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
-            Box(Modifier.widthIn(max = STANDARD_CONTENT_WIDTH).fillMaxSize()) {
+            Box((if (paneOpen) Modifier else Modifier.widthIn(max = STANDARD_CONTENT_WIDTH)).fillMaxSize()) {
                 PullPage(
                     loading = state.loading || receiver?.loading == true,
                     onRefresh = { viewModel.refresh(); pair?.refresh(); santaQuestions?.refresh(); myDetails?.refresh(); readMarks?.refresh() },
                 ) {
                     LoadSection(state, onRetry = { viewModel.refresh() }) { detail ->
                         val secretSanta: @Composable () -> Unit = {
-                            SecretSantaCard(detail.phase, receiver, unread, onRetry = { pair?.refresh() }, onOpenGifter, onOpenInbox, onSheet = { sheet = it })
+                            SecretSantaCard(detail.phase, receiver, unread, onRetry = { pair?.refresh() }, onOpenPane, onSheet = { sheet = it })
                         }
                         val yourStuff: @Composable () -> Unit = {
-                            YourStuffCard(detail.phase, unanswered, asksForDeliveryInfo, onOpenReceiver, onSendLetter, onSheet = { sheet = it })
+                            YourStuffCard(detail.phase, unanswered, asksForDeliveryInfo, onOpenPane, onSheet = { sheet = it })
                         }
                         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Header(detail, onOpenMessages)
@@ -129,10 +132,11 @@ fun GroupPage(
                 }
             }
         }
-        if (wide && announcementsOpen && canOpenMessages) {
+        if (paneOpen) {
             VerticalDivider()
-            val announcements = koinViewModel<AnnouncementsViewModel>(key = "announcements-${viewModel.groupId}-member") { parametersOf(viewModel.groupId, false) }
-            AnnouncementsPane(announcements, onClose = onCloseAnnouncements, modifier = Modifier.width(PANE_WIDTH).fillMaxHeight())
+            PaneFrame(paneTitleOf(shownPane, viewModel.groupId), onClose = onClosePane, modifier = Modifier.weight(1f).fillMaxHeight()) {
+                GroupPaneContent(shownPane, viewModel.groupId, onBack = onClosePane)
+            }
         }
     }
     val editable = state.value?.phase.let { it == GroupPhase.Pending || it == GroupPhase.Active }

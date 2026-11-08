@@ -1,7 +1,6 @@
 package com.usuallycoding.opensecretsanta.ui.admin
 
 import androidx.compose.foundation.layout.Arrangement
-import com.usuallycoding.opensecretsanta.ui.layout.PANE_WIDTH
 import com.usuallycoding.opensecretsanta.ui.layout.STANDARD_CONTENT_WIDTH
 import com.usuallycoding.opensecretsanta.ui.layout.LocalWideLayout
 import androidx.compose.material3.VerticalDivider
@@ -111,9 +110,11 @@ fun AdminGroupScreen(
     // on a wide window a participant's wishlist and a pair open in a pane beside the page, which keeps its place
     val wide = LocalWideLayout.current
     val pane = if (wide) ui.sheet?.takeIf { it.opensInPane() } else null
+    // with a pane open the page and the pane share the width equally
+    val paneOpen = pane != null || (wide && announcementsOpen && viewModel.canOpenAnnouncements)
     Row(Modifier.fillMaxSize()) {
         Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
-            Box(Modifier.widthIn(max = STANDARD_CONTENT_WIDTH).fillMaxSize()) {
+            Box((if (paneOpen) Modifier else Modifier.widthIn(max = STANDARD_CONTENT_WIDTH)).fillMaxSize()) {
                 // one page that scrolls as a whole (and can be pulled down to reload): notices, details, buttons, search and people
                 PullPage(loading = state.loading, onRefresh = { viewModel.refresh() }) {
                     ui.notice?.let { notice ->
@@ -162,12 +163,12 @@ fun AdminGroupScreen(
         }
         if (pane != null) {
             VerticalDivider()
-            GroupPane(pane, viewModel.groupId, viewModel.me, draw, onDismiss = viewModel::dismissSheet, modifier = Modifier.width(PANE_WIDTH).fillMaxHeight())
+            GroupPane(pane, viewModel.groupId, viewModel.me, draw, onDismiss = viewModel::dismissSheet, modifier = Modifier.weight(1f).fillMaxHeight())
         } else if (wide && announcementsOpen && viewModel.canOpenAnnouncements) {
             // the address names the announcements, so the pane is the route's; a pane above (rules, a wishlist) shows first and gives way when closed
             VerticalDivider()
             val announcements = koinViewModel<AnnouncementsViewModel>(key = "announcements-${viewModel.groupId}-owner") { parametersOf(viewModel.groupId, true) }
-            AnnouncementsPane(announcements, onClose = onCloseAnnouncements, modifier = Modifier.width(PANE_WIDTH).fillMaxHeight())
+            AnnouncementsPane(announcements, onClose = onCloseAnnouncements, modifier = Modifier.weight(1f).fillMaxHeight())
         }
     }
     ui.participants?.let { ParticipantsSheet(it, viewModel) }

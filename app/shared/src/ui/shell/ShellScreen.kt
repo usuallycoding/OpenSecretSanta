@@ -110,6 +110,21 @@ import com.usuallycoding.opensecretsanta.ui.navigation.GroupsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.DeliveryInfoRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.ReceiverRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.SettingsRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.isGroupPane
+import com.usuallycoding.opensecretsanta.ui.groups.GroupPaneRoute
+import com.usuallycoding.opensecretsanta.ui.groups.WithGroupPhase
+import com.usuallycoding.opensecretsanta.ui.groups.paneTitle
+import com.usuallycoding.opensecretsanta.ui.navigation.GifterQuestionsRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.GifterWishlistRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.GroupPane
+import com.usuallycoding.opensecretsanta.ui.navigation.ReceiverQuestionsRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.ReceiverWishlistRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.closePane
+import com.usuallycoding.opensecretsanta.ui.navigation.givingWithin
+import com.usuallycoding.opensecretsanta.ui.navigation.openPane
+import com.usuallycoding.opensecretsanta.ui.navigation.paneOf
+import com.usuallycoding.opensecretsanta.ui.navigation.paneRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.replacePane
 import com.usuallycoding.opensecretsanta.ui.navigation.isAdminScreen
 import com.usuallycoding.opensecretsanta.ui.delivery.DeliveryInfoScreen
 import com.usuallycoding.opensecretsanta.ui.delivery.DeliveryInfoViewModel
@@ -189,7 +204,7 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                         containerColor = Color.Transparent,
                         topBar = {
                             CenterAlignedTopAppBar(
-                                title = { Text(titleOf(view, destination, pageTitle, wide)) },
+                                title = { Text(titleOf(view, destination, pageTitle, wide, backEntry?.paneRoute()?.let(::paneOf))) },
                                 navigationIcon = {
                                     if (onGroup) {
                                         IconButton(onClick = { navController.popBackStack() }) {
@@ -229,7 +244,7 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
         ) { padding ->
             // On a wide window the content keeps one readable width beside the sidebar; the pages that lay out columns of their own use all of it
             val spread = wide && destination?.let {
-                it.hasRoute<AdminGroupRoute>() || it.hasRoute<AdminAnnouncementsRoute>() || it.hasRoute<GroupRoute>() || it.hasRoute<AnnouncementsRoute>() || it.hasRoute<GifterRoute>() || it.hasRoute<ReceiverRoute>()
+                it.hasRoute<AdminGroupRoute>() || it.hasRoute<AdminAnnouncementsRoute>() || it.hasRoute<GroupRoute>() || it.isGroupPane() || it.hasRoute<GifterRoute>() || it.hasRoute<ReceiverRoute>()
             } == true
             Column(Modifier.fillMaxSize().padding(padding)) {
             val handedOverTo by viewModel.handedOverTo.collectAsState()
@@ -251,58 +266,71 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                             GroupsScreen(groups, onOpen = { navController.navigate(GroupRoute(it)) })
                         }
                         composable<GroupRoute> { entry ->
-                            GroupEntry(navController, viewModel.account.username, wide, entry.toRoute<GroupRoute>().id, announcementsOpen = false)
+                            GroupEntry(navController, viewModel.account.username, entry.toRoute<GroupRoute>().id, pane = null)
                         }
+                        // each pane is a page of its own on a small screen and, beside the group's page, a pane on a wide window
                         composable<AnnouncementsRoute> { entry ->
-                            val groupId = entry.toRoute<AnnouncementsRoute>().groupId
-                            if (wide) {
-                                // there is room for the pane: the group's page with the announcements beside it, at the announcements' address
-                                GroupEntry(navController, viewModel.account.username, wide, groupId, announcementsOpen = true)
-                            } else {
-                                AnnouncementsPage(
-                                    koinViewModel<AnnouncementsViewModel>(key = "announcements-$groupId-member") { parametersOf(groupId, false) },
-                                    onBack = { navController.popBackStack() },
-                                )
-                            }
+                            PaneEntry(navController, viewModel.account.username, wide, GroupPane.Announcements, entry.toRoute<AnnouncementsRoute>().groupId) { pageTitle = it }
                         }
-                        composable<GifterRoute> { entry ->
-                            val route = entry.toRoute<GifterRoute>()
-                            val groupId = route.groupId
-                            GifterPage(
-                                koinViewModel<ReceiverWishlistViewModel>(key = "receiver-wishlist-$groupId") { parametersOf(groupId) },
-                                koinViewModel<ReceiverViewModel>(key = "receiver-$groupId") { parametersOf(groupId) },
-                                onBack = { navController.popBackStack() },
-                                onTitle = { pageTitle = it },
-                                tab = route.tab,
-                                inbox = if (wide) koinViewModel<InboxViewModel>(key = "inbox-$groupId") { parametersOf(groupId) } else null,
-                            )
+                        composable<GifterWishlistRoute> { entry ->
+                            PaneEntry(navController, viewModel.account.username, wide, GroupPane.GifterWishlist, entry.toRoute<GifterWishlistRoute>().groupId) { pageTitle = it }
                         }
-                        composable<ReceiverRoute> { entry ->
-                            val route = entry.toRoute<ReceiverRoute>()
-                            val groupId = route.groupId
-                            ReceiverPage(
-                                groupId,
-                                koinViewModel<WishlistViewModel>(key = "wishlist-$groupId") { parametersOf(groupId) },
-                                onBack = { navController.popBackStack() },
-                                onTitle = { pageTitle = it },
-                                tab = route.tab,
-                                letters = if (wide) koinViewModel<SendLetterViewModel>(key = "send-letter-$groupId") { parametersOf(groupId) } else null,
-                            )
-                        }
-                        composable<SendLetterRoute> { entry ->
-                            val groupId = entry.toRoute<SendLetterRoute>().groupId
-                            SendLetterScreen(
-                                koinViewModel<SendLetterViewModel>(key = "send-letter-$groupId") { parametersOf(groupId) },
-                                onBack = { navController.popBackStack() },
-                            )
+                        composable<GifterQuestionsRoute> { entry ->
+                            PaneEntry(navController, viewModel.account.username, wide, GroupPane.GifterQuestions, entry.toRoute<GifterQuestionsRoute>().groupId) { pageTitle = it }
                         }
                         composable<InboxRoute> { entry ->
-                            val groupId = entry.toRoute<InboxRoute>().groupId
-                            InboxScreen(
-                                koinViewModel<InboxViewModel>(key = "inbox-$groupId") { parametersOf(groupId) },
-                                onBack = { navController.popBackStack() },
-                                onTitle = { pageTitle = it },
-                            )
+                            PaneEntry(navController, viewModel.account.username, wide, GroupPane.Inbox, entry.toRoute<InboxRoute>().groupId) { pageTitle = it }
+                        }
+                        composable<ReceiverWishlistRoute> { entry ->
+                            PaneEntry(navController, viewModel.account.username, wide, GroupPane.ReceiverWishlist, entry.toRoute<ReceiverWishlistRoute>().groupId) { pageTitle = it }
+                        }
+                        composable<ReceiverQuestionsRoute> { entry ->
+                            PaneEntry(navController, viewModel.account.username, wide, GroupPane.ReceiverQuestions, entry.toRoute<ReceiverQuestionsRoute>().groupId) { pageTitle = it }
+                        }
+                        composable<SendLetterRoute> { entry ->
+                            PaneEntry(navController, viewModel.account.username, wide, GroupPane.Outbox, entry.toRoute<SendLetterRoute>().groupId) { pageTitle = it }
+                        }
+                        // the Giving and Receiving pages: three sections side by side on a wide window, the first of them on a small screen
+                        composable<GifterRoute> { entry ->
+                            val groupId = entry.toRoute<GifterRoute>().groupId
+                            if (wide) {
+                                WithGroupPhase(groupId, viewModel.account.username, onBack = { navController.popBackStack() }) { phase ->
+                                    if (givingWithin(phase)) {
+                                        GifterPage(
+                                            koinViewModel<ReceiverWishlistViewModel>(key = "receiver-wishlist-$groupId") { parametersOf(groupId) },
+                                            koinViewModel<ReceiverViewModel>(key = "receiver-$groupId") { parametersOf(groupId) },
+                                            koinViewModel<InboxViewModel>(key = "inbox-$groupId") { parametersOf(groupId) },
+                                            onBack = { navController.popBackStack() },
+                                            onTitle = { pageTitle = it },
+                                        )
+                                    } else {
+                                        // before the draw there is no receiver to give to
+                                        LaunchedEffect(phase) {
+                                            navController.navigate(GroupRoute(groupId)) { popUpTo<GifterRoute> { inclusive = true }; launchSingleTop = true }
+                                        }
+                                    }
+                                }
+                            } else {
+                                LaunchedEffect(groupId) {
+                                    navController.navigate(GifterWishlistRoute(groupId)) { popUpTo<GifterRoute> { inclusive = true }; launchSingleTop = true }
+                                }
+                            }
+                        }
+                        composable<ReceiverRoute> { entry ->
+                            val groupId = entry.toRoute<ReceiverRoute>().groupId
+                            if (wide) {
+                                ReceiverPage(
+                                    groupId,
+                                    koinViewModel<WishlistViewModel>(key = "wishlist-$groupId") { parametersOf(groupId) },
+                                    koinViewModel<SendLetterViewModel>(key = "send-letter-$groupId") { parametersOf(groupId) },
+                                    onBack = { navController.popBackStack() },
+                                    onTitle = { pageTitle = it },
+                                )
+                            } else {
+                                LaunchedEffect(groupId) {
+                                    navController.navigate(ReceiverWishlistRoute(groupId)) { popUpTo<ReceiverRoute> { inclusive = true }; launchSingleTop = true }
+                                }
+                            }
                         }
                         composable<DeliveryInfoRoute> { entry ->
                             val groupId = entry.toRoute<DeliveryInfoRoute>().groupId
@@ -388,7 +416,11 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
 
 
 /** The top bar's title; a wide window shows the announcements beside their group's page, so the page keeps its own title there. */
-private fun titleOf(view: AppView, destination: NavDestination?, pageTitle: String?, wide: Boolean): String = when {
+/**
+ * The top bar's title. A wide window shows a pane beside its group's page, so the page keeps its own title there; a small screen shows the
+ * [pane]'s page, titled by what it set, or by its title without the receiver's name until then.
+ */
+private fun titleOf(view: AppView, destination: NavDestination?, pageTitle: String?, wide: Boolean, pane: GroupPane?): String = when {
     destination?.hasRoute<SettingsRoute>() == true -> Strings.TITLE_SETTINGS
     destination?.hasRoute<AdminUserRoute>() == true -> Strings.ADMIN_USER
     destination?.hasRoute<AdminUsersRoute>() == true -> Strings.ADMIN_TAB_USERS
@@ -399,12 +431,10 @@ private fun titleOf(view: AppView, destination: NavDestination?, pageTitle: Stri
     destination?.hasRoute<AdminGroupRoute>() == true -> Strings.ADMIN_GROUP
     view == AppView.Admin -> Strings.ADMIN_GROUPS
     destination?.hasRoute<GroupRoute>() == true -> Strings.TITLE_GROUP
-    destination?.hasRoute<AnnouncementsRoute>() == true -> if (wide) Strings.TITLE_GROUP else Strings.ANNOUNCEMENTS
+    pane != null -> if (wide) Strings.TITLE_GROUP else pageTitle ?: paneTitle(pane, null)
     destination?.hasRoute<GifterRoute>() == true -> pageTitle ?: Strings.givingTo(null)
     destination?.hasRoute<ReceiverRoute>() == true -> pageTitle ?: Strings.TITLE_YOUR_WISHLIST
     destination?.hasRoute<DeliveryInfoRoute>() == true -> Strings.TITLE_DELIVERY_INFO
-    destination?.hasRoute<SendLetterRoute>() == true -> Strings.TITLE_SEND_LETTER
-    destination?.hasRoute<InboxRoute>() == true -> pageTitle ?: Strings.TITLE_INBOX
     else -> Strings.TITLE_GROUPS
 }
 
@@ -437,8 +467,7 @@ private fun NavDestination.ownView(): AppView? = when {
 }
 
 private fun NavDestination.belowGroups(): Boolean =
-    hasRoute<GroupRoute>() || hasRoute<GifterRoute>() || hasRoute<ReceiverRoute>() || hasRoute<DeliveryInfoRoute>() ||
-        hasRoute<SendLetterRoute>() || hasRoute<InboxRoute>() || hasRoute<AnnouncementsRoute>()
+    hasRoute<GroupRoute>() || hasRoute<GifterRoute>() || hasRoute<ReceiverRoute>() || hasRoute<DeliveryInfoRoute>() || isGroupPane()
 
 private fun NavDestination.belowAdminGroups(): Boolean =
     hasRoute<AdminGroupNewRoute>() || hasRoute<AdminGroupRoute>() || hasRoute<AdminGroupEditRoute>() || hasRoute<AdminGroupRulesRoute>() || hasRoute<AdminAnnouncementsRoute>() || hasRoute<AdminUserRoute>()
@@ -491,30 +520,36 @@ private fun Centered(content: @Composable () -> Unit) {
 }
 
 /**
- * A participant's group page. With [announcementsOpen], which is the announcements' own address, a wide window shows them in a pane
- * beside it; closing the pane goes back to the page's own address, whether the pane was opened from the page or by an address.
+ * A participant's group page. With a [pane], which is the pane's own address, a wide window shows that page beside it; closing the pane
+ * goes back to the page's own address, whether the pane was opened from the page or by an address, and opening another pane replaces it.
  */
 @Composable
-private fun GroupEntry(navController: NavController, me: String, wide: Boolean, groupId: Long, announcementsOpen: Boolean) {
+private fun GroupEntry(navController: NavController, me: String, groupId: Long, pane: GroupPane?) {
     GroupPage(
         koinViewModel<GroupDetailViewModel>(key = "group-$groupId") { parametersOf(groupId, me) },
         me = me,
         onBack = { navController.popBackStack() },
-        onOpenGifter = { questions -> navController.navigate(GifterRoute(groupId, questions)) },
-        onOpenReceiver = { questions -> navController.navigate(ReceiverRoute(groupId, questions)) },
-        // a wide window has the Inbox and the Outbox on the Giving and Receiving pages
-        onSendLetter = { navController.navigate(if (wide) ReceiverRoute(groupId) else SendLetterRoute(groupId)) },
-        onOpenInbox = { navController.navigate(if (wide) GifterRoute(groupId) else InboxRoute(groupId)) },
         onEditDeliveryInfo = { navController.navigate(DeliveryInfoRoute(groupId)) },
-        onOpenAnnouncements = { navController.navigate(AnnouncementsRoute(groupId)) { launchSingleTop = true } },
-        announcementsOpen = announcementsOpen,
-        onCloseAnnouncements = {
-            navController.navigate(GroupRoute(groupId)) {
-                popUpTo<AnnouncementsRoute> { inclusive = true }
-                launchSingleTop = true
-            }
-        },
+        onOpenPane = { navController.openPane(pane, groupId, it) },
+        pane = pane,
+        onClosePane = { pane?.let { navController.closePane(it, groupId) } },
+        onReplacePane = { to -> pane?.let { navController.replacePane(it, groupId, to) } },
     )
+}
+
+/** A pane's route: the group's page with the pane beside it on a wide window, the pane as a page of its own on a small screen. */
+@Composable
+private fun PaneEntry(navController: NavController, me: String, wide: Boolean, pane: GroupPane, groupId: Long, onTitle: (String?) -> Unit) {
+    if (wide) {
+        GroupEntry(navController, me, groupId, pane)
+    } else {
+        GroupPaneRoute(
+            pane, groupId, me,
+            onBack = { navController.popBackStack() },
+            onTitle = onTitle,
+            onReplace = { to -> navController.replacePane(pane, groupId, to) },
+        )
+    }
 }
 
 /** The owner's group screen, with the announcements in a pane beside it when [announcementsOpen]; see [GroupEntry]. */

@@ -56,6 +56,8 @@ import com.usuallycoding.opensecretsanta.ui.navigation.InboxRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.ReceiverRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.SendLetterRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.SettingsRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.groupIdOfPane
+import com.usuallycoding.opensecretsanta.ui.navigation.paneRoute
 import com.usuallycoding.opensecretsanta.ui.readmarks.ReadMarksViewModel
 import com.usuallycoding.opensecretsanta.ui.readmarks.known
 import org.koin.compose.viewmodel.koinViewModel
@@ -65,26 +67,20 @@ import org.koin.core.parameter.parametersOf
 private val SIDEBAR_WIDTH = 240.dp
 
 /** The group a screen of the participant view belongs to, or null for the lists and the Settings page. */
-internal fun NavBackStackEntry.openGroupId(): Long? = when {
+internal fun NavBackStackEntry.openGroupId(): Long? = paneRoute()?.let(::groupIdOfPane) ?: when {
     destination.hasRoute<GroupRoute>() -> toRoute<GroupRoute>().id
     destination.hasRoute<GifterRoute>() -> toRoute<GifterRoute>().groupId
     destination.hasRoute<ReceiverRoute>() -> toRoute<ReceiverRoute>().groupId
-    destination.hasRoute<SendLetterRoute>() -> toRoute<SendLetterRoute>().groupId
-    destination.hasRoute<InboxRoute>() -> toRoute<InboxRoute>().groupId
-    destination.hasRoute<AnnouncementsRoute>() -> toRoute<AnnouncementsRoute>().groupId
     destination.hasRoute<DeliveryInfoRoute>() -> toRoute<DeliveryInfoRoute>().groupId
     else -> null
 }
 
 /** The route a screen was opened with, as the sidebar's items name them, or null for a screen it has no item for. */
-internal fun NavBackStackEntry.sidebarRoute(): Any? = when {
+internal fun NavBackStackEntry.sidebarRoute(): Any? = paneRoute()?.let { GroupRoute(groupIdOfPane(it)!!) } ?: when {
+    // a pane is read from the group's overview, which stays the selected item
     destination.hasRoute<GroupRoute>() -> toRoute<GroupRoute>()
     destination.hasRoute<GifterRoute>() -> toRoute<GifterRoute>()
     destination.hasRoute<ReceiverRoute>() -> toRoute<ReceiverRoute>()
-    destination.hasRoute<SendLetterRoute>() -> toRoute<SendLetterRoute>()
-    destination.hasRoute<InboxRoute>() -> toRoute<InboxRoute>()
-    // the announcements are read from the group's overview, which stays the selected item
-    destination.hasRoute<AnnouncementsRoute>() -> GroupRoute(toRoute<AnnouncementsRoute>().groupId)
     destination.hasRoute<SettingsRoute>() -> SettingsRoute
     destination.hasRoute<GroupsRoute>() -> GroupsRoute
     destination.hasRoute<AdminGroupsRoute>() -> AdminGroupsRoute

@@ -46,16 +46,7 @@ internal fun WideColumns(titles: List<String>, column: @Composable (index: Int) 
                 // the column's floating button is a button at the end of its heading instead
                 val actions = remember { PageActionHost() }
                 Column((if (fits) Modifier.weight(1f) else Modifier.width(MIN_COLUMN_WIDTH)).fillMaxHeight()) {
-                    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(start = 16.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                        for (action in actions.actions) {
-                            TextButton(onClick = action.onClick) {
-                                Icon(action.icon, contentDescription = null)
-                                Spacer(Modifier.width(8.dp))
-                                Text(action.description)
-                            }
-                        }
-                    }
+                    ColumnHeading(title, actions.actions)
                     Box(Modifier.weight(1f).fillMaxWidth()) {
                         CompositionLocalProvider(LocalPageActions provides actions) { column(index) }
                     }

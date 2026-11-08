@@ -167,7 +167,8 @@ object Strings {
     const val NO_ANNOUNCEMENTS = "No announcements yet."
     const val ANNOUNCEMENT_TITLE_LABEL = "Title"
     const val ANNOUNCEMENT_TEXT_LABEL = "Message"
-    const val ANNOUNCEMENTS_CLOSE = "Close announcements"
+    /** The name of the icon that closes a pane, for assistive technology. */
+    fun closePane(title: String) = "Close $title"
     fun announcementSentAt(time: String) = "Sent $time"
 
     /** What a screen reader hears of the announcements a person has not seen, for a group's entry and its sidebar line. */

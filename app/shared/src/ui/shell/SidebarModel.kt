@@ -32,10 +32,5 @@ internal fun groupItems(groupId: Long, phase: GroupPhase, unread: UnreadCounts?,
     return items
 }
 
-/** Whether [current], the screen that is open, belongs to this item: the pages of Giving and of Receiving each hold more than one route. */
-internal fun SidebarItem.holds(current: Any?): Boolean = when (route) {
-    is GroupRoute -> current is GroupRoute
-    is GifterRoute -> current is GifterRoute || current is InboxRoute
-    is ReceiverRoute -> current is ReceiverRoute || current is SendLetterRoute
-    else -> current == route
-}
+/** Whether [current], the screen that is open, belongs to this item. The panes' routes are the group's Overview, which the sidebar maps them to. */
+internal fun SidebarItem.holds(current: Any?): Boolean = current == route

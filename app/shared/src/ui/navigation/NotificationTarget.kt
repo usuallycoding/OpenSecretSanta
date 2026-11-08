@@ -16,15 +16,15 @@ object NotificationTarget {
     fun routesOf(category: String?, groupId: Long, target: String? = null): List<Any> = buildList {
         add(GroupRoute(groupId))
         when (category) {
-            // the Santa's question is answered by the receiver, on the page for what they receive
-            "questions" -> add(ReceiverRoute(groupId, questions = true))
-            // the receiver's answer and wishlist are read by the Santa, on the page for what they give
-            "answers" -> add(GifterRoute(groupId, questions = true))
-            "wishlist" -> add(GifterRoute(groupId))
+            // the Santa's question is answered by the receiver, on the page of the questions from their Santa
+            "questions" -> add(GroupPane.ReceiverQuestions.route(groupId))
+            // the receiver's answer and wishlist are read by the Santa, on the pages for what they give
+            "answers" -> add(GroupPane.GifterQuestions.route(groupId))
+            "wishlist" -> add(GroupPane.GifterWishlist.route(groupId))
             // the receiver's letters are read by the Santa, in the inbox
-            "letters" -> add(InboxRoute(groupId))
+            "letters" -> add(GroupPane.Inbox.route(groupId))
             // an announcement the owner sent is read on the Announcements page
-            "announcements" -> if (target == NotificationData.TARGET_MESSAGES) add(AnnouncementsRoute(groupId))
+            "announcements" -> if (target == NotificationData.TARGET_MESSAGES) add(GroupPane.Announcements.route(groupId))
         }
     }
 }

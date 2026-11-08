@@ -13,15 +13,12 @@ object WebAddresses {
     private val USERNAME = Regex("[a-z0-9._-]+")
 
     /** The address of a screen, or null for something that is not one of the app's routes. */
-    fun addressOf(route: Any): String? = when (route) {
+    fun addressOf(route: Any): String? = paneOf(route)?.let { "#/groups/${groupIdOfPane(route)}/${it.segment}" } ?: when (route) {
         GroupsRoute -> "#/groups"
         is GroupRoute -> "#/groups/${route.id}"
-        is GifterRoute -> "#/groups/${route.groupId}/giver" + tabSuffix(route.questions)
-        is ReceiverRoute -> "#/groups/${route.groupId}/receiver" + tabSuffix(route.questions)
+        is GifterRoute -> "#/groups/${route.groupId}/giver"
+        is ReceiverRoute -> "#/groups/${route.groupId}/receiver"
         is DeliveryInfoRoute -> "#/groups/${route.groupId}/delivery-info"
-        is SendLetterRoute -> "#/groups/${route.groupId}/outbox"
-        is InboxRoute -> "#/groups/${route.groupId}/inbox"
-        is AnnouncementsRoute -> "#/groups/${route.groupId}/announcements"
         SettingsRoute -> "#/settings"
         AdminGroupsRoute -> "#/admin/groups"
         AdminGroupNewRoute -> "#/admin/groups/new"
@@ -33,9 +30,6 @@ object WebAddresses {
         is AdminUserRoute -> "#/admin/users/${route.username}"
         else -> null
     }
-
-    /** The wishlist tab is the default and has no suffix; the address names the tab a page opens on, not the one it is on. */
-    private fun tabSuffix(questions: Boolean) = if (questions) "/questions" else ""
 
     /**
      * The screen an address names, or null when it names none, or names an admin screen to someone
@@ -54,17 +48,13 @@ object WebAddresses {
     private fun groupRoute(parts: List<String>): Any? {
         if (parts.isEmpty()) return GroupsRoute
         val id = parts[0].toLongOrNull() ?: return null
-        return when (parts.drop(1)) {
-            emptyList<String>() -> GroupRoute(id)
-            listOf("giver") -> GifterRoute(id)
-            listOf("giver", "questions") -> GifterRoute(id, questions = true)
-            listOf("receiver") -> ReceiverRoute(id)
-            listOf("receiver", "questions") -> ReceiverRoute(id, questions = true)
-            listOf("delivery-info") -> DeliveryInfoRoute(id)
-            listOf("outbox") -> SendLetterRoute(id)
-            listOf("inbox") -> InboxRoute(id)
-            listOf("announcements") -> AnnouncementsRoute(id)
-            else -> null
+        val rest = parts.drop(1)
+        return when {
+            rest.isEmpty() -> GroupRoute(id)
+            rest == listOf("giver") -> GifterRoute(id)
+            rest == listOf("receiver") -> ReceiverRoute(id)
+            rest == listOf("delivery-info") -> DeliveryInfoRoute(id)
+            else -> paneOfSegment(rest.joinToString("/"))?.route(id)
         }
     }
 
@@ -101,9 +91,7 @@ object WebAddresses {
             d.hasRoute<GifterRoute>() -> entry.toRoute<GifterRoute>()
             d.hasRoute<ReceiverRoute>() -> entry.toRoute<ReceiverRoute>()
             d.hasRoute<DeliveryInfoRoute>() -> entry.toRoute<DeliveryInfoRoute>()
-            d.hasRoute<SendLetterRoute>() -> entry.toRoute<SendLetterRoute>()
-            d.hasRoute<InboxRoute>() -> entry.toRoute<InboxRoute>()
-            d.hasRoute<AnnouncementsRoute>() -> entry.toRoute<AnnouncementsRoute>()
+            d.isGroupPane() -> entry.paneRoute() ?: return null
             d.hasRoute<SettingsRoute>() -> SettingsRoute
             d.hasRoute<AdminGroupsRoute>() -> AdminGroupsRoute
             d.hasRoute<AdminGroupNewRoute>() -> AdminGroupNewRoute

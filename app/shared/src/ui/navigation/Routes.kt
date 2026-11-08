@@ -17,23 +17,32 @@ data class DeliveryInfoRoute(val groupId: Long)
 @Serializable
 data object SettingsRoute
 
-/** Which of a page's two tabs it opens on: the wishlist, which is the default, or the questions. */
-enum class PageTab { Wishlist, Questions }
-
 /**
- * The page for the relationship in which the person gives: the receiver's list and the person's questions to them. It opens on its
- * questions tab when [questions] is set. A route's arguments must be plain values: Navigation on the web and iOS cannot carry an enum.
+ * The Giving page of a wide window, with the receiver's wishlist, the person's questions to them and the Inbox side by side. On a small
+ * screen its address opens the receiver's wishlist page, which is what its first tab was.
  */
 @Serializable
-data class GifterRoute(val groupId: Long, val questions: Boolean = false) {
-    val tab: PageTab get() = if (questions) PageTab.Questions else PageTab.Wishlist
-}
+data class GifterRoute(val groupId: Long)
 
-/** The page for the relationship in which the person receives: their own list and the questions from their Santa. See [GifterRoute]. */
+/** The Receiving page of a wide window, with the person's wishlist, the questions from their Santa and the Outbox side by side. See [GifterRoute]. */
 @Serializable
-data class ReceiverRoute(val groupId: Long, val questions: Boolean = false) {
-    val tab: PageTab get() = if (questions) PageTab.Questions else PageTab.Wishlist
-}
+data class ReceiverRoute(val groupId: Long)
+
+/** The receiver's wishlist, read-only, as a page of its own; on a wide window the group's page with it in a pane. */
+@Serializable
+data class GifterWishlistRoute(val groupId: Long)
+
+/** The person's questions to their receiver and the answers, as a page of its own; on a wide window in a pane. */
+@Serializable
+data class GifterQuestionsRoute(val groupId: Long)
+
+/** The person's own wishlist, as a page of its own; on a wide window in a pane. */
+@Serializable
+data class ReceiverWishlistRoute(val groupId: Long)
+
+/** The questions the person's Santa has asked, with the person's answers, as a page of its own; on a wide window in a pane. */
+@Serializable
+data class ReceiverQuestionsRoute(val groupId: Long)
 
 /** The page where a receiver reads the letters they have sent their Santa and writes new ones while the group is Active. */
 @Serializable

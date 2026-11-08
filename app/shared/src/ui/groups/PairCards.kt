@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import com.usuallycoding.opensecretsanta.ui.form.GiftIcon
 import com.usuallycoding.opensecretsanta.ui.form.MailIcon
+import com.usuallycoding.opensecretsanta.ui.navigation.GroupPane
 import com.usuallycoding.opensecretsanta.ui.form.PlaceIcon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -33,7 +34,8 @@ enum class PairSheet { Me, Receiver, Santa }
 
 /**
  * Who the person gives to, once the names are drawn: the receiver's username in capitals with the ways to learn about them, the
- * Gifter page on either tab and, last, the details sheet. A Pending group has no such card. Nothing here says who the Santa is.
+ * receiver's wishlist, the questions to them and the Inbox, each opened through [onOpen] (a page, or a pane beside the group page on a wide window)
+ * and, last, the details sheet. A Pending group has no such card. Nothing here says who the Santa is.
  */
 @Composable
 internal fun SecretSantaCard(
@@ -41,8 +43,7 @@ internal fun SecretSantaCard(
     receiver: LoadState<ReceiverInfo>?,
     unread: UnreadCounts?,
     onRetry: () -> Unit,
-    onOpenGifter: (questions: Boolean) -> Unit,
-    onOpenInbox: () -> Unit,
+    onOpen: (GroupPane) -> Unit,
     onSheet: (PairSheet) -> Unit,
 ) {
     // before the draw there is no receiver to tell about
@@ -65,9 +66,9 @@ internal fun SecretSantaCard(
             }
             val known = name != null
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                UnreadIconButton(GiftIcon, Strings.SEE_WISHLIST, unread?.wishlist ?: 0, Strings::withNewOrEdited, { onOpenGifter(false) }, known)
-                UnreadIconButton(Icons.AutoMirrored.Filled.Send, Strings.ASK_QUESTIONS, unread?.answers ?: 0, Strings::withNew, { onOpenGifter(true) }, known)
-                UnreadIconButton(MailIcon, Strings.INBOX, unread?.letters ?: 0, Strings::withNew, onOpenInbox, known)
+                UnreadIconButton(GiftIcon, Strings.SEE_WISHLIST, unread?.wishlist ?: 0, Strings::withNewOrEdited, { onOpen(GroupPane.GifterWishlist) }, known)
+                UnreadIconButton(Icons.AutoMirrored.Filled.Send, Strings.ASK_QUESTIONS, unread?.answers ?: 0, Strings::withNew, { onOpen(GroupPane.GifterQuestions) }, known)
+                UnreadIconButton(MailIcon, Strings.INBOX, unread?.letters ?: 0, Strings::withNew, { onOpen(GroupPane.Inbox) }, known)
                 CardIconButton(PlaceIcon, Strings.DELIVERY_INFO, { onSheet(PairSheet.Receiver) }, enabled = known)
             }
         }
@@ -75,8 +76,9 @@ internal fun SecretSantaCard(
 }
 
 /**
- * What is the person's own: the Receiver page on either tab and, last, their details sheet. "Respond to Santa" carries the number
- * of questions [unanswered] when there are some, and [asksForDeliveryInfo] puts a message above "Delivery Info". The questions tab exists from Active on,
+ * What is the person's own: their wishlist, the questions from their Santa and the Outbox, each opened through [onOpen], and, last, their
+ * details sheet. "Respond to Santa" carries the number of questions [unanswered] when there are some, and [asksForDeliveryInfo] puts a
+ * message above "Delivery Info". The questions and the Outbox exist from Active on,
  * and the Santa can be revealed only once the group is Archived, so nothing earlier offers either.
  */
 @Composable
@@ -84,8 +86,7 @@ internal fun YourStuffCard(
     phase: GroupPhase,
     unanswered: Int,
     asksForDeliveryInfo: Boolean,
-    onOpenReceiver: (questions: Boolean) -> Unit,
-    onSendLetter: () -> Unit,
+    onOpen: (GroupPane) -> Unit,
     onSheet: (PairSheet) -> Unit,
 ) {
     if (phase != GroupPhase.Pending && phase != GroupPhase.Active && phase != GroupPhase.Archived) return
@@ -101,11 +102,11 @@ internal fun YourStuffCard(
             // a person who still has to give their delivery info is asked to, right above the row, whose Delivery Info button turns red with it
             if (asksForDeliveryInfo) Text(Strings.DELIVERY_INFO_NEEDED, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                CardIconButton(GiftIcon, Strings.EDIT_WISHLIST, { onOpenReceiver(false) })
+                CardIconButton(GiftIcon, Strings.EDIT_WISHLIST, { onOpen(GroupPane.ReceiverWishlist) })
                 if (drawn) {
-                    UnreadIconButton(Icons.AutoMirrored.Filled.Send, Strings.RESPOND_TO_SANTA, unanswered, Strings::withUnanswered, { onOpenReceiver(true) })
+                    UnreadIconButton(Icons.AutoMirrored.Filled.Send, Strings.RESPOND_TO_SANTA, unanswered, Strings::withUnanswered, { onOpen(GroupPane.ReceiverQuestions) })
                     // from the draw on, the receiver can write to their Santa, who is never named
-                    CardIconButton(MailIcon, Strings.SEND_LETTER, onSendLetter)
+                    CardIconButton(MailIcon, Strings.SEND_LETTER, { onOpen(GroupPane.Outbox) })
                 }
                 CardIconButton(PlaceIcon, Strings.DELIVERY_INFO, { onSheet(PairSheet.Me) }, error = asksForDeliveryInfo)
             }

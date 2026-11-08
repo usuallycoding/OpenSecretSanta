@@ -15,7 +15,7 @@ class TabScreensTest {
     @Test
     fun everyOtherScreenIsNot() {
         val others = listOf(
-            GroupRoute(2), GifterRoute(2), ReceiverRoute(2, questions = true), DeliveryInfoRoute(2), AdminGroupNewRoute, AdminGroupRoute(2), AdminGroupEditRoute(2), AdminUserRoute("alice"),
+            GroupRoute(2), GifterRoute(2), ReceiverRoute(2), GifterWishlistRoute(2), GifterQuestionsRoute(2), ReceiverWishlistRoute(2), ReceiverQuestionsRoute(2), InboxRoute(2), SendLetterRoute(2), AnnouncementsRoute(2), DeliveryInfoRoute(2), AdminGroupNewRoute, AdminGroupRoute(2), AdminGroupEditRoute(2), AdminUserRoute("alice"),
         )
         for (route in others) assertEquals(false, TabScreens.isTab(route), route.toString())
     }

@@ -1,9 +1,9 @@
 package com.usuallycoding.opensecretsanta.ui.navigation
 
 /**
- * Where a web address opened in the app goes: only the group screens that an email links to. The address is the part after
- * the `#`, read with the mapping the web app uses; the group's own page is always behind the Gifter and Receiver pages, as
- * it is for a notification, so that Back goes up one level at a time.
+ * Where a web address opened in the app goes: only the group screens that an email or a message links to. The address is the part after
+ * the `#`, read with the mapping the web app uses; the group's own page is always behind the other screens, as it is for a
+ * notification, so that Back goes up one level at a time.
  */
 object LinkTarget {
     /** The screens to open, in order, for the [fragment] of a link; null for an address that is not a group screen (admin, profile, settings, none, unknown). */
@@ -13,7 +13,8 @@ object LinkTarget {
             is GroupRoute -> listOf(route)
             is GifterRoute -> listOf(GroupRoute(route.groupId), route)
             is ReceiverRoute -> listOf(GroupRoute(route.groupId), route)
-            else -> null
+            // the six pages of the gift exchange and the announcements, each with its group's page behind it
+            else -> route?.let { paneOf(it) }?.let { listOf(GroupRoute(groupIdOfPane(route)!!), route) }
         }
     }
 }
