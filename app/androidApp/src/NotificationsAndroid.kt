@@ -25,6 +25,9 @@ const val EXTRA_GROUP_ID = "com.usuallycoding.opensecretsanta.GROUP_ID"
 /** The extra that carries the kind of notification it was, which decides the page it opens. */
 const val EXTRA_CATEGORY = "com.usuallycoding.opensecretsanta.CATEGORY"
 
+/** The extra that says which of a kind's notifications it was, when the kind alone does not decide the page it opens. */
+const val EXTRA_TARGET = "com.usuallycoding.opensecretsanta.TARGET"
+
 /** Creates the four channels (Android 8 and later); doing it again changes nothing. */
 fun createNotificationChannels(context: Context) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
@@ -48,6 +51,7 @@ fun showNotification(context: Context, data: Map<String, String>) {
         .apply {
             if (groupId != null) putExtra(EXTRA_GROUP_ID, groupId)
             putExtra(EXTRA_CATEGORY, channel.id)
+            data[NotificationData.TARGET]?.let { putExtra(EXTRA_TARGET, it) }
         }
     val tap = PendingIntent.getActivity(context, id * 4 + channel.ordinal, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 

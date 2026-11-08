@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.domain
 
+import com.usuallycoding.opensecretsanta.domain.announcement.AnnouncementLimits
 import com.usuallycoding.opensecretsanta.domain.announcement.SendAnnouncement
 import com.usuallycoding.opensecretsanta.domain.email.EmailMessage
 import com.usuallycoding.opensecretsanta.domain.email.EmailSummary
@@ -47,6 +48,8 @@ class SendAnnouncementTest {
     private val notifier = Notifier(settings, devices, sender, groups)
     private val mailer = AnnouncementMailer()
     private val infos = FakeDeliveryInfos()
+    private val announcements = InMemoryAnnouncements(groups)
+    private val clock = FakeClock(now = 5_000L)
     private val owner = users.add("boss", admin = true).let { users.userNamed("boss") }
     private val names = listOf("alice", "bob", "carol", "dave")
 
@@ -64,7 +67,7 @@ class SendAnnouncementTest {
         push: Boolean = false,
         appUrl: String? = "https://santa.example",
         actor: com.usuallycoding.opensecretsanta.domain.user.User = owner,
-    ) = SendAnnouncement(OwnedGroupLoader(groups), infos, mailer, notifier, appUrl)(actor, group.id, title, body, email, push)
+    ) = SendAnnouncement(OwnedGroupLoader(groups), infos, announcements, mailer, notifier, clock, appUrl)(actor, group.id, title, body, email, push)
 
     private fun group(state: GroupState, details: GroupDetails = GroupDetails("Office Party")): Group {
         val seeded = groups.seed(owner.username, state, *names.map(::u).toTypedArray())
@@ -72,6 +75,62 @@ class SendAnnouncementTest {
         // everyone has told the group an email, as the people of a real group would have
         names.forEach { infos.save(seeded.id, u(it), DeliveryInfo(email = "$it@example.org")) }
         return groups.find(seeded.id)!!
+    }
+
+    @Test
+    fun anAnnouncementIsKeptAndNumberedPerGroup() {
+        val first = group(GroupState.PENDING)
+        val second = group(GroupState.ACTIVE)
+
+        announce(first, title = "Schedule change", body = "Line one\nLine two")
+        announce(first, title = "Reminder")
+        announce(second, title = "Other group")
+
+        val kept = announcements.list(first.id)
+        assertEquals(listOf(1, 2), kept.map { it.number })
+        assertEquals(listOf("Schedule change", "Reminder"), kept.map { it.title })
+        assertEquals("Line one\nLine two", kept.first().body)
+        assertEquals(5_000L, kept.first().sentAtMillis)
+        assertEquals(listOf(1), announcements.list(second.id).map { it.number })
+    }
+
+    @Test
+    fun anAnnouncementIsKeptWhateverBecomesOfTheEmails() {
+        val g = group(GroupState.ACTIVE)
+        mailer.throwing = true
+
+        announce(g, email = true, push = false)
+
+        assertEquals(1, announcements.list(g.id).size)
+    }
+
+    @Test
+    fun aRefusedAnnouncementIsNotKept() {
+        val g = group(GroupState.PENDING)
+
+        assertFailsWith<DomainException.ValidationFailed> { announce(g, title = "") }
+        assertFailsWith<DomainException.ValidationFailed> { announce(g, email = false, push = false) }
+        assertFailsWith<DomainException.InvalidState> { announce(group(GroupState.DRAFT)) }
+        mailer.enabled = false
+        assertFailsWith<DomainException.InvalidState> { announce(g) }
+
+        assertTrue(announcements.list(g.id).isEmpty())
+    }
+
+    @Test
+    fun theTwoHundredthIsKeptAndTheNextOneIsRefusedWithNothingSent() {
+        val g = group(GroupState.ACTIVE)
+        announcements.seed(g.id, AnnouncementLimits.MAX_PER_GROUP - 1)
+
+        announce(g)
+        assertEquals(AnnouncementLimits.MAX_PER_GROUP, announcements.list(g.id).last().number)
+        mailer.sent.clear()
+        names.forEach { devices.register(u(it), "$it-phone", DevicePlatform.ANDROID, 1) }
+
+        assertFailsWith<DomainException.InvalidState> { announce(g, push = true) }
+
+        assertTrue(mailer.sent.isEmpty())
+        assertEquals(AnnouncementLimits.MAX_PER_GROUP, announcements.list(g.id).size)
     }
 
     @Test

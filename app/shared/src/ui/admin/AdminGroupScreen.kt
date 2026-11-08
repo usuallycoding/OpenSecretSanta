@@ -1,6 +1,7 @@
 package com.usuallycoding.opensecretsanta.ui.admin
 
 import androidx.compose.foundation.layout.Arrangement
+import com.usuallycoding.opensecretsanta.ui.layout.PANE_WIDTH
 import com.usuallycoding.opensecretsanta.ui.layout.STANDARD_CONTENT_WIDTH
 import com.usuallycoding.opensecretsanta.ui.layout.LocalWideLayout
 import androidx.compose.material3.VerticalDivider
@@ -46,6 +47,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.usuallycoding.opensecretsanta.domain.group.ActivateGroup
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.announcements.AnnouncementsPane
+import com.usuallycoding.opensecretsanta.ui.announcements.AnnouncementsViewModel
 import com.usuallycoding.opensecretsanta.ui.groups.GroupInfoCard
 import com.usuallycoding.opensecretsanta.ui.form.FormColumn
 import com.usuallycoding.opensecretsanta.ui.form.SheetTextField
@@ -68,9 +71,6 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.ui.text.style.TextAlign
 
-/** How wide the pane beside the group page is. */
-private val PANE_WIDTH = 400.dp
-
 /** One of the administrator's groups: its details and people, and what can be done with it in its state. */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -79,7 +79,10 @@ fun AdminGroupScreen(
     onBack: () -> Unit,
     onEdit: () -> Unit,
     onRules: () -> Unit,
+    onAnnouncements: () -> Unit,
     onDeleted: () -> Unit,
+    announcementsOpen: Boolean = false,
+    onCloseAnnouncements: () -> Unit = {},
 ) {
     val state by viewModel.data.collectAsState()
     val draw by viewModel.draw.collectAsState()
@@ -145,7 +148,12 @@ fun AdminGroupScreen(
                     }
                     LoadSection(state, onRetry = { viewModel.refresh() }) { group ->
                         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Header(group, viewModel, ui.busy, onEdit, onRules = { if (wide) viewModel.openRulesPane() else onRules() }) { announcing = true }
+                            Header(
+                                group, viewModel, ui.busy, onEdit,
+                                onRules = { if (wide) viewModel.openRulesPane() else onRules() },
+                                // a pane that is open gives way: the announcements are shown in its place
+                                onMessages = { viewModel.dismissSheet(); onAnnouncements() },
+                            ) { announcing = true }
                             People(group, viewModel, draw)
                         }
                     }
@@ -155,6 +163,11 @@ fun AdminGroupScreen(
         if (pane != null) {
             VerticalDivider()
             GroupPane(pane, viewModel.groupId, viewModel.me, draw, onDismiss = viewModel::dismissSheet, modifier = Modifier.width(PANE_WIDTH).fillMaxHeight())
+        } else if (wide && announcementsOpen && viewModel.canOpenAnnouncements) {
+            // the address names the announcements, so the pane is the route's; a pane above (rules, a wishlist) shows first and gives way when closed
+            VerticalDivider()
+            val announcements = koinViewModel<AnnouncementsViewModel>(key = "announcements-${viewModel.groupId}-owner") { parametersOf(viewModel.groupId, true) }
+            AnnouncementsPane(announcements, onClose = onCloseAnnouncements, modifier = Modifier.width(PANE_WIDTH).fillMaxHeight())
         }
     }
     ui.participants?.let { ParticipantsSheet(it, viewModel) }
@@ -203,14 +216,14 @@ private fun AdminStep.label() = when (this) {
 /** The group's details and, in one row, everything that can be done with it: edit, announce, passwords, rules, delete and, last, the next step. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Header(group: AdminGroup, viewModel: AdminGroupViewModel, busy: Boolean, onEdit: () -> Unit, onRules: () -> Unit, onAnnounce: () -> Unit) {
+private fun Header(group: AdminGroup, viewModel: AdminGroupViewModel, busy: Boolean, onEdit: () -> Unit, onRules: () -> Unit, onMessages: () -> Unit, onAnnounce: () -> Unit) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ReadOnlyText(group.name, Modifier.fillMaxWidth(), style = MaterialTheme.typography.headlineSmall, label = Strings.GROUP_NAME, maxLines = 1, copy = false, centered = true)
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(group.state.label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             group.phase.note()?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
         }
-        GroupInfoCard(group.description, group.whenText, group.location, group.budgetText)
+        GroupInfoCard(group.description, group.whenText, group.location, group.budgetText, onOpenMessages = onMessages.takeIf { viewModel.canOpenAnnouncements })
         val step = viewModel.nextStep
         val blocked = viewModel.drawNeedsMorePeople
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {

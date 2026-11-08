@@ -7,6 +7,7 @@ import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import com.usuallycoding.opensecretsanta.domain.notification.NotificationCategory
 import com.usuallycoding.opensecretsanta.domain.notification.PushMessage
+import com.usuallycoding.opensecretsanta.domain.notification.PushTargets
 import com.usuallycoding.opensecretsanta.domain.notification.PushResult
 import com.usuallycoding.opensecretsanta.server.config.FcmCredentials
 import com.usuallycoding.opensecretsanta.server.data.push.FcmPushSender
@@ -96,6 +97,16 @@ class FcmPushSenderTest {
         assertEquals("Secret Santa", data["title"]!!.jsonPrimitive.content)
         assertEquals("A question for you in Party", data["body"]!!.jsonPrimitive.content)
         assertEquals("HIGH", body["android"]!!.jsonObject["priority"]!!.jsonPrimitive.content)
+    }
+
+    @Test
+    fun aTargetIsInTheDataOnlyWhenTheMessageHasOne() {
+        sender().send(listOf(message().copy(category = NotificationCategory.ANNOUNCEMENTS, target = PushTargets.MESSAGES), message()))
+
+        val (withTarget, without) = sends().map { Json.parseToJsonElement(it.body).jsonObject["message"]!!.jsonObject["data"]!!.jsonObject }
+        assertEquals("messages", withTarget["target"]!!.jsonPrimitive.content)
+        assertEquals("announcements", withTarget["category"]!!.jsonPrimitive.content)
+        assertFalse("target" in without)
     }
 
     @Test

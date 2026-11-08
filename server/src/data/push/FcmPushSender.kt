@@ -89,6 +89,7 @@ class FcmPushSender(
                 put(NotificationData.GROUP_ID, message.groupId.toString())
                 put(NotificationData.TITLE, message.title)
                 put(NotificationData.BODY, message.body)
+                message.target?.let { put(NotificationData.TARGET, it) }
             }
             putJsonObject("android") {
                 put("priority", "HIGH")

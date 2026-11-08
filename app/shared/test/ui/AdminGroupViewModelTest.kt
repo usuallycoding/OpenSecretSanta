@@ -32,6 +32,14 @@ class AdminGroupViewModelTest {
     // --- loading and what each phase allows ------------------------------------------------------------
 
     @Test
+    fun theAnnouncementsCanBeOpenedInEveryStateButDraft() = runTest {
+        assertFalse(viewModel(fake.add("Draft")).canOpenAnnouncements)
+        for (state in listOf("pending", "active", "archived")) {
+            assertTrue(viewModel(fake.add(state, state = state, participants = four)).canOpenAnnouncements, state)
+        }
+    }
+
+    @Test
     fun theGroupIsShownWithItsParticipantsAndTheirMarks() = runTest {
         val id = fake.add("Office party", participants = listOf("alice", "bob", "newcomer"))
 

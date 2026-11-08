@@ -98,6 +98,9 @@ class AdminGroupViewModel(
         if (canOpenRules) _ui.update { it.copy(sheet = GroupSheet.Rules, drawRefused = null) }
     }
 
+    /** The announcements can be read in every state but Draft, which has none. */
+    val canOpenAnnouncements: Boolean get() = canOpenRules
+
     fun dismissSheet() = _ui.update { it.copy(sheet = null) }
 
     /** Reads the draw for a group that has one; a group that has none is not asked. */

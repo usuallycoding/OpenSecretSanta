@@ -1,5 +1,7 @@
 package com.usuallycoding.opensecretsanta.ui
 
+import com.usuallycoding.opensecretsanta.contract.NotificationData
+import com.usuallycoding.opensecretsanta.ui.navigation.AnnouncementsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.GifterRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.GroupRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.InboxRoute
@@ -31,8 +33,23 @@ class NotificationTargetTest {
     }
 
     @Test
-    fun anAnnouncementOpensTheGroup() {
+    fun beingAddedToAGroupAndTheDrawOpenTheGroup() {
         assertEquals(listOf(GroupRoute(7)), NotificationTarget.routesOf("announcements", 7))
+        assertEquals(listOf(GroupRoute(7)), NotificationTarget.routesOf("announcements", 7, target = null))
+        assertEquals(listOf(GroupRoute(7)), NotificationTarget.routesOf("announcements", 7, target = "something-new"))
+    }
+
+    @Test
+    fun anAnnouncementTheOwnerSentOpensTheAnnouncementsOverTheGroup() {
+        assertEquals(
+            listOf(GroupRoute(7), AnnouncementsRoute(7)),
+            NotificationTarget.routesOf("announcements", 7, target = NotificationData.TARGET_MESSAGES),
+        )
+    }
+
+    @Test
+    fun aTargetOnAnotherKindChangesNothing() {
+        assertEquals(listOf(GroupRoute(7), InboxRoute(7)), NotificationTarget.routesOf("letters", 7, target = NotificationData.TARGET_MESSAGES))
     }
 
     @Test
@@ -49,5 +66,6 @@ class NotificationTargetTest {
         assertEquals(NotificationTarget.routesOf("answers", 7).last(), WebAddresses.routeOf("#/groups/7/giver/questions", false))
         assertEquals(NotificationTarget.routesOf("wishlist", 7).last(), WebAddresses.routeOf("#/groups/7/giver", false))
         assertEquals(NotificationTarget.routesOf("letters", 7).last(), WebAddresses.routeOf("#/groups/7/inbox", false))
+        assertEquals(NotificationTarget.routesOf("announcements", 7, NotificationData.TARGET_MESSAGES).last(), WebAddresses.routeOf("#/groups/7/notifications", false))
     }
 }

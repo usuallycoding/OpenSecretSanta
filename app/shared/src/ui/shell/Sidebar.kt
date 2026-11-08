@@ -42,7 +42,9 @@ import com.usuallycoding.opensecretsanta.ui.groups.groupPhase
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupsViewModel
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupEditRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupNewRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.AdminAnnouncementsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.AnnouncementsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminUserRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminUsersRoute
@@ -69,6 +71,7 @@ internal fun NavBackStackEntry.openGroupId(): Long? = when {
     destination.hasRoute<ReceiverRoute>() -> toRoute<ReceiverRoute>().groupId
     destination.hasRoute<SendLetterRoute>() -> toRoute<SendLetterRoute>().groupId
     destination.hasRoute<InboxRoute>() -> toRoute<InboxRoute>().groupId
+    destination.hasRoute<AnnouncementsRoute>() -> toRoute<AnnouncementsRoute>().groupId
     destination.hasRoute<DeliveryInfoRoute>() -> toRoute<DeliveryInfoRoute>().groupId
     else -> null
 }
@@ -80,6 +83,8 @@ internal fun NavBackStackEntry.sidebarRoute(): Any? = when {
     destination.hasRoute<ReceiverRoute>() -> toRoute<ReceiverRoute>()
     destination.hasRoute<SendLetterRoute>() -> toRoute<SendLetterRoute>()
     destination.hasRoute<InboxRoute>() -> toRoute<InboxRoute>()
+    // the announcements are read from the group's overview, which stays the selected item
+    destination.hasRoute<AnnouncementsRoute>() -> GroupRoute(toRoute<AnnouncementsRoute>().groupId)
     destination.hasRoute<SettingsRoute>() -> SettingsRoute
     destination.hasRoute<GroupsRoute>() -> GroupsRoute
     destination.hasRoute<AdminGroupsRoute>() -> AdminGroupsRoute
@@ -146,6 +151,7 @@ private fun OpenGroup(navController: NavController, group: GroupRow, current: An
 private fun NavBackStackEntry.adminGroupId(): Long? = when {
     destination.hasRoute<AdminGroupRoute>() -> toRoute<AdminGroupRoute>().id
     destination.hasRoute<AdminGroupEditRoute>() -> toRoute<AdminGroupEditRoute>().id
+    destination.hasRoute<AdminAnnouncementsRoute>() -> toRoute<AdminAnnouncementsRoute>().id
     else -> null
 }
 

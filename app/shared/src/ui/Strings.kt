@@ -162,6 +162,14 @@ object Strings {
     fun adminLettersTitle(receiver: String) = "Letters from $receiver"
     const val SAVED = "Saved."
 
+    // --- the announcements the owner has sent, read by the people of the group ---
+    const val GROUP_NOTIFICATIONS = "Group Notifications"
+    const val NO_GROUP_NOTIFICATIONS = "No group notifications yet."
+    const val GROUP_NOTIFICATION_TITLE_LABEL = "Title"
+    const val GROUP_NOTIFICATION_TEXT_LABEL = "Message"
+    const val GROUP_NOTIFICATIONS_CLOSE = "Close group notifications"
+    fun groupNotificationSentAt(time: String) = "Sent $time"
+
     const val SECRET_SANTA_FOR = "You're Secret Santa for:"
     const val KEEP_IT_SECRET = "Shh... Keep it a secret!"
     const val TELL_YOUR_SANTA = "Tell your santa what you want and let them know you!"
@@ -264,6 +272,7 @@ object Strings {
     const val ADMIN_NO_GROUPS = "You do not have any group yet. Use the + button to create one."
     const val NEW_GROUP = "New group"
     const val GROUP_NAME = "Name"
+    const val TBD = "TBD"
     const val WHEN_LABEL = "When?"
     const val WHERE_LABEL = "Where?"
     const val BUDGET_LABEL = "Budget?"

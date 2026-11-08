@@ -24,13 +24,14 @@ firebase.messaging().onBackgroundMessage(function (payload) {
         body: data.body,
         // a newer notification of a kind for a group replaces the older one
         tag: (data.category || 'message') + ':' + (data.groupId || ''),
-        data: { groupId: data.groupId || '', category: data.category || '' }
+        data: { groupId: data.groupId || '', category: data.category || '', target: data.target || '' }
     });
 });
 
 // The page a notification opens, by its kind: a question is answered on the Receiver page, a letter is read in the inbox, an answer and a wishlist are read
-// on the Gifter page, and anything else opens the group. The app has the same mapping (NotificationTarget); these are its addresses.
-function addressOf(groupId, category) {
+// on the Gifter page, an announcement the owner sent (the target 'messages', which the announcements kind alone does not say) is read on the
+// group notifications page, and anything else opens the group. The app has the same mapping (NotificationTarget); these are its addresses.
+function addressOf(groupId, category, target) {
     if (!groupId) return '#/groups';
     const group = '#/groups/' + groupId;
     switch (category) {
@@ -38,6 +39,7 @@ function addressOf(groupId, category) {
         case 'answers': return group + '/giver/questions';
         case 'wishlist': return group + '/giver';
         case 'letters': return group + '/inbox';
+        case 'announcements': return target === 'messages' ? group + '/notifications' : group;
         default: return group;
     }
 }
@@ -51,7 +53,7 @@ self.addEventListener('notificationclick', function (event) {
     event.notification.close();
     const notified = event.notification.data || {};
     // the app's addresses are after the '#'
-    const address = addressOf(notified.groupId, notified.category);
+    const address = addressOf(notified.groupId, notified.category, notified.target);
     const target = new URL(self.registration.scope);
     target.hash = address;
     event.waitUntil(

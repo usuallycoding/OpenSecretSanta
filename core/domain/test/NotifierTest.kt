@@ -15,6 +15,7 @@ import com.usuallycoding.opensecretsanta.domain.notification.NotificationSetting
 import com.usuallycoding.opensecretsanta.domain.notification.NotificationSettingsRepository
 import com.usuallycoding.opensecretsanta.domain.notification.Notifier
 import com.usuallycoding.opensecretsanta.domain.notification.PushMessage
+import com.usuallycoding.opensecretsanta.domain.notification.PushTargets
 import com.usuallycoding.opensecretsanta.domain.notification.PushResult
 import com.usuallycoding.opensecretsanta.domain.notification.PushSender
 import com.usuallycoding.opensecretsanta.domain.notification.RegisteredDevice
@@ -93,6 +94,29 @@ class NotifierTest {
         devices.register(u(name), token, platform, 1)
 
     private fun tokens() = sender.sent.map { it.token }.sorted()
+
+    @Test
+    fun anAnnouncementFromTheOwnerCarriesTheMessagesTarget() {
+        val g = group(GroupState.ACTIVE)
+        names.forEach { register(it) }
+
+        val plan = notifier.planAnnouncement(g, "Schedule change", "We start at 19:00.", u("boss"))
+
+        assertTrue(plan.messages.isNotEmpty())
+        assertTrue(plan.messages.all { it.category == NotificationCategory.ANNOUNCEMENTS && it.target == PushTargets.MESSAGES })
+    }
+
+    @Test
+    fun beingAddedAndTheDrawCarryNoTarget() {
+        val g = group(GroupState.ACTIVE)
+        names.forEach { register(it) }
+
+        notifier.groupVisible(g, g.participants, actor = u("boss"))
+        notifier.groupDrawn(g, actor = u("boss"))
+
+        assertTrue(sender.sent.isNotEmpty())
+        assertTrue(sender.sent.all { it.category == NotificationCategory.ANNOUNCEMENTS && it.target == null })
+    }
 
     @Test
     fun aGroupBecomingVisibleTellsTheRecipientsExceptTheActor() {

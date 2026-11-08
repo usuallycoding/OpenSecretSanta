@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.domain.announcement
 
+import com.usuallycoding.opensecretsanta.domain.auth.Clock
 import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfoRepository
 import com.usuallycoding.opensecretsanta.domain.email.EmailMessage
 import com.usuallycoding.opensecretsanta.domain.email.EmailSummary
@@ -25,14 +26,17 @@ class AnnouncementOutcome(val emails: EmailSummary?, val pushPlan: PushPlan?)
 
 /**
  * The owner of a Pending or Active group tells its participants something, by email, by push notification or both. The
- * emails are sent here; the push notifications are only planned, so that the caller can send them in the background.
- * Everything is checked before anything is sent, and a failing email never keeps the other channel from going out.
+ * announcement is kept first, so that the people of the group can read it later; the emails are sent here and the push
+ * notifications are only planned, so that the caller can send them in the background. Everything is checked, and the
+ * announcement kept, before anything is sent, and a failing email never keeps the other channel from going out.
  */
 class SendAnnouncement(
     private val loadOwned: OwnedGroupLoader,
     private val deliveryInfos: DeliveryInfoRepository,
+    private val announcements: AnnouncementRepository,
     private val mailer: Mailer,
     private val notifier: Notifier,
+    private val clock: Clock,
     private val appUrl: String? = null,
 ) {
     operator fun invoke(actor: User, groupId: Long, rawTitle: String, rawBody: String, email: Boolean, push: Boolean): AnnouncementOutcome {
@@ -48,6 +52,7 @@ class SendAnnouncement(
         }
         if (email && !mailer.enabled) throw DomainException.InvalidState("Email is not set up on this server.")
         if (push && !notifier.available) throw DomainException.InvalidState("Push notifications are not set up on this server.")
+        announcements.add(group.id, title, body, clock.nowMillis(), AnnouncementLimits.MAX_PER_GROUP)
 
         val summary = if (email) sendEmails(group.participants, groupId, group.details, title, body) else null
         val plan = if (push) {

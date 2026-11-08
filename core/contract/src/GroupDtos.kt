@@ -99,6 +99,18 @@ data class AnnouncementResponse(
 )
 
 /**
+ * An announcement the owner sent, as the people of the group read it later. It names no one, not even the sender. [number] counts
+ * from 1 within the group, [body] keeps its line breaks and [sentAt] is an ISO-8601 UTC instant.
+ */
+@Serializable
+data class AnnouncementDto(
+    val number: Int,
+    val title: String,
+    val body: String,
+    val sentAt: String,
+)
+
+/**
  * The group after a change, plus the accounts the change created (empty when it created none). Only the answer to an
  * activation carries [emails], and only when email is configured.
  */

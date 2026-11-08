@@ -89,6 +89,10 @@ import com.usuallycoding.opensecretsanta.ui.groups.GroupDetailViewModel
 import com.usuallycoding.opensecretsanta.ui.groups.GroupsScreen
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupEditRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupNewRoute
+import com.usuallycoding.opensecretsanta.ui.announcements.AnnouncementsPage
+import com.usuallycoding.opensecretsanta.ui.announcements.AnnouncementsViewModel
+import com.usuallycoding.opensecretsanta.ui.navigation.AdminAnnouncementsRoute
+import com.usuallycoding.opensecretsanta.ui.navigation.AnnouncementsRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupRulesRoute
 import com.usuallycoding.opensecretsanta.ui.navigation.AdminGroupsRoute
@@ -185,7 +189,7 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                         containerColor = Color.Transparent,
                         topBar = {
                             CenterAlignedTopAppBar(
-                                title = { Text(titleOf(view, destination, pageTitle)) },
+                                title = { Text(titleOf(view, destination, pageTitle, wide)) },
                                 navigationIcon = {
                                     if (onGroup) {
                                         IconButton(onClick = { navController.popBackStack() }) {
@@ -225,7 +229,7 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
         ) { padding ->
             // On a wide window the content keeps one readable width beside the sidebar; the pages that lay out columns of their own use all of it
             val spread = wide && destination?.let {
-                it.hasRoute<AdminGroupRoute>() || it.hasRoute<GifterRoute>() || it.hasRoute<ReceiverRoute>()
+                it.hasRoute<AdminGroupRoute>() || it.hasRoute<AdminAnnouncementsRoute>() || it.hasRoute<GroupRoute>() || it.hasRoute<AnnouncementsRoute>() || it.hasRoute<GifterRoute>() || it.hasRoute<ReceiverRoute>()
             } == true
             Column(Modifier.fillMaxSize().padding(padding)) {
             val handedOverTo by viewModel.handedOverTo.collectAsState()
@@ -247,18 +251,19 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                             GroupsScreen(groups, onOpen = { navController.navigate(GroupRoute(it)) })
                         }
                         composable<GroupRoute> { entry ->
-                            val groupId = entry.toRoute<GroupRoute>().id
-                            GroupPage(
-                                koinViewModel<GroupDetailViewModel>(key = "group-$groupId") { parametersOf(groupId, viewModel.account.username) },
-                                me = viewModel.account.username,
-                                onBack = { navController.popBackStack() },
-                                onOpenGifter = { questions -> navController.navigate(GifterRoute(groupId, questions)) },
-                                onOpenReceiver = { questions -> navController.navigate(ReceiverRoute(groupId, questions)) },
-                                // a wide window has the Inbox and the Outbox on the Giving and Receiving pages
-                                onSendLetter = { navController.navigate(if (wide) ReceiverRoute(groupId) else SendLetterRoute(groupId)) },
-                                onOpenInbox = { navController.navigate(if (wide) GifterRoute(groupId) else InboxRoute(groupId)) },
-                                onEditDeliveryInfo = { navController.navigate(DeliveryInfoRoute(groupId)) },
-                            )
+                            GroupEntry(navController, viewModel.account.username, wide, entry.toRoute<GroupRoute>().id, announcementsOpen = false)
+                        }
+                        composable<AnnouncementsRoute> { entry ->
+                            val groupId = entry.toRoute<AnnouncementsRoute>().groupId
+                            if (wide) {
+                                // there is room for the pane: the group's page with the announcements beside it, at the announcements' address
+                                GroupEntry(navController, viewModel.account.username, wide, groupId, announcementsOpen = true)
+                            } else {
+                                AnnouncementsPage(
+                                    koinViewModel<AnnouncementsViewModel>(key = "announcements-$groupId-member") { parametersOf(groupId, false) },
+                                    onBack = { navController.popBackStack() },
+                                )
+                            }
                         }
                         composable<GifterRoute> { entry ->
                             val route = entry.toRoute<GifterRoute>()
@@ -332,14 +337,19 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
                             )
                         }
                         composable<AdminGroupRoute> { entry ->
-                            val groupId = entry.toRoute<AdminGroupRoute>().id
-                            AdminGroupScreen(
-                                koinViewModel<AdminGroupViewModel>(key = "admin-group-$groupId") { parametersOf(groupId, viewModel.account.username) },
-                                onBack = { navController.popBackStack() },
-                                onEdit = { navController.navigate(AdminGroupEditRoute(groupId)) },
-                                onRules = { navController.navigate(AdminGroupRulesRoute(groupId)) },
-                                onDeleted = { navController.popBackStack() },
-                            )
+                            AdminGroupEntry(navController, viewModel.account.username, entry.toRoute<AdminGroupRoute>().id, announcementsOpen = false)
+                        }
+                        composable<AdminAnnouncementsRoute> { entry ->
+                            val groupId = entry.toRoute<AdminAnnouncementsRoute>().id
+                            if (wide) {
+                                // there is room for the pane: the group's page with the announcements beside it, at the announcements' address
+                                AdminGroupEntry(navController, viewModel.account.username, groupId, announcementsOpen = true)
+                            } else {
+                                AnnouncementsPage(
+                                    koinViewModel<AnnouncementsViewModel>(key = "announcements-$groupId-owner") { parametersOf(groupId, true) },
+                                    onBack = { navController.popBackStack() },
+                                )
+                            }
                         }
                         composable<AdminGroupRulesRoute> { entry ->
                             val groupId = entry.toRoute<AdminGroupRulesRoute>().id
@@ -377,16 +387,19 @@ fun ShellScreen(viewModel: ShellViewModel, onNavigationReady: suspend (NavContro
 }
 
 
-private fun titleOf(view: AppView, destination: NavDestination?, pageTitle: String?): String = when {
+/** The top bar's title; a wide window shows the announcements beside their group's page, so the page keeps its own title there. */
+private fun titleOf(view: AppView, destination: NavDestination?, pageTitle: String?, wide: Boolean): String = when {
     destination?.hasRoute<SettingsRoute>() == true -> Strings.TITLE_SETTINGS
     destination?.hasRoute<AdminUserRoute>() == true -> Strings.ADMIN_USER
     destination?.hasRoute<AdminUsersRoute>() == true -> Strings.ADMIN_TAB_USERS
     destination?.hasRoute<AdminGroupNewRoute>() == true -> Strings.ADMIN_NEW_GROUP
     destination?.hasRoute<AdminGroupEditRoute>() == true -> Strings.ADMIN_EDIT_GROUP
     destination?.hasRoute<AdminGroupRulesRoute>() == true -> Strings.RULES_TITLE
+    destination?.hasRoute<AdminAnnouncementsRoute>() == true -> if (wide) Strings.ADMIN_GROUP else Strings.GROUP_NOTIFICATIONS
     destination?.hasRoute<AdminGroupRoute>() == true -> Strings.ADMIN_GROUP
     view == AppView.Admin -> Strings.ADMIN_GROUPS
     destination?.hasRoute<GroupRoute>() == true -> Strings.TITLE_GROUP
+    destination?.hasRoute<AnnouncementsRoute>() == true -> if (wide) Strings.TITLE_GROUP else Strings.GROUP_NOTIFICATIONS
     destination?.hasRoute<GifterRoute>() == true -> pageTitle ?: Strings.givingTo(null)
     destination?.hasRoute<ReceiverRoute>() == true -> pageTitle ?: Strings.TITLE_YOUR_WISHLIST
     destination?.hasRoute<DeliveryInfoRoute>() == true -> Strings.TITLE_DELIVERY_INFO
@@ -425,10 +438,10 @@ private fun NavDestination.ownView(): AppView? = when {
 
 private fun NavDestination.belowGroups(): Boolean =
     hasRoute<GroupRoute>() || hasRoute<GifterRoute>() || hasRoute<ReceiverRoute>() || hasRoute<DeliveryInfoRoute>() ||
-        hasRoute<SendLetterRoute>() || hasRoute<InboxRoute>()
+        hasRoute<SendLetterRoute>() || hasRoute<InboxRoute>() || hasRoute<AnnouncementsRoute>()
 
 private fun NavDestination.belowAdminGroups(): Boolean =
-    hasRoute<AdminGroupNewRoute>() || hasRoute<AdminGroupRoute>() || hasRoute<AdminGroupEditRoute>() || hasRoute<AdminGroupRulesRoute>() || hasRoute<AdminUserRoute>()
+    hasRoute<AdminGroupNewRoute>() || hasRoute<AdminGroupRoute>() || hasRoute<AdminGroupEditRoute>() || hasRoute<AdminGroupRulesRoute>() || hasRoute<AdminAnnouncementsRoute>() || hasRoute<AdminUserRoute>()
 
 /** The admin view's tabs: the groups and the users the administrator manages, and the settings both views share. */
 @Composable
@@ -475,4 +488,51 @@ private fun Centered(content: @Composable () -> Unit) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) { content() }
     }
+}
+
+/**
+ * A participant's group page. With [announcementsOpen], which is the announcements' own address, a wide window shows them in a pane
+ * beside it; closing the pane goes back to the page's own address, whether the pane was opened from the page or by an address.
+ */
+@Composable
+private fun GroupEntry(navController: NavController, me: String, wide: Boolean, groupId: Long, announcementsOpen: Boolean) {
+    GroupPage(
+        koinViewModel<GroupDetailViewModel>(key = "group-$groupId") { parametersOf(groupId, me) },
+        me = me,
+        onBack = { navController.popBackStack() },
+        onOpenGifter = { questions -> navController.navigate(GifterRoute(groupId, questions)) },
+        onOpenReceiver = { questions -> navController.navigate(ReceiverRoute(groupId, questions)) },
+        // a wide window has the Inbox and the Outbox on the Giving and Receiving pages
+        onSendLetter = { navController.navigate(if (wide) ReceiverRoute(groupId) else SendLetterRoute(groupId)) },
+        onOpenInbox = { navController.navigate(if (wide) GifterRoute(groupId) else InboxRoute(groupId)) },
+        onEditDeliveryInfo = { navController.navigate(DeliveryInfoRoute(groupId)) },
+        onOpenAnnouncements = { navController.navigate(AnnouncementsRoute(groupId)) { launchSingleTop = true } },
+        announcementsOpen = announcementsOpen,
+        onCloseAnnouncements = {
+            navController.navigate(GroupRoute(groupId)) {
+                popUpTo<AnnouncementsRoute> { inclusive = true }
+                launchSingleTop = true
+            }
+        },
+    )
+}
+
+/** The owner's group screen, with the announcements in a pane beside it when [announcementsOpen]; see [GroupEntry]. */
+@Composable
+private fun AdminGroupEntry(navController: NavController, me: String, groupId: Long, announcementsOpen: Boolean) {
+    AdminGroupScreen(
+        koinViewModel<AdminGroupViewModel>(key = "admin-group-$groupId") { parametersOf(groupId, me) },
+        onBack = { navController.popBackStack() },
+        onEdit = { navController.navigate(AdminGroupEditRoute(groupId)) },
+        onRules = { navController.navigate(AdminGroupRulesRoute(groupId)) },
+        onAnnouncements = { navController.navigate(AdminAnnouncementsRoute(groupId)) { launchSingleTop = true } },
+        onDeleted = { navController.popBackStack() },
+        announcementsOpen = announcementsOpen,
+        onCloseAnnouncements = {
+            navController.navigate(AdminGroupRoute(groupId)) {
+                popUpTo<AdminAnnouncementsRoute> { inclusive = true }
+                launchSingleTop = true
+            }
+        },
+    )
 }

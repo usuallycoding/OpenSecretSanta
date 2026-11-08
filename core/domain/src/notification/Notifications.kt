@@ -65,13 +65,23 @@ interface NotificationSettingsRepository {
     fun save(username: Username, settings: NotificationSettings)
 }
 
-/** One data message for one device. The texts are what the person sees; [groupId] and [category] tell the app where a tap leads. */
+/** What a notification of a kind that has several can say more about: where a tap leads when the kind alone does not tell. */
+object PushTargets {
+    /** An announcement the owner sent, as opposed to the other notifications of the announcements kind. */
+    const val MESSAGES = "messages"
+}
+
+/**
+ * One data message for one device. The texts are what the person sees; [groupId] and [category] tell the app where a tap leads,
+ * and [target], when there is one, tells which of a category's notifications it is.
+ */
 data class PushMessage(
     val token: String,
     val category: NotificationCategory,
     val groupId: Long,
     val title: String,
     val body: String,
+    val target: String? = null,
 )
 
 /** What became of one message. */

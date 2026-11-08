@@ -3,6 +3,16 @@ package com.usuallycoding.opensecretsanta.ui.groups
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.VerticalDivider
+import com.usuallycoding.opensecretsanta.ui.announcements.AnnouncementsPane
+import com.usuallycoding.opensecretsanta.ui.announcements.AnnouncementsViewModel
+import com.usuallycoding.opensecretsanta.ui.layout.LocalWideLayout
+import com.usuallycoding.opensecretsanta.ui.layout.PANE_WIDTH
+import com.usuallycoding.opensecretsanta.ui.layout.STANDARD_CONTENT_WIDTH
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -47,6 +57,9 @@ fun GroupPage(
     onSendLetter: () -> Unit,
     onOpenInbox: () -> Unit,
     onEditDeliveryInfo: () -> Unit,
+    onOpenAnnouncements: () -> Unit,
+    announcementsOpen: Boolean = false,
+    onCloseAnnouncements: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     val phase = state.value?.phase
@@ -88,23 +101,38 @@ fun GroupPage(
     val asksForDeliveryInfo = showsDeliveryNudge(phase, myDetails?.details?.collectAsState()?.value)
     var sheet by remember { mutableStateOf<PairSheet?>(null) }
 
-    PullPage(
-        loading = state.loading || receiver?.loading == true,
-        onRefresh = { viewModel.refresh(); pair?.refresh(); santaQuestions?.refresh(); myDetails?.refresh(); readMarks?.refresh() },
-    ) {
-        LoadSection(state, onRetry = { viewModel.refresh() }) { detail ->
-            val secretSanta: @Composable () -> Unit = {
-                SecretSantaCard(detail.phase, receiver, unread, onRetry = { pair?.refresh() }, onOpenGifter, onOpenInbox, onSheet = { sheet = it })
+    // on a wide window the announcements open in a pane beside the page, when the address is the announcements'; on a small screen they are a page
+    val wide = LocalWideLayout.current
+    val canOpenMessages = phase == GroupPhase.Pending || phase == GroupPhase.Active || phase == GroupPhase.Archived
+    val onOpenMessages: (() -> Unit)? = onOpenAnnouncements.takeIf { canOpenMessages }
+    Row(Modifier.fillMaxSize()) {
+        Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
+            Box(Modifier.widthIn(max = STANDARD_CONTENT_WIDTH).fillMaxSize()) {
+                PullPage(
+                    loading = state.loading || receiver?.loading == true,
+                    onRefresh = { viewModel.refresh(); pair?.refresh(); santaQuestions?.refresh(); myDetails?.refresh(); readMarks?.refresh() },
+                ) {
+                    LoadSection(state, onRetry = { viewModel.refresh() }) { detail ->
+                        val secretSanta: @Composable () -> Unit = {
+                            SecretSantaCard(detail.phase, receiver, unread, onRetry = { pair?.refresh() }, onOpenGifter, onOpenInbox, onSheet = { sheet = it })
+                        }
+                        val yourStuff: @Composable () -> Unit = {
+                            YourStuffCard(detail.phase, unanswered, asksForDeliveryInfo, onOpenReceiver, onSendLetter, onSheet = { sheet = it })
+                        }
+                        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Header(detail, onOpenMessages)
+                            secretSanta()
+                            yourStuff()
+                            Participants(detail.participants)
+                        }
+                    }
+                }
             }
-            val yourStuff: @Composable () -> Unit = {
-                YourStuffCard(detail.phase, unanswered, asksForDeliveryInfo, onOpenReceiver, onSendLetter, onSheet = { sheet = it })
-            }
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Header(detail)
-                secretSanta()
-                yourStuff()
-                Participants(detail.participants)
-            }
+        }
+        if (wide && announcementsOpen && canOpenMessages) {
+            VerticalDivider()
+            val announcements = koinViewModel<AnnouncementsViewModel>(key = "announcements-${viewModel.groupId}-member") { parametersOf(viewModel.groupId, false) }
+            AnnouncementsPane(announcements, onClose = onCloseAnnouncements, modifier = Modifier.width(PANE_WIDTH).fillMaxHeight())
         }
     }
     val editable = state.value?.phase.let { it == GroupPhase.Pending || it == GroupPhase.Active }
@@ -123,14 +151,14 @@ internal fun GroupGone(onBack: () -> Unit) {
 }
 
 @Composable
-private fun Header(group: GroupDetail) {
+private fun Header(group: GroupDetail, onOpenMessages: (() -> Unit)?) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ReadOnlyText(group.name, Modifier.fillMaxWidth(), style = MaterialTheme.typography.headlineSmall, label = Strings.GROUP_NAME, maxLines = 1, copy = false, centered = true)
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(group.state.label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             group.state.note?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
         }
-        GroupInfoCard(group.description, group.whenText, group.location, group.budget)
+        GroupInfoCard(group.description, group.whenText, group.location, group.budget, onOpenMessages = onOpenMessages)
     }
 }
 

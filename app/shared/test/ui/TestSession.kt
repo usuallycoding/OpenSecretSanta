@@ -2,6 +2,7 @@ package com.usuallycoding.opensecretsanta.ui
 
 import com.usuallycoding.opensecretsanta.contract.AddDrawRuleRequest
 import com.usuallycoding.opensecretsanta.contract.HandOverAdminRequest
+import com.usuallycoding.opensecretsanta.contract.AnnouncementDto
 import com.usuallycoding.opensecretsanta.contract.AnnouncementRequest
 import com.usuallycoding.opensecretsanta.contract.DrawRuleDto
 import com.usuallycoding.opensecretsanta.contract.DrawRulesDto
@@ -891,6 +892,19 @@ class FakeAdminOversight(private val groups: FakeAdminGroups) {
 /** The announcement route: it keeps what it was sent and answers with a summary of each channel asked for, or with a queued failure. */
 class FakeAnnouncements {
     val requests = mutableListOf<AnnouncementRequest>()
+
+    /** What the server has kept, in the order sent; a send adds to it. */
+    val kept = mutableListOf<AnnouncementDto>()
+    private val readFailures = ArrayDeque<Pair<HttpStatusCode, String>>()
+
+    fun keptBehindTheScenes(count: Int) {
+        repeat(count) { kept += AnnouncementDto(kept.size + 1, "Title ${kept.size + 1}", "Message ${kept.size + 1}", "2026-12-04T09:00:00Z") }
+    }
+
+    fun failNextReadWith(status: HttpStatusCode, code: String, message: String = "refused") {
+        readFailures += status to """{"code":"$code","message":"$message"}"""
+    }
+
     var emails = EmailSummaryDto(sent = 4, failed = 0, noAddress = 0)
     var push = PushSummaryDto(reached = 3, notReached = 1)
     private val failures = ArrayDeque<Pair<HttpStatusCode, String>>()
@@ -900,10 +914,14 @@ class FakeAnnouncements {
     }
 
     fun answer(method: String, path: String, body: String): Pair<HttpStatusCode, String>? {
+        if (method == "GET" && Regex("(/admin)?/groups/\\d+/announcements").matches(path)) {
+            return readFailures.removeFirstOrNull() ?: (HttpStatusCode.OK to Json.encodeToString(kept.toList()))
+        }
         if (method != "POST" || !Regex("/admin/groups/\\d+/announcements").matches(path)) return null
         return failures.removeFirstOrNull() ?: run {
             val request = Json.decodeFromString<AnnouncementRequest>(body)
             requests += request
+            kept += AnnouncementDto(kept.size + 1, request.title.trim(), request.body.trim(), "2026-12-04T10:00:00Z")
             HttpStatusCode.OK to Json.encodeToString(AnnouncementResponse(emails.takeIf { request.email }, push.takeIf { request.push }))
         }
     }

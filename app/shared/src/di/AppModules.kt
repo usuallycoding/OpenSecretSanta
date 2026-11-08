@@ -22,6 +22,7 @@ import com.usuallycoding.opensecretsanta.ui.login.LoginViewModel
 import com.usuallycoding.opensecretsanta.ui.notifications.NotificationsViewModel
 import com.usuallycoding.opensecretsanta.ui.password.ChangePasswordViewModel
 import com.usuallycoding.opensecretsanta.ui.delivery.DeliveryInfoViewModel
+import com.usuallycoding.opensecretsanta.ui.announcements.AnnouncementsViewModel
 import com.usuallycoding.opensecretsanta.ui.letters.InboxViewModel
 import com.usuallycoding.opensecretsanta.ui.letters.SendLetterViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminGroupFormViewModel
@@ -71,6 +72,7 @@ fun appModules(baseUrl: String, pushDevice: PushDevice = UnsupportedPushDevice):
         viewModel { (groupId: Long) -> DeliveryInfoViewModel(groupId, get(), viewModelScope()) }
         viewModel { (groupId: Long) -> SendLetterViewModel(groupId, get(), viewModelScope()) }
         viewModel { (groupId: Long) -> InboxViewModel(groupId, get(), viewModelScope()) }
+        viewModel { (groupId: Long, forOwner: Boolean) -> AnnouncementsViewModel(groupId, forOwner, get(), viewModelScope()) }
         viewModel { NotificationsViewModel(get(), get(), viewModelScope()) }
         viewModel { (groupId: Long) -> WishlistViewModel(groupId, get(), viewModelScope()) }
         viewModel { AdminGroupsViewModel(get(), viewModelScope()) }

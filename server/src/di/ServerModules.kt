@@ -73,7 +73,9 @@ import com.usuallycoding.opensecretsanta.domain.wishlist.WishlistRepository
 import com.usuallycoding.opensecretsanta.domain.user.UserRepository
 import com.usuallycoding.opensecretsanta.domain.email.DisabledMailer
 import com.usuallycoding.opensecretsanta.domain.email.Mailer
+import com.usuallycoding.opensecretsanta.domain.announcement.AnnouncementRepository
 import com.usuallycoding.opensecretsanta.domain.announcement.Channels
+import com.usuallycoding.opensecretsanta.domain.announcement.ListAnnouncements
 import com.usuallycoding.opensecretsanta.domain.announcement.SendAnnouncement
 import com.usuallycoding.opensecretsanta.domain.email.SendDrawEmails
 import com.usuallycoding.opensecretsanta.domain.notification.DeviceRepository
@@ -103,6 +105,7 @@ import com.usuallycoding.opensecretsanta.server.data.notification.SqliteNotifica
 import com.usuallycoding.opensecretsanta.server.data.push.FcmPushSender
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteDrawRuleRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteGroupRepository
+import com.usuallycoding.opensecretsanta.server.data.group.SqliteAnnouncementRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteLetterRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteQuestionRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteReadMarkRepository
@@ -149,6 +152,7 @@ val repositoryModule = module {
     single<DrawRuleRepository> { SqliteDrawRuleRepository(get()) }
     single<QuestionRepository> { SqliteQuestionRepository(get()) }
     single<LetterRepository> { SqliteLetterRepository(get()) }
+    single<AnnouncementRepository> { SqliteAnnouncementRepository(get()) }
     single<ReadMarkRepository> { SqliteReadMarkRepository(get()) }
     single<WishlistRepository> { SqliteWishlistRepository(get()) }
     single<DeliveryInfoRepository> { SqliteDeliveryInfoRepository(get()) }
@@ -184,7 +188,8 @@ fun emailModule(mailer: Mailer? = null) = module {
         }
     }
     single { SendDrawEmails(get(), get(), get(), get<ServerConfig>().appUrl) }
-    single { SendAnnouncement(get(), get(), get(), get(), get<ServerConfig>().appUrl) }
+    single { SendAnnouncement(get(), get(), get(), get(), get(), get(), get<ServerConfig>().appUrl) }
+    single { ListAnnouncements(get(), get(), get()) }
     single { Channels(get(), get()) }
 }
 

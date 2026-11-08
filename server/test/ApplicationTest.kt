@@ -33,7 +33,7 @@ class ApplicationTest {
         val response = client.get(ApiRoutes.HEALTH)
 
         assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals(HealthResponse("ok", schemaVersion = 13), Json.decodeFromString(response.bodyAsText()))
+        assertEquals(HealthResponse("ok", schemaVersion = 14), Json.decodeFromString(response.bodyAsText()))
     }
 
     @Test

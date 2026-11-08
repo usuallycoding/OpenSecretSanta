@@ -16,12 +16,13 @@ class AppModulesVerifyTest {
 
     // Types that are supplied by something other than this module's own definitions: the platform's
     // token store and settings store (a host passes them), per-view-model scopes and the signed-in account (created where
-    // the view model is requested), and the engine the HTTP client picks for itself.
+    // the view model is requested), a flag the view model is created with (whether the owner is reading, for the announcements),
+    // and the engine the HTTP client picks for itself.
     @OptIn(KoinExperimentalAPI::class)
     @Test
     fun moduleGraphIsComplete() {
         module { includes(appModules(baseUrl = "http://localhost:8080")) }.verify(
-            extraTypes = listOf(TokenStore::class, SettingsStore::class, CoroutineScope::class, Account::class, HttpClientEngine::class, Lazy::class),
+            extraTypes = listOf(TokenStore::class, SettingsStore::class, CoroutineScope::class, Account::class, Boolean::class, HttpClientEngine::class, Lazy::class),
         )
     }
 }

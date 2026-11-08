@@ -95,7 +95,7 @@ class Notifier(
         val owned = devices.devicesOf(wanting)
         val body = cut(text)
         val heading = "${oneLine(title)}: ${oneLine(group.details.name)}"
-        val messages = owned.map { PushMessage(it.token, NotificationCategory.ANNOUNCEMENTS, group.id, heading, body) }
+        val messages = owned.map { PushMessage(it.token, NotificationCategory.ANNOUNCEMENTS, group.id, heading, body, PushTargets.MESSAGES) }
         val reached = owned.map { it.username }.toSet().size
         return PushPlan(messages, reached = reached, notReached = others.size - reached)
     }

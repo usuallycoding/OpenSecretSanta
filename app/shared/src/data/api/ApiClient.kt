@@ -8,6 +8,7 @@ import com.usuallycoding.opensecretsanta.contract.DrawRuleDto
 import com.usuallycoding.opensecretsanta.contract.DrawRulesDto
 import com.usuallycoding.opensecretsanta.contract.AdminQuestionThreadDto
 import com.usuallycoding.opensecretsanta.contract.AnswerRequest
+import com.usuallycoding.opensecretsanta.contract.AnnouncementDto
 import com.usuallycoding.opensecretsanta.contract.AnnouncementRequest
 import com.usuallycoding.opensecretsanta.contract.AnnouncementResponse
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
@@ -167,6 +168,14 @@ class ApiClient(
     /** Sends the person's Santa a letter; the answer is the stored letter with its number. */
     suspend fun sendLetter(groupId: Long, title: String, text: String): ApiResult<LetterDto> =
         call(HttpMethod.Post, ApiRoutes.groupSantaLetters(groupId), body = SendLetterRequest(title, text))
+
+    /** The announcements the group's owner has sent, in the order sent, for a participant. */
+    suspend fun groupAnnouncements(groupId: Long): ApiResult<List<AnnouncementDto>> =
+        call(HttpMethod.Get, ApiRoutes.groupAnnouncements(groupId))
+
+    /** The same announcements for the group's owner, who need not take part in the group. */
+    suspend fun adminGroupAnnouncements(groupId: Long): ApiResult<List<AnnouncementDto>> =
+        call(HttpMethod.Get, ApiRoutes.adminGroupAnnouncements(groupId))
 
     /** The letters the person's receiver has sent them, in the order sent. */
     suspend fun lettersFromReceiver(groupId: Long): ApiResult<List<LetterDto>> =

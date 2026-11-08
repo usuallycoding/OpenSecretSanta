@@ -2,11 +2,13 @@ package com.usuallycoding.opensecretsanta.server
 
 import com.usuallycoding.opensecretsanta.contract.AccountDto
 import com.usuallycoding.opensecretsanta.contract.AdminGroupDto
+import com.usuallycoding.opensecretsanta.contract.AnnouncementDto
 import com.usuallycoding.opensecretsanta.contract.AnnouncementRequest
 import com.usuallycoding.opensecretsanta.contract.AnnouncementResponse
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.CreateGroupRequest
 import com.usuallycoding.opensecretsanta.contract.EmailSummaryDto
+import com.usuallycoding.opensecretsanta.contract.ParticipantsRequest
 import com.usuallycoding.opensecretsanta.contract.PushSummaryDto
 import com.usuallycoding.opensecretsanta.domain.email.EmailMessage
 import com.usuallycoding.opensecretsanta.domain.email.Mailer
@@ -15,6 +17,7 @@ import com.usuallycoding.opensecretsanta.domain.notification.NotificationCategor
 import com.usuallycoding.opensecretsanta.domain.notification.PushMessage
 import com.usuallycoding.opensecretsanta.domain.notification.PushResult
 import com.usuallycoding.opensecretsanta.domain.notification.PushSender
+import com.usuallycoding.opensecretsanta.domain.announcement.AnnouncementLimits
 import com.usuallycoding.opensecretsanta.domain.delivery.DeliveryInfo
 import com.usuallycoding.opensecretsanta.domain.user.Username
 import com.usuallycoding.opensecretsanta.server.data.notification.SqliteDeviceRepository
@@ -237,5 +240,136 @@ class AnnouncementRoutesTest {
 
         assertTrue(me.emailAvailable)
         assertFalse(me.pushAvailable)
+    }
+
+    // --- reading what was announced ---
+
+    private suspend fun HttpClient.read(id: Long, token: String?, admin: Boolean = false): HttpResponse =
+        send<Unit>("GET", if (admin) ApiRoutes.adminGroupAnnouncements(id) else ApiRoutes.groupAnnouncements(id), token)
+
+    private suspend fun HttpResponse.announcements(): List<AnnouncementDto> {
+        assertEquals(HttpStatusCode.OK, status, bodyAsText())
+        return Json.decodeFromString(bodyAsText())
+    }
+
+    @Test
+    fun aParticipantReadsTheAnnouncementsInTheOrderSentInPendingActiveAndArchivedGroups() = testApplication {
+        startApp()
+        setup()
+        val group = client.group()
+        client.announce(group.id, AnnouncementRequest("First", "Line one\nLine two", email = true))
+        client.announce(group.id, AnnouncementRequest("Second", "Later", push = true))
+
+        fun check(list: List<AnnouncementDto>) {
+            assertEquals(listOf(1, 2), list.map { it.number })
+            assertEquals(listOf("First", "Second"), list.map { it.title })
+            assertEquals("Line one\nLine two", list.first().body)
+            assertTrue(list.first().sentAt.endsWith("Z"), list.first().sentAt)
+        }
+        check(client.read(group.id, fx.token("alice")).announcements())
+        assertEquals(HttpStatusCode.OK, client.send<Unit>("POST", ApiRoutes.adminGroupActivate(group.id), fx.token("admin")).status)
+        check(client.read(group.id, fx.token("bob")).announcements())
+        assertEquals(HttpStatusCode.OK, client.send<Unit>("POST", ApiRoutes.adminGroupArchive(group.id), fx.token("admin")).status)
+        check(client.read(group.id, fx.token("carol")).announcements())
+    }
+
+    @Test
+    fun aGroupThatWasNeverAnnouncedToHasAnEmptyList() = testApplication {
+        startApp()
+        setup()
+        val group = client.group()
+
+        assertEquals(emptyList(), client.read(group.id, fx.token("alice")).announcements())
+    }
+
+    @Test
+    fun someoneWhoJoinedLaterReadsWhatWasSentBeforeTheyJoined() = testApplication {
+        startApp()
+        setup()
+        fx.addUser("erin")
+        val group = client.group()
+        client.announce(group.id, AnnouncementRequest("Before erin", "Hello", email = true))
+        assertEquals(HttpStatusCode.NotFound, client.read(group.id, fx.token("erin")).status)
+
+        client.send("PUT", ApiRoutes.adminGroupParticipants(group.id), fx.token("admin"), ParticipantsRequest(names + "erin"))
+
+        assertEquals(listOf("Before erin"), client.read(group.id, fx.token("erin")).announcements().map { it.title })
+    }
+
+    @Test
+    fun aStrangerAndADraftAndAMissingGroupAreNotFoundForAParticipant() = testApplication {
+        startApp()
+        setup()
+        fx.addUser("eve")
+        val pending = client.group()
+        val draft = client.group(pending = false)
+
+        assertEquals(HttpStatusCode.NotFound, client.read(pending.id, fx.token("eve")).status)
+        assertEquals(HttpStatusCode.NotFound, client.read(draft.id, fx.token("alice")).status)
+        assertEquals(HttpStatusCode.NotFound, client.read(9999, fx.token("alice")).status)
+        assertEquals(HttpStatusCode.Unauthorized, client.read(pending.id, token = null).status)
+    }
+
+    @Test
+    fun theOwnerReadsThemEvenThoughTheyAreNotInTheGroup() = testApplication {
+        startApp()
+        setup()
+        fx.addUser("other", admin = true)
+        val group = client.group()
+        client.announce(group.id, both)
+
+        assertEquals(listOf("Schedule change"), client.read(group.id, fx.token("admin"), admin = true).announcements().map { it.title })
+        assertEquals(HttpStatusCode.NotFound, client.read(group.id, fx.token("other"), admin = true).status)
+        assertEquals(HttpStatusCode.Forbidden, client.read(group.id, fx.token("alice"), admin = true).status)
+        assertEquals(HttpStatusCode.Unauthorized, client.read(group.id, token = null, admin = true).status)
+    }
+
+    @Test
+    fun aDraftGroupIs409ForTheOwner() = testApplication {
+        startApp()
+        setup()
+        val draft = client.group(pending = false)
+
+        assertEquals(HttpStatusCode.Conflict, client.read(draft.id, fx.token("admin"), admin = true).status)
+    }
+
+    @Test
+    fun theTwoHundredAndFirstAnnouncementIsRefusedAndNothingIsSent() = testApplication {
+        startApp()
+        setup()
+        val group = client.group()
+        fx.database.connection().use { c ->
+            c.prepareStatement("INSERT INTO announcements (group_id, number, title, body, sent_at) VALUES (?, ?, 't', 'b', 1)").use { s ->
+                for (number in 1 until AnnouncementLimits.MAX_PER_GROUP) {
+                    s.setLong(1, group.id)
+                    s.setInt(2, number)
+                    s.executeUpdate()
+                }
+            }
+        }
+
+        assertEquals(HttpStatusCode.OK, client.announce(group.id, both).status)
+        mailer.sent.clear()
+        sender.sent.clear()
+        val refused = client.announce(group.id, both)
+
+        assertEquals(HttpStatusCode.Conflict, refused.status)
+        assertTrue("invalid_state" in refused.bodyAsText(), refused.bodyAsText())
+        assertTrue(mailer.sent.isEmpty() && sender.sent.isEmpty())
+        assertEquals(AnnouncementLimits.MAX_PER_GROUP, client.read(group.id, fx.token("alice")).announcements().size)
+    }
+
+    @Test
+    fun thereIsNoRouteToChangeOrDeleteOne() = testApplication {
+        startApp()
+        setup()
+        val group = client.group()
+        client.announce(group.id, both)
+
+        for (method in listOf("PUT", "PATCH", "DELETE")) {
+            val status = client.send<Unit>(method, "${ApiRoutes.adminGroupAnnouncements(group.id)}/1", fx.token("admin")).status
+            assertTrue(status == HttpStatusCode.NotFound || status == HttpStatusCode.MethodNotAllowed, "$method gave $status")
+        }
+        assertEquals(1, client.read(group.id, fx.token("alice")).announcements().size)
     }
 }

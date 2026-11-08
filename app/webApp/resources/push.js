@@ -59,7 +59,7 @@
         registration.showNotification(data.title || 'Open Secret Santa', {
             body: data.body,
             tag: (data.category || 'message') + ':' + (data.groupId || ''),
-            data: { groupId: data.groupId || '', category: data.category || '' }
+            data: { groupId: data.groupId || '', category: data.category || '', target: data.target || '' }
         });
     }
 

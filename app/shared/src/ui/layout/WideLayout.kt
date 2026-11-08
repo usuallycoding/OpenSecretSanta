@@ -14,6 +14,9 @@ import androidx.compose.ui.unit.dp
 /** The widest the content of a screen gets: the signed-in app centers it, and the bars and buttons share it on a narrower window. */
 val STANDARD_CONTENT_WIDTH: Dp = 640.dp
 
+/** How wide the pane beside a group's page is on a wide window. */
+val PANE_WIDTH: Dp = 400.dp
+
 /** The window width from which the signed-in app shows a sidebar instead of the bottom bar. */
 val WIDE_BREAKPOINT: Dp = 840.dp
 

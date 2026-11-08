@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.contract
 
+import com.usuallycoding.opensecretsanta.domain.notification.PushTargets
 import kotlinx.serialization.Serializable
 
 /** The person's five switches, and whether the server can send push notifications at all. */
@@ -42,4 +43,8 @@ object NotificationData {
     const val GROUP_ID = "groupId"
     const val TITLE = "title"
     const val BODY = "body"
+
+    /** Present when the category alone does not say where a tap leads; its value is [TARGET_MESSAGES] for an announcement from the owner. */
+    const val TARGET = "target"
+    const val TARGET_MESSAGES = PushTargets.MESSAGES
 }

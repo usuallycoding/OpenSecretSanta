@@ -106,3 +106,6 @@ fun budgetLine(budget: Int?, currency: String?): String? = budget?.let { "$it ${
 
 /** A line of the group's information card: its label, " - ", then its value, for example `When? - 24 Dec 2026, 18:30`. */
 fun labelledLine(label: String, value: String): String = "$label - $value"
+
+/** What an information line of the group card shows for [value]: the value, or `TBD` when the group has none (or only spaces). */
+fun shownOrTbd(value: String?): String = value?.takeIf { it.isNotBlank() } ?: Strings.TBD

@@ -7,6 +7,7 @@ import com.usuallycoding.opensecretsanta.ui.groups.groupPhase
 import com.usuallycoding.opensecretsanta.ui.groups.groupStateInfo
 import com.usuallycoding.opensecretsanta.ui.groups.isMe
 import com.usuallycoding.opensecretsanta.ui.groups.labelledLine
+import com.usuallycoding.opensecretsanta.ui.groups.shownOrTbd
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -18,6 +19,22 @@ class GroupFormatTest {
     fun aDateAndATimeAreReadable() {
         assertEquals("24 Dec 2026, 18:30", formatWhen("2026-12-24", "18:30"))
         assertEquals("5 Jan 2027, 09:05", formatWhen("2027-01-05", "9:05"))
+    }
+
+    @Test
+    fun aLineWithNoValueShowsTbd() {
+        assertEquals("TBD", shownOrTbd(null))
+        assertEquals("TBD", shownOrTbd(""))
+        assertEquals("TBD", shownOrTbd("   "))
+        assertEquals("Grandma's house", shownOrTbd("Grandma's house"))
+    }
+
+    @Test
+    fun theDateAndTimeLineIsTbdOnlyWhenBothAreMissing() {
+        assertEquals("24 Dec 2026", shownOrTbd(formatWhen("2026-12-24", null)))
+        assertEquals("18:30", shownOrTbd(formatWhen(null, "18:30")))
+        assertEquals("TBD", shownOrTbd(formatWhen(null, null)))
+        assertEquals("When? - TBD", labelledLine(Strings.WHEN_LABEL, shownOrTbd(formatWhen(null, null))))
     }
 
     @Test

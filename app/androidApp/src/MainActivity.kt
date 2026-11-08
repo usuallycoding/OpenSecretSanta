@@ -44,6 +44,7 @@ class MainActivity : ComponentActivity() {
                         requestedRoutes.value = null
                         intent.removeExtra(EXTRA_GROUP_ID)
                         intent.removeExtra(EXTRA_CATEGORY)
+                        intent.removeExtra(EXTRA_TARGET)
                         // a link is handled once, so an activity that is recreated does not open its group again
                         intent.data = null
                     }
@@ -70,7 +71,7 @@ class MainActivity : ComponentActivity() {
      */
     private fun routesOf(intent: Intent?): List<Any>? {
         val groupId = intent?.getLongExtra(EXTRA_GROUP_ID, NONE)?.takeIf { it != NONE }
-        if (groupId != null) return NotificationTarget.routesOf(intent.getStringExtra(EXTRA_CATEGORY), groupId)
+        if (groupId != null) return NotificationTarget.routesOf(intent.getStringExtra(EXTRA_CATEGORY), groupId, intent.getStringExtra(EXTRA_TARGET))
         val link = intent?.data ?: return null
         return LinkTarget.routesOf(linkFragment(link.scheme, link.host, link.fragment))
     }
