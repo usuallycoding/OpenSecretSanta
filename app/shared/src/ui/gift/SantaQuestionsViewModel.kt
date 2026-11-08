@@ -47,7 +47,7 @@ class SantaQuestionsViewModel(
             is ApiResult.Success -> result.value
             is ApiResult.Failure -> return result
         }
-        return ApiResult.Success(SantaQuestionsData(questions.map { it.toQuestion() }, groupPhase(group.state)))
+        return ApiResult.Success(SantaQuestionsData(questions.map { it.toQuestion() }.sortedByDescending { it.number }, groupPhase(group.state)))
     }
 
     // --- the bottom sheet -------------------------------------------------------------------

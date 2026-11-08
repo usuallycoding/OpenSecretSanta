@@ -123,14 +123,14 @@ class ReceiverViewModelTest {
     // --- the questions ------------------------------------------------------------------------------
 
     @Test
-    fun questionsAreShownInOrderWithAnswersWhereThereAreAny() = runTest {
+    fun questionsAreShownNewestFirstWithAnswersWhereThereAreAny() = runTest {
         server.gift.askedBehindTheScenes(2)
         server.gift.receiverAnswers(1, "Yes")
 
         val questions = viewModel().data.value.value!!.questions
 
-        assertEquals(listOf(1, 2), questions.map { it.number })
-        assertEquals(listOf("Yes", null), questions.map { it.answer })
+        assertEquals(listOf(2, 1), questions.map { it.number })
+        assertEquals(listOf(null, "Yes"), questions.map { it.answer })
     }
 
     @Test
@@ -144,7 +144,7 @@ class ReceiverViewModelTest {
     // --- asking --------------------------------------------------------------------------------------
 
     @Test
-    fun anAskedQuestionAppearsLastAndTheSheetCloses() = runTest {
+    fun anAskedQuestionAppearsFirstAndTheSheetCloses() = runTest {
         server.gift.askedBehindTheScenes(1)
         val model = viewModel()
 
@@ -153,7 +153,7 @@ class ReceiverViewModelTest {
         model.edit("  Any allergies?  ")
         model.save()?.join()
 
-        assertEquals(listOf("Question 1", "Any allergies?"), model.texts())
+        assertEquals(listOf("Any allergies?", "Question 1"), model.texts())
         assertNull(model.ui.value.editor)
         assertEquals(2, server.gift.myQuestions.size)
     }

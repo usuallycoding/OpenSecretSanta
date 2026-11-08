@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -46,7 +45,6 @@ import com.usuallycoding.opensecretsanta.ui.groups.GroupGone
 import com.usuallycoding.opensecretsanta.ui.groups.GroupPhase
 import com.usuallycoding.opensecretsanta.ui.groups.PageTitle
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
-import com.usuallycoding.opensecretsanta.ui.layout.LocalWideLayout
 import com.usuallycoding.opensecretsanta.ui.load.LazyPullPage
 import com.usuallycoding.opensecretsanta.ui.load.loadItems
 
@@ -111,9 +109,8 @@ fun SendLetterContent(viewModel: SendLetterViewModel) {
             }
         }
         if (state.value != null && viewModel.canSend) {
-            // a wide window shows the action in the top bar, where it is named "Send letter"
-            if (LocalWideLayout.current) AppFab(Icons.AutoMirrored.Filled.Send, Strings.SEND_LETTER, onClick = viewModel::openSheet)
-            else AppFab(Icons.Filled.Add, Strings.WRITE_LETTER, onClick = viewModel::openSheet)
+            // a wide window shows the action in the top bar instead; the icon and the name are the same on both
+            AppFab(Icons.AutoMirrored.Filled.Send, Strings.SEND_LETTER, onClick = viewModel::openSheet)
         }
     }
     ui.editor?.let { editor ->

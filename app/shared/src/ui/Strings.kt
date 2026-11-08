@@ -145,7 +145,6 @@ object Strings {
     const val TITLE_SEND_LETTER = "Letters to your Santa"
     const val TITLE_INBOX = "Letters from your receiver"
     fun lettersFrom(receiver: String?) = if (receiver == null) TITLE_INBOX else "Letters from $receiver"
-    const val WRITE_LETTER = "Write a letter"
     const val LETTER_SHEET_TITLE = "Send a letter"
     const val LETTER_TITLE_LABEL = "Title"
     const val LETTER_TEXT_LABEL = "Description"

@@ -64,7 +64,7 @@ class ReceiverViewModel(
         }
         tracker.ensureBaseline()
         tracker.shown(newestOf(questions.filter { it.answer != null }.map { it.answerUpdatedAt }))
-        return ApiResult.Success(ReceiverData(receiver.toInfo(), questions.map { it.toQuestion(tracker.baseline) }, groupPhase(group.state)))
+        return ApiResult.Success(ReceiverData(receiver.toInfo(), questions.map { it.toQuestion(tracker.baseline) }.sortedByDescending { it.number }, groupPhase(group.state)))
     }
 
     // --- the bottom sheet -------------------------------------------------------------------
@@ -91,7 +91,7 @@ class ReceiverViewModel(
         return scope.launch {
             when (val result = api.askQuestion(groupId, text)) {
                 is ApiResult.Success -> {
-                    current?.let { data -> loader.replace(data.copy(questions = data.questions + result.value.toQuestion())) }
+                    current?.let { data -> loader.replace(data.copy(questions = listOf(result.value.toQuestion()) + data.questions)) }
                     _ui.update { it.copy(editor = null) }
                 }
                 is ApiResult.Failure -> failed(result.error)

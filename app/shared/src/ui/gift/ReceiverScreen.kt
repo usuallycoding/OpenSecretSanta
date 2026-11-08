@@ -1,5 +1,7 @@
 package com.usuallycoding.opensecretsanta.ui.gift
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,7 +35,6 @@ import com.usuallycoding.opensecretsanta.ui.load.LazyPullPage
 import com.usuallycoding.opensecretsanta.ui.load.loadItems
 import androidx.compose.foundation.layout.BoxScope
 import com.usuallycoding.opensecretsanta.ui.form.AppFab
-import com.usuallycoding.opensecretsanta.ui.form.QuestionIcon
 
 /** The person's questions to their receiver and the receiver's answers, as a page of their own; [bottomSpace] keeps the last one clear of a floating button. */
 @Composable
@@ -62,7 +63,7 @@ fun ReceiverQuestionsSection(viewModel: ReceiverViewModel, shown: Boolean = true
 fun BoxScope.AskQuestionFab(viewModel: ReceiverViewModel) {
     val state by viewModel.data.collectAsState()
     if (state.value != null && viewModel.canAsk) {
-        AppFab(QuestionIcon, Strings.ASK_QUESTION, onClick = viewModel::openAsk)
+        AppFab(Icons.AutoMirrored.Filled.Send, Strings.ASK_QUESTION, onClick = viewModel::openAsk)
     }
 }
 

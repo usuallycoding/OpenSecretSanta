@@ -166,7 +166,7 @@ class ReadMarksViewModelTest {
 
         val questions = answers().data.value.value!!.questions
 
-        assertEquals(listOf(true, false), questions.map { it.answerIsNew })
+        assertEquals(listOf(false, true), questions.map { it.answerIsNew })
     }
 
     @Test

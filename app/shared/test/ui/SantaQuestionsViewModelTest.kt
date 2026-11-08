@@ -32,7 +32,7 @@ class SantaQuestionsViewModelTest {
     private fun writes() = server.calls.count { it.startsWith("PUT") }
 
     @Test
-    fun questionsAreShownInOrderWithThePersonsOwnAnswers() = runTest {
+    fun questionsAreShownNewestFirstWithThePersonsOwnAnswers() = runTest {
         server.gift.santaAsks("Any allergies?")
         server.gift.santaAsks("Favourite colour?")
         val model = viewModel()
@@ -40,9 +40,9 @@ class SantaQuestionsViewModelTest {
 
         val questions = model.data.value.value!!.questions
 
-        assertEquals(listOf(1, 2), questions.map { it.number })
-        assertEquals(listOf("Any allergies?", "Favourite colour?"), questions.map { it.text })
-        assertEquals(listOf(null, "Green"), model.answers())
+        assertEquals(listOf(2, 1), questions.map { it.number })
+        assertEquals(listOf("Favourite colour?", "Any allergies?"), questions.map { it.text })
+        assertEquals(listOf("Green", null), model.answers())
     }
 
     @Test
