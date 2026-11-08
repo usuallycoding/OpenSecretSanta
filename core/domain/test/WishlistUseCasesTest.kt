@@ -108,13 +108,13 @@ class WishlistUseCasesTest {
     }
 
     @Test
-    fun aListHoldsAtMostFiftyItems() {
+    fun aListHoldsAtMostTheLimitOfItems() {
         val id = group()
         repeat(WishlistLimits.MAX_ITEMS) { addTitle(id, "Item $it") }
 
         assertFailsWith<DomainException.InvalidState> { addTitle(id, "One too many") }
 
-        assertEquals(50, titles(id).size)
+        assertEquals(WishlistLimits.MAX_ITEMS, titles(id).size)
         addTitle(id, "Bob has his own list", "bob")
     }
 

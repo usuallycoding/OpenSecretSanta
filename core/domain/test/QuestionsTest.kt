@@ -93,13 +93,13 @@ class QuestionsTest {
     }
 
     @Test
-    fun aSantaCanAskThirtyQuestionsButNotThirtyOne() {
+    fun aSantaCanAskUpToTheLimitButNotOneMore() {
         val id = activeGroup()
-        repeat(30) { ask(user("alice"), id, "Question ${it + 1}") }
+        repeat(QuestionLimits.MAX_QUESTIONS_PER_SANTA) { ask(user("alice"), id, "Question ${it + 1}") }
 
         assertFailsWith<DomainException.InvalidState> { ask(user("alice"), id, "One too many") }
 
-        assertEquals(30, mine(user("alice"), id).size)
+        assertEquals(QuestionLimits.MAX_QUESTIONS_PER_SANTA, mine(user("alice"), id).size)
         assertEquals(1, ask(user("bob"), id, "Bob is not limited by alice").number) // the cap is per Santa
     }
 

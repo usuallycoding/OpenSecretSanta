@@ -10,7 +10,7 @@ import com.usuallycoding.opensecretsanta.domain.user.User
 object QuestionLimits {
     const val MAX_QUESTION_LENGTH = 1000
     const val MAX_ANSWER_LENGTH = 2000
-    const val MAX_QUESTIONS_PER_SANTA = 30
+    const val MAX_QUESTIONS_PER_SANTA = 200
 }
 
 private fun cleanText(value: String, maxLength: Int): String {
@@ -33,7 +33,7 @@ private fun Group.requireThread() {
     }
 }
 
-/** A Santa asks their receiver a question; each Santa has a thread of up to 30, numbered from 1. */
+/** A Santa asks their receiver a question; each Santa has a thread of up to [QuestionLimits.MAX_QUESTIONS_PER_SANTA], numbered from 1. */
 class AskQuestion(
     private val loadParticipantGroup: ParticipantGroupLoader,
     private val questions: QuestionRepository,

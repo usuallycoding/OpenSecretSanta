@@ -3,7 +3,7 @@ package com.usuallycoding.opensecretsanta.domain.wishlist
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 
 object WishlistLimits {
-    const val MAX_ITEMS = 50
+    const val MAX_ITEMS = 200
     const val MAX_TITLE_LENGTH = 200
     const val MAX_NOTE_LENGTH = 1000
     const val MAX_URL_LENGTH = 2000

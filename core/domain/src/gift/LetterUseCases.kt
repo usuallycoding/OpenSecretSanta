@@ -25,7 +25,7 @@ private fun Group.requireDrawn() {
     if (state != GroupState.ACTIVE && state != GroupState.ARCHIVED) throw DomainException.InvalidState("Letters start once the group is active.")
 }
 
-/** A receiver sends their Santa a letter with a title and a text, both required; up to 30 each, numbered from 1. */
+/** A receiver sends their Santa a letter with a title and a text, both required; up to [LetterLimits.MAX_LETTERS_PER_RECEIVER] each, numbered from 1. */
 class SendLetter(
     private val loadParticipantGroup: ParticipantGroupLoader,
     private val letters: LetterRepository,

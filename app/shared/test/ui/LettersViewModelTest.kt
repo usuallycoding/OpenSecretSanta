@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.ui
 
+import com.usuallycoding.opensecretsanta.domain.gift.LetterLimits
 import com.usuallycoding.opensecretsanta.ui.groups.GroupPhase
 import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.letters.InboxViewModel
@@ -169,14 +170,14 @@ class LettersViewModelTest {
         model.openSheet()
         model.editTitle("One more")
         model.editText("Text")
-        letters.sentBehindTheScenes(30)
+        letters.sentBehindTheScenes(LetterLimits.MAX_LETTERS_PER_RECEIVER)
         letters.failNextSendWith(HttpStatusCode.Conflict, "invalid_state", "The letter limit has been reached.")
 
         model.save()?.join()
 
         assertNull(model.ui.value.editor)
         assertEquals(LetterNotice.LimitReached, model.ui.value.notice)
-        assertEquals(30, model.data.value.value!!.letters.size)
+        assertEquals(LetterLimits.MAX_LETTERS_PER_RECEIVER, model.data.value.value!!.letters.size)
         assertFalse(model.canSend)
     }
 

@@ -4,6 +4,7 @@ import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.ErrorResponse
 import com.usuallycoding.opensecretsanta.contract.LetterDto
 import com.usuallycoding.opensecretsanta.contract.SendLetterRequest
+import com.usuallycoding.opensecretsanta.domain.gift.LetterLimits
 import io.ktor.client.HttpClient
 import io.ktor.client.request.header
 import io.ktor.client.request.request
@@ -117,16 +118,16 @@ class LetterRoutesTest {
     }
 
     @Test
-    fun theThirtyFirstLetterIsRefusedAndAnotherReceiverIsUnaffected() = testApplication {
+    fun aLetterBeyondTheLimitIsRefusedAndAnotherReceiverIsUnaffected() = testApplication {
         startApp()
         val id = world()
-        repeat(30) { assertEquals(HttpStatusCode.Created, client.write(id, "bob", "t$it", "x").status) }
+        repeat(LetterLimits.MAX_LETTERS_PER_RECEIVER) { assertEquals(HttpStatusCode.Created, client.write(id, "bob", "t$it", "x").status) }
 
         val refused = client.write(id, "bob", "one more", "x")
 
         assertEquals(HttpStatusCode.Conflict, refused.status)
         assertEquals("invalid_state", error(refused.bodyAsText()).code)
-        assertEquals(30, count())
+        assertEquals(LetterLimits.MAX_LETTERS_PER_RECEIVER, count())
         assertEquals(HttpStatusCode.Created, client.write(id, "carol", "t", "x").status)
     }
 

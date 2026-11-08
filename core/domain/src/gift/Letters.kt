@@ -5,7 +5,7 @@ import com.usuallycoding.opensecretsanta.domain.user.Username
 object LetterLimits {
     const val MAX_TITLE_LENGTH = 100
     const val MAX_TEXT_LENGTH = 2000
-    const val MAX_LETTERS_PER_RECEIVER = 30
+    const val MAX_LETTERS_PER_RECEIVER = 200
 }
 
 /**

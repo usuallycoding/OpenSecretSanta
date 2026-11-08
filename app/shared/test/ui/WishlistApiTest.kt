@@ -6,6 +6,7 @@ import com.usuallycoding.opensecretsanta.contract.WishlistItemDto
 import com.usuallycoding.opensecretsanta.contract.WishlistItemRequest
 import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.data.api.ApiResult
+import com.usuallycoding.opensecretsanta.domain.wishlist.WishlistLimits
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -125,12 +126,12 @@ class WishlistApiTest {
 
     @Test
     fun aFullListAnswers409() = runTest {
-        repeat(50) { server.wishlist.add("Item $it") }
+        repeat(WishlistLimits.MAX_ITEMS) { server.wishlist.add("Item $it") }
 
         val result = api.addWishlistItem(1, WishlistItemRequest("One too many"))
 
         assertEquals(ApiResult.Failure(ApiError.Rejected(409, "invalid_state", "The wishlist is full.")), result)
-        assertEquals(50, server.wishlist.ids.size)
+        assertEquals(WishlistLimits.MAX_ITEMS, server.wishlist.ids.size)
     }
 
     @Test

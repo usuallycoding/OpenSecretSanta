@@ -2,6 +2,7 @@ package com.usuallycoding.opensecretsanta.ui
 
 import com.usuallycoding.opensecretsanta.contract.ReceiverDto
 import com.usuallycoding.opensecretsanta.data.api.ApiError
+import com.usuallycoding.opensecretsanta.domain.gift.QuestionLimits
 import com.usuallycoding.opensecretsanta.ui.gift.GiftNotice
 import com.usuallycoding.opensecretsanta.ui.gift.ReceiverViewModel
 import com.usuallycoding.opensecretsanta.ui.groups.GroupPhase
@@ -200,8 +201,8 @@ class ReceiverViewModelTest {
     }
 
     @Test
-    fun atThirtyQuestionsAskingIsUnavailable() = runTest {
-        server.gift.askedBehindTheScenes(30)
+    fun atTheQuestionLimitAskingIsUnavailable() = runTest {
+        server.gift.askedBehindTheScenes(QuestionLimits.MAX_QUESTIONS_PER_SANTA)
         val model = viewModel()
 
         assertFalse(model.canAsk)
@@ -210,14 +211,14 @@ class ReceiverViewModelTest {
     }
 
     @Test
-    fun theThirtiethQuestionCanStillBeAsked() = runTest {
-        server.gift.askedBehindTheScenes(29)
+    fun theLastQuestionCanStillBeAsked() = runTest {
+        server.gift.askedBehindTheScenes(QuestionLimits.MAX_QUESTIONS_PER_SANTA - 1)
         val model = viewModel()
 
         assertTrue(model.canAsk)
         model.openAsk(); model.edit("Last one?"); model.save()?.join()
 
-        assertEquals(30, model.data.value.value!!.questions.size)
+        assertEquals(QuestionLimits.MAX_QUESTIONS_PER_SANTA, model.data.value.value!!.questions.size)
         assertFalse(model.canAsk)
     }
 
@@ -240,13 +241,13 @@ class ReceiverViewModelTest {
     fun theLimitReachedOnAnotherDeviceReloadsAndSaysSo() = runTest {
         val model = viewModel()
         model.openAsk(); model.edit("One more?")
-        server.gift.askedBehindTheScenes(30)
+        server.gift.askedBehindTheScenes(QuestionLimits.MAX_QUESTIONS_PER_SANTA)
 
         model.save()?.join()
 
         assertNull(model.ui.value.editor)
         assertEquals(GiftNotice.LimitReached, model.ui.value.notice)
-        assertEquals(30, model.data.value.value!!.questions.size)
+        assertEquals(QuestionLimits.MAX_QUESTIONS_PER_SANTA, model.data.value.value!!.questions.size)
         assertFalse(model.canAsk)
     }
 
@@ -300,7 +301,7 @@ class ReceiverViewModelTest {
     fun aNoticeCanBeDismissed() = runTest {
         val model = viewModel()
         model.openAsk(); model.edit("x")
-        server.gift.askedBehindTheScenes(30)
+        server.gift.askedBehindTheScenes(QuestionLimits.MAX_QUESTIONS_PER_SANTA)
         model.save()?.join()
         assertNotNull(model.ui.value.notice)
 

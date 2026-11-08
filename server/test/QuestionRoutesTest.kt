@@ -6,6 +6,7 @@ import com.usuallycoding.opensecretsanta.contract.ApiRoutes
 import com.usuallycoding.opensecretsanta.contract.AskQuestionRequest
 import com.usuallycoding.opensecretsanta.contract.ErrorResponse
 import com.usuallycoding.opensecretsanta.contract.QuestionDto
+import com.usuallycoding.opensecretsanta.domain.gift.QuestionLimits
 import io.ktor.client.HttpClient
 import io.ktor.client.request.header
 import io.ktor.client.request.request
@@ -122,16 +123,16 @@ class QuestionRoutesTest {
     }
 
     @Test
-    fun theThirtyFirstQuestionIsRefused() = testApplication {
+    fun aQuestionBeyondTheLimitIsRefused() = testApplication {
         startApp()
         val id = world()
-        repeat(30) { assertEquals(HttpStatusCode.Created, client.ask(id, "alice", "Question $it").status) }
+        repeat(QuestionLimits.MAX_QUESTIONS_PER_SANTA) { assertEquals(HttpStatusCode.Created, client.ask(id, "alice", "Question $it").status) }
 
         val response = client.ask(id, "alice", "one too many")
 
         assertEquals(HttpStatusCode.Conflict, response.status)
         assertEquals("invalid_state", error(response.bodyAsText()).code)
-        assertEquals(30, client.mine(id, "alice").size)
+        assertEquals(QuestionLimits.MAX_QUESTIONS_PER_SANTA, client.mine(id, "alice").size)
         assertEquals(HttpStatusCode.Created, client.ask(id, "bob", "bob still can").status)
     }
 

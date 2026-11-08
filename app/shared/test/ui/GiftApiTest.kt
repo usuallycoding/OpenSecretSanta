@@ -7,6 +7,7 @@ import com.usuallycoding.opensecretsanta.contract.ReceiverDto
 import com.usuallycoding.opensecretsanta.contract.SantaRevealDto
 import com.usuallycoding.opensecretsanta.data.api.ApiError
 import com.usuallycoding.opensecretsanta.data.api.ApiResult
+import com.usuallycoding.opensecretsanta.domain.gift.QuestionLimits
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
@@ -99,8 +100,8 @@ class GiftApiTest {
     }
 
     @Test
-    fun noMoreThanThirtyQuestionsCanBeAsked() = runTest {
-        server.gift.askedBehindTheScenes(30)
+    fun noMoreQuestionsThanTheLimitCanBeAsked() = runTest {
+        server.gift.askedBehindTheScenes(QuestionLimits.MAX_QUESTIONS_PER_SANTA)
 
         val result = api.askQuestion(1, "One more?")
 

@@ -5,6 +5,7 @@ import com.usuallycoding.opensecretsanta.contract.ErrorResponse
 import com.usuallycoding.opensecretsanta.contract.ReorderWishlistRequest
 import com.usuallycoding.opensecretsanta.contract.WishlistItemDto
 import com.usuallycoding.opensecretsanta.contract.WishlistItemRequest
+import com.usuallycoding.opensecretsanta.domain.wishlist.WishlistLimits
 import io.ktor.client.HttpClient
 import io.ktor.client.request.header
 import io.ktor.client.request.request
@@ -149,16 +150,16 @@ class WishlistRoutesTest {
     }
 
     @Test
-    fun theFiftyFirstItemIsRefused() = testApplication {
+    fun anItemBeyondTheLimitIsRefused() = testApplication {
         startApp()
         val id = world()
-        repeat(50) { assertEquals(HttpStatusCode.Created, client.addItem(id, "alice", "Item $it").status) }
+        repeat(WishlistLimits.MAX_ITEMS) { assertEquals(HttpStatusCode.Created, client.addItem(id, "alice", "Item $it").status) }
 
         val response = client.addItem(id, "alice", "One too many")
 
         assertEquals(HttpStatusCode.Conflict, response.status)
         assertEquals("invalid_state", error(response.bodyAsText()).code)
-        assertEquals(50, client.wishes(id, "alice").size)
+        assertEquals(WishlistLimits.MAX_ITEMS, client.wishes(id, "alice").size)
         assertEquals(HttpStatusCode.Created, client.addItem(id, "bob", "Bob's own list").status)
     }
 

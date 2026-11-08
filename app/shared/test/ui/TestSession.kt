@@ -57,6 +57,9 @@ import com.usuallycoding.opensecretsanta.contract.SantaRevealDto
 import com.usuallycoding.opensecretsanta.contract.SharedWishlistItemDto
 import com.usuallycoding.opensecretsanta.contract.WishlistItemDto
 import com.usuallycoding.opensecretsanta.contract.WishlistItemRequest
+import com.usuallycoding.opensecretsanta.domain.gift.LetterLimits
+import com.usuallycoding.opensecretsanta.domain.gift.QuestionLimits
+import com.usuallycoding.opensecretsanta.domain.wishlist.WishlistLimits
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -178,7 +181,7 @@ class ScriptedServer {
 fun immediateScope() = CoroutineScope(Dispatchers.Unconfined)
 
 /**
- * A wishlist with the server's behavior: items get ids, a list holds at most 50, an empty title is
+ * A wishlist with the server's behavior: items get ids, a list holds at most [WishlistLimits.MAX_ITEMS], an empty title is
  * refused, a reorder must name exactly the current ids, and a group that is not editable answers 409.
  * A test can also queue a failure that the next change (add, edit, delete or reorder) answers with.
  */
@@ -232,7 +235,7 @@ class FakeWishlist {
                 val request = Json.decodeFromString<WishlistItemRequest>(body)
                 when {
                     request.title.isBlank() -> error(HttpStatusCode.BadRequest, "validation_failed", "Title must be 1 to 200 characters long.", "title")
-                    rows.size >= 50 -> error(HttpStatusCode.Conflict, "invalid_state", "The wishlist is full.")
+                    rows.size >= WishlistLimits.MAX_ITEMS -> error(HttpStatusCode.Conflict, "invalid_state", "The wishlist is full.")
                     else -> {
                         val row = Row(nextId++, request.title.trim(), request.note?.trim()?.ifEmpty { null }, request.url?.trim()?.ifEmpty { null })
                         rows += row
@@ -269,7 +272,7 @@ class FakeWishlist {
 
 /**
  * The gift routes with the server's behavior: details and threads exist once the group is Active or
- * Archived, the reveal only once it is Archived, a question is 1 to 1000 characters and at most 30,
+ * Archived, the reveal only once it is Archived, a question is 1 to 1000 characters and at most [QuestionLimits.MAX_QUESTIONS_PER_SANTA],
  * an answer 1 to 2000, and anything that writes needs an Active group. The Santa's questions carry
  * no sign of who asked. A test can queue a failure that the next write answers with.
  */
@@ -337,7 +340,7 @@ class FakeGift {
                 val text = Json.decodeFromString<AskQuestionRequest>(body).text
                 when {
                     tooLong(text, 1000) -> error(HttpStatusCode.BadRequest, "validation_failed", "Text must be 1 to 1000 characters long.", "text")
-                    asked.size >= 30 -> error(HttpStatusCode.Conflict, "invalid_state", "You have asked the most questions allowed.")
+                    asked.size >= QuestionLimits.MAX_QUESTIONS_PER_SANTA -> error(HttpStatusCode.Conflict, "invalid_state", "You have asked the most questions allowed.")
                     else -> {
                         val question = QuestionDto(asked.size + 1, text.trim(), "2026-12-02T10:00:00Z")
                         asked += question
@@ -408,7 +411,7 @@ class FakeLetters(private val gift: FakeGift) {
         return when {
             request.title.isBlank() || request.title.trim().length > 100 -> error(HttpStatusCode.BadRequest, "validation_failed", "Title must be 1 to 100 characters long.", "title")
             request.text.isBlank() || request.text.trim().length > 2000 -> error(HttpStatusCode.BadRequest, "validation_failed", "Text must be 1 to 2000 characters long.", "text")
-            sent.size >= 30 -> error(HttpStatusCode.Conflict, "invalid_state", "The letter limit has been reached.")
+            sent.size >= LetterLimits.MAX_LETTERS_PER_RECEIVER -> error(HttpStatusCode.Conflict, "invalid_state", "The letter limit has been reached.")
             else -> {
                 val letter = LetterDto(sent.size + 1, request.title.trim(), request.text.trim(), "2026-12-04T10:00:00Z")
                 sent += letter
