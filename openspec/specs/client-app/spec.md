@@ -286,7 +286,7 @@ A form that has a primary button (Delivery info, Change password, Sign in, and t
 - **THEN** it scrolls and the Sign in button can be reached
 
 ### Requirement: Dragging dismisses the keyboard
-A drag by the person that scrolls a form or a bottom sheet SHALL close the keyboard. Scrolling the app does itself to bring a field into view SHALL NOT close it, and a drag that only scrolls the text inside a multi-line field SHALL NOT close it.
+A drag by the person that scrolls a form or a bottom sheet SHALL close the keyboard. Scrolling the app does itself to bring a field into view SHALL NOT close it, whatever the size of the screen, and a drag that only scrolls the text inside a multi-line field SHALL NOT close it.
 
 #### Scenario: Drag a form
 - **WHEN** the keyboard is open on the Delivery Info page and the person drags the form
@@ -295,6 +295,10 @@ A drag by the person that scrolls a form or a bottom sheet SHALL close the keybo
 #### Scenario: Field brought into view
 - **WHEN** the person taps a field that is partly under the keyboard and the form scrolls to show it
 - **THEN** the keyboard stays open
+
+#### Scenario: Short screen
+- **WHEN** the person taps any field of the Delivery Info page on a short screen, such as a phone in landscape, where the keyboard leaves room for little more than the field
+- **THEN** the form scrolls to show the field and the keyboard stays open
 
 #### Scenario: Drag inside a field
 - **WHEN** the person drags inside a multi-line field that is scrolling its own text
@@ -612,7 +616,7 @@ A bottom sheet in which the keyboard is not open SHALL be dragged, scrolled and 
 - **THEN** the content scrolls and the keyboard closes, as the dragging requirement says, and the sheet is not moved
 
 ### Requirement: Swiping anywhere closes the keyboard
-On every screen that is not a bottom sheet or a dialog, a swipe or drag in any direction outside the keyboard SHALL close the keyboard, wherever on the screen it starts, including on a list that scrolls under it. A drag that a text field uses for its own text, moving the cursor, selecting or scrolling it, SHALL NOT close it.
+On every screen that is not a bottom sheet or a dialog, a swipe or drag in any direction outside the keyboard SHALL close the keyboard, wherever on the screen it starts, including on a list that scrolls under it. A drag that a text field uses for its own text, moving the cursor, selecting or scrolling it, SHALL NOT close it. A scroll the app does itself, with no finger on the screen, SHALL NOT close it.
 
 #### Scenario: Swipe a list
 - **WHEN** the keyboard is open for the search field of the Groups tab and the person swipes up on the list
@@ -633,6 +637,10 @@ On every screen that is not a bottom sheet or a dialog, a swipe or drag in any d
 #### Scenario: Pull to reload
 - **WHEN** the keyboard is open and the person pulls a list down to reload it
 - **THEN** the list reloads and the keyboard closes
+
+#### Scenario: Scroll the app does itself
+- **WHEN** the keyboard opens for a field and the screen scrolls on its own to keep the field in view, with no finger on the screen
+- **THEN** the keyboard stays open and the field keeps the focus
 
 ### Requirement: Tapping empty space closes the keyboard
 A tap on anything that does not handle it, such as empty space or plain text, SHALL close the keyboard. A tap on a text field SHALL focus it, and a tap on a control SHALL do what the control does.
