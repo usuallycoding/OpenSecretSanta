@@ -98,7 +98,7 @@ private fun SheetContent(hider: KeyboardHider, keyboardOpen: Boolean, onKeyboard
     // a drag nothing used hides the keyboard; a form's own scrolling uses every vertical drag, even with nothing to scroll,
     // so vertical drags are judged by what is left of them, which is what the hook counts
     val tracker = remember { GestureTracker() }
-    val connection = remember { scrollHook(countConsumed = false) { if (keyboardOpen) hider.hide() } }
+    val connection = remember { scrollHook(countConsumed = false, fingerDown = { tracker.fingerDown }) { if (keyboardOpen) hider.hide() } }
     Column(
         Modifier.fillMaxWidth().nestedScroll(connection).watchGestures(tracker, onDrag = { if (keyboardOpen) hider.hide() }, onTap = null),
     ) {

@@ -41,6 +41,9 @@ internal class GestureTracker {
     var downAt: Long = -1L
         private set
 
+    /** Whether a finger is on the screen: from the first pressed event of a touch until it is released. */
+    val fingerDown: Boolean get() = origin != null
+
     fun onEvent(position: Offset, pressed: Boolean, consumed: Boolean, uptime: Long, slop: Float): Gesture {
         if (pressed) {
             val start = origin
@@ -118,11 +121,13 @@ internal fun Modifier.watchGestures(tracker: GestureTracker, onDrag: () -> Unit,
 /**
  * Calls [onScroll] when the person's own vertical scroll reaches here. With [countConsumed] a scroll the content used
  * counts as well, which is how a list that scrolls also closes the keyboard; without it only what the content could not
- * scroll counts. Horizontal scrolling is left out: it is how a single-line field scrolls its own text.
+ * scroll counts. Horizontal scrolling is left out: it is how a single-line field scrolls its own text. Only a scroll made while
+ * [fingerDown] is true counts: when the keyboard opens, the framework scrolls the focused field into view and reports that as
+ * user input too, with no finger on the screen.
  */
-internal fun scrollHook(countConsumed: Boolean, onScroll: () -> Unit): NestedScrollConnection = object : NestedScrollConnection {
+internal fun scrollHook(countConsumed: Boolean, fingerDown: () -> Boolean, onScroll: () -> Unit): NestedScrollConnection = object : NestedScrollConnection {
     override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-        if (source == NestedScrollSource.UserInput && (available.y != 0f || (countConsumed && consumed.y != 0f))) onScroll()
+        if (source == NestedScrollSource.UserInput && fingerDown() && (available.y != 0f || (countConsumed && consumed.y != 0f))) onScroll()
         return Offset.Zero
     }
 }
@@ -144,7 +149,7 @@ fun KeyboardDismissRoot(content: @Composable () -> Unit) {
         focus.clearFocus()
         keyboard?.hide()
     }
-    val connection = remember(tracker, guard) { scrollHook(countConsumed = true, onScroll = { close() }) }
+    val connection = remember(tracker, guard) { scrollHook(countConsumed = true, fingerDown = { tracker.fingerDown }, onScroll = { close() }) }
     Box(Modifier.fillMaxSize().nestedScroll(connection).watchGestures(tracker, onDrag = { close() }, onTap = { close() })) {
         CompositionLocalProvider(LocalTouchGuard provides guard) { content() }
     }

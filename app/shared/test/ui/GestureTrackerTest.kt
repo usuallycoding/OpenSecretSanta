@@ -5,6 +5,8 @@ import com.usuallycoding.opensecretsanta.ui.form.Gesture
 import com.usuallycoding.opensecretsanta.ui.form.GestureTracker
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class GestureTrackerTest {
     private val slop = 8f
@@ -69,6 +71,18 @@ class GestureTrackerTest {
         assertEquals(42L, tracker.downAt)
         tracker.up()
         assertEquals(-1L, tracker.downAt)
+    }
+
+    @Test
+    fun theFingerIsDownFromTheFirstEventOfATouchUntilItIsReleased() {
+        val tracker = GestureTracker()
+        assertFalse(tracker.fingerDown)
+        tracker.down()
+        assertTrue(tracker.fingerDown)
+        tracker.move(Offset(100f, 160f))
+        assertTrue(tracker.fingerDown)
+        tracker.up()
+        assertFalse(tracker.fingerDown)
     }
 
     @Test
