@@ -112,25 +112,6 @@ While a wishlist loads, the app SHALL show a progress indicator in its place. Wh
 - **WHEN** the app returns to the foreground
 - **THEN** the visible page's wishlist reloads without clearing what it shows
 
-### Requirement: Links open in a dialog
-Choosing a link shown on an item SHALL open a dialog with the whole link, not cut, with an "Open in browser" button and a "Cancel" button, and a copy icon as for other read-only text. "Open in browser" SHALL open the link in the platform's browser or default handler and close the dialog; "Cancel" SHALL close it and open nothing. Only addresses the server accepted (`http` or `https`) SHALL ever be shown as links. This applies to every link of every place a wishlist is shown.
-
-#### Scenario: Show the whole link
-- **WHEN** the person chooses a link of 300 characters
-- **THEN** a dialog shows all of it, wrapped
-
-#### Scenario: Open it
-- **WHEN** the person chooses "Open in browser" in the link dialog
-- **THEN** the link opens outside the app in the platform's browser and the dialog closes
-
-#### Scenario: Cancel
-- **WHEN** the person chooses "Cancel" in the link dialog
-- **THEN** the dialog closes and nothing opens
-
-#### Scenario: Each link has its own dialog
-- **WHEN** an item shows three links and the person chooses the second
-- **THEN** the dialog shows the second link only
-
 ### Requirement: Reordering items by dragging
 While the group is Pending or Active, each item SHALL have a drag handle, and dragging an item by it SHALL move the item through the list, with the other items making room, using touch or a mouse. Dropping it SHALL send the complete list of item ids in the new order once, with `PUT /groups/{id}/wishlist/order`, and show the order the server returns. No move up or move down button SHALL be shown, and the handles are unavailable while a move is being saved.
 
@@ -237,3 +218,33 @@ An item SHALL show each of its links, one under another in their order, between 
 #### Scenario: No links
 - **WHEN** an item has no link
 - **THEN** the item shows no link
+
+### Requirement: Links open in the browser
+Choosing a link shown on an item SHALL open it at once in the platform's browser or default handler, with no dialog or other step between. Only addresses the server accepted (`http` or `https`) SHALL ever be shown as links. When nothing can open the link, nothing SHALL happen. This applies to every link of every place a wishlist is shown.
+
+#### Scenario: Open it
+- **WHEN** the person chooses a link on an item
+- **THEN** the link opens outside the app in the platform's browser and no dialog is shown
+
+#### Scenario: Each link opens itself
+- **WHEN** an item shows three links and the person chooses the second
+- **THEN** the second link opens and the other two do not
+
+#### Scenario: Nothing can open it
+- **WHEN** the platform cannot open the link
+- **THEN** nothing happens and the item is unchanged
+
+### Requirement: A link is one line with a copy icon
+A link SHALL be shown on one line, cut with an ellipsis when it does not fit, with a copy icon as for other read-only text that copies the whole link without opening it. A screen reader SHALL read a link as one that opens in the browser.
+
+#### Scenario: A long link
+- **WHEN** an item has a link of 300 characters
+- **THEN** it is shown on one line, cut with an ellipsis, and choosing it opens the whole link
+
+#### Scenario: Copy the whole link
+- **WHEN** the person chooses the copy icon of a link of 300 characters
+- **THEN** all 300 characters are copied and the link does not open
+
+#### Scenario: Read as a link
+- **WHEN** a screen reader reaches a link
+- **THEN** it is read as a link that opens in the browser

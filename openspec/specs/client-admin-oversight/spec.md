@@ -62,11 +62,11 @@ Choosing the gift icon at the end of a participant's row in a Pending group SHAL
 
 #### Scenario: Link opens
 - **WHEN** the owner chooses an item's link
-- **THEN** the link dialog opens, and the link opens in the browser only from its "Open in browser" button
+- **THEN** the link opens in the browser at once, as it does in the person's own list
 
 #### Scenario: Several links
 - **WHEN** an item has three links
-- **THEN** the sheet or pane shows the three one under another in their order, each opening the link dialog
+- **THEN** the sheet or pane shows the three one under another in their order, each opening in the browser
 
 #### Scenario: Pane beside the page
 - **WHEN** the owner chooses the gift icon of a participant's row on a wide window
@@ -256,13 +256,6 @@ There SHALL be no wishlist screen for a participant's wishlist, and the sheet SH
 #### Scenario: A sheet, not a screen
 - **WHEN** the owner chooses a participant's gift icon
 - **THEN** a bottom sheet opens over the group's detail and no wishlist screen is shown
-
-### Requirement: Wishlist links open the link dialog
-Choosing any link in the participant's wishlist sheet SHALL open the link dialog of `client-wishlist` for that link.
-
-#### Scenario: The same dialog as the person's own list
-- **WHEN** the owner chooses a link in the wishlist sheet
-- **THEN** the link dialog that the person's own wishlist uses opens
 
 ### Requirement: The user sheet resets passwords
 The user sheet SHALL offer "Reset password" with the same confirmation and one-time password dialog as the Users tab, and SHALL offer none for the administrator's own username.
