@@ -108,6 +108,9 @@ class ScriptedServer {
     var receiverWishlist: List<SharedWishlistItemDto> = emptyList()
     var receiverWishlistAnswer: Pair<HttpStatusCode, String>? = null
 
+    /** What `/health` answers; the body says whether an Android app can be downloaded. */
+    var healthAnswer: Pair<HttpStatusCode, String> = HttpStatusCode.OK to """{"status":"ok","schemaVersion":16,"androidDownload":false}"""
+
     var unreachable = false
     val calls = mutableListOf<String>()
     val bodies = mutableListOf<String>()
@@ -125,6 +128,7 @@ class ScriptedServer {
         )
         when (request.url.encodedPath) {
             ApiRoutes.LOGIN -> json(loginAnswer.first, loginAnswer.second.first, loginAnswer.second.second)
+            ApiRoutes.HEALTH -> json(healthAnswer.first, healthAnswer.second)
             ApiRoutes.ME_PASSWORD -> json(passwordAnswer.first, passwordAnswer.second)
             ApiRoutes.ME -> json(HttpStatusCode.OK, accountBody(request.headers[HttpHeaders.Authorization]?.removePrefix("Bearer ")))
             ApiRoutes.GROUPS -> json(groupsAnswer.first, groupsAnswer.second)

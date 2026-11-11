@@ -5,6 +5,7 @@ import com.usuallycoding.opensecretsanta.domain.auth.TokenService
 import com.usuallycoding.opensecretsanta.domain.user.UserRepository
 import com.usuallycoding.opensecretsanta.server.config.ConfigurationException
 import com.usuallycoding.opensecretsanta.server.config.ServerConfig
+import com.usuallycoding.opensecretsanta.server.data.download.ApkDownloads
 import com.usuallycoding.opensecretsanta.server.data.db.ClasspathMigrations
 import com.usuallycoding.opensecretsanta.server.data.db.Migration
 import com.usuallycoding.opensecretsanta.server.data.db.MigrationRunner
@@ -94,6 +95,7 @@ import com.usuallycoding.opensecretsanta.server.presentation.wishlistRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.deliveryInfoRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.authRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.registerLoginLimit
+import com.usuallycoding.opensecretsanta.server.presentation.downloadRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.healthRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.installAccessTokens
 import com.usuallycoding.opensecretsanta.server.presentation.installErrorHandling
@@ -159,6 +161,7 @@ fun Application.module(
 
     routing {
         healthRoutes(get<HealthService>())
+        downloadRoutes(get<ApkDownloads>())
         authRoutes(get<Login>())
 
         authenticate(ACCESS_AUTH) {

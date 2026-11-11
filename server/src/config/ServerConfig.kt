@@ -33,6 +33,8 @@ data class ServerConfig(
     val fcm: FcmCredentials? = null,
     /** Where the FCM API is; only changed to point the server at a stand-in during tests. */
     val fcmApiUrl: String? = null,
+    /** The folder `/download_latest` takes the Android app from; it need not exist. */
+    val downloadsDir: String = DEFAULT_DOWNLOADS_DIR,
 ) {
     fun encryptionKeyBytes(): ByteArray = Base64.getDecoder().decode(dataEncryptionKey.trim())
 
@@ -44,11 +46,12 @@ data class ServerConfig(
     /** The secrets are never printed, so that the configuration can be logged without leaking them. */
     override fun toString(): String =
         "ServerConfig(dbPath=$dbPath, port=$port, adminUsername=$adminUsername, corsAllowedOrigins=$corsAllowedOrigins, " +
-            "emailEnabled=$emailEnabled, emailFrom=$emailFrom, appUrl=$appUrl, pushEnabled=$pushEnabled, secrets=hidden)"
+            "emailEnabled=$emailEnabled, emailFrom=$emailFrom, appUrl=$appUrl, pushEnabled=$pushEnabled, downloadsDir=$downloadsDir, secrets=hidden)"
 
     companion object {
         const val DEFAULT_DB_PATH = "opensecretsanta.db"
         const val DEFAULT_PORT = 8080
+        const val DEFAULT_DOWNLOADS_DIR = "downloads"
         const val DEFAULT_ADMIN_USERNAME = "admin"
         const val ENCRYPTION_KEY_BYTES = 32
 
@@ -67,6 +70,7 @@ data class ServerConfig(
             resendApiUrl = env["RESEND_API_URL"]?.takeIf { it.isNotBlank() }?.trim(),
             fcm = env[FcmCredentials.VARIABLE]?.takeIf { it.isNotBlank() }?.let { FcmCredentials.load(it.trim()) },
             fcmApiUrl = env["FCM_API_URL"]?.takeIf { it.isNotBlank() }?.trim(),
+            downloadsDir = env["DOWNLOADS_DIR"]?.takeIf { it.isNotBlank() }?.trim() ?: DEFAULT_DOWNLOADS_DIR,
         )
 
         private val ORIGIN = Regex("(https?)://([A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?)(:[0-9]{1,5})?")

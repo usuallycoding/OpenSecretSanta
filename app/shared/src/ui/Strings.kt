@@ -61,6 +61,7 @@ object Strings {
     const val NEW_PASSWORD = "New password"
     const val REPEAT_PASSWORD = "Repeat new password"
     const val CHANGE_PASSWORD = "Change password"
+    const val DOWNLOAD_ANDROID_APP = "Download Android app"
     const val CHANGING_PASSWORD = "Changing..."
     const val CHANGE_PASSWORD_SHEET_INTRO = "You will be signed out on your other devices."
     const val PASSWORD_CHANGED = "Your password was changed. You are signed out on your other devices."

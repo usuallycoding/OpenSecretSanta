@@ -39,6 +39,7 @@ import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 import org.koin.test.verify.verify
+import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -49,7 +50,8 @@ class ServerModulesTest {
     @Test
     fun moduleGraphIsComplete() {
         val config = testConfig()
-        module { includes(serverModules(config, migrations = emptyList())) }.verify()
+        // the downloads folder is a Path built from the configuration, so it is not a definition of its own
+        module { includes(serverModules(config, migrations = emptyList())) }.verify(extraTypes = listOf(Path::class))
     }
 
     @Test

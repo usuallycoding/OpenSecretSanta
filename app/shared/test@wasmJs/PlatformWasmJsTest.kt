@@ -19,4 +19,9 @@ class PlatformWasmJsTest {
     fun theWebOffersTheChoiceToStaySignedIn() {
         assertTrue(getPlatform().canChooseToStaySignedIn)
     }
+
+    @Test
+    fun theWebOffersTheAndroidDownload() {
+        assertTrue(getPlatform().offersAndroidDownload)
+    }
 }

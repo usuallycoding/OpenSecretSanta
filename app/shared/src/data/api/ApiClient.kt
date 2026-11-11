@@ -4,6 +4,7 @@ import com.usuallycoding.opensecretsanta.contract.AccountDto
 import com.usuallycoding.opensecretsanta.contract.AddDrawRuleRequest
 import com.usuallycoding.opensecretsanta.contract.AdminGroupDto
 import com.usuallycoding.opensecretsanta.contract.HandOverAdminRequest
+import com.usuallycoding.opensecretsanta.contract.HealthResponse
 import com.usuallycoding.opensecretsanta.contract.DrawRuleDto
 import com.usuallycoding.opensecretsanta.contract.DrawRulesDto
 import com.usuallycoding.opensecretsanta.contract.AdminQuestionThreadDto
@@ -103,6 +104,12 @@ class ApiClient(
         call(HttpMethod.Post, ApiRoutes.LOGIN, authenticated = false, body = LoginRequest(username, password))
 
     suspend fun account(): ApiResult<AccountDto> = call(HttpMethod.Get, ApiRoutes.ME)
+
+    /** What the server says about itself; needs no sign-in. */
+    suspend fun health(): ApiResult<HealthResponse> = call(HttpMethod.Get, ApiRoutes.HEALTH, authenticated = false)
+
+    /** Where the newest Android app is downloaded from: a plain address, to be opened by the browser. */
+    fun androidDownloadUrl(): String = baseUrl.trimEnd('/') + ApiRoutes.DOWNLOAD_LATEST
 
     suspend fun groups(): ApiResult<List<MemberGroupDto>> = call(HttpMethod.Get, ApiRoutes.GROUPS)
 

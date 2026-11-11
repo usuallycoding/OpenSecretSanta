@@ -30,6 +30,7 @@ import com.usuallycoding.opensecretsanta.APP_VERSION
 import com.usuallycoding.opensecretsanta.data.push.PushRegistration
 import com.usuallycoding.opensecretsanta.data.settings.AppearanceSettings
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.download.androidDownloadAction
 import com.usuallycoding.opensecretsanta.ui.form.SheetBackHandler
 import com.usuallycoding.opensecretsanta.ui.notifications.NotificationsSheet
 import com.usuallycoding.opensecretsanta.ui.notifications.NotificationsViewModel
@@ -64,6 +65,8 @@ fun SettingsScreen(onSignOut: () -> Unit) {
         SettingsRow(Strings.APPEARANCE, supporting = appearance.mode.label()) { choosingAppearance = true }
         if (push.isOffered) SettingsRow(Strings.NOTIFICATIONS) { choosingNotifications = true }
         SettingsRow(Strings.CHANGE_PASSWORD) { changingPassword = true }
+        // on the web, while the server has an app to give: it downloads in the browser, so there is no sheet to open
+        androidDownloadAction()?.let { download -> SettingsRow(Strings.DOWNLOAD_ANDROID_APP, chevron = false, onClick = download) }
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
         SettingsRow(Strings.SIGN_OUT, chevron = false, onClick = onSignOut)
         Text(

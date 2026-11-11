@@ -7,6 +7,7 @@
 #
 # SECRETS_DIR is only needed for push notifications: the folder that holds the Firebase service-account key, as a
 # full path when the file is not next to the compose file (Portainer runs it from a folder of its own).
+# DOWNLOADS_HOST_DIR is the same for the folder the Android app is copied to (./downloads by default).
 
 services:
   server:
@@ -25,12 +26,16 @@ services:
       APP_URL: ${APP_URL:-}
       # optional: push notifications. FCM_KEY_FILE is the name of the service-account key inside SECRETS_DIR
       FCM_SERVICE_ACCOUNT_FILE: ${FCM_KEY_FILE:+/run/push-secrets/${FCM_KEY_FILE}}
+      # where /download_latest finds the Android app inside the container
+      DOWNLOADS_DIR: /downloads
     ports:
       - "${SERVER_PORT:-8081}:8080"
     volumes:
       - data:/data
       # only the server sees the push key, and only for reading; it is in no image
       - ${SECRETS_DIR:-./secrets}:/run/push-secrets:ro
+      # the Android app that /download_latest serves: copy the APK in, the server only reads it (README: "Publish the Android app")
+      - ${DOWNLOADS_HOST_DIR:-./downloads}:/downloads:ro
 
   web:
     image: ghcr.io/usuallycoding/opensecretsanta-web:${IMAGE_TAG:-latest}

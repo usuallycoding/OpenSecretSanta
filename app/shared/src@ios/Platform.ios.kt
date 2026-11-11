@@ -6,6 +6,7 @@ class IOSPlatform: Platform {
     override val name: String = UIDevice.currentDevice.systemName() + " " + UIDevice.currentDevice.systemVersion
     override val hasPullToRefresh: Boolean = true
     override val canChooseToStaySignedIn: Boolean = false
+    override val offersAndroidDownload: Boolean = false
 }
 
 actual fun getPlatform(): Platform = IOSPlatform()

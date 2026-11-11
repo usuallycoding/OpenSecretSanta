@@ -38,6 +38,7 @@ The server reads its configuration from environment variables and refuses to sta
 | `RESEND_API_URL`      | no                        | `https://api.resend.com` | Only for tests: points the server at a stand-in for Resend |
 | `FCM_SERVICE_ACCOUNT_FILE` | no                   | -                    | Path to a Firebase service-account key (JSON); with it the server sends push notifications to Android and web (see below), without it none |
 | `FCM_API_URL`         | no                        | `https://fcm.googleapis.com` | Only for tests: points the server at a stand-in for FCM |
+| `DOWNLOADS_DIR`       | no                        | `downloads`          | The folder `GET /download_latest` takes the Android app from: the newest `.apk` in it (see "Publish the Android app"); it need not exist |
 
 #### Emails when the names are drawn
 
@@ -81,7 +82,7 @@ JWT_SECRET=change-me \
 DATA_ENCRYPTION_KEY="$(openssl rand -base64 32)" \
 ADMIN_PASSWORD=choose-a-password \
 ./kotlin run -m server
-curl localhost:8080/health   # {"status":"ok","schemaVersion":<n>}
+curl localhost:8080/health   # {"status":"ok","schemaVersion":<n>,"androidDownload":false}
 ```
 
 `CORS_ALLOWED_ORIGINS` is only needed when the web app is served from a different origin than the server. Each entry is `scheme://host[:port]` with no path, no trailing slash and no wildcard (`*` is refused at startup). When it is empty the server adds no cross-origin headers at all; when it is set, a browser request from an origin that is not listed is refused with `403`, while same-origin requests and native apps (which send no `Origin`) are unaffected.
@@ -344,6 +345,24 @@ Set it up once:
 6. **The tester group**: open the project's App Distribution page, then Testers & Groups. The script wants the group's *alias* (under the group's name, normally the name in lower case, such as `dincolo`), not the display name. Testers get an email invitation the first time.
 
 Node is needed for the upload (`npx firebase-tools`), and the Android SDK build-tools for `apksigner`, which the script finds under `ANDROID_HOME` or the usual SDK folders.
+
+#### Publish the Android app
+
+The server can hand out the Android app at `GET /download_latest`, with no sign-in, from an APK that you copy to the machine it runs on. It is for people who are not testers in Firebase App Distribution, and the web app offers it on its sign-in screen and in Settings while an APK is there. Nothing uploads it for you.
+
+1. Build the signed APK without sending it anywhere, and take the path it prints:
+   ```
+   scripts/distribute-android.sh --no-upload
+   ```
+2. On the machine that runs the stack, make the folder once, next to the compose file (or anywhere, and set `DOWNLOADS_HOST_DIR` in `.env` to its full path, for example in Portainer): `mkdir downloads`. Docker would otherwise create it for root. The server runs as an unprivileged user and mounts the folder read-only, so a file must be readable by others (mode 644).
+3. Copy the APK there under a name that ends in `.part`, and rename it when the copy is complete, so that nobody can download half a file (the server ignores anything that does not end in `.apk`):
+   ```
+   scp build/distribution/opensecretsanta-1.1.5-28900000.apk pi@raspberrypi.local:santa/downloads/opensecretsanta-1.1.5-28900000.apk.part
+   ssh pi@raspberrypi.local 'cd santa/downloads && chmod 644 *.part && mv opensecretsanta-1.1.5-28900000.apk.part opensecretsanta-1.1.5-28900000.apk'
+   ```
+4. Check it through the public address, from a phone if you can: `curl -OJ https://santa-api.example.org/download_latest`. A proxy or tunnel in front of the server has to let a download of that size (several tens of megabytes) through; if it does not, the check is where you find out.
+
+The file served is the newest `.apk` in the folder: names like `opensecretsanta-<version>-<code>.apk`, which is what the script writes, are ordered by their version code as a number, so the build you just made wins, and any other name comes after them (the most recently modified first). Older APKs can stay in the folder, and deleting the newest one rolls back to the one before. Without an APK, `/download_latest` answers 404 and `GET /health` has `"androidDownload": false`, so the web app shows no link. The download is public: anyone with the address can fetch the app, which holds no secret (the release key stays on your machine). To install it, Android asks to allow installs from the browser, and it installs over an existing copy because both are signed with the same release key.
 
 #### Opening links in the Android app
 

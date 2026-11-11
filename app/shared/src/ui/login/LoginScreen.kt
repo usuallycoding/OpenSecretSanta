@@ -13,6 +13,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -34,6 +35,7 @@ import com.usuallycoding.opensecretsanta.resources.Res
 import com.usuallycoding.opensecretsanta.resources.app_logo_dark
 import com.usuallycoding.opensecretsanta.resources.app_logo_light
 import com.usuallycoding.opensecretsanta.ui.Strings
+import com.usuallycoding.opensecretsanta.ui.download.androidDownloadAction
 import org.jetbrains.compose.resources.painterResource
 import com.usuallycoding.opensecretsanta.ui.form.touchesOfAField
 import com.usuallycoding.opensecretsanta.ui.form.PasswordField
@@ -89,6 +91,8 @@ fun LoginScreen(viewModel: LoginViewModel, sessionEnded: Boolean) {
         Button(onClick = viewModel::submit, enabled = state.canSubmit, modifier = Modifier.fillMaxWidth()) {
             Text(if (state.inProgress) Strings.SIGNING_IN else Strings.SIGN_IN)
         }
+        // on the web, while the server has an app to give: the download opens in the browser and this screen stays as it is
+        androidDownloadAction()?.let { download -> TextButton(onClick = download) { Text(Strings.DOWNLOAD_ANDROID_APP) } }
         Text(Strings.version(APP_VERSION), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

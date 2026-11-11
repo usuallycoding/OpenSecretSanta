@@ -32,6 +32,26 @@ class ServerConfigTest {
     }
 
     @Test
+    fun downloadsFolderDefaultsToDownloads() {
+        assertEquals("downloads", ServerConfig.fromEnv(envWith()).downloadsDir)
+    }
+
+    @Test
+    fun downloadsFolderCanBeSet() {
+        assertEquals("/downloads", ServerConfig.fromEnv(envWith("DOWNLOADS_DIR" to " /downloads ")).downloadsDir)
+    }
+
+    @Test
+    fun blankDownloadsFolderIsTheDefault() {
+        assertEquals("downloads", ServerConfig.fromEnv(envWith("DOWNLOADS_DIR" to "   ")).downloadsDir)
+    }
+
+    @Test
+    fun aDownloadsFolderThatDoesNotExistIsNotAnError() {
+        assertEquals("/no/such/folder", ServerConfig.fromEnv(envWith("DOWNLOADS_DIR" to "/no/such/folder")).downloadsDir)
+    }
+
+    @Test
     fun blankAdminPasswordCountsAsMissing() {
         assertNull(ServerConfig.fromEnv(envWith("ADMIN_PASSWORD" to "  ")).adminPassword)
     }

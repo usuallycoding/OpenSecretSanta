@@ -33,7 +33,36 @@ class ApplicationTest {
         val response = client.get(ApiRoutes.HEALTH)
 
         assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals(HealthResponse("ok", schemaVersion = 16), Json.decodeFromString(response.bodyAsText()))
+        assertEquals(HealthResponse("ok", schemaVersion = 16, androidDownload = false), Json.decodeFromString(response.bodyAsText()))
+    }
+
+    @Test
+    fun healthSaysAnAndroidAppCanBeDownloadedWhenOneIsThere() = testApplication {
+        val downloads = Files.createTempDirectory("santa-downloads")
+        Files.write(downloads.resolve("opensecretsanta-1.1.5-9000.apk"), byteArrayOf(1))
+        application { module(testConfig(tempDbPath(), downloadsDir = downloads)) }
+
+        val response = client.get(ApiRoutes.HEALTH)
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals(true, Json.decodeFromString<HealthResponse>(response.bodyAsText()).androidDownload)
+    }
+
+    @Test
+    fun healthSaysNoWhenTheFolderIsEmpty() = testApplication {
+        application { module(testConfig(tempDbPath(), downloadsDir = Files.createTempDirectory("santa-downloads"))) }
+
+        assertEquals(false, Json.decodeFromString<HealthResponse>(client.get(ApiRoutes.HEALTH).bodyAsText()).androidDownload)
+    }
+
+    @Test
+    fun healthStaysOkWhenTheDownloadsFolderIsMissing() = testApplication {
+        application { module(testConfig(tempDbPath(), downloadsDir = Files.createTempDirectory("santa-downloads").resolve("nothing-here"))) }
+
+        val response = client.get(ApiRoutes.HEALTH)
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals(HealthResponse("ok", schemaVersion = 16, androidDownload = false), Json.decodeFromString(response.bodyAsText()))
     }
 
     @Test

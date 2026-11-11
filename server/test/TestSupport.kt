@@ -27,6 +27,7 @@ fun testConfig(
     dbPath: Path = newTempDbPath(),
     adminUsername: String = "admin",
     adminPassword: String? = TEST_ADMIN_PASSWORD,
+    downloadsDir: Path = Files.createTempDirectory("santa-downloads"),
 ) = ServerConfig(
     jwtSecret = "test-secret-with-enough-length-for-hs256",
     dataEncryptionKey = TEST_ENCRYPTION_KEY,
@@ -35,6 +36,7 @@ fun testConfig(
     adminUsername = adminUsername,
     adminPassword = adminPassword,
     passwordHashCost = TEST_PASSWORD_COST,
+    downloadsDir = downloadsDir.toString(),
 )
 
 fun envWith(vararg extra: Pair<String, String>): Map<String, String> =

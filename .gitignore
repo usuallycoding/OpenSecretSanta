@@ -27,6 +27,7 @@ local.properties
 *.jfr
 .claude/settings.local.json
 /secrets/
+/downloads/
 /app/androidApp/google-services.json
 # Android release signing: the key and the file that names it and holds its passwords
 *.keystore

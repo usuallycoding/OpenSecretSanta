@@ -6,6 +6,9 @@ object ApiRoutes {
 
     const val HEALTH = "/health"
 
+    /** The newest Android app, as a file download; needs no sign-in. */
+    const val DOWNLOAD_LATEST = "/download_latest"
+
     const val LOGIN = "/auth/login"
 
     const val ME = "/me"

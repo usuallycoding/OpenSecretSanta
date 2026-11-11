@@ -91,6 +91,7 @@ import com.usuallycoding.opensecretsanta.server.notification.NotificationDispatc
 import com.usuallycoding.opensecretsanta.server.notification.Scheduler
 import com.usuallycoding.opensecretsanta.server.notification.ThreadScheduler
 import com.usuallycoding.opensecretsanta.server.notification.daemonSingleThreadExecutor
+import java.nio.file.Path
 import java.util.concurrent.Executor
 import com.usuallycoding.opensecretsanta.domain.notification.RegisterDevice
 import com.usuallycoding.opensecretsanta.domain.notification.UnregisterDevice
@@ -100,6 +101,7 @@ import com.usuallycoding.opensecretsanta.server.data.email.ResendMailer
 import com.usuallycoding.opensecretsanta.server.data.auth.SqliteLoginAttemptTracker
 import com.usuallycoding.opensecretsanta.server.data.db.ClasspathMigrations
 import com.usuallycoding.opensecretsanta.server.data.db.Database
+import com.usuallycoding.opensecretsanta.server.data.download.ApkDownloads
 import com.usuallycoding.opensecretsanta.server.data.db.Migration
 import com.usuallycoding.opensecretsanta.server.data.db.MigrationRunner
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteGroupMembershipRepository
@@ -275,7 +277,8 @@ val useCaseModule = module {
 }
 
 val presentationModule = module {
-    single { HealthService(get()) }
+    single { ApkDownloads(Path.of(get<ServerConfig>().downloadsDir)) }
+    single { HealthService(get(), get()) }
 }
 
 fun serverModules(
