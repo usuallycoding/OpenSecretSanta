@@ -7,11 +7,15 @@ What the owner of a group can read about it on the server: each participant's wi
 ## Requirements
 
 ### Requirement: Owner reads a participant's wishlist
-The server SHALL expose `GET /admin/groups/{id}/participants/{username}/wishlist`, usable only by the group's owner while the group is Pending, Active or Archived, returning the wishlist that participant keeps for that group in their chosen order, with each item's title, note, link, creation time and last-changed time and without item ids.
+The server SHALL expose `GET /admin/groups/{id}/participants/{username}/wishlist`, usable only by the group's owner while the group is Pending, Active or Archived, returning the wishlist that participant keeps for that group in their chosen order, with each item's title, note, links in their order, creation time and last-changed time and without item ids. For apps that predate several links, each item SHALL also carry its first link as the deprecated `url`.
 
 #### Scenario: Owner reads a list
 - **WHEN** the owner requests the wishlist of participant `bob` in an Active group
-- **THEN** the response lists `bob`'s items for that group in his order with title, note, link and times, and no ids
+- **THEN** the response lists `bob`'s items for that group in his order with title, note, links and times, and no ids
+
+#### Scenario: Several links
+- **WHEN** an item of `bob` has three links
+- **THEN** the response lists the three in their order in `urls` and the first as `url`
 
 #### Scenario: Pending group
 - **WHEN** the owner requests a participant's wishlist while the group is Pending

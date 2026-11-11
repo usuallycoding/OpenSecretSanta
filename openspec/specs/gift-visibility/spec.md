@@ -89,15 +89,23 @@ A participant SHALL NOT be able to learn who anyone else's receiver or Santa is 
 - **THEN** the response concerns only their own receiver, never another participant's
 
 ### Requirement: Receiver wishlist
-The server SHALL expose `GET /groups/{id}/receiver/wishlist` to a participant of an Active or Archived group, returning the wishlist that the participant's own receiver keeps for that group, in the receiver's chosen order, with each item's title, note, link, creation time and last-changed time and without item ids. The receiver's details response SHALL stay as it is.
+The server SHALL expose `GET /groups/{id}/receiver/wishlist` to a participant of an Active or Archived group, returning the wishlist that the participant's own receiver keeps for that group, in the receiver's chosen order, with each item's title, note, links in their order, creation time and last-changed time and without item ids. For apps that predate several links, each item SHALL also carry its first link as the deprecated `url`. The receiver's details response SHALL stay as it is.
 
 #### Scenario: Santa reads the list
 - **WHEN** `alice`, whose receiver is `bob`, requests `/groups/{id}/receiver/wishlist` for an Active group
-- **THEN** the response lists `bob`'s items for that group in his order with title, note, link and times, and no ids
+- **THEN** the response lists `bob`'s items for that group in his order with title, note, links and times, and no ids
+
+#### Scenario: Several links
+- **WHEN** an item of `bob` has three links
+- **THEN** the response lists the three in their order in `urls` and the first as `url`
 
 #### Scenario: Live and ordered
 - **WHEN** `bob` adds, edits or reorders items in that group after it became Active
 - **THEN** `alice`'s next read shows the current items in the current order
+
+#### Scenario: A change of links is an edit
+- **WHEN** `bob` adds a link to an item after `alice` last looked
+- **THEN** `alice`'s next read shows the item with its new last-changed time
 
 #### Scenario: Empty list
 - **WHEN** the receiver has no items in this group
