@@ -43,7 +43,7 @@ class SqliteWishlistRepositoryTest {
         return g.id
     }
 
-    private fun entry(title: String, note: String? = null, url: String? = null) = WishlistEntry.of(title, note, url)
+    private fun entry(title: String, note: String? = null, vararg urls: String) = WishlistEntry.of(title, note, urls.toList())
 
     private fun add(group: Long, owner: String, title: String, at: Long = 100, max: Int = 50) =
         wishlists.add(group, u(owner), entry(title), at, max)
@@ -84,7 +84,80 @@ class SqliteWishlistRepositoryTest {
 
         assertEquals(item, wishlists.list(g, u("alice")).single())
         assertEquals("Grey", item.note)
-        assertEquals("https://shop.example/socks", item.url)
+        assertEquals(listOf("https://shop.example/socks"), item.urls)
+    }
+
+    private fun linkRows(): Int = database.connection().use { c ->
+        c.createStatement().use { s -> s.executeQuery("SELECT COUNT(*) FROM wishlist_item_links").use { it.next(); it.getInt(1) } }
+    }
+
+    @Test
+    fun anItemStoresTenLinksInOrder() {
+        val g = group()
+        val links = Array(10) { "https://shop.example/$it" }
+
+        val item = wishlists.add(g, u("alice"), entry("Socks", null, *links), 1, 50)
+
+        assertEquals(links.toList(), item.urls)
+        assertEquals(links.toList(), wishlists.list(g, u("alice")).single().urls)
+    }
+
+    @Test
+    fun editingReplacesLinksAsAWholeAndRemovesThemWithAnEmptyList() {
+        val g = group()
+        val item = wishlists.add(g, u("alice"), entry("Socks", null, "https://a.example", "https://b.example", "https://c.example"), 1, 50)
+
+        val replaced = wishlists.update(g, u("alice"), item.id, entry("Socks", null, "https://c.example", "https://x.example"), 2)
+        assertEquals(listOf("https://c.example", "https://x.example"), replaced.urls)
+        assertEquals(2, linkRows())
+
+        val cleared = wishlists.update(g, u("alice"), item.id, entry("Socks"), 3)
+        assertEquals(emptyList(), cleared.urls)
+        assertEquals(0, linkRows())
+    }
+
+    @Test
+    fun anEntryFromAnOlderAppReplacesTheFirstLinkAndKeepsTheOthers() {
+        val g = group()
+        val item = wishlists.add(g, u("alice"), entry("Socks", null, "https://a.example", "https://b.example", "https://c.example"), 1, 50)
+
+        val changed = wishlists.update(g, u("alice"), item.id, WishlistEntry.ofFirstLink("Socks", null, "https://new.example"), 2)
+        assertEquals(listOf("https://new.example", "https://b.example", "https://c.example"), changed.urls)
+
+        val cleared = wishlists.update(g, u("alice"), item.id, WishlistEntry.ofFirstLink("Socks", null, null), 3)
+        assertEquals(listOf("https://b.example", "https://c.example"), cleared.urls)
+    }
+
+    @Test
+    fun linksStayWithTheirItemWhenTheListIsReordered() {
+        val g = group()
+        val one = wishlists.add(g, u("alice"), entry("One", null, "https://one.example"), 1, 50)
+        val two = wishlists.add(g, u("alice"), entry("Two", null, "https://two.example", "https://two-b.example"), 2, 50)
+
+        val reordered = wishlists.reorder(g, u("alice"), listOf(two.id, one.id))
+
+        assertEquals(listOf(listOf("https://two.example", "https://two-b.example"), listOf("https://one.example")), reordered.map { it.urls })
+    }
+
+    @Test
+    fun deletingAnItemRemovesItsLinksOnly() {
+        val g = group()
+        val one = wishlists.add(g, u("alice"), entry("One", null, "https://one.example", "https://one-b.example"), 1, 50)
+        wishlists.add(g, u("alice"), entry("Two", null, "https://two.example"), 2, 50)
+
+        wishlists.delete(g, u("alice"), one.id)
+
+        assertEquals(1, linkRows())
+    }
+
+    @Test
+    fun deletingAGroupRemovesTheLinksOfItsItems() {
+        val g = group()
+        wishlists.add(g, u("alice"), entry("One", null, "https://one.example"), 1, 50)
+
+        database.connection().use { c -> c.createStatement().use { it.execute("DELETE FROM groups WHERE id = $g") } }
+
+        assertEquals(0, linkRows())
     }
 
     @Test

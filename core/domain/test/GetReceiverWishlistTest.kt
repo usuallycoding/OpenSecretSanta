@@ -41,7 +41,7 @@ class GetReceiverWishlistTest {
         return g.id
     }
 
-    private fun wish(group: Long, who: String, title: String) = add(user(who), group, title, null, null)
+    private fun wish(group: Long, who: String, title: String) = add(user(who), group, title, null, null, null)
 
     private fun seen(group: Long, who: String) = readReceiverList(user(who), group).map { it.title }
 
@@ -68,10 +68,10 @@ class GetReceiverWishlistTest {
     @Test
     fun theViewHasNoIdsAndCarriesTimes() {
         val id = activeGroup()
-        add(user("bob"), id, "Socks", "Grey", "https://shop.example")
+        add(user("bob"), id, "Socks", "Grey", null, "https://shop.example")
         clock.now = 9_000
         val item = wishlists.list(id, u("bob")).single()
-        update(user("bob"), id, item.id, "Socks, wool", "Grey", "https://shop.example")
+        update(user("bob"), id, item.id, "Socks, wool", "Grey", null, "https://shop.example")
 
         val shared = readReceiverList(user("alice"), id).single()
 
@@ -79,7 +79,7 @@ class GetReceiverWishlistTest {
         assertEquals("Grey", shared.note)
         assertEquals(1_000L, shared.createdAtMillis)
         assertEquals(9_000L, shared.updatedAtMillis)
-        assertEquals("SharedWishlistItem(title=Socks, wool, note=Grey, url=https://shop.example, createdAtMillis=1000, updatedAtMillis=9000)", shared.toString())
+        assertEquals("SharedWishlistItem(title=Socks, wool, note=Grey, urls=[https://shop.example], createdAtMillis=1000, updatedAtMillis=9000)", shared.toString())
     }
 
     @Test
@@ -88,7 +88,7 @@ class GetReceiverWishlistTest {
         val item = wish(id, "bob", "Old")
         assertEquals(listOf("Old"), seen(id, "alice"))
 
-        update(user("bob"), id, item.id, "New", null, null)
+        update(user("bob"), id, item.id, "New", null, null, null)
         wish(id, "bob", "Another")
 
         assertEquals(listOf("New", "Another"), seen(id, "alice"))
@@ -122,7 +122,7 @@ class GetReceiverWishlistTest {
     @Test
     fun thereIsNoReceiverBeforeActivation() {
         val pending = groups.seed(admin.username, GroupState.PENDING, *names.map { u(it) }.toTypedArray())
-        add(user("bob"), pending.id, "Prepared early", null, null)
+        add(user("bob"), pending.id, "Prepared early", null, null, null)
 
         assertFailsWith<DomainException.InvalidState> { readReceiverList(user("alice"), pending.id) }
     }

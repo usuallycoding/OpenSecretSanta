@@ -24,7 +24,7 @@ class WishlistApiTest {
 
     @Test
     fun theListComesBackInTheOrderThePersonChoseWithIds() = runTest {
-        val first = server.wishlist.add("Socks", note = "Grey", url = "https://shop.example/socks")
+        val first = server.wishlist.add("Socks", "Grey", "https://shop.example/socks")
         val second = server.wishlist.add("Tea")
 
         val items = success(api.wishlist(1)) as List<*>
@@ -38,12 +38,12 @@ class WishlistApiTest {
     fun anAddedItemIsCreatedAtTheEndWithTheRequestAsBody() = runTest {
         server.wishlist.add("Socks")
 
-        val created = success(api.addWishlistItem(1, WishlistItemRequest("Tea", "Loose leaf", "https://tea.example")))
+        val created = success(api.addWishlistItem(1, WishlistItemRequest("Tea", "Loose leaf", urls = listOf("https://tea.example", "https://tea.example/green"))))
 
         assertEquals(listOf("Socks", "Tea"), server.wishlist.titles)
         assertEquals("Tea", (created as com.usuallycoding.opensecretsanta.contract.WishlistItemDto).title)
         assertEquals("POST /groups/1/wishlist/items", server.calls.last())
-        assertEquals(WishlistItemRequest("Tea", "Loose leaf", "https://tea.example"), Json.decodeFromString(server.bodies.last()))
+        assertEquals(WishlistItemRequest("Tea", "Loose leaf", urls = listOf("https://tea.example", "https://tea.example/green")), Json.decodeFromString(server.bodies.last()))
     }
 
     @Test

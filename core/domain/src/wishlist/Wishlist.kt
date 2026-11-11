@@ -7,6 +7,7 @@ object WishlistLimits {
     const val MAX_TITLE_LENGTH = 200
     const val MAX_NOTE_LENGTH = 1000
     const val MAX_URL_LENGTH = 2000
+    const val MAX_LINKS = 10
 }
 
 /** An item as its owner sees it, with the id needed to edit, delete and reorder it. */
@@ -14,7 +15,7 @@ data class WishlistItem(
     val id: Long,
     val title: String,
     val note: String?,
-    val url: String?,
+    val urls: List<String>,
     val createdAtMillis: Long,
     val updatedAtMillis: Long,
 )
@@ -23,37 +24,70 @@ data class WishlistItem(
 data class SharedWishlistItem(
     val title: String,
     val note: String?,
-    val url: String?,
+    val urls: List<String>,
     val createdAtMillis: Long,
     val updatedAtMillis: Long,
 )
 
-/** The editable part of an item, validated once for both adding and editing. */
+/**
+ * The editable part of an item, validated once for both adding and editing. [urls] are the item's links in order: trimmed,
+ * without blanks or repeats. An [onlyFirstLink] entry comes from an app that knows one link: it replaces just the first link
+ * of an item and leaves the others, see [linksOver].
+ */
 class WishlistEntry private constructor(
     val title: String,
     val note: String?,
-    val url: String?,
+    val urls: List<String>,
+    val onlyFirstLink: Boolean,
 ) {
+    /** The links an item with [current] links has after this entry is applied to it. */
+    fun linksOver(current: List<String>): List<String> =
+        if (onlyFirstLink) (urls + current.drop(1)).distinct() else urls
+
     companion object {
-        fun of(title: String?, note: String?, url: String?): WishlistEntry {
-            val cleanTitle = title?.trim().orEmpty()
-            if (cleanTitle.isEmpty() || cleanTitle.length > WishlistLimits.MAX_TITLE_LENGTH) {
+        fun of(title: String?, note: String?, urls: List<String>): WishlistEntry {
+            val cleanTitle = cleanTitle(title)
+            val cleanNote = cleanNote(note)
+            val clean = urls.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+            if (clean.size > WishlistLimits.MAX_LINKS) {
+                throw DomainException.ValidationFailed("urls", "An item can have at most ${WishlistLimits.MAX_LINKS} links.")
+            }
+            clean.forEachIndexed { index, link -> checkLink(link, "urls[$index]") }
+            return WishlistEntry(cleanTitle, cleanNote, clean, onlyFirstLink = false)
+        }
+
+        /** An entry from an app that sends the one link `url`: it stands for the first link only. */
+        fun ofFirstLink(title: String?, note: String?, url: String?): WishlistEntry {
+            val cleanTitle = cleanTitle(title)
+            val cleanNote = cleanNote(note)
+            val link = optional(url)
+            if (link != null) checkLink(link, "url")
+            return WishlistEntry(cleanTitle, cleanNote, listOfNotNull(link), onlyFirstLink = true)
+        }
+
+        private fun cleanTitle(title: String?): String {
+            val clean = title?.trim().orEmpty()
+            if (clean.isEmpty() || clean.length > WishlistLimits.MAX_TITLE_LENGTH) {
                 throw DomainException.ValidationFailed("title", "Title must be 1 to ${WishlistLimits.MAX_TITLE_LENGTH} characters long.")
             }
-            val cleanNote = optional(note)
-            if (cleanNote != null && cleanNote.length > WishlistLimits.MAX_NOTE_LENGTH) {
+            return clean
+        }
+
+        private fun cleanNote(note: String?): String? {
+            val clean = optional(note)
+            if (clean != null && clean.length > WishlistLimits.MAX_NOTE_LENGTH) {
                 throw DomainException.ValidationFailed("note", "Note must be at most ${WishlistLimits.MAX_NOTE_LENGTH} characters long.")
             }
-            val cleanUrl = optional(url)
-            if (cleanUrl != null) {
-                if (cleanUrl.length > WishlistLimits.MAX_URL_LENGTH) {
-                    throw DomainException.ValidationFailed("url", "Link must be at most ${WishlistLimits.MAX_URL_LENGTH} characters long.")
-                }
-                if (!WebLink.isValid(cleanUrl)) {
-                    throw DomainException.ValidationFailed("url", "Link must be an http or https address, for example https://shop.example/item.")
-                }
+            return clean
+        }
+
+        private fun checkLink(link: String, field: String) {
+            if (link.length > WishlistLimits.MAX_URL_LENGTH) {
+                throw DomainException.ValidationFailed(field, "Link must be at most ${WishlistLimits.MAX_URL_LENGTH} characters long.")
             }
-            return WishlistEntry(cleanTitle, cleanNote, cleanUrl)
+            if (!WebLink.isValid(link)) {
+                throw DomainException.ValidationFailed(field, "Link must be an http or https address, for example https://shop.example/item.")
+            }
         }
 
         private fun optional(value: String?): String? = value?.trim()?.takeIf { it.isNotEmpty() }

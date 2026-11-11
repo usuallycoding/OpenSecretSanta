@@ -187,7 +187,7 @@ fun immediateScope() = CoroutineScope(Dispatchers.Unconfined)
  * A test can also queue a failure that the next change (add, edit, delete or reorder) answers with.
  */
 class FakeWishlist {
-    private class Row(val id: Long, var title: String, var note: String?, var url: String?)
+    private class Row(val id: Long, var title: String, var note: String?, var urls: List<String>)
 
     private val rows = mutableListOf<Row>()
     private var nextId = 1L
@@ -200,8 +200,8 @@ class FakeWishlist {
     val ids: List<Long> get() = rows.map { it.id }
     val titles: List<String> get() = rows.map { it.title }
 
-    fun add(title: String, note: String? = null, url: String? = null): Long {
-        val row = Row(nextId++, title, note, url)
+    fun add(title: String, note: String? = null, vararg urls: String): Long {
+        val row = Row(nextId++, title, note, urls.toList())
         rows += row
         return row.id
     }
@@ -216,7 +216,12 @@ class FakeWishlist {
         failures += status to """{"code":"$code","message":"$message"$extra}"""
     }
 
-    private fun dto(row: Row) = WishlistItemDto(row.id, row.title, row.note, row.url, "2026-12-01T10:00:00Z", "2026-12-01T10:00:00Z")
+    /** What the server makes of the links of a request: `urls` when sent, otherwise the one `url` for the first link only. */
+    private fun linksOf(request: WishlistItemRequest, current: List<String> = emptyList()): List<String> =
+        request.urls?.map { it.trim() }?.filter { it.isNotEmpty() }?.distinct()
+            ?: (listOfNotNull(request.url?.trim()?.ifEmpty { null }) + current.drop(1)).distinct()
+
+    private fun dto(row: Row) = WishlistItemDto(row.id, row.title, row.note, row.urls.firstOrNull(), "2026-12-01T10:00:00Z", "2026-12-01T10:00:00Z", row.urls)
 
     private fun error(status: HttpStatusCode, code: String, message: String, field: String? = null) =
         status to """{"code":"$code","message":"$message"${if (field != null) ""","field":"$field"""" else ""}}"""
@@ -238,7 +243,7 @@ class FakeWishlist {
                     request.title.isBlank() -> error(HttpStatusCode.BadRequest, "validation_failed", "Title must be 1 to 200 characters long.", "title")
                     rows.size >= WishlistLimits.MAX_ITEMS -> error(HttpStatusCode.Conflict, "invalid_state", "The wishlist is full.")
                     else -> {
-                        val row = Row(nextId++, request.title.trim(), request.note?.trim()?.ifEmpty { null }, request.url?.trim()?.ifEmpty { null })
+                        val row = Row(nextId++, request.title.trim(), request.note?.trim()?.ifEmpty { null }, linksOf(request))
                         rows += row
                         HttpStatusCode.Created to Json.encodeToString(dto(row))
                     }
@@ -250,7 +255,7 @@ class FakeWishlist {
                 if (request.title.isBlank()) return error(HttpStatusCode.BadRequest, "validation_failed", "Title must be 1 to 200 characters long.", "title")
                 row.title = request.title.trim()
                 row.note = request.note?.trim()?.ifEmpty { null }
-                row.url = request.url?.trim()?.ifEmpty { null }
+                row.urls = linksOf(request, row.urls)
                 HttpStatusCode.OK to Json.encodeToString(dto(row))
             }
             method == "DELETE" && item != null ->

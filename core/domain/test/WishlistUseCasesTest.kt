@@ -41,7 +41,7 @@ class WishlistUseCasesTest {
 
     private fun titles(group: Long, name: String = "alice") = list(user(name), group).map { it.title }
 
-    private fun addTitle(group: Long, title: String, name: String = "alice") = add(user(name), group, title, null, null)
+    private fun addTitle(group: Long, title: String, name: String = "alice") = add(user(name), group, title, null, null, null)
 
     // --- empty and independent ---
 
@@ -89,11 +89,11 @@ class WishlistUseCasesTest {
     fun anItemRecordsItsValuesAndTimes() {
         val id = group()
 
-        val item = add(user("alice"), id, " Wool socks ", "Grey, size M", "https://shop.example/socks")
+        val item = add(user("alice"), id, " Wool socks ", "Grey, size M", null, "https://shop.example/socks")
 
         assertEquals("Wool socks", item.title)
         assertEquals("Grey, size M", item.note)
-        assertEquals("https://shop.example/socks", item.url)
+        assertEquals(listOf("https://shop.example/socks"), item.urls)
         assertEquals(1_000L, item.createdAtMillis)
         assertEquals(1_000L, item.updatedAtMillis)
     }
@@ -102,8 +102,8 @@ class WishlistUseCasesTest {
     fun invalidInputIsRejectedAndNothingIsStored() {
         val id = group()
 
-        assertEquals("title", assertFailsWith<DomainException.ValidationFailed> { add(user("alice"), id, " ", null, null) }.field)
-        assertEquals("url", assertFailsWith<DomainException.ValidationFailed> { add(user("alice"), id, "Socks", null, "javascript:alert(1)") }.field)
+        assertEquals("title", assertFailsWith<DomainException.ValidationFailed> { add(user("alice"), id, " ", null, null, null) }.field)
+        assertEquals("url", assertFailsWith<DomainException.ValidationFailed> { add(user("alice"), id, "Socks", null, null, "javascript:alert(1)") }.field)
         assertEquals(emptyList(), titles(id))
     }
 
@@ -128,7 +128,7 @@ class WishlistUseCasesTest {
         addTitle(id, "Three")
         clock.now = 5_000
 
-        val edited = update(user("alice"), id, second.id, "Two, better", "A note", "https://shop.example/two")
+        val edited = update(user("alice"), id, second.id, "Two, better", "A note", null, "https://shop.example/two")
 
         assertEquals(listOf("One", "Two, better", "Three"), titles(id))
         assertEquals(1_000L, edited.createdAtMillis)
@@ -139,20 +139,111 @@ class WishlistUseCasesTest {
     @Test
     fun anEditCanClearTheNoteAndLink() {
         val id = group()
-        val item = add(user("alice"), id, "One", "note", "https://shop.example")
+        val item = add(user("alice"), id, "One", "note", null, "https://shop.example")
 
-        val edited = update(user("alice"), id, item.id, "One", null, null)
+        val edited = update(user("alice"), id, item.id, "One", null, null, null)
 
         assertNull(edited.note)
-        assertNull(edited.url)
+        assertEquals(emptyList(), edited.urls)
+    }
+
+    @Test
+    fun anItemHoldsSeveralLinksInOrder() {
+        val id = group()
+
+        val item = add(user("alice"), id, "Socks", null, listOf("https://a.example", "https://b.example"), null)
+
+        assertEquals(listOf("https://a.example", "https://b.example"), item.urls)
+    }
+
+    @Test
+    fun urlsDecideTheLinksAndTheOlderUrlIsIgnored() {
+        val id = group()
+        val item = add(user("alice"), id, "Socks", null, listOf("https://a.example"), "https://ignored.example")
+
+        val edited = update(user("alice"), id, item.id, "Socks", null, listOf("https://x.example", "https://y.example"), "https://ignored.example")
+
+        assertEquals(listOf("https://a.example"), item.urls)
+        assertEquals(listOf("https://x.example", "https://y.example"), edited.urls)
+    }
+
+    @Test
+    fun changingOnlyTheLinksUpdatesTheLastChangedTime() {
+        val id = group()
+        val item = add(user("alice"), id, "Socks", "Grey", listOf("https://a.example"), null)
+        clock.now = 7_000
+
+        val edited = update(user("alice"), id, item.id, "Socks", "Grey", listOf("https://a.example", "https://b.example"), null)
+
+        assertEquals(1_000L, edited.createdAtMillis)
+        assertEquals(7_000L, edited.updatedAtMillis)
+    }
+
+    @Test
+    fun anEmptyUrlsRemovesEveryLink() {
+        val id = group()
+        val item = add(user("alice"), id, "Socks", null, listOf("https://a.example", "https://b.example"), null)
+
+        assertEquals(emptyList(), update(user("alice"), id, item.id, "Socks", null, emptyList(), null).urls)
+    }
+
+    @Test
+    fun tooManyLinksAreRejectedAndTheItemKeepsItsLinks() {
+        val id = group()
+        val item = add(user("alice"), id, "Socks", null, listOf("https://a.example"), null)
+        val eleven = List(11) { "https://shop.example/$it" }
+
+        assertEquals("urls", assertFailsWith<DomainException.ValidationFailed> { update(user("alice"), id, item.id, "Socks", null, eleven, null) }.field)
+        assertEquals("urls", assertFailsWith<DomainException.ValidationFailed> { add(user("alice"), id, "More", null, eleven, null) }.field)
+
+        assertEquals(listOf("https://a.example"), list(user("alice"), id).single().urls)
+    }
+
+    @Test
+    fun anOlderAppSavingTheTitleKeepsAllThreeLinks() {
+        val id = group()
+        val links = listOf("https://a.example", "https://b.example", "https://c.example")
+        val item = add(user("alice"), id, "Socks", null, links, null)
+
+        val edited = update(user("alice"), id, item.id, "Socks, wool", null, null, "https://a.example")
+
+        assertEquals("Socks, wool", edited.title)
+        assertEquals(links, edited.urls)
+    }
+
+    @Test
+    fun anOlderAppChangingTheLinkReplacesTheFirstOnly() {
+        val id = group()
+        val item = add(user("alice"), id, "Socks", null, listOf("https://a.example", "https://b.example", "https://c.example"), null)
+
+        val edited = update(user("alice"), id, item.id, "Socks", null, null, "https://new.example")
+
+        assertEquals(listOf("https://new.example", "https://b.example", "https://c.example"), edited.urls)
+    }
+
+    @Test
+    fun anOlderAppClearingTheLinkRemovesTheFirstOnly() {
+        val id = group()
+        val item = add(user("alice"), id, "Socks", null, listOf("https://a.example", "https://b.example", "https://c.example"), null)
+
+        val edited = update(user("alice"), id, item.id, "Socks", null, null, null)
+
+        assertEquals(listOf("https://b.example", "https://c.example"), edited.urls)
+    }
+
+    @Test
+    fun anOlderAppAddsAnItemWithOneLink() {
+        val id = group()
+
+        assertEquals(listOf("https://a.example"), add(user("alice"), id, "Socks", null, null, "https://a.example").urls)
     }
 
     @Test
     fun anInvalidEditLeavesTheItemAlone() {
         val id = group()
-        val item = add(user("alice"), id, "One", null, null)
+        val item = add(user("alice"), id, "One", null, null, null)
 
-        assertFailsWith<DomainException.ValidationFailed> { update(user("alice"), id, item.id, "", null, null) }
+        assertFailsWith<DomainException.ValidationFailed> { update(user("alice"), id, item.id, "", null, null, null) }
 
         assertEquals(listOf("One"), titles(id))
     }
@@ -176,7 +267,7 @@ class WishlistUseCasesTest {
         val id = group()
         val bobs = addTitle(id, "Bob's", "bob")
 
-        assertFailsWith<DomainException.NotFound> { update(user("alice"), id, bobs.id, "Mine now", null, null) }
+        assertFailsWith<DomainException.NotFound> { update(user("alice"), id, bobs.id, "Mine now", null, null, null) }
         assertFailsWith<DomainException.NotFound> { delete(user("alice"), id, bobs.id) }
         assertEquals(listOf("Bob's"), titles(id, "bob"))
     }
@@ -187,7 +278,7 @@ class WishlistUseCasesTest {
         val second = group()
         val inFirst = addTitle(first, "Only in the first")
 
-        assertFailsWith<DomainException.NotFound> { update(user("alice"), second, inFirst.id, "Moved", null, null) }
+        assertFailsWith<DomainException.NotFound> { update(user("alice"), second, inFirst.id, "Moved", null, null, null) }
         assertFailsWith<DomainException.NotFound> { delete(user("alice"), second, inFirst.id) }
         assertEquals(listOf("Only in the first"), titles(first))
     }
@@ -254,7 +345,7 @@ class WishlistUseCasesTest {
         for (state in listOf(GroupState.PENDING, GroupState.ACTIVE)) {
             val id = group(state)
             val item = addTitle(id, "One")
-            update(user("alice"), id, item.id, "One, edited", null, null)
+            update(user("alice"), id, item.id, "One, edited", null, null, null)
             reorder(user("alice"), id, listOf(item.id))
             delete(user("alice"), id, item.id)
             assertEquals(emptyList(), titles(id), state.toString())
@@ -268,7 +359,7 @@ class WishlistUseCasesTest {
         groups.archive(id)
 
         assertFailsWith<DomainException.InvalidState> { addTitle(id, "New") }
-        assertFailsWith<DomainException.InvalidState> { update(user("alice"), id, item.id, "Changed", null, null) }
+        assertFailsWith<DomainException.InvalidState> { update(user("alice"), id, item.id, "Changed", null, null, null) }
         assertFailsWith<DomainException.InvalidState> { delete(user("alice"), id, item.id) }
         assertFailsWith<DomainException.InvalidState> { reorder(user("alice"), id, listOf(item.id)) }
         assertEquals(listOf("Kept"), titles(id))
@@ -283,7 +374,7 @@ class WishlistUseCasesTest {
         assertFailsWith<DomainException.NotFound> { list(user("alice"), draft) }
         assertFailsWith<DomainException.NotFound> { addTitle(draft, "x") }
         assertFailsWith<DomainException.NotFound> { list(user("outsider"), active) }
-        assertFailsWith<DomainException.NotFound> { add(user("outsider"), active, "x", null, null) }
+        assertFailsWith<DomainException.NotFound> { add(user("outsider"), active, "x", null, null, null) }
         assertFailsWith<DomainException.NotFound> { list(admin, active) }
         assertFailsWith<DomainException.NotFound> { list(user("alice"), 9999) }
     }

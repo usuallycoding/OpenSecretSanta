@@ -105,6 +105,19 @@ class AdminOversightRoutesTest {
         getAs(ApiRoutes.adminGroupQuestions(group.toLong()), token)
 
     @Test
+    fun theOwnerSeesEveryLinkOfAnItem() = testApplication {
+        startApp()
+        val id = world()
+        val request = WishlistItemRequest("Socks", urls = listOf("https://a.example", "https://b.example", "https://c.example"))
+        assertEquals(HttpStatusCode.Created, client.send("POST", ApiRoutes.groupWishlistItems(id.toLong()), fx.token("bob"), request).status)
+
+        val items = Json.decodeFromString<List<SharedWishlistItemDto>>(client.ownerReadsWishlist(id, "bob").bodyAsText())
+
+        assertEquals(listOf("https://a.example", "https://b.example", "https://c.example"), items.single().urls)
+        assertEquals("https://a.example", items.single().url)
+    }
+
+    @Test
     fun theOwnerReadsAWishlistWithoutIds() = testApplication {
         startApp()
         val id = world()
@@ -118,7 +131,7 @@ class AdminOversightRoutesTest {
         assertEquals(listOf("First wish", "Second wish"), items.map { it.title })
         assertEquals("Note of bob", items.first().note)
         for (element in Json.parseToJsonElement(response.bodyAsText()).jsonArray) {
-            assertEquals(setOf("title", "note", "url", "createdAt", "updatedAt"), element.jsonObject.keys)
+            assertEquals(setOf("title", "note", "url", "createdAt", "updatedAt", "urls"), element.jsonObject.keys)
         }
     }
 

@@ -66,3 +66,21 @@ class TimesMappingTest {
         assertEquals("4 Dec 2026, 12:15", question.answerChanged)
     }
 }
+
+class LinksMappingTest {
+    private val time = "2026-12-01T10:00:00Z"
+
+    @Test
+    fun anItemShowsEveryLinkInOrder() {
+        val item = WishlistItemDto(1, "Socks", null, "https://a.example", time, time, listOf("https://a.example", "https://b.example")).toItem()
+
+        assertEquals(listOf("https://a.example", "https://b.example"), item.urls)
+    }
+
+    @Test
+    fun aServerThatKnowsOneLinkStillShowsIt() {
+        assertEquals(listOf("https://a.example"), WishlistItemDto(1, "Socks", null, "https://a.example", time, time).toItem().urls)
+        assertEquals(listOf("https://a.example"), SharedWishlistItemDto("Tea", null, "https://a.example", time, time).toItem().urls)
+        assertEquals(emptyList(), WishlistItemDto(1, "Socks", null, null, time, time).toItem().urls)
+    }
+}

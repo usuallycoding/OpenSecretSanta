@@ -248,9 +248,9 @@ class SqliteGroupRepositoryTest {
         assertEquals(DeletionImpact(0, 0, 0, draw = true), groups.impact(id))
         assertEquals(false, groups.impact(id).isEmpty)
 
-        wishlists.add(id, u("alice"), WishlistEntry.of("Socks", null, null), 1, 50)
-        wishlists.add(id, u("alice"), WishlistEntry.of("Tea", null, null), 2, 50)
-        wishlists.add(id, u("bob"), WishlistEntry.of("Mug", null, null), 3, 50)
+        wishlists.add(id, u("alice"), WishlistEntry.of("Socks", null, emptyList()), 1, 50)
+        wishlists.add(id, u("alice"), WishlistEntry.of("Tea", null, emptyList()), 2, 50)
+        wishlists.add(id, u("bob"), WishlistEntry.of("Mug", null, emptyList()), 3, 50)
         questions.ask(id, u("alice"), "Colour?", 4, 30)
         questions.ask(id, u("alice"), "Size?", 5, 30)
         questions.ask(id, u("bob"), "Allergies?", 6, 30)
@@ -267,7 +267,7 @@ class SqliteGroupRepositoryTest {
         groups.moveToPending(id, emptyList())
         assertTrue(groups.impact(id).isEmpty)
 
-        wishlists.add(id, u("alice"), WishlistEntry.of("Socks", null, null), 1, 50)
+        wishlists.add(id, u("alice"), WishlistEntry.of("Socks", null, emptyList()), 1, 50)
 
         assertEquals(DeletionImpact(1, 0, 0, draw = false), groups.impact(id))
     }
@@ -277,7 +277,7 @@ class SqliteGroupRepositoryTest {
         val doomed = activeGroup()
         val kept = activeGroup()
         for (id in listOf(doomed, kept)) {
-            wishlists.add(id, u("alice"), WishlistEntry.of("Socks", null, null), 1, 50)
+            wishlists.add(id, u("alice"), WishlistEntry.of("Socks", null, emptyList()), 1, 50)
             questions.ask(id, u("alice"), "Colour?", 2, 30)
             questions.answer(id, u("bob"), 1, "Green", 3)
         }

@@ -6,6 +6,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 
 class WishlistDtoSerializationTest {
     private val json = Json
@@ -25,6 +26,10 @@ class WishlistDtoSerializationTest {
         roundTrip(WishlistItemDto(8, "Just a title", createdAt = "2026-12-01T10:15:30Z", updatedAt = "2026-12-01T10:15:30Z"))
         roundTrip(WishlistItemRequest("Wool socks", "Grey", "https://shop.example/socks"))
         roundTrip(WishlistItemRequest("Just a title"))
+        roundTrip(WishlistItemRequest("Links", urls = listOf("https://a.example", "https://b.example")))
+        roundTrip(WishlistItemRequest("No links", urls = emptyList()))
+        roundTrip(WishlistItemDto(9, "Links", urls = listOf("https://a.example", "https://b.example"), createdAt = "c", updatedAt = "u"))
+        roundTrip(SharedWishlistItemDto("Links", urls = listOf("https://a.example"), createdAt = "c", updatedAt = "u"))
         roundTrip(ReorderWishlistRequest(listOf(3, 1, 2)))
         roundTrip(ReorderWishlistRequest(emptyList()))
         roundTrip(SharedWishlistItemDto("Wool socks", "Grey", "https://shop.example/socks", "2026-12-01T10:15:30Z", "2026-12-02T09:00:00Z"))
@@ -36,9 +41,21 @@ class WishlistDtoSerializationTest {
     }
 
     @Test
+    fun anOlderAppsRequestHasNoUrlsAndAnEmptyListIsNotAbsent() {
+        assertNull(json.decodeFromString<WishlistItemRequest>("""{"title":"Socks","url":"https://a.example"}""").urls)
+        assertEquals(emptyList(), json.decodeFromString<WishlistItemRequest>("""{"title":"Socks","urls":[]}""").urls)
+    }
+
+    @Test
+    fun anItemWithoutUrlsReadsAsHavingNone() {
+        val item = json.decodeFromString<WishlistItemDto>("""{"id":1,"title":"t","url":"https://a.example","createdAt":"c","updatedAt":"u"}""")
+        assertEquals(emptyList(), item.urls)
+    }
+
+    @Test
     fun theOwnersItemHasAnIdAndTheSantasItemDoesNot() {
-        assertEquals(setOf("id", "title", "note", "url", "createdAt", "updatedAt"), keys(WishlistItemDto(1, "t", createdAt = "c", updatedAt = "u")))
-        assertEquals(setOf("title", "note", "url", "createdAt", "updatedAt"), keys(SharedWishlistItemDto("t", createdAt = "c", updatedAt = "u")))
+        assertEquals(setOf("id", "title", "note", "url", "createdAt", "updatedAt", "urls"), keys(WishlistItemDto(1, "t", createdAt = "c", updatedAt = "u")))
+        assertEquals(setOf("title", "note", "url", "createdAt", "updatedAt", "urls"), keys(SharedWishlistItemDto("t", createdAt = "c", updatedAt = "u")))
     }
 
     @Test

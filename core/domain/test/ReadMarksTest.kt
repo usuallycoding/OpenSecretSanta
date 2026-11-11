@@ -69,7 +69,7 @@ class ReadMarksTest {
     fun nothingMarkedYetCountsEverythingAndHasNoTimeSeen() {
         val id = group()
         at(2_000)
-        repeat(3) { addItem(user("bob"), id, "Item $it", null, null) }
+        repeat(3) { addItem(user("bob"), id, "Item $it", null, null, null) }
         send(user("bob"), id, "Hi", "x")
 
         val result = read(user("alice"), id)
@@ -92,13 +92,13 @@ class ReadMarksTest {
     fun newAndEditedItemsCountAndAnItemEditedManyTimesCountsOnce() {
         val id = group()
         at(2_000)
-        val old = addItem(user("bob"), id, "Old", null, null)
+        val old = addItem(user("bob"), id, "Old", null, null, null)
         mark(user("alice"), id, ReadKind.WISHLIST, 2_500)
         at(3_000)
-        addItem(user("bob"), id, "New", null, null)
-        updateItem(user("bob"), id, old.id, "Old, edited", null, null)
+        addItem(user("bob"), id, "New", null, null, null)
+        updateItem(user("bob"), id, old.id, "Old, edited", null, null, null)
         at(4_000)
-        updateItem(user("bob"), id, old.id, "Old, edited again", null, null)
+        updateItem(user("bob"), id, old.id, "Old, edited again", null, null, null)
 
         assertEquals(2, read(user("alice"), id).wishlist.unread)
     }
@@ -107,7 +107,7 @@ class ReadMarksTest {
     fun aDeletedItemCountsForNothing() {
         val id = group()
         at(2_000)
-        val item = addItem(user("bob"), id, "Gone", null, null)
+        val item = addItem(user("bob"), id, "Gone", null, null, null)
         deleteItem(user("bob"), id, item.id)
 
         assertEquals(0, read(user("alice"), id).wishlist.unread)
@@ -154,7 +154,7 @@ class ReadMarksTest {
     fun markingLowersTheCountAndAnotherKindIsUntouched() {
         val id = group()
         at(2_000)
-        addItem(user("bob"), id, "Item", null, null)
+        addItem(user("bob"), id, "Item", null, null, null)
         send(user("bob"), id, "Letter", "x")
         at(3_000)
 

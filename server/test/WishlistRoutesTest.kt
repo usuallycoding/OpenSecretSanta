@@ -105,8 +105,10 @@ class WishlistRoutesTest {
         assertEquals("Wool socks", first.title)
         assertEquals("Grey, size M", first.note)
         assertEquals("https://shop.example/socks", first.url)
+        assertEquals(listOf("https://shop.example/socks"), first.urls)
         assertNull(second.note)
         assertNull(second.url)
+        assertEquals(emptyList(), second.urls)
         assertTrue(Instant.parse(first.createdAt).toEpochMilli() > 0)
         assertEquals(first.createdAt, first.updatedAt)
         assertEquals(listOf("Wool socks", "A book"), client.titles(id))
@@ -197,6 +199,145 @@ class WishlistRoutesTest {
         val cleared = client.wishes(id, "alice").single()
         assertNull(cleared.note)
         assertNull(cleared.url)
+    }
+
+    private suspend fun HttpClient.addLinks(group: Int, urls: List<String>?, url: String? = null, title: String = "Socks") =
+        send("POST", ApiRoutes.groupWishlistItems(group.toLong()), fx.token("alice"), WishlistItemRequest(title, urls = urls, url = url))
+
+    private suspend fun HttpClient.putItem(group: Int, itemId: Long, request: WishlistItemRequest) =
+        send("PUT", ApiRoutes.groupWishlistItem(group.toLong(), itemId), fx.token("alice"), request)
+
+    private suspend fun HttpClient.createdWith(group: Int, urls: List<String>): WishlistItemDto {
+        val response = addLinks(group, urls)
+        assertEquals(HttpStatusCode.Created, response.status, response.bodyAsText())
+        return Json.decodeFromString(response.bodyAsText())
+    }
+
+    @Test
+    fun anItemCarriesUpToTenLinksAndTheFirstOneAsUrl() = testApplication {
+        startApp()
+        val id = world()
+        val links = List(10) { "https://shop.example/$it" }
+
+        val item = client.createdWith(id, links)
+
+        assertEquals(links, item.urls)
+        assertEquals(links.first(), item.url)
+        assertEquals(links, client.wishes(id, "alice").single().urls)
+    }
+
+    @Test
+    fun moreThanTenLinksAreRejectedNamingUrlsAndStoreNothing() = testApplication {
+        startApp()
+        val id = world()
+
+        val response = client.addLinks(id, List(11) { "https://shop.example/$it" })
+
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+        assertEquals("urls", error(response.bodyAsText()).field)
+        assertEquals(0, count())
+    }
+
+    @Test
+    fun aBadLinkIsNamedByItsPlace() = testApplication {
+        startApp()
+        val id = world()
+
+        for (bad in listOf("javascript:alert(1)", "ftp://host/file", "not a url", "https://shop.example/" + "a".repeat(2000))) {
+            val response = client.addLinks(id, listOf("https://ok.example", bad))
+            assertEquals(HttpStatusCode.BadRequest, response.status, bad.take(20))
+            assertEquals("urls[1]", error(response.bodyAsText()).field)
+        }
+        assertEquals(0, count())
+    }
+
+    @Test
+    fun blanksAreDroppedAndRepeatsKeptOnce() = testApplication {
+        startApp()
+        val id = world()
+
+        val item = client.createdWith(id, listOf("https://a.example", "  ", "https://b.example", " https://a.example "))
+
+        assertEquals(listOf("https://a.example", "https://b.example"), item.urls)
+    }
+
+    @Test
+    fun urlsWinOverTheOlderUrl() = testApplication {
+        startApp()
+        val id = world()
+
+        val response = client.addLinks(id, listOf("https://a.example"), url = "https://ignored.example")
+
+        assertEquals(listOf("https://a.example"), Json.decodeFromString<WishlistItemDto>(response.bodyAsText()).urls)
+    }
+
+    @Test
+    fun anOlderAppAddsAnItemWithOneLink() = testApplication {
+        startApp()
+        val id = world()
+
+        val response = client.addLinks(id, urls = null, url = "https://a.example")
+
+        assertEquals(HttpStatusCode.Created, response.status)
+        assertEquals(listOf("https://a.example"), Json.decodeFromString<WishlistItemDto>(response.bodyAsText()).urls)
+    }
+
+    @Test
+    fun anOlderAppSavingAnItemKeepsAllItsLinks() = testApplication {
+        startApp()
+        val id = world()
+        val links = listOf("https://a.example", "https://b.example", "https://c.example")
+        val item = client.createdWith(id, links)
+
+        val saved = client.putItem(id, item.id, WishlistItemRequest("Socks, wool", url = "https://a.example"))
+
+        assertEquals(HttpStatusCode.OK, saved.status)
+        val after = client.wishes(id, "alice").single()
+        assertEquals("Socks, wool", after.title)
+        assertEquals(links, after.urls)
+    }
+
+    @Test
+    fun anOlderAppChangingOrClearingTheLinkTouchesOnlyTheFirst() = testApplication {
+        startApp()
+        val id = world()
+        val item = client.createdWith(id, listOf("https://a.example", "https://b.example", "https://c.example"))
+
+        client.putItem(id, item.id, WishlistItemRequest("Socks", url = "https://new.example"))
+        assertEquals(listOf("https://new.example", "https://b.example", "https://c.example"), client.wishes(id, "alice").single().urls)
+
+        client.putItem(id, item.id, WishlistItemRequest("Socks"))
+        assertEquals(listOf("https://b.example", "https://c.example"), client.wishes(id, "alice").single().urls)
+    }
+
+    @Test
+    fun anEmptyUrlsRemovesEveryLinkAndAnInvalidEditChangesNothing() = testApplication {
+        startApp()
+        val id = world()
+        val item = client.createdWith(id, listOf("https://a.example", "https://b.example"))
+
+        val bad = client.putItem(id, item.id, WishlistItemRequest("Socks", urls = listOf("https://a.example", "ftp://x")))
+        assertEquals(HttpStatusCode.BadRequest, bad.status)
+        assertEquals(2, client.wishes(id, "alice").single().urls.size)
+
+        client.putItem(id, item.id, WishlistItemRequest("Socks", urls = emptyList()))
+        val cleared = client.wishes(id, "alice").single()
+        assertEquals(emptyList(), cleared.urls)
+        assertNull(cleared.url)
+    }
+
+    @Test
+    fun changingOnlyTheLinksCountsAsAnEdit() = testApplication {
+        startApp()
+        val id = world()
+        val item = client.createdWith(id, listOf("https://a.example"))
+        Thread.sleep(5)
+
+        client.putItem(id, item.id, WishlistItemRequest("Socks", urls = listOf("https://a.example", "https://b.example")))
+
+        val after = client.wishes(id, "alice").single()
+        assertEquals(item.createdAt, after.createdAt)
+        assertTrue(Instant.parse(after.updatedAt) > Instant.parse(item.updatedAt))
     }
 
     @Test

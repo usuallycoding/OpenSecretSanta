@@ -10,7 +10,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -19,8 +23,10 @@ import com.usuallycoding.opensecretsanta.ui.form.AppBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.usuallycoding.opensecretsanta.domain.wishlist.WishlistLimits
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.form.FormColumn
 import com.usuallycoding.opensecretsanta.ui.form.MultiLineTextField
@@ -46,7 +52,7 @@ internal fun ItemSheetHost(viewModel: WishlistViewModel) {
                     label = Strings.FIELD_NOTE,
                     error = editor.errors[WishField.Note],
                 )
-                SheetField(Strings.FIELD_URL, editor.url, editor.errors[WishField.Url]) { viewModel.edit(WishField.Url, it) }
+                LinkFields(editor, viewModel)
                 editor.general?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }
                 Row(Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (!editor.adding) {
@@ -74,4 +80,31 @@ internal fun ItemSheetHost(viewModel: WishlistViewModel) {
 @Composable
 private fun SheetField(label: String, value: String, error: String?, onChange: (String) -> Unit) {
     SheetTextField(value = value, onValueChange = onChange, label = label, error = error)
+}
+
+/** One field per link, each with its own remove button, and the "Add link" button with how many of the most are in use. */
+@Composable
+private fun LinkFields(editor: ItemEditor, viewModel: WishlistViewModel) {
+    editor.urls.forEachIndexed { index, url ->
+        SheetTextField(
+            value = url,
+            onValueChange = { viewModel.editLink(index, it) },
+            label = Strings.FIELD_URL,
+            error = editor.linkErrors[index],
+            trailingIcon = {
+                IconButton(onClick = { viewModel.removeLink(index) }) {
+                    Icon(Icons.Filled.Close, contentDescription = Strings.REMOVE_LINK)
+                }
+            },
+        )
+    }
+    editor.linksError?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        TextButton(onClick = viewModel::addLink, enabled = editor.canAddLink) { Text(Strings.ADD_LINK) }
+        Text(
+            if (editor.canAddLink) Strings.linksCount(editor.urls.size, WishlistLimits.MAX_LINKS) else Strings.linksAtMost(WishlistLimits.MAX_LINKS),
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.weight(1f).padding(start = 8.dp),
+        )
+    }
 }

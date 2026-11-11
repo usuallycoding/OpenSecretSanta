@@ -16,7 +16,7 @@ class InMemoryWishlists(private val groups: InMemoryGroups) : WishlistRepository
         val owner: Username,
         var title: String,
         var note: String?,
-        var url: String?,
+        var urls: List<String>,
         val createdAt: Long,
         var updatedAt: Long,
     )
@@ -35,14 +35,14 @@ class InMemoryWishlists(private val groups: InMemoryGroups) : WishlistRepository
 
     private fun mine(groupId: Long, owner: Username) = rows.filter { it.groupId == groupId && it.owner == owner }
 
-    private fun Row.toItem() = WishlistItem(id, title, note, url, createdAt, updatedAt)
+    private fun Row.toItem() = WishlistItem(id, title, note, urls, createdAt, updatedAt)
 
     override fun list(groupId: Long, owner: Username) = mine(groupId, owner).map { it.toItem() }
 
     override fun add(groupId: Long, owner: Username, entry: WishlistEntry, atMillis: Long, maxItems: Int): WishlistItem {
         requireWritable(groupId, owner)
         if (mine(groupId, owner).size >= maxItems) throw DomainException.InvalidState("The wishlist is full.")
-        val row = Row(nextId++, groupId, owner, entry.title, entry.note, entry.url, atMillis, atMillis)
+        val row = Row(nextId++, groupId, owner, entry.title, entry.note, entry.urls, atMillis, atMillis)
         rows += row
         return row.toItem()
     }
@@ -52,7 +52,7 @@ class InMemoryWishlists(private val groups: InMemoryGroups) : WishlistRepository
         val row = mine(groupId, owner).firstOrNull { it.id == itemId } ?: throw DomainException.NotFound("Item not found.")
         row.title = entry.title
         row.note = entry.note
-        row.url = entry.url
+        row.urls = entry.linksOver(row.urls)
         row.updatedAt = atMillis
         return row.toItem()
     }
@@ -77,5 +77,5 @@ class InMemoryWishlists(private val groups: InMemoryGroups) : WishlistRepository
 
     /** What a Santa sees of [owner]'s list: no ids. */
     fun shared(groupId: Long, owner: Username) =
-        mine(groupId, owner).map { SharedWishlistItem(it.title, it.note, it.url, it.createdAt, it.updatedAt) }
+        mine(groupId, owner).map { SharedWishlistItem(it.title, it.note, it.urls, it.createdAt, it.updatedAt) }
 }

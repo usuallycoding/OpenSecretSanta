@@ -22,7 +22,7 @@ class GetReceiverWishlist(
         }
         val receiver = groups.receiverOf(group.id, user.username) ?: throw DomainException.NotFound("Group not found.")
         return wishlists.list(group.id, receiver).map {
-            SharedWishlistItem(it.title, it.note, it.url, it.createdAtMillis, it.updatedAtMillis)
+            SharedWishlistItem(it.title, it.note, it.urls, it.createdAtMillis, it.updatedAtMillis)
         }
     }
 }

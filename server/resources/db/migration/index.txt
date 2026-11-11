@@ -14,3 +14,4 @@ V012__read_marks.sql
 V013__draw_rules.sql
 V014__announcements.sql
 V015__announcement_reads.sql
+V016__wishlist_links.sql

@@ -300,7 +300,7 @@ private fun WishlistItems(items: List<OversightItem>) {
         for ((index, item) in items.withIndex()) {
             SnowCard("wish-$index", Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    ItemText(index + 1, item.title, item.note, item.url, item.added, item.changed)
+                    ItemText(index + 1, item.title, item.note, item.urls, item.added, item.changed)
                 }
             }
         }

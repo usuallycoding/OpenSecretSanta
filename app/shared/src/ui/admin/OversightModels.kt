@@ -8,6 +8,7 @@ import com.usuallycoding.opensecretsanta.contract.SharedWishlistItemDto
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.groups.changedTime
 import com.usuallycoding.opensecretsanta.ui.groups.formatInstant
+import com.usuallycoding.opensecretsanta.ui.wishlist.linksOf
 
 /** Who gives to whom, with which side is the administrator themselves. */
 data class AdminPair(
@@ -52,12 +53,12 @@ internal fun AssignmentDto.toPair(me: String, participants: List<AdminParticipan
 }
 
 /** One item of a participant's list as the owner reads it; [changed] is set only when it was edited after it was added. */
-data class OversightItem(val title: String, val note: String?, val url: String?, val added: String, val changed: String?)
+data class OversightItem(val title: String, val note: String?, val urls: List<String>, val added: String, val changed: String?)
 
 internal fun SharedWishlistItemDto.toOversightItem() = OversightItem(
     title = title,
     note = note?.takeIf { it.isNotBlank() },
-    url = url?.takeIf { it.isNotBlank() },
+    urls = linksOf(urls, url),
     added = formatInstant(createdAt),
     changed = changedTime(createdAt, updatedAt),
 )

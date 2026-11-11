@@ -32,8 +32,23 @@ class WishlistViewModelTest {
     private fun WishlistViewModel.titles() = data.value.value!!.items.map { it.title }
 
     private fun WishlistViewModel.fill(title: String = "", note: String = "", url: String = "") {
-        edit(WishField.Title, title); edit(WishField.Note, note); edit(WishField.Url, url)
+        edit(WishField.Title, title); edit(WishField.Note, note)
+        setLinks(listOf(url))
     }
+
+    /** Fills the sheet with a title and one link field for each of [links]. */
+    private fun WishlistViewModel.fillLinks(title: String, vararg links: String) {
+        edit(WishField.Title, title)
+        setLinks(links.toList())
+    }
+
+    private fun WishlistViewModel.setLinks(fields: List<String>) {
+        while (ui.value.editor!!.urls.size < fields.size) addLink()
+        while (ui.value.editor!!.urls.size > fields.size) removeLink(ui.value.editor!!.urls.lastIndex)
+        fields.forEachIndexed { index, value -> editLink(index, value) }
+    }
+
+    private fun WishlistViewModel.links() = ui.value.editor!!.urls
 
     private fun changesSent() = server.calls.count { it.startsWith("POST") || it.startsWith("PUT") || it.startsWith("DELETE") }
 
@@ -49,7 +64,7 @@ class WishlistViewModelTest {
         assertEquals(listOf("Socks", "Tea"), items.map { it.title })
         assertEquals(listOf(socks, tea), items.map { it.id })
         assertEquals("Grey", items.first().note)
-        assertEquals("https://shop.example/socks", items.first().url)
+        assertEquals(listOf("https://shop.example/socks"), items.first().urls)
         assertNull(items.last().note)
     }
 
@@ -141,12 +156,12 @@ class WishlistViewModelTest {
 
         model.openEdit(socks)
         model.edit(WishField.Note, "")
-        model.edit(WishField.Url, "   ")
+        model.editLink(0, "   ")
         model.save()?.join()
 
         val item = model.data.value.value!!.items.single()
         assertNull(item.note)
-        assertNull(item.url)
+        assertEquals(emptyList(), item.urls)
     }
 
     @Test
@@ -177,7 +192,7 @@ class WishlistViewModelTest {
 
         model.fill(title = "ok", url = "https://shop.example/" + "x".repeat(2000))
         assertNull(model.save())
-        assertTrue(WishField.Url in model.ui.value.editor!!.errors)
+        assertTrue(0 in model.ui.value.editor!!.linkErrors)
         assertEquals(0, changesSent())
     }
 
@@ -189,9 +204,125 @@ class WishlistViewModelTest {
         for (bad in listOf("javascript:alert(1)", "ftp://host/file", "file:///etc/passwd", "//host/path", "not a url", "data:text/html,x")) {
             model.fill(title = "Socks", url = bad)
             assertNull(model.save(), bad)
-            assertTrue(WishField.Url in model.ui.value.editor!!.errors, bad)
+            assertTrue(0 in model.ui.value.editor!!.linkErrors, bad)
         }
         assertEquals(0, changesSent())
+    }
+
+    // --- several links ---------------------------------------------------------------------------
+
+    @Test
+    fun theSheetStartsWithOneEmptyLinkFieldAndShowsEveryLinkOfAnItem() = runTest {
+        val socks = server.wishlist.add("Socks", null, "https://a.example", "https://b.example", "https://c.example")
+        val model = viewModel()
+
+        model.openAdd()
+        assertEquals(listOf(""), model.links())
+
+        model.openEdit(socks)
+        assertEquals(listOf("https://a.example", "https://b.example", "https://c.example"), model.links())
+    }
+
+    @Test
+    fun anItemWithoutLinksOpensWithOneEmptyField() = runTest {
+        val tea = server.wishlist.add("Tea")
+        val model = viewModel()
+
+        model.openEdit(tea)
+
+        assertEquals(listOf(""), model.links())
+    }
+
+    @Test
+    fun linkFieldsCanBeAddedUpToTenAndRemoved() = runTest {
+        val model = viewModel()
+        model.openAdd()
+
+        repeat(20) { model.addLink() }
+
+        assertEquals(WishlistLimits.MAX_LINKS, model.links().size)
+        assertFalse(model.ui.value.editor!!.canAddLink)
+
+        model.removeLink(9)
+        assertEquals(9, model.links().size)
+        assertTrue(model.ui.value.editor!!.canAddLink)
+    }
+
+    @Test
+    fun removingAFieldKeepsTheOthersInOrderAndTheLastOneIsEmptiedInstead() = runTest {
+        val model = viewModel()
+        model.openAdd()
+        model.fillLinks("Socks", "https://a.example", "https://b.example", "https://c.example")
+
+        model.removeLink(1)
+        assertEquals(listOf("https://a.example", "https://c.example"), model.links())
+
+        model.removeLink(0); model.removeLink(0)
+        assertEquals(listOf(""), model.links())
+    }
+
+    @Test
+    fun severalLinksAreSentInOrderWithoutBlanksOrRepeats() = runTest {
+        val model = viewModel()
+        model.openAdd()
+        model.fillLinks("Socks", "https://a.example", "", " https://b.example ", "https://a.example")
+
+        model.save()?.join()
+
+        val item = model.data.value.value!!.items.single()
+        assertEquals(listOf("https://a.example", "https://b.example"), item.urls)
+        assertNull(model.ui.value.editor)
+    }
+
+    @Test
+    fun aBadLinkIsFlaggedNextToItsOwnFieldOnly() = runTest {
+        val model = viewModel()
+        model.openAdd()
+        model.fillLinks("Socks", "https://a.example", "ftp://host/file")
+
+        assertNull(model.save())
+
+        assertEquals(setOf(1), model.ui.value.editor!!.linkErrors.keys)
+        assertEquals(0, changesSent())
+    }
+
+    @Test
+    fun aBadLinkIsFlaggedAtItsFieldEvenWithBlankFieldsBeforeIt() = runTest {
+        val model = viewModel()
+        model.openAdd()
+        model.fillLinks("Socks", "", "https://a.example", "not a url")
+
+        assertNull(model.save())
+
+        assertEquals(setOf(2), model.ui.value.editor!!.linkErrors.keys)
+    }
+
+    @Test
+    fun theServerNamingALinkFlagsTheFieldItCameFrom() = runTest {
+        val model = viewModel()
+        model.openAdd()
+        model.fillLinks("Socks", "", "https://a.example", "https://b.example")
+        server.wishlist.failNextChangeWith(HttpStatusCode.BadRequest, "validation_failed", "Link must be an http or https address.", field = "urls[1]")
+
+        model.save()?.join()
+
+        val editor = model.ui.value.editor!!
+        assertEquals(setOf(2), editor.linkErrors.keys)
+        assertFalse(editor.saving)
+        assertEquals(listOf("", "https://a.example", "https://b.example"), editor.urls)
+    }
+
+    @Test
+    fun editingALinkClearsItsOwnErrorOnly() = runTest {
+        val model = viewModel()
+        model.openAdd()
+        model.fillLinks("Socks", "ftp://x", "ftp://y")
+        model.save()
+        assertEquals(setOf(0, 1), model.ui.value.editor!!.linkErrors.keys)
+
+        model.editLink(0, "https://a.example")
+
+        assertEquals(setOf(1), model.ui.value.editor!!.linkErrors.keys)
     }
 
     @Test

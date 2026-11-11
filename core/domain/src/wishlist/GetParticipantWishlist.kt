@@ -22,7 +22,7 @@ class GetParticipantWishlist(
         val participant = Username.parseOrNull(rawUsername)?.takeIf { it in group.participants }
             ?: throw DomainException.NotFound("Participant not found.")
         return wishlists.list(group.id, participant).map {
-            SharedWishlistItem(it.title, it.note, it.url, it.createdAtMillis, it.updatedAtMillis)
+            SharedWishlistItem(it.title, it.note, it.urls, it.createdAtMillis, it.updatedAtMillis)
         }
     }
 }

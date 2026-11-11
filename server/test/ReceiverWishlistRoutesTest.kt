@@ -87,9 +87,22 @@ class ReceiverWishlistRoutesTest {
         assertEquals(listOf("First wish", "Second wish"), items.map { it.title })
         assertEquals("Grey, size M", items.first().note)
         assertEquals("https://shop.example/socks", items.first().url)
+        assertEquals(listOf("https://shop.example/socks"), items.first().urls)
         for (element in Json.parseToJsonElement(response.bodyAsText()).jsonArray) {
-            assertEquals(setOf("title", "note", "url", "createdAt", "updatedAt"), element.jsonObject.keys)
+            assertEquals(setOf("title", "note", "url", "createdAt", "updatedAt", "urls"), element.jsonObject.keys)
         }
+    }
+
+    @Test
+    fun aSantaSeesEveryLinkOfAnItem() = testApplication {
+        startApp()
+        val id = world()
+        client.send("POST", ApiRoutes.groupWishlistItems(id.toLong()), fx.token("bob"), WishlistItemRequest("Socks", urls = listOf("https://a.example", "https://b.example")))
+
+        val items = Json.decodeFromString<List<SharedWishlistItemDto>>(client.getAs(ApiRoutes.groupReceiverWishlist(id.toLong()), fx.token("alice")).bodyAsText())
+
+        assertEquals(listOf("https://a.example", "https://b.example"), items.single().urls)
+        assertEquals("https://a.example", items.single().url)
     }
 
     @Test

@@ -37,8 +37,8 @@ class GetParticipantWishlistTest {
     fun theOwnerReadsAListInTheParticipantsOrderInEveryStateAfterDraft() {
         for (state in listOf(GroupState.PENDING, GroupState.ACTIVE, GroupState.ARCHIVED)) {
             val id = group(GroupState.PENDING)
-            add(user("bob"), id, "First", "Grey", "https://shop.example")
-            add(user("bob"), id, "Second", null, null)
+            add(user("bob"), id, "First", "Grey", null, "https://shop.example")
+            add(user("bob"), id, "Second", null, null, null)
             ReorderWishlist(participantLoader, wishlists)(
                 user("bob"), id, wishlists.list(id, u("bob")).map { it.id }.reversed(),
             )
@@ -51,10 +51,10 @@ class GetParticipantWishlistTest {
     @Test
     fun theViewCarriesTimesAndNoId() {
         val id = group(GroupState.PENDING)
-        add(user("bob"), id, "Socks", "Grey", "https://shop.example")
+        add(user("bob"), id, "Socks", "Grey", null, "https://shop.example")
 
         assertEquals(
-            "SharedWishlistItem(title=Socks, note=Grey, url=https://shop.example, createdAtMillis=1000, updatedAtMillis=1000)",
+            "SharedWishlistItem(title=Socks, note=Grey, urls=[https://shop.example], createdAtMillis=1000, updatedAtMillis=1000)",
             read(admin, id, "bob").single().toString(),
         )
     }
@@ -67,7 +67,7 @@ class GetParticipantWishlistTest {
     @Test
     fun usernameCaseDoesNotMatter() {
         val id = group(GroupState.ACTIVE)
-        add(user("bob"), id, "Socks", null, null)
+        add(user("bob"), id, "Socks", null, null, null)
 
         assertEquals(listOf("Socks"), titles(id, "BOB"))
     }
@@ -102,7 +102,7 @@ class GetParticipantWishlistTest {
         users.add("owner-p", admin = true)
         val owner = users.userNamed("owner-p")
         val id = groups.seed(owner.username, GroupState.ACTIVE, u("owner-p"), u("alice"), u("bob"), u("carol")).id
-        add(user("alice"), id, "Tea", null, null)
+        add(user("alice"), id, "Tea", null, null, null)
 
         assertEquals(listOf("Tea"), read(owner, id, "alice").map { it.title })
     }

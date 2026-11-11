@@ -28,9 +28,9 @@ import java.time.Instant
 
 private fun iso(millis: Long): String = Instant.ofEpochMilli(millis).toString()
 
-private fun WishlistItem.toDto() = WishlistItemDto(id, title, note, url, iso(createdAtMillis), iso(updatedAtMillis))
+private fun WishlistItem.toDto() = WishlistItemDto(id, title, note, urls.firstOrNull(), iso(createdAtMillis), iso(updatedAtMillis), urls)
 
-private fun SharedWishlistItem.toDto() = SharedWishlistItemDto(title, note, url, iso(createdAtMillis), iso(updatedAtMillis))
+private fun SharedWishlistItem.toDto() = SharedWishlistItemDto(title, note, urls.firstOrNull(), iso(createdAtMillis), iso(updatedAtMillis), urls)
 
 /** A non-numeric item id can never match an item, so it is reported like any other missing item. */
 private fun ApplicationCall.itemId(): Long =
@@ -53,7 +53,7 @@ fun Route.wishlistRoutes(
         val user = call.currentUser()
         val groupId = call.groupId()
         val request = call.receive<WishlistItemRequest>()
-        val item = blocking { addItem(user, groupId, request.title, request.note, request.url) }
+        val item = blocking { addItem(user, groupId, request.title, request.note, request.urls, request.url) }
         notifications.wishlistChanged(groupId, user.username)
         call.respond(HttpStatusCode.Created, item.toDto())
     }
@@ -62,7 +62,7 @@ fun Route.wishlistRoutes(
         val groupId = call.groupId()
         val itemId = call.itemId()
         val request = call.receive<WishlistItemRequest>()
-        val item = blocking { updateItem(user, groupId, itemId, request.title, request.note, request.url) }
+        val item = blocking { updateItem(user, groupId, itemId, request.title, request.note, request.urls, request.url) }
         notifications.wishlistChanged(groupId, user.username)
         call.respond(item.toDto())
     }

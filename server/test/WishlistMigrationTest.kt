@@ -32,7 +32,7 @@ class WishlistMigrationTest {
 
     @Test
     fun schemaVersionIsLatest() {
-        assertEquals(15, database.schemaVersion())
+        assertEquals(16, database.schemaVersion())
     }
 
     @Test
@@ -44,10 +44,9 @@ class WishlistMigrationTest {
 
         database.connection().use { c ->
             c.createStatement().use { s ->
-                s.executeQuery("SELECT note, url FROM wishlist_items").use {
+                s.executeQuery("SELECT note FROM wishlist_items").use {
                     it.next()
                     assertEquals(null, it.getString(1))
-                    assertEquals(null, it.getString(2))
                 }
             }
         }
@@ -121,5 +120,35 @@ class WishlistMigrationTest {
         item(g, "alice", -2)
 
         assertEquals(2, count("position < 0"))
+    }
+
+    @Test
+    fun anItemHasNoLinkColumnAnymore() {
+        assertFailsWith<SQLException> { sql("SELECT url FROM wishlist_items") }
+    }
+
+    @Test
+    fun twoLinksOfOneItemCannotShareAPlace() {
+        val g = group()
+        user("alice")
+        item(g, "alice", 0)
+
+        sql("INSERT INTO wishlist_item_links (item_id, position, url) VALUES (1, 0, 'https://a.example')")
+        assertFailsWith<SQLException> { sql("INSERT INTO wishlist_item_links (item_id, position, url) VALUES (1, 0, 'https://b.example')") }
+        sql("INSERT INTO wishlist_item_links (item_id, position, url) VALUES (1, 1, 'https://b.example')")
+    }
+
+    @Test
+    fun deletingAnItemRemovesItsLinks() {
+        val g = group()
+        user("alice")
+        item(g, "alice", 0)
+        sql("INSERT INTO wishlist_item_links (item_id, position, url) VALUES (1, 0, 'https://a.example')")
+
+        sql("DELETE FROM wishlist_items WHERE id = 1")
+
+        assertEquals(0, database.connection().use { c ->
+            c.createStatement().use { s -> s.executeQuery("SELECT COUNT(*) FROM wishlist_item_links").use { it.next(); it.getInt(1) } }
+        })
     }
 }

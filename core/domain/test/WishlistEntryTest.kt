@@ -12,7 +12,9 @@ class WishlistEntryTest {
 
     private fun fieldOf(block: () -> Unit) = assertFailsWith<DomainException.ValidationFailed> { block() }.field
 
-    private fun entry(title: String? = "Wool socks", note: String? = null, url: String? = null) = WishlistEntry.of(title, note, url)
+    private fun entry(title: String? = "Wool socks", note: String? = null, vararg urls: String) = WishlistEntry.of(title, note, urls.toList())
+
+    private fun linkEntry(url: String?) = WishlistEntry.ofFirstLink("Wool socks", null, url)
 
     // --- title, note, link basics ---
 
@@ -21,22 +23,22 @@ class WishlistEntryTest {
         val e = entry()
         assertEquals("Wool socks", e.title)
         assertNull(e.note)
-        assertNull(e.url)
+        assertEquals(emptyList(), e.urls)
     }
 
     @Test
     fun whitespaceIsTrimmedAndBlankOptionalsBecomeEmpty() {
-        val e = entry(title = "  Wool socks  ", note = "   ", url = "\n")
+        val e = entry("  Wool socks  ", "   ", "\n")
         assertEquals("Wool socks", e.title)
         assertNull(e.note)
-        assertNull(e.url)
+        assertEquals(emptyList(), e.urls)
     }
 
     @Test
     fun noteAndLinkAreKept() {
-        val e = entry(note = "Grey, size M", url = "https://shop.example/socks")
+        val e = entry(note = "Grey, size M", urls = arrayOf("https://shop.example/socks"))
         assertEquals("Grey, size M", e.note)
-        assertEquals("https://shop.example/socks", e.url)
+        assertEquals(listOf("https://shop.example/socks"), e.urls)
     }
 
     @Test
@@ -57,8 +59,8 @@ class WishlistEntryTest {
     fun linkLengthIsLimitedTo2000() {
         val long = "https://shop.example/" + "a".repeat(2000 - "https://shop.example/".length)
         assertEquals(2000, long.length)
-        assertEquals(long, entry(url = long).url)
-        assertEquals("url", fieldOf { entry(url = long + "a") })
+        assertEquals(listOf(long), entry(urls = arrayOf(long)).urls)
+        assertEquals("urls[0]", fieldOf { entry(urls = arrayOf(long + "a")) })
     }
 
     // --- links ---
@@ -78,7 +80,7 @@ class WishlistEntryTest {
             "https://shop.example?query=only",
             "https://a.b",
         )
-        for (link in valid) assertEquals(link, entry(url = link).url, link)
+        for (link in valid) assertEquals(listOf(link), entry(urls = arrayOf(link)).urls, link)
     }
 
     @Test
@@ -115,22 +117,87 @@ class WishlistEntryTest {
             "https://shop.example/a\nb",
             "http:/shop.example",
         )
-        for (link in invalid) assertEquals("url", fieldOf { entry(url = link) }, link)
+        for (link in invalid) {
+            assertEquals("urls[0]", fieldOf { entry(urls = arrayOf(link)) }, link)
+            assertEquals("url", fieldOf { linkEntry(link) }, link)
+        }
     }
 
     @Test
     fun surroundingWhitespaceAroundAValidLinkIsTrimmedNotRejected() {
-        assertEquals("https://shop.example/", entry(url = "  https://shop.example/\n").url)
+        assertEquals(listOf("https://shop.example/"), entry(urls = arrayOf("  https://shop.example/\n")).urls)
     }
 
     @Test
     fun aLabelOverSixtyThreeCharactersIsRejected() {
-        assertEquals("url", fieldOf { entry(url = "https://${"a".repeat(64)}.example/") })
-        entry(url = "https://${"a".repeat(63)}.example/")
+        assertEquals("urls[0]", fieldOf { entry(urls = arrayOf("https://${"a".repeat(64)}.example/")) })
+        entry(urls = arrayOf("https://${"a".repeat(63)}.example/"))
     }
 
     @Test
     fun invalidLinkDoesNotHideAValidTitleError() {
-        assertEquals("title", fieldOf { entry(title = "", url = "javascript:alert(1)") })
+        assertEquals("title", fieldOf { entry(title = "", urls = arrayOf("javascript:alert(1)")) })
+    }
+
+    // --- several links ---
+
+    private fun links(count: Int) = Array(count) { "https://shop.example/$it" }
+
+    @Test
+    fun tenLinksAreKeptInTheOrderGiven() {
+        assertEquals(links(10).toList(), entry(urls = links(10)).urls)
+    }
+
+    @Test
+    fun elevenLinksAreRejectedNamingUrls() {
+        assertEquals("urls", fieldOf { entry(urls = links(11)) })
+    }
+
+    @Test
+    fun tooManyLinksIsReportedBeforeABadOne() {
+        assertEquals("urls", fieldOf { entry(urls = links(10) + "javascript:alert(1)") })
+    }
+
+    @Test
+    fun blanksAreDroppedAndRepeatsKeptOnceAtTheirFirstPlace() {
+        val e = entry(urls = arrayOf("https://a.example", "   ", "https://b.example", " https://a.example "))
+        assertEquals(listOf("https://a.example", "https://b.example"), e.urls)
+    }
+
+    @Test
+    fun repeatsAndBlanksDoNotCountTowardsTheLimit() {
+        assertEquals(10, entry(urls = links(10) + links(10) + "  ").urls.size)
+    }
+
+    @Test
+    fun aBadLinkIsNamedByItsPlaceAmongTheKeptLinks() {
+        assertEquals("urls[1]", fieldOf { entry(urls = arrayOf("https://a.example", "ftp://host/file")) })
+        assertEquals("urls[1]", fieldOf { entry(urls = arrayOf("", "https://a.example", "ftp://host/file")) })
+    }
+
+    // --- an app that knows one link ---
+
+    @Test
+    fun anOlderAppsLinkStandsForTheFirstLinkOnly() {
+        val e = linkEntry(" https://new.example ")
+        assertEquals(listOf("https://new.example"), e.urls)
+        assertEquals(listOf("https://new.example", "https://b.example", "https://c.example"), e.linksOver(listOf("https://old.example", "https://b.example", "https://c.example")))
+    }
+
+    @Test
+    fun anOlderAppWithNoLinkRemovesTheFirstLinkAndKeepsTheRest() {
+        assertEquals(listOf("https://b.example"), linkEntry(null).linksOver(listOf("https://old.example", "https://b.example")))
+        assertEquals(listOf("https://b.example"), linkEntry("  ").linksOver(listOf("https://old.example", "https://b.example")))
+    }
+
+    @Test
+    fun anOlderAppsLinkAlreadyAmongTheOthersIsNotRepeated() {
+        assertEquals(listOf("https://b.example"), linkEntry("https://b.example").linksOver(listOf("https://old.example", "https://b.example")))
+    }
+
+    @Test
+    fun linksOfAnEntryWithUrlsReplaceEverything() {
+        assertEquals(listOf("https://x.example"), entry(urls = arrayOf("https://x.example")).linksOver(listOf("https://a.example", "https://b.example")))
+        assertEquals(emptyList(), entry().linksOver(listOf("https://a.example")))
     }
 }

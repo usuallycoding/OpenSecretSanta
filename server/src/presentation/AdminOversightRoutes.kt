@@ -22,7 +22,7 @@ import java.time.Instant
 
 private fun iso(millis: Long?): String? = millis?.let { Instant.ofEpochMilli(it).toString() }
 
-private fun SharedWishlistItem.toDto() = SharedWishlistItemDto(title, note, url, iso(createdAtMillis)!!, iso(updatedAtMillis)!!)
+private fun SharedWishlistItem.toDto() = SharedWishlistItemDto(title, note, urls.firstOrNull(), iso(createdAtMillis)!!, iso(updatedAtMillis)!!, urls)
 
 private fun DeliveryInfo.toDto() = DeliveryInfoDto(fullName, email, phone, address, deliveryInfo)
 

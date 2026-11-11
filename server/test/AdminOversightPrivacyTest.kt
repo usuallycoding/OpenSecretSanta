@@ -184,6 +184,6 @@ class AdminOversightPrivacyTest {
 
         val health = Json.decodeFromString<HealthResponse>(client.getAs(ApiRoutes.HEALTH, null).bodyAsText())
 
-        assertEquals(HealthResponse("ok", schemaVersion = 15), health)
+        assertEquals(HealthResponse("ok", schemaVersion = 16), health)
     }
 }

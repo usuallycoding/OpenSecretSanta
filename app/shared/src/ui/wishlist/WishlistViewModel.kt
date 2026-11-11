@@ -68,7 +68,7 @@ class WishlistViewModel(
 
     fun openEdit(itemId: Long) {
         val item = current?.takeIf { it.editable }?.items?.firstOrNull { it.id == itemId } ?: return
-        _ui.update { it.copy(editor = ItemEditor(item.id, item.title, item.note.orEmpty(), item.url.orEmpty()), notice = null) }
+        _ui.update { it.copy(editor = ItemEditor(item.id, item.title, item.note.orEmpty(), item.urls.ifEmpty { listOf("") }), notice = null) }
     }
 
     fun dismissEditor() = _ui.update { it.copy(editor = null) }
@@ -77,24 +77,47 @@ class WishlistViewModel(
         val changed = when (field) {
             WishField.Title -> editor.copy(title = value)
             WishField.Note -> editor.copy(note = value)
-            WishField.Url -> editor.copy(url = value)
         }
         changed.copy(errors = editor.errors - field, general = null)
+    }
+
+    fun editLink(index: Int, value: String) = updateEditor { editor ->
+        if (index !in editor.urls.indices) return@updateEditor editor
+        editor.copy(
+            urls = editor.urls.toMutableList().also { it[index] = value },
+            linkErrors = editor.linkErrors - index,
+            linksError = null,
+            general = null,
+        )
+    }
+
+    /** Another empty link field after the last, up to [WishlistLimits.MAX_LINKS]. */
+    fun addLink() = updateEditor { editor ->
+        if (!editor.canAddLink) editor else editor.copy(urls = editor.urls + "", linksError = null)
+    }
+
+    /** Takes a link field away; the last one left is emptied instead, so the sheet always shows one. */
+    fun removeLink(index: Int) = updateEditor { editor ->
+        if (index !in editor.urls.indices) return@updateEditor editor
+        val urls = editor.urls.filterIndexed { i, _ -> i != index }.ifEmpty { listOf("") }
+        // errors belong to the fields they were shown next to, which move up after the one taken away
+        val errors = editor.linkErrors.filterKeys { it != index }.mapKeys { (i, _) -> if (i > index) i - 1 else i }
+        editor.copy(urls = urls, linkErrors = errors, linksError = null, general = null)
     }
 
     /** Checks what the server checks, then sends; returns the running work, or null when nothing is sent. */
     fun save(): Job? {
         val editor = _ui.value.editor ?: return null
         if (editor.saving) return null
+        val kept = keptLinks(editor.urls)
         val entry = try {
-            WishlistEntry.of(editor.title, editor.note, editor.url)
+            WishlistEntry.of(editor.title, editor.note, editor.urls)
         } catch (e: DomainException.ValidationFailed) {
-            val field = fieldOf(e.field)
-            updateEditor { it.copy(errors = if (field != null) mapOf(field to e.message.orEmpty()) else emptyMap(), general = if (field == null) e.message else null) }
+            if (linkPlace(e.field) != null) showInvalidLinks(editor.urls, kept) else showInvalid(e.field, e.message.orEmpty(), kept)
             return null
         }
-        updateEditor { it.copy(saving = true, errors = emptyMap(), general = null) }
-        val request = WishlistItemRequest(entry.title, entry.note, entry.url)
+        updateEditor { it.copy(saving = true, errors = emptyMap(), linkErrors = emptyMap(), linksError = null, general = null) }
+        val request = WishlistItemRequest(entry.title, entry.note, urls = entry.urls)
         return scope.launch {
             val result = if (editor.itemId == null) {
                 api.addWishlistItem(groupId, request)
@@ -110,7 +133,7 @@ class WishlistViewModel(
                     }
                     _ui.update { it.copy(editor = null) }
                 }
-                is ApiResult.Failure -> failed(result.error, itemRelated = editor.itemId != null, fromEditor = true)
+                is ApiResult.Failure -> failed(result.error, itemRelated = editor.itemId != null, fromEditor = true, kept = kept)
             }
         }
     }
@@ -135,7 +158,7 @@ class WishlistViewModel(
                     current?.let { data -> loader.replace(data.copy(items = data.items.filterNot { it.id == item.id })) }
                     _ui.update { it.copy(editor = null) }
                 }
-                is ApiResult.Failure -> failed(result.error, itemRelated = true, fromEditor = false)
+                is ApiResult.Failure -> failed(result.error, itemRelated = true, fromEditor = false, kept = emptyList())
             }
         }
     }
@@ -168,7 +191,7 @@ class WishlistViewModel(
                 }
                 is ApiResult.Failure -> {
                     _ui.update { it.copy(moving = false) }
-                    failed(result.error, itemRelated = false, fromEditor = false)
+                    failed(result.error, itemRelated = false, fromEditor = false, kept = emptyList())
                 }
             }
         }
@@ -178,10 +201,12 @@ class WishlistViewModel(
 
     // --- when the server says no ----------------------------------------------------------------
 
-    private suspend fun failed(error: ApiError, itemRelated: Boolean, fromEditor: Boolean) {
+    private suspend fun failed(error: ApiError, itemRelated: Boolean, fromEditor: Boolean, kept: List<Int>) {
         when {
-            error is ApiError.Validation && fieldOf(error.field) != null && fromEditor ->
-                updateEditor { it.copy(saving = false, errors = mapOf(fieldOf(error.field)!! to error.message)) }
+            error is ApiError.Validation && fromEditor && isFormField(error.field) -> {
+                updateEditor { it.copy(saving = false) }
+                showInvalid(error.field, error.message, kept)
+            }
             error is ApiError.Validation && error.field == "itemIds" -> reloadWith(WishlistNotice.ChangedElsewhere)
             error is ApiError.Rejected && error.status == 409 -> {
                 // archived, or the list filled up elsewhere: the reloaded phase tells which
@@ -210,4 +235,45 @@ class WishlistViewModel(
         _ui.update { state -> state.editor?.let { state.copy(editor = change(it)) } ?: state }
 
     private fun fieldOf(key: String?): WishField? = WishField.entries.firstOrNull { it.key == key }
+
+    /** `title`, `note`, `urls` or `urls[i]`: what the form can show next to a field. */
+    private fun isFormField(key: String?): Boolean = fieldOf(key) != null || key == LINKS_FIELD || linkPlace(key) != null
+
+    private fun linkPlace(key: String?): Int? =
+        key?.removePrefix("$LINKS_FIELD[")?.removeSuffix("]")?.takeIf { key.startsWith("$LINKS_FIELD[") && key.endsWith("]") }?.toIntOrNull()
+
+    /** Shows a problem next to its field: a link by the place it has among the [kept] fields, those with something in them. */
+    private fun showInvalid(key: String?, message: String, kept: List<Int>) = updateEditor { editor ->
+        val field = fieldOf(key)
+        val place = linkPlace(key)?.let { kept.getOrNull(it) }
+        when {
+            field != null -> editor.copy(errors = mapOf(field to message), linkErrors = emptyMap(), linksError = null)
+            place != null -> editor.copy(errors = emptyMap(), linkErrors = mapOf(place to message), linksError = null)
+            key == LINKS_FIELD -> editor.copy(errors = emptyMap(), linkErrors = emptyMap(), linksError = message)
+            else -> editor.copy(errors = emptyMap(), linkErrors = emptyMap(), linksError = null, general = message)
+        }
+    }
+
+    /** Every link that is not acceptable gets its message next to its own field, not just the first. */
+    private fun showInvalidLinks(urls: List<String>, kept: List<Int>) {
+        val problems = kept.mapNotNull { place ->
+            try {
+                WishlistEntry.of("-", null, listOf(urls[place]))
+                null
+            } catch (e: DomainException.ValidationFailed) {
+                place to e.message.orEmpty()
+            }
+        }.toMap()
+        updateEditor { it.copy(errors = emptyMap(), linkErrors = problems, linksError = null) }
+    }
+
+    private companion object {
+        const val LINKS_FIELD = "urls"
+    }
+}
+
+/** The places, among the link fields of the sheet, of the links that are sent: not blank and not a repeat, in order. */
+internal fun keptLinks(urls: List<String>): List<Int> {
+    val seen = mutableSetOf<String>()
+    return urls.indices.filter { index -> urls[index].trim().let { it.isNotEmpty() && seen.add(it) } }
 }

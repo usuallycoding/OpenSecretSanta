@@ -238,7 +238,7 @@ class AdminOversightViewModelTest {
             id, "alice",
             listOf(
                 SharedWishlistItemDto("Kept", null, null, "2026-12-01T10:00:00Z", "2026-12-01T10:00:00Z"),
-                SharedWishlistItemDto("Edited", "Blue", "https://shop.example/x", "2026-12-01T10:00:00Z", "2026-12-05T08:30:00Z"),
+                SharedWishlistItemDto("Edited", "Blue", "https://shop.example/x", "2026-12-01T10:00:00Z", "2026-12-05T08:30:00Z", listOf("https://shop.example/x", "https://shop.example/y")),
             ),
         )
 
@@ -248,7 +248,7 @@ class AdminOversightViewModelTest {
         assertNull(items[0].changed)
         assertEquals("5 Dec 2026, 10:30", items[1].changed)
         assertEquals("Blue", items[1].note)
-        assertEquals("https://shop.example/x", items[1].url)
+        assertEquals(listOf("https://shop.example/x", "https://shop.example/y"), items[1].urls)
     }
 
     // --- the letters in the pair sheet -------------------------------------------------------------------

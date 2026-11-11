@@ -20,6 +20,7 @@ interface WishlistRepository {
     /** Appends to the end of the list; `InvalidState` when [maxItems] already exist. */
     fun add(groupId: Long, owner: Username, entry: WishlistEntry, atMillis: Long, maxItems: Int): WishlistItem
 
+    /** Replaces the item's title and note, and its links as `entry.linksOver(current links)`, read in the same transaction. */
     fun update(groupId: Long, owner: Username, itemId: Long, entry: WishlistEntry, atMillis: Long): WishlistItem
 
     fun delete(groupId: Long, owner: Username, itemId: Long)
@@ -48,15 +49,19 @@ class GetMyWishlist(
     }
 }
 
+/** [urls] decide the links when sent; otherwise the entry comes from an app that sends only the one link [url]. */
+private fun entryOf(title: String?, note: String?, urls: List<String>?, url: String?) =
+    if (urls != null) WishlistEntry.of(title, note, urls) else WishlistEntry.ofFirstLink(title, note, url)
+
 class AddWishlistItem(
     private val loadParticipantGroup: ParticipantGroupLoader,
     private val wishlists: WishlistRepository,
     private val clock: Clock,
 ) {
-    operator fun invoke(user: User, groupId: Long, title: String?, note: String?, url: String?): WishlistItem {
+    operator fun invoke(user: User, groupId: Long, title: String?, note: String?, urls: List<String>?, url: String?): WishlistItem {
         val group = loadParticipantGroup(user, groupId)
         group.requireEditableWishlist()
-        val entry = WishlistEntry.of(title, note, url)
+        val entry = entryOf(title, note, urls, url)
         return wishlists.add(group.id, user.username, entry, clock.nowMillis(), WishlistLimits.MAX_ITEMS)
     }
 }
@@ -66,10 +71,10 @@ class UpdateWishlistItem(
     private val wishlists: WishlistRepository,
     private val clock: Clock,
 ) {
-    operator fun invoke(user: User, groupId: Long, itemId: Long, title: String?, note: String?, url: String?): WishlistItem {
+    operator fun invoke(user: User, groupId: Long, itemId: Long, title: String?, note: String?, urls: List<String>?, url: String?): WishlistItem {
         val group = loadParticipantGroup(user, groupId)
         group.requireEditableWishlist()
-        val entry = WishlistEntry.of(title, note, url)
+        val entry = entryOf(title, note, urls, url)
         return wishlists.update(group.id, user.username, itemId, entry, clock.nowMillis())
     }
 }

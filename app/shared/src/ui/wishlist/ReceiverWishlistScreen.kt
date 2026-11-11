@@ -49,7 +49,7 @@ fun ReceiverWishlistSection(viewModel: ReceiverWishlistViewModel, shown: Boolean
                         // what is new or edited since the Santa last looked has a pill and a bar on the card's start edge
                         Column(Modifier.startAccentBar(item.change != null)) {
                             ItemText(
-                                index + 1, item.title, item.note, item.url, item.added, item.changed, Modifier.padding(16.dp),
+                                index + 1, item.title, item.note, item.urls, item.added, item.changed, Modifier.padding(16.dp),
                                 pill = when (item.change) {
                                     Change.New -> Strings.READ_NEW
                                     Change.Edited -> Strings.READ_EDITED
