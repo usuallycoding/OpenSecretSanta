@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -139,10 +140,10 @@ fun FullTextDialog(title: String?, text: String, onDismiss: () -> Unit) {
     )
 }
 
-/** A wishlist link: one line in the link colour with a copy icon; choosing it opens [LinkDialog], not the browser. */
+/** A wishlist link: one line in the link colour with a copy icon; choosing it opens the link in the platform's browser at once. */
 @Composable
 fun LinkText(url: String, modifier: Modifier = Modifier) {
-    var open by remember { mutableStateOf(false) }
+    val uriHandler = LocalUriHandler.current
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         Text(
             url,
@@ -150,29 +151,11 @@ fun LinkText(url: String, modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.primary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f).clickable { open = true },
+            // nothing can open the link on some platforms, which is not worth a message: the tap simply does nothing
+            modifier = Modifier.weight(1f).clickable(onClickLabel = Strings.OPEN_LINK_IN_BROWSER, role = Role.Button) {
+                runCatching { uriHandler.openUri(url) }
+            },
         )
         CopyButton(url)
     }
-    if (open) LinkDialog(url, onDismiss = { open = false })
-}
-
-/** The whole link, with the choice to open it in the platform's browser or to cancel. */
-@Composable
-fun LinkDialog(url: String, onDismiss: () -> Unit) {
-    val uriHandler = LocalUriHandler.current
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(Strings.WISHLIST_LINK, modifier = Modifier.weight(1f))
-                CopyButton(url)
-            }
-        },
-        text = { Column(Modifier.verticalScroll(rememberScrollState())) { SelectionContainer { Text(url) } } },
-        confirmButton = {
-            TextButton(onClick = { runCatching { uriHandler.openUri(url) }; onDismiss() }) { Text(Strings.OPEN_IN_BROWSER) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(Strings.CANCEL) } },
-    )
 }
