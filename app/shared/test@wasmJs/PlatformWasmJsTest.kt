@@ -1,6 +1,7 @@
 package com.usuallycoding.opensecretsanta
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -23,5 +24,10 @@ class PlatformWasmJsTest {
     @Test
     fun theWebOffersTheAndroidDownload() {
         assertTrue(getPlatform().offersAndroidDownload)
+    }
+
+    @Test
+    fun theUpdateWayOfThePlatform() {
+        assertEquals(UpdateWay.Reload, getPlatform().updateWay)
     }
 }

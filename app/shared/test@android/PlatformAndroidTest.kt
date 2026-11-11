@@ -1,6 +1,7 @@
 package com.usuallycoding.opensecretsanta
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -18,5 +19,10 @@ class PlatformAndroidTest {
     @Test
     fun `the android app does not offer itself for download`() {
         assertFalse(getPlatform().offersAndroidDownload)
+    }
+
+    @Test
+    fun theUpdateWayOfThePlatform() {
+        assertEquals(UpdateWay.Download, getPlatform().updateWay)
     }
 }

@@ -39,6 +39,7 @@ import com.usuallycoding.opensecretsanta.ui.admin.AdminUserViewModel
 import com.usuallycoding.opensecretsanta.ui.admin.AdminUsersViewModel
 import com.usuallycoding.opensecretsanta.ui.gift.ReceiverViewModel
 import com.usuallycoding.opensecretsanta.ui.download.AndroidDownloadOffer
+import com.usuallycoding.opensecretsanta.ui.update.AppCompatibility
 import com.usuallycoding.opensecretsanta.ui.gift.SantaQuestionsViewModel
 import com.usuallycoding.opensecretsanta.ui.gift.SantaRevealViewModel
 import com.usuallycoding.opensecretsanta.ui.wishlist.ReceiverWishlistViewModel
@@ -65,6 +66,7 @@ fun appModules(baseUrl: String, pushDevice: PushDevice = UnsupportedPushDevice):
         single { PushRegistration(device = get(), api = lazy { get<ApiClient>() }, settings = get()) }
         single { SessionManager(api = lazy { get<ApiClient>() }, store = get(), beforeSignOut = get<PushRegistration>()) } bind AuthContext::class
         single { ApiClient(http = get(), baseUrl = get<BackendConfig>().baseUrl, auth = get()) }
+        single { AppCompatibility(get()) }
         single { AndroidDownloadOffer(get(), getPlatform().offersAndroidDownload, viewModelScope()) }
 
         // Each view model owns its scope, which the lifecycle library cancels when the view model is cleared.

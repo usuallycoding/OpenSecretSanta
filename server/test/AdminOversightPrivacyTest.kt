@@ -2,6 +2,7 @@ package com.usuallycoding.opensecretsanta.server
 
 import com.usuallycoding.opensecretsanta.contract.AnswerRequest
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
+import com.usuallycoding.opensecretsanta.contract.ApiVersion
 import com.usuallycoding.opensecretsanta.contract.AskQuestionRequest
 import com.usuallycoding.opensecretsanta.contract.AssignmentDto
 import com.usuallycoding.opensecretsanta.contract.DeliveryInfoDto
@@ -184,6 +185,6 @@ class AdminOversightPrivacyTest {
 
         val health = Json.decodeFromString<HealthResponse>(client.getAs(ApiRoutes.HEALTH, null).bodyAsText())
 
-        assertEquals(HealthResponse("ok", schemaVersion = 16, androidDownload = false), health)
+        assertEquals(HealthResponse("ok", schemaVersion = 16, apiVersion = ApiVersion.CURRENT, androidDownload = false), health)
     }
 }

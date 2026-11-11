@@ -1,6 +1,7 @@
 package com.usuallycoding.opensecretsanta.server
 
 import com.usuallycoding.opensecretsanta.contract.ApiRoutes
+import com.usuallycoding.opensecretsanta.contract.ApiVersion
 import com.usuallycoding.opensecretsanta.contract.ErrorResponse
 import com.usuallycoding.opensecretsanta.contract.HealthResponse
 import com.usuallycoding.opensecretsanta.server.data.db.Migration
@@ -33,7 +34,16 @@ class ApplicationTest {
         val response = client.get(ApiRoutes.HEALTH)
 
         assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals(HealthResponse("ok", schemaVersion = 16, androidDownload = false), Json.decodeFromString(response.bodyAsText()))
+        assertEquals(HealthResponse("ok", schemaVersion = 16, apiVersion = ApiVersion.CURRENT, androidDownload = false), Json.decodeFromString(response.bodyAsText()))
+    }
+
+    @Test
+    fun healthReportsTheVersionOfTheApi() = testApplication {
+        application { module(configFor(tempDbPath())) }
+
+        val answer = Json.decodeFromString<HealthResponse>(client.get(ApiRoutes.HEALTH).bodyAsText())
+
+        assertEquals(ApiVersion.CURRENT, answer.apiVersion)
     }
 
     @Test
@@ -62,7 +72,7 @@ class ApplicationTest {
         val response = client.get(ApiRoutes.HEALTH)
 
         assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals(HealthResponse("ok", schemaVersion = 16, androidDownload = false), Json.decodeFromString(response.bodyAsText()))
+        assertEquals(HealthResponse("ok", schemaVersion = 16, apiVersion = ApiVersion.CURRENT, androidDownload = false), Json.decodeFromString(response.bodyAsText()))
     }
 
     @Test
@@ -76,6 +86,7 @@ class ApplicationTest {
 
         assertEquals(HttpStatusCode.ServiceUnavailable, response.status)
         assertEquals(HealthResponse("error"), Json.decodeFromString(response.bodyAsText()))
+        assertEquals(null, Json.decodeFromString<HealthResponse>(response.bodyAsText()).apiVersion)
     }
 
     @Test

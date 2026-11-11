@@ -12,8 +12,9 @@ class HealthResponseTest {
     @Test
     fun roundTrips() {
         for (value in listOf(
-            HealthResponse("ok", schemaVersion = 16, androidDownload = true),
-            HealthResponse("ok", schemaVersion = 16, androidDownload = false),
+            HealthResponse("ok", schemaVersion = 16, apiVersion = 1, androidDownload = true),
+            HealthResponse("ok", schemaVersion = 16, apiVersion = 2, androidDownload = false),
+            HealthResponse("ok", schemaVersion = 16),
             HealthResponse("error"),
         )) {
             assertEquals(value, json.decodeFromString<HealthResponse>(json.encodeToString(value)))
@@ -28,10 +29,22 @@ class HealthResponseTest {
     }
 
     @Test
+    fun anAnswerFromAnOlderServerHasNoApiVersion() {
+        val answer = json.decodeFromString<HealthResponse>("""{"status":"ok","schemaVersion":16,"androidDownload":true}""")
+
+        assertNull(answer.apiVersion)
+    }
+
+    @Test
+    fun theApiVersionStartsAtOne() {
+        assertEquals(1, ApiVersion.CURRENT)
+    }
+
+    @Test
     fun anOlderReaderIgnoresTheDownloadFlag() {
         val strictOld = Json { ignoreUnknownKeys = true }
 
-        assertEquals("ok", strictOld.decodeFromString<HealthResponse>("""{"status":"ok","schemaVersion":16,"androidDownload":true,"other":1}""").status)
+        assertEquals("ok", strictOld.decodeFromString<HealthResponse>("""{"status":"ok","schemaVersion":16,"apiVersion":1,"androidDownload":true,"other":1}""").status)
     }
 
     @Test

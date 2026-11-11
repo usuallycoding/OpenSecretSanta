@@ -82,7 +82,7 @@ JWT_SECRET=change-me \
 DATA_ENCRYPTION_KEY="$(openssl rand -base64 32)" \
 ADMIN_PASSWORD=choose-a-password \
 ./kotlin run -m server
-curl localhost:8080/health   # {"status":"ok","schemaVersion":<n>,"androidDownload":false}
+curl localhost:8080/health   # {"status":"ok","schemaVersion":<n>,"apiVersion":<n>,"androidDownload":false}
 ```
 
 `CORS_ALLOWED_ORIGINS` is only needed when the web app is served from a different origin than the server. Each entry is `scheme://host[:port]` with no path, no trailing slash and no wildcard (`*` is refused at startup). When it is empty the server adds no cross-origin headers at all; when it is set, a browser request from an origin that is not listed is refused with `403`, while same-origin requests and native apps (which send no `Origin`) are unaffected.
@@ -363,6 +363,18 @@ The server can hand out the Android app at `GET /download_latest`, with no sign-
 4. Check it through the public address, from a phone if you can: `curl -OJ https://santa-api.example.org/download_latest`. A proxy or tunnel in front of the server has to let a download of that size (several tens of megabytes) through; if it does not, the check is where you find out.
 
 The file served is the newest `.apk` in the folder: names like `opensecretsanta-<version>-<code>.apk`, which is what the script writes, are ordered by their version code as a number, so the build you just made wins, and any other name comes after them (the most recently modified first). Older APKs can stay in the folder, and deleting the newest one rolls back to the one before. Without an APK, `/download_latest` answers 404 and `GET /health` has `"androidDownload": false`, so the web app shows no link. The download is public: anyone with the address can fetch the app, which holds no secret (the release key stays on your machine). To install it, Android asks to allow installs from the browser, and it installs over an existing copy because both are signed with the same release key.
+
+#### The API version and updating the apps
+
+The server's API has a version number, `ApiVersion.CURRENT` in `core/contract/src/ApiVersion.kt`, which the server reports as `apiVersion` in `GET /health` and every app is built with. When an app asks `/health` (at launch and each time it returns to the foreground) and the server's number is higher than its own, the app stops: a full-screen "Update required" replaces everything, and nothing else can be used until it is updated. On the web it offers "Reload"; on Android "Download update", which opens `/download_latest` and appears only while an APK is in the downloads folder (see "Publish the Android app"); on iOS it only says to update the app. A server that cannot be reached, answers with an error, or is older and reports no `apiVersion` never stops an app, and the person stays signed in through an update.
+
+Raise the number by hand, by one, only for a change that an app built with the earlier number would misbehave against: a field it relied on is gone or means something else, a route it calls is gone, a rule it does not know is now enforced. Do not raise it for a change such an app still copes with, such as a new optional field, a new route or a field kept as an alias. Raising it stops every app built with the earlier number that has this check, so do it as a release step, in this order:
+
+1. Build and publish the new apps: upload the APK to `downloads/` (README: "Publish the Android app"), and release the iOS build.
+2. Deploy the server and the web app together, so an open browser tab that reloads gets the new web app.
+3. Tell people. On Android and the web the screen leads them to the update; on iOS they need to be told.
+
+Apps released before this check existed (1.1.5 and earlier) have none and cannot be stopped; until nearly everyone has a version that has it, prefer changes they still cope with.
 
 #### Opening links in the Android app
 

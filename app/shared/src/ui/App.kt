@@ -10,6 +10,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import com.usuallycoding.opensecretsanta.ui.update.AppCompatibility
+import com.usuallycoding.opensecretsanta.ui.update.AppScreen
+import com.usuallycoding.opensecretsanta.ui.update.UpdateRequiredScreen
+import com.usuallycoding.opensecretsanta.ui.update.screenFor
 import androidx.compose.runtime.key
 import androidx.navigation.NavController
 import androidx.compose.runtime.collectAsState
@@ -56,7 +65,15 @@ fun App(
 private fun AppContent(onNavigationReady: suspend (NavController, isAdmin: Boolean) -> Unit, snow: Boolean) {
     val session = koinInject<SessionManager>()
     val state by session.state.collectAsState()
-    LaunchedEffect(session) { session.restore() }
+    val compatibility = koinInject<AppCompatibility>()
+    val compatible by compatibility.state.collectAsState()
+    val scope = rememberCoroutineScope()
+    // the server is asked whether this app can be used with it at the same time as the session is restored, so that a server that
+    // cannot be reached is waited for once, not twice; nothing else shows until both have answered
+    LaunchedEffect(session) { coroutineScope { launch { compatibility.check() }; session.restore() } }
+    // and again on returning to the app: the server may have moved on meanwhile, or been rolled back; the session was restored at
+    // launch whatever the server said, so only the check is repeated
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { scope.launch { compatibility.check() } }
 
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         // the snow is the first layer over the background, under every screen (the sign-in ones too): it shows in the open space and
@@ -64,26 +81,45 @@ private fun AppContent(onNavigationReady: suspend (NavController, isAdmin: Boole
         if (snow) SnowOverlay()
         // a swipe or a tap outside a text field closes the keyboard, on the shell and on the sign-in screens alike
         KeyboardDismissRoot {
-            when (val current = state) {
-                // Signed in, the shell is its own screen with a bar at the top; a new person gets a fresh one.
-                // a change of role (an administrator handing theirs over) gives a fresh shell too, with the other view's screens
-                is SessionState.SignedIn -> key(current.account.username, current.account.isAdmin) {
-                    ShellScreen(koinViewModel<ShellViewModel>(key = "${current.account.username}-${current.account.isAdmin}") { parametersOf(current.account) }, onNavigationReady)
-                }
-                else -> {
-                    val scrollState = rememberScrollState()
-                    Box(
-                        Modifier.fillMaxSize().dismissKeyboardOnDrag(scrollState).safeContentPadding().verticalScroll(scrollState),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        when (current) {
-                            SessionState.Loading -> CircularProgressIndicator()
-                            is SessionState.SignedOut -> LoginScreen(koinViewModel(), sessionEnded = current.reason == SignedOutReason.SessionEnded)
-                            is SessionState.PasswordChangeRequired -> ChangePasswordScreen(koinViewModel(), onSignOut = session::signOut)
-                            is SessionState.SignedIn -> Unit
-                        }
-                    }
-                }
+            when (val screen = screenFor(compatible)) {
+                AppScreen.Loading -> CenteredOnItsOwn { CircularProgressIndicator() }
+                // in place of everything else: the shell, sign-in and the password change are all out of reach, and the session is kept
+                is AppScreen.Update -> CenteredOnItsOwn { UpdateRequiredScreen(screen.update) }
+                AppScreen.Session -> SessionScreens(state, session, onNavigationReady)
+            }
+        }
+    }
+}
+
+/** A screen of one thing in the middle, over the whole window. */
+@Composable
+private fun CenteredOnItsOwn(content: @Composable () -> Unit) {
+    val scrollState = rememberScrollState()
+    Box(
+        Modifier.fillMaxSize().dismissKeyboardOnDrag(scrollState).safeContentPadding().verticalScroll(scrollState),
+        contentAlignment = Alignment.Center,
+    ) { content() }
+}
+
+/** The screens that follow the session, as they always did. */
+@Composable
+private fun SessionScreens(
+    state: SessionState,
+    session: SessionManager,
+    onNavigationReady: suspend (NavController, isAdmin: Boolean) -> Unit,
+) {
+    when (val current = state) {
+        // Signed in, the shell is its own screen with a bar at the top; a new person gets a fresh one.
+        // a change of role (an administrator handing theirs over) gives a fresh shell too, with the other view's screens
+        is SessionState.SignedIn -> key(current.account.username, current.account.isAdmin) {
+            ShellScreen(koinViewModel<ShellViewModel>(key = "${current.account.username}-${current.account.isAdmin}") { parametersOf(current.account) }, onNavigationReady)
+        }
+        else -> CenteredOnItsOwn {
+            when (current) {
+                SessionState.Loading -> CircularProgressIndicator()
+                is SessionState.SignedOut -> LoginScreen(koinViewModel(), sessionEnded = current.reason == SignedOutReason.SessionEnded)
+                is SessionState.PasswordChangeRequired -> ChangePasswordScreen(koinViewModel(), onSignOut = session::signOut)
+                is SessionState.SignedIn -> Unit
             }
         }
     }
