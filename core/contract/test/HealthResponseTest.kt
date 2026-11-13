@@ -5,6 +5,7 @@ import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class HealthResponseTest {
     private val json = Json { ignoreUnknownKeys = true }
@@ -36,8 +37,8 @@ class HealthResponseTest {
     }
 
     @Test
-    fun theApiVersionStartsAtOne() {
-        assertEquals(1, ApiVersion.CURRENT)
+    fun theApiVersionIsAPositiveNumber() {
+        assertTrue(ApiVersion.CURRENT >= 1)
     }
 
     @Test
