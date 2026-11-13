@@ -53,5 +53,7 @@ internal fun GiftNotice.text(): String = when (this) {
     GiftNotice.Locked -> Strings.NOTICE_THREAD_LOCKED
     GiftNotice.LimitReached -> Strings.NOTICE_LIMIT_REACHED
     GiftNotice.QuestionGone -> Strings.NOTICE_QUESTION_GONE
+    GiftNotice.QuestionAnswered -> Strings.NOTICE_QUESTION_ANSWERED
     GiftNotice.Unreachable -> Strings.SERVER_UNREACHABLE
+    GiftNotice.Failed -> Strings.SERVER_FAILED
 }

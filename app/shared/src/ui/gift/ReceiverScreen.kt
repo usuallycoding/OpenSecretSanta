@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -22,6 +23,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -50,8 +53,28 @@ fun ReceiverQuestionsSection(viewModel: ReceiverViewModel, shown: Boolean = true
         loadItems(state, onRetry = { viewModel.refresh() }) { data ->
             if (data.phase != GroupPhase.Active || !viewModel.canAsk) item(key = "header") { QuestionsHeader(data, viewModel) }
             if (data.questions.isEmpty()) item(key = "none") { Text(Strings.NO_QUESTIONS_ASKED, style = MaterialTheme.typography.bodyLarge) }
-            items(data.questions, key = { it.number }) { question -> QuestionCard(question) }
+            items(data.questions, key = { it.number }) { question ->
+                QuestionCard(question, action = if (viewModel.canDelete(question)) {
+                    {
+                        val label = Strings.deleteQuestionLabel(question.number)
+                        TextButton(onClick = { viewModel.requestDelete(question.number) }, modifier = Modifier.semantics { contentDescription = label }) {
+                            Text(Strings.DELETE, color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                } else {
+                    null
+                })
+            }
         }
+    }
+    ui.deleting?.let { question ->
+        AlertDialog(
+            onDismissRequest = viewModel::cancelDelete,
+            title = { Text(Strings.DELETE_QUESTION_TITLE) },
+            text = { Text(Strings.deleteQuestionBody(question.number, question.text)) },
+            confirmButton = { TextButton(onClick = { viewModel.confirmDelete() }) { Text(Strings.DELETE, color = MaterialTheme.colorScheme.error) } },
+            dismissButton = { TextButton(onClick = viewModel::cancelDelete) { Text(Strings.CANCEL) } },
+        )
     }
     ui.editor?.let { editor ->
         TextSheet(Strings.ASK_QUESTION, Strings.YOUR_QUESTION, editor, viewModel::edit, onSave = { viewModel.save() }, onDismiss = viewModel::dismissEditor)

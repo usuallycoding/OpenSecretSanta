@@ -33,7 +33,19 @@ class SqliteQuestionRepository(private val database: Database) : QuestionReposit
             }
             if (count >= maxQuestions) throw DomainException.InvalidState("The question limit has been reached.")
 
-            val number = highest + 1
+            // Numbers continue after the highest ever used, which deleted questions no longer show.
+            val lastUsed = c.prepareStatement("SELECT last_question_number FROM assignments WHERE group_id = ? AND santa = ?").use { s ->
+                s.setLong(1, groupId)
+                s.setString(2, santa.value)
+                s.executeQuery().use { it.next(); it.getInt(1) }
+            }
+            val number = maxOf(highest, lastUsed) + 1
+            c.prepareStatement("UPDATE assignments SET last_question_number = ? WHERE group_id = ? AND santa = ?").use { s ->
+                s.setInt(1, number)
+                s.setLong(2, groupId)
+                s.setString(3, santa.value)
+                s.executeUpdate()
+            }
             c.prepareStatement("INSERT INTO questions (group_id, santa, number, text, asked_at) VALUES (?, ?, ?, ?, ?)").use { s ->
                 s.setLong(1, groupId)
                 s.setString(2, santa.value)
@@ -75,6 +87,31 @@ class SqliteQuestionRepository(private val database: Database) : QuestionReposit
                 s.executeQuery().use { it.next(); toReceived(it) }
             }
         }
+
+    override fun delete(groupId: Long, santa: Username, number: Int) {
+        database.transaction { c ->
+            requireActive(c, groupId)
+            val deleted = c.prepareStatement("DELETE FROM questions WHERE group_id = ? AND santa = ? AND number = ? AND answer IS NULL").use { s ->
+                s.setLong(1, groupId)
+                s.setString(2, santa.value)
+                s.setInt(3, number)
+                s.executeUpdate()
+            }
+            if (deleted == 0) {
+                val exists = c.prepareStatement("SELECT 1 FROM questions WHERE group_id = ? AND santa = ? AND number = ?").use { s ->
+                    s.setLong(1, groupId)
+                    s.setString(2, santa.value)
+                    s.setInt(3, number)
+                    s.executeQuery().use { it.next() }
+                }
+                throw if (exists) {
+                    DomainException.InvalidState("A question that has been answered cannot be deleted.")
+                } else {
+                    DomainException.NotFound("Question not found.")
+                }
+            }
+        }
+    }
 
     override fun askedBy(groupId: Long, santa: Username): List<AskedQuestion> = database.connection().use { c ->
         c.prepareStatement("SELECT $COLUMNS FROM questions WHERE group_id = ? AND santa = ? ORDER BY number").use { s ->

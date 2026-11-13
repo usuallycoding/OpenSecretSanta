@@ -21,6 +21,7 @@ class InMemoryQuestions(private val groups: InMemoryGroups) : QuestionRepository
     )
 
     private val rows = mutableListOf<Row>()
+    private val highest = mutableMapOf<Pair<Long, Username>, Int>()
 
     private fun requireActive(groupId: Long) {
         val group = groups.find(groupId) ?: throw DomainException.NotFound("Group not found.")
@@ -32,7 +33,9 @@ class InMemoryQuestions(private val groups: InMemoryGroups) : QuestionRepository
         if (groups.receiverOf(groupId, santa) == null) throw DomainException.NotFound("Group not found.")
         val mine = rows.filter { it.groupId == groupId && it.santa == santa }
         if (mine.size >= maxQuestions) throw DomainException.InvalidState("The question limit has been reached.")
-        val row = Row(groupId, santa, number = (mine.maxOfOrNull { it.number } ?: 0) + 1, text = text, askedAt = atMillis)
+        val number = (highest[groupId to santa] ?: 0) + 1
+        highest[groupId to santa] = number
+        val row = Row(groupId, santa, number = number, text = text, askedAt = atMillis)
         rows += row
         return row.asked()
     }
@@ -46,6 +49,14 @@ class InMemoryQuestions(private val groups: InMemoryGroups) : QuestionRepository
         row.answer = text
         row.answerUpdatedAt = atMillis
         return row.received()
+    }
+
+    override fun delete(groupId: Long, santa: Username, number: Int) {
+        requireActive(groupId)
+        val row = rows.firstOrNull { it.groupId == groupId && it.santa == santa && it.number == number }
+            ?: throw DomainException.NotFound("Question not found.")
+        if (row.answer != null) throw DomainException.InvalidState("A question that has been answered cannot be deleted.")
+        rows -= row
     }
 
     override fun askedBy(groupId: Long, santa: Username) =

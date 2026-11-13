@@ -53,6 +53,9 @@ class QuestionRoutesTest {
     private suspend fun HttpClient.answer(group: Int, user: String, number: Int, text: String) =
         send("PUT", ApiRoutes.groupSantaQuestionAnswer(group.toLong(), number), fx.token(user), AnswerRequest(text))
 
+    private suspend fun HttpClient.delete(group: Int, user: String, number: Int) =
+        send<Unit>("DELETE", ApiRoutes.groupReceiverQuestion(group.toLong(), number), fx.token(user))
+
     private suspend fun HttpClient.mine(group: Int, user: String): List<QuestionDto> =
         Json.decodeFromString(getAs(ApiRoutes.groupReceiverQuestions(group.toLong()), fx.token(user)).bodyAsText())
 
@@ -176,6 +179,84 @@ class QuestionRoutesTest {
         assertEquals(HttpStatusCode.Conflict, client.answer(id, "bob", 1, "Blue").status)
         assertEquals("Green", client.mine(id, "alice").single().answer)
         assertEquals("Green", client.fromSanta(id, "bob").single().answer)
+        assertEquals(1, count())
+    }
+
+    // --- deleting ---
+
+    @Test
+    fun anUnansweredQuestionIsDeletedForBothSides() = testApplication {
+        startApp()
+        val id = world()
+        client.ask(id, "alice", "One")
+        client.ask(id, "alice", "Two")
+
+        val response = client.delete(id, "alice", 1)
+
+        assertEquals(HttpStatusCode.NoContent, response.status)
+        assertEquals(listOf(2), client.mine(id, "alice").map { it.number })
+        assertEquals(listOf(2), client.fromSanta(id, "bob").map { it.number })
+    }
+
+    @Test
+    fun numbersAreNotReusedAfterADelete() = testApplication {
+        startApp()
+        val id = world()
+        client.ask(id, "alice", "One")
+        client.ask(id, "alice", "Two")
+        client.delete(id, "alice", 2)
+
+        val next = Json.decodeFromString<QuestionDto>(client.ask(id, "alice", "Three").bodyAsText())
+
+        assertEquals(3, next.number)
+    }
+
+    @Test
+    fun anAnsweredQuestionIsRefusedAndKept() = testApplication {
+        startApp()
+        val id = world()
+        client.ask(id, "alice", "Colour?")
+        client.answer(id, "bob", 1, "Green")
+
+        val response = client.delete(id, "alice", 1)
+
+        assertEquals(HttpStatusCode.Conflict, response.status)
+        assertEquals("invalid_state", error(response.bodyAsText()).code)
+        assertEquals("Green", client.mine(id, "alice").single().answer)
+    }
+
+    @Test
+    fun answeringADeletedQuestionIsNotFoundAndStoresNothing() = testApplication {
+        startApp()
+        val id = world()
+        client.ask(id, "alice", "Colour?")
+        client.delete(id, "alice", 1)
+
+        assertEquals(HttpStatusCode.NotFound, client.answer(id, "bob", 1, "Green").status)
+        assertEquals(0, count())
+    }
+
+    @Test
+    fun anUnknownOrReceivedQuestionCannotBeDeleted() = testApplication {
+        startApp()
+        val id = world()
+        client.ask(id, "alice", "One")
+
+        assertEquals(HttpStatusCode.NotFound, client.delete(id, "alice", 9).status)
+        assertEquals(HttpStatusCode.NotFound, client.delete(id, "bob", 1).status)
+        assertEquals(HttpStatusCode.NotFound, client.delete(id, "admin-a", 1).status)
+        assertEquals(1, count())
+    }
+
+    @Test
+    fun deletingNeedsAnActiveGroupAndALogin() = testApplication {
+        startApp()
+        val id = world()
+        client.ask(id, "alice", "One")
+
+        assertEquals(HttpStatusCode.Unauthorized, client.send<Unit>("DELETE", ApiRoutes.groupReceiverQuestion(id.toLong(), 1), null).status)
+        setState(id, "archived")
+        assertEquals(HttpStatusCode.Conflict, client.delete(id, "alice", 1).status)
         assertEquals(1, count())
     }
 

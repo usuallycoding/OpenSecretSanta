@@ -152,6 +152,10 @@ class ApiClient(
     suspend fun askQuestion(groupId: Long, text: String): ApiResult<QuestionDto> =
         call(HttpMethod.Post, ApiRoutes.groupReceiverQuestions(groupId), body = AskQuestionRequest(text))
 
+    /** Deletes the person's question [number] to their receiver; the server refuses once it has an answer. */
+    suspend fun deleteQuestion(groupId: Long, number: Int): ApiResult<Unit> =
+        call(HttpMethod.Delete, ApiRoutes.groupReceiverQuestion(groupId, number))
+
     /** The questions the person's Santa asked, in order, with nothing that names the Santa. */
     suspend fun santaQuestions(groupId: Long): ApiResult<List<QuestionDto>> =
         call(HttpMethod.Get, ApiRoutes.groupSantaQuestions(groupId))

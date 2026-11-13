@@ -38,6 +38,7 @@ import com.usuallycoding.opensecretsanta.domain.admin.ResetPassword
 import com.usuallycoding.opensecretsanta.domain.auth.ChangePassword
 import com.usuallycoding.opensecretsanta.domain.auth.Login
 import com.usuallycoding.opensecretsanta.domain.gift.AnswerQuestion
+import com.usuallycoding.opensecretsanta.domain.gift.DeleteQuestion
 import com.usuallycoding.opensecretsanta.domain.gift.AskQuestion
 import com.usuallycoding.opensecretsanta.domain.gift.GetMyReceiver
 import com.usuallycoding.opensecretsanta.domain.gift.GetMySanta
@@ -183,7 +184,7 @@ fun Application.module(
             announcementRoutes(get<SendAnnouncement>(), get<ListAnnouncements>(), get<GetMyAnnouncementReads>(), get<MarkAnnouncementsRead>(), get<NotificationDispatcher>())
             memberGroupRoutes(get<ListMyGroups>(), get<GetMyGroup>())
             giftVisibilityRoutes(get<GetMyReceiver>(), get<GetMySanta>())
-            questionRoutes(get<AskQuestion>(), get<ListMyQuestions>(), get<ListQuestionsFromMySanta>(), get<AnswerQuestion>(), get<NotificationDispatcher>())
+            questionRoutes(get<AskQuestion>(), get<ListMyQuestions>(), get<ListQuestionsFromMySanta>(), get<AnswerQuestion>(), get<DeleteQuestion>(), get<NotificationDispatcher>())
             letterRoutes(get<SendLetter>(), get<ListMySentLetters>(), get<ListLettersFromMyReceiver>(), get<NotificationDispatcher>())
             readMarkRoutes(get<GetMyReadMarks>(), get<MarkRead>())
             wishlistRoutes(get<GetMyWishlist>(), get<AddWishlistItem>(), get<UpdateWishlistItem>(), get<DeleteWishlistItem>(), get<ReorderWishlist>(), get<NotificationDispatcher>())

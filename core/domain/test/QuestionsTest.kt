@@ -3,6 +3,7 @@ package com.usuallycoding.opensecretsanta.domain
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 import com.usuallycoding.opensecretsanta.domain.gift.AnswerQuestion
 import com.usuallycoding.opensecretsanta.domain.gift.AskQuestion
+import com.usuallycoding.opensecretsanta.domain.gift.DeleteQuestion
 import com.usuallycoding.opensecretsanta.domain.gift.ListMyQuestions
 import com.usuallycoding.opensecretsanta.domain.gift.ListQuestionsFromMySanta
 import com.usuallycoding.opensecretsanta.domain.gift.QuestionLimits
@@ -30,6 +31,7 @@ class QuestionsTest {
     private val mine = ListMyQuestions(loader, questions)
     private val fromSanta = ListQuestionsFromMySanta(loader, questions)
     private val answer = AnswerQuestion(loader, questions, clock)
+    private val delete = DeleteQuestion(loader, questions)
 
     private val admin = users.add("admin-a", admin = true).let { users.userNamed("admin-a") }
 
@@ -258,5 +260,49 @@ class QuestionsTest {
         assertFailsWith<DomainException.NotFound> { ask(admin, id, "hi") }
         assertFailsWith<DomainException.NotFound> { ask(user("alice"), draft.id, "hi") }
         assertFailsWith<DomainException.NotFound> { ask(user("alice"), 9999, "hi") }
+    }
+
+    @Test
+    fun aSantaDeletesAnUnansweredQuestionAndTheReceiverNoLongerSeesIt() {
+        val id = activeGroup()
+        ask(user("alice"), id, "One")
+        ask(user("alice"), id, "Two")
+
+        delete(user("alice"), id, 1)
+
+        assertEquals(listOf(2), mine(user("alice"), id).map { it.number })
+        assertEquals(listOf(2), fromSanta(user("bob"), id).map { it.number })
+    }
+
+    @Test
+    fun anAnsweredQuestionCannotBeDeleted() {
+        val id = activeGroup()
+        ask(user("alice"), id, "One")
+        answer(user("bob"), id, 1, "Green")
+
+        assertFailsWith<DomainException.InvalidState> { delete(user("alice"), id, 1) }
+
+        assertEquals("Green", mine(user("alice"), id).single().answer)
+    }
+
+    @Test
+    fun deletingNeedsAnActiveGroupAndAParticipant() {
+        val id = activeGroup().also { ask(user("alice"), it, "One") }
+        val pending = groups.seed(admin.username, GroupState.PENDING, *names.map { u(it) }.toTypedArray())
+
+        assertFailsWith<DomainException.InvalidState> { delete(user("alice"), pending.id, 1) }
+        assertFailsWith<DomainException.NotFound> { delete(admin, id, 1) }
+        archive(id)
+        assertFailsWith<DomainException.InvalidState> { delete(user("alice"), id, 1) }
+    }
+
+    @Test
+    fun aParticipantCannotDeleteAQuestionTheyReceived() {
+        val id = activeGroup()
+        ask(user("alice"), id, "One")
+
+        assertFailsWith<DomainException.NotFound> { delete(user("bob"), id, 1) }
+
+        assertEquals(1, fromSanta(user("bob"), id).size)
     }
 }

@@ -8,6 +8,7 @@ import com.usuallycoding.opensecretsanta.contract.QuestionDto
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 import com.usuallycoding.opensecretsanta.domain.gift.AnswerQuestion
 import com.usuallycoding.opensecretsanta.domain.gift.AskQuestion
+import com.usuallycoding.opensecretsanta.domain.gift.DeleteQuestion
 import com.usuallycoding.opensecretsanta.domain.gift.AskedQuestion
 import com.usuallycoding.opensecretsanta.domain.gift.ListMyQuestions
 import com.usuallycoding.opensecretsanta.domain.gift.ListQuestionsFromMySanta
@@ -16,6 +17,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
@@ -37,6 +39,7 @@ fun Route.questionRoutes(
     listMine: ListMyQuestions,
     listFromSanta: ListQuestionsFromMySanta,
     answer: AnswerQuestion,
+    delete: DeleteQuestion,
     notifications: NotificationDispatcher,
 ) {
     get(ApiRoutes.GROUP_RECEIVER_QUESTIONS) {
@@ -50,6 +53,12 @@ fun Route.questionRoutes(
         val asked = blocking { ask(user, groupId, request.text) }
         notifications.questionAsked(groupId, user.username)
         call.respond(HttpStatusCode.Created, asked.toDto())
+    }
+    delete(ApiRoutes.GROUP_RECEIVER_QUESTION) {
+        val user = call.currentUser()
+        val number = call.parameters["number"]?.toIntOrNull() ?: throw DomainException.NotFound("Question not found.")
+        blocking { delete(user, call.groupId(), number) }
+        call.respond(HttpStatusCode.NoContent)
     }
     get(ApiRoutes.GROUP_SANTA_QUESTIONS) {
         val user = call.currentUser()

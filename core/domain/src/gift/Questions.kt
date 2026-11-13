@@ -57,6 +57,9 @@ interface QuestionRepository {
     /** Sets or replaces the answer to question [number] among those addressed to [receiver]. */
     fun answer(groupId: Long, receiver: Username, number: Int, text: String, atMillis: Long): ReceivedQuestion
 
+    /** Deletes question [number] of [santa]'s thread if it has no answer: `NotFound` when there is none, `InvalidState` when it has been answered. */
+    fun delete(groupId: Long, santa: Username, number: Int)
+
     fun askedBy(groupId: Long, santa: Username): List<AskedQuestion>
 
     fun askedTo(groupId: Long, receiver: Username): List<ReceivedQuestion>

@@ -99,6 +99,46 @@ class ReceiverViewModel(
         }
     }
 
+    // --- deleting -----------------------------------------------------------------------------
+
+    /** The person can delete a question while the group is Active and the receiver has not answered it. */
+    fun canDelete(question: Question): Boolean = current?.phase == GroupPhase.Active && question.answer == null
+
+    /** Asks for a confirmation to delete question [number]. */
+    fun requestDelete(number: Int) {
+        val question = current?.questions?.firstOrNull { it.number == number }?.takeIf(::canDelete) ?: return
+        _ui.update { it.copy(deleting = question, notice = null) }
+    }
+
+    fun cancelDelete() = _ui.update { it.copy(deleting = null) }
+
+    fun confirmDelete(): Job? {
+        val question = _ui.value.deleting ?: return null
+        _ui.update { it.copy(deleting = null) }
+        return scope.launch {
+            when (val result = api.deleteQuestion(groupId, question.number)) {
+                is ApiResult.Success -> current?.let { data -> loader.replace(data.copy(questions = data.questions.filterNot { it.number == question.number })) }
+                is ApiResult.Failure -> deleteFailed(result.error, question.number)
+            }
+        }
+    }
+
+    private suspend fun deleteFailed(error: ApiError, number: Int) {
+        when {
+            error is ApiError.Rejected && error.status == 409 -> {
+                // answered meanwhile, or the group is no longer Active: the reloaded thread tells which
+                reloadWith(null)
+                if (loader.state.value.error == null) {
+                    val answered = current?.questions?.firstOrNull { it.number == number }?.answer != null
+                    _ui.update { it.copy(notice = if (answered) GiftNotice.QuestionAnswered else GiftNotice.Locked) }
+                }
+            }
+            error is ApiError.Rejected && error.status == 404 -> reloadWith(GiftNotice.QuestionGone)
+            error == ApiError.Network -> _ui.update { it.copy(notice = GiftNotice.Unreachable) }
+            else -> _ui.update { it.copy(notice = GiftNotice.Failed) }
+        }
+    }
+
     fun dismissNotice() = _ui.update { it.copy(notice = null) }
 
     // --- when the server says no ----------------------------------------------------------------

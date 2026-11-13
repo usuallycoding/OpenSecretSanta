@@ -110,6 +110,95 @@ class SqliteQuestionRepositoryTest {
         assertEquals(0, count())
     }
 
+    // --- deleting ---
+
+    @Test
+    fun anUnansweredQuestionIsDeletedAndTheOthersKeepTheirNumbers() {
+        val id = group()
+        repeat(3) { questions.ask(id, u("alice"), "q${it + 1}", it.toLong(), 30) }
+
+        questions.delete(id, u("alice"), 2)
+
+        assertEquals(listOf(1, 3), questions.askedBy(id, u("alice")).map { it.number })
+        assertEquals(listOf(1, 3), questions.askedTo(id, u("bob")).map { it.number })
+    }
+
+    @Test
+    fun aDeletedNumberIsNeverGivenOutAgain() {
+        val id = group()
+        questions.ask(id, u("alice"), "one", 1, 30)
+        questions.ask(id, u("alice"), "two", 2, 30)
+
+        questions.delete(id, u("alice"), 2)
+        val next = questions.ask(id, u("alice"), "three", 3, 30)
+
+        assertEquals(3, next.number)
+        assertEquals(listOf(1, 3), questions.askedBy(id, u("alice")).map { it.number })
+    }
+
+    @Test
+    fun anAnsweredQuestionCannotBeDeleted() {
+        val id = group()
+        questions.ask(id, u("alice"), "Colour?", 1, 30)
+        questions.answer(id, u("bob"), 1, "Green", 2)
+
+        assertFailsWith<DomainException.InvalidState> { questions.delete(id, u("alice"), 1) }
+
+        assertEquals("Green", questions.askedBy(id, u("alice")).single().answer)
+    }
+
+    @Test
+    fun aDeletedQuestionCanNoLongerBeAnswered() {
+        val id = group()
+        questions.ask(id, u("alice"), "Colour?", 1, 30)
+        questions.delete(id, u("alice"), 1)
+
+        assertFailsWith<DomainException.NotFound> { questions.answer(id, u("bob"), 1, "Green", 2) }
+
+        assertEquals(0, count())
+    }
+
+    @Test
+    fun anUnknownOrAlreadyDeletedNumberIsNotFound() {
+        val id = group()
+        questions.ask(id, u("alice"), "one", 1, 30)
+        questions.delete(id, u("alice"), 1)
+
+        assertFailsWith<DomainException.NotFound> { questions.delete(id, u("alice"), 1) }
+        assertFailsWith<DomainException.NotFound> { questions.delete(id, u("alice"), 7) }
+    }
+
+    @Test
+    fun aSantaOnlyDeletesFromTheirOwnThread() {
+        val id = group()
+        questions.ask(id, u("alice"), "alice asks bob", 1, 30)
+
+        assertFailsWith<DomainException.NotFound> { questions.delete(id, u("bob"), 1) }
+
+        assertEquals(1, count())
+    }
+
+    @Test
+    fun deletingNeedsAnActiveGroup() {
+        val archived = group(archive = true)
+        val pending = group(activate = false)
+
+        assertFailsWith<DomainException.InvalidState> { questions.delete(archived, u("alice"), 1) }
+        assertFailsWith<DomainException.InvalidState> { questions.delete(pending, u("alice"), 1) }
+        assertFailsWith<DomainException.NotFound> { questions.delete(9999, u("alice"), 1) }
+    }
+
+    @Test
+    fun deletingFreesAPlaceUnderTheCap() {
+        val id = group()
+        repeat(3) { questions.ask(id, u("alice"), "q$it", it.toLong(), 3) }
+        assertFailsWith<DomainException.InvalidState> { questions.ask(id, u("alice"), "full", 9, 3) }
+
+        questions.delete(id, u("alice"), 2)
+
+        assertEquals(4, questions.ask(id, u("alice"), "fits now", 10, 3).number)
+    }
+
     // --- answering ---
 
     @Test

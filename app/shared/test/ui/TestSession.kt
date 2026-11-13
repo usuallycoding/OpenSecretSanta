@@ -295,6 +295,7 @@ class FakeGift {
     private val asked = mutableListOf<QuestionDto>()
     private val received = mutableListOf<QuestionDto>()
     private val failures = ArrayDeque<Pair<HttpStatusCode, String>>()
+    private var lastNumber = 0
 
     /** The questions the person asked their receiver. */
     val myQuestions: List<QuestionDto> get() = asked
@@ -312,7 +313,7 @@ class FakeGift {
     }
 
     fun askedBehindTheScenes(count: Int) {
-        repeat(count) { asked += QuestionDto(asked.size + 1, "Question ${asked.size + 1}", "2026-12-02T09:00:00Z") }
+        repeat(count) { asked += QuestionDto(++lastNumber, "Question $lastNumber", "2026-12-02T09:00:00Z") }
     }
 
     fun failNextWriteWith(status: HttpStatusCode, code: String, message: String = "refused", field: String? = null) {
@@ -327,10 +328,11 @@ class FakeGift {
 
     /** The answer to a request under `/groups/{id}` about the receiver, the Santa or the questions, or null for anything else. */
     fun answer(method: String, path: String, body: String): Pair<HttpStatusCode, String>? {
-        val match = Regex("/groups/\\d+/(receiver|santa)(/questions(/(\\d+)/answer)?)?").matchEntire(path) ?: return null
+        val match = Regex("/groups/\\d+/(receiver|santa)(/questions(/(\\d+)(/answer)?)?)?").matchEntire(path) ?: return null
         val side = match.groupValues[1]
         val questions = match.groupValues[2].isNotEmpty()
         val number = match.groupValues[4].toIntOrNull()
+        val answering = match.groupValues[5].isNotEmpty()
         val notStarted = error(HttpStatusCode.Conflict, "invalid_state", "Questions start once the group is active.")
         if (method == "GET") {
             return when {
@@ -352,9 +354,20 @@ class FakeGift {
                     tooLong(text, 1000) -> error(HttpStatusCode.BadRequest, "validation_failed", "Text must be 1 to 1000 characters long.", "text")
                     asked.size >= QuestionLimits.MAX_QUESTIONS_PER_SANTA -> error(HttpStatusCode.Conflict, "invalid_state", "You have asked the most questions allowed.")
                     else -> {
-                        val question = QuestionDto(asked.size + 1, text.trim(), "2026-12-02T10:00:00Z")
+                        val question = QuestionDto(++lastNumber, text.trim(), "2026-12-02T10:00:00Z")
                         asked += question
                         HttpStatusCode.Created to Json.encodeToString(question)
+                    }
+                }
+            }
+            method == "DELETE" && side == "receiver" && number != null && !answering -> {
+                val index = asked.indexOfFirst { it.number == number }
+                when {
+                    index < 0 -> error(HttpStatusCode.NotFound, "not_found", "Question not found.")
+                    asked[index].answer != null -> error(HttpStatusCode.Conflict, "invalid_state", "A question that has been answered cannot be deleted.")
+                    else -> {
+                        asked.removeAt(index)
+                        HttpStatusCode.NoContent to ""
                     }
                 }
             }

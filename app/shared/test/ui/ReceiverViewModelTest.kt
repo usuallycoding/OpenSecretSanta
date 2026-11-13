@@ -309,4 +309,127 @@ class ReceiverViewModelTest {
 
         assertNull(model.ui.value.notice)
     }
+
+    // --- deleting --------------------------------------------------------------------------------
+
+    private fun deletes() = server.calls.count { it.startsWith("DELETE") }
+
+    @Test
+    fun anUnansweredQuestionIsDeletedAfterAConfirmationAndTheOthersKeepTheirNumbers() = runTest {
+        server.gift.askedBehindTheScenes(3)
+        val model = viewModel()
+
+        model.requestDelete(2)
+        assertEquals(2, model.ui.value.deleting?.number)
+        model.confirmDelete()?.join()
+
+        assertNull(model.ui.value.deleting)
+        assertEquals(listOf(3, 1), model.data.value.value!!.questions.map { it.number })
+        assertEquals(listOf(1, 3), server.gift.myQuestions.map { it.number })
+        assertNull(model.ui.value.notice)
+    }
+
+    @Test
+    fun cancellingTheConfirmationSendsNothing() = runTest {
+        server.gift.askedBehindTheScenes(1)
+        val model = viewModel()
+
+        model.requestDelete(1)
+        model.cancelDelete()
+
+        assertNull(model.ui.value.deleting)
+        assertNull(model.confirmDelete())
+        assertEquals(0, deletes())
+        assertEquals(1, model.data.value.value!!.questions.size)
+    }
+
+    @Test
+    fun anAnsweredQuestionCannotBeDeleted() = runTest {
+        server.gift.askedBehindTheScenes(2)
+        server.gift.receiverAnswers(1, "Green")
+        val model = viewModel()
+
+        val answered = model.data.value.value!!.questions.first { it.number == 1 }
+        val open = model.data.value.value!!.questions.first { it.number == 2 }
+        assertFalse(model.canDelete(answered))
+        assertTrue(model.canDelete(open))
+        model.requestDelete(1)
+
+        assertNull(model.ui.value.deleting)
+    }
+
+    @Test
+    fun anArchivedGroupHasNothingToDelete() = runTest {
+        server.gift.askedBehindTheScenes(1)
+        val model = viewModel("archived")
+
+        assertFalse(model.canDelete(model.data.value.value!!.questions.single()))
+        model.requestDelete(1)
+
+        assertNull(model.ui.value.deleting)
+    }
+
+    @Test
+    fun aQuestionAnsweredMeanwhileStaysReloadsAndSaysWhy() = runTest {
+        server.gift.askedBehindTheScenes(1)
+        val model = viewModel()
+        model.requestDelete(1)
+        server.gift.receiverAnswers(1, "Green")
+
+        model.confirmDelete()?.join()
+
+        assertEquals(GiftNotice.QuestionAnswered, model.ui.value.notice)
+        assertEquals("Green", model.data.value.value!!.questions.single().answer)
+    }
+
+    @Test
+    fun aGroupArchivedMeanwhileReloadsAndSaysSo() = runTest {
+        server.gift.askedBehindTheScenes(1)
+        val model = viewModel()
+        model.requestDelete(1)
+        groupIs("archived")
+
+        model.confirmDelete()?.join()
+
+        assertEquals(GiftNotice.Locked, model.ui.value.notice)
+        assertEquals(GroupPhase.Archived, model.data.value.value!!.phase)
+        assertEquals(1, server.gift.myQuestions.size)
+    }
+
+    @Test
+    fun aQuestionThatIsAlreadyGoneReloadsAndSaysSo() = runTest {
+        server.gift.askedBehindTheScenes(2)
+        val model = viewModel()
+        model.requestDelete(1)
+        server.gift.failNextWriteWith(HttpStatusCode.NotFound, "not_found", "Question not found.")
+
+        model.confirmDelete()?.join()
+
+        assertEquals(GiftNotice.QuestionGone, model.ui.value.notice)
+    }
+
+    @Test
+    fun anUnreachableServerKeepsTheQuestionAndSaysSo() = runTest {
+        server.gift.askedBehindTheScenes(1)
+        val model = viewModel()
+        model.requestDelete(1)
+        server.unreachable = true
+
+        model.confirmDelete()?.join()
+
+        assertEquals(GiftNotice.Unreachable, model.ui.value.notice)
+        assertEquals(1, model.data.value.value!!.questions.size)
+    }
+
+    @Test
+    fun deletingFreesAPlaceAtTheLimit() = runTest {
+        server.gift.askedBehindTheScenes(QuestionLimits.MAX_QUESTIONS_PER_SANTA)
+        val model = viewModel()
+        assertFalse(model.canAsk)
+
+        model.requestDelete(5)
+        model.confirmDelete()?.join()
+
+        assertTrue(model.canAsk)
+    }
 }

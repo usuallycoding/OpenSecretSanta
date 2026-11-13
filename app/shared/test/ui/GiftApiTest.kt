@@ -135,4 +135,16 @@ class GiftApiTest {
 
         assertEquals(setOf("number", "text", "askedAt", "answer", "answeredAt", "answerUpdatedAt"), names)
     }
+
+    @Test
+    fun anUnansweredQuestionIsDeletedAndAnAnsweredOneIsRefused() = runTest {
+        server.gift.askedBehindTheScenes(2)
+        server.gift.receiverAnswers(2, "Green")
+
+        assertEquals(ApiResult.Success(Unit), api.deleteQuestion(1, 1))
+        assertEquals("DELETE /groups/1/receiver/questions/1", server.calls.last())
+        assertEquals(listOf(2), success(api.receiverQuestions(1)).map { it.number })
+        assertEquals(ApiResult.Failure(ApiError.Rejected(409, "invalid_state", "A question that has been answered cannot be deleted.")), api.deleteQuestion(1, 2))
+        assertEquals(ApiResult.Failure(ApiError.Rejected(404, "not_found", "Question not found.")), api.deleteQuestion(1, 1))
+    }
 }

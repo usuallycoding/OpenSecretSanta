@@ -20,6 +20,7 @@ import com.usuallycoding.opensecretsanta.domain.auth.SecretBox
 import com.usuallycoding.opensecretsanta.domain.auth.TempPasswordGenerator
 import com.usuallycoding.opensecretsanta.domain.auth.TokenService
 import com.usuallycoding.opensecretsanta.domain.gift.AnswerQuestion
+import com.usuallycoding.opensecretsanta.domain.gift.DeleteQuestion
 import com.usuallycoding.opensecretsanta.domain.gift.AskQuestion
 import com.usuallycoding.opensecretsanta.domain.gift.GetMyReceiver
 import com.usuallycoding.opensecretsanta.domain.gift.GetMySanta
@@ -250,6 +251,7 @@ val useCaseModule = module {
     single { ListMyQuestions(get(), get()) }
     single { ListQuestionsFromMySanta(get(), get()) }
     single { AnswerQuestion(get(), get(), get()) }
+    single { DeleteQuestion(get(), get()) }
     single { SendLetter(get(), get(), get()) }
     single { ListMySentLetters(get(), get()) }
     single { ListLettersFromMyReceiver(get(), get()) }

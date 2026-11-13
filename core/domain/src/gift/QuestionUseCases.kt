@@ -84,3 +84,15 @@ class AnswerQuestion(
         return questions.answer(group.id, user.username, number, clean, clock.nowMillis())
     }
 }
+
+/** A Santa withdraws one of their own questions, as long as the receiver has not answered it. */
+class DeleteQuestion(
+    private val loadParticipantGroup: ParticipantGroupLoader,
+    private val questions: QuestionRepository,
+) {
+    operator fun invoke(user: User, groupId: Long, number: Int) {
+        val group = loadParticipantGroup(user, groupId)
+        group.requireActive()
+        questions.delete(group.id, user.username, number)
+    }
+}

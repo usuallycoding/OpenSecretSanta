@@ -53,9 +53,10 @@ data class TextEditor(
 )
 
 /** Something that happened while the person was busy, and that the screen says once. */
-enum class GiftNotice { Locked, LimitReached, QuestionGone, Unreachable }
+enum class GiftNotice { Locked, LimitReached, QuestionGone, QuestionAnswered, Unreachable, Failed }
 
-data class ReceiverUiState(val editor: TextEditor? = null, val notice: GiftNotice? = null)
+/** [deleting] is the question whose deletion is waiting for a confirmation. */
+data class ReceiverUiState(val editor: TextEditor? = null, val notice: GiftNotice? = null, val deleting: Question? = null)
 
 internal fun QuestionDto.toQuestion(baseline: SeenBaseline? = null) = Question(
     number = number,
