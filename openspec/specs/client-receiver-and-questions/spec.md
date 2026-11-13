@@ -137,11 +137,11 @@ The question and the answer SHALL keep their "Question" and "Answer" labels for 
 - **THEN** it announces the question's number and text and the answer with their labels, and announces nothing for the line
 
 ### Requirement: Unanswered questions are marked
-While the group is Active, a question from the Santa that has no answer SHALL show a pill reading "Unanswered" beside the time it was asked and an accent bar along the start edge of its card, in the theme's tertiary colour. It SHALL keep "Not answered yet" in the answer's place. An answered question, and any question in a Pending or an Archived group, SHALL look as before. The Gifter page SHALL NOT mark anything.
+While the group is Active, a question from the Santa that has no answer SHALL show a pill reading "Unanswered" under the question and an accent bar along the start edge of its card, in the theme's tertiary colour. It SHALL keep "Not answered yet" in the answer's place. An answered question, and any question in a Pending or an Archived group, SHALL look as before. The Gifter page SHALL NOT mark anything.
 
 #### Scenario: Unanswered question in an Active group
 - **WHEN** the group is Active and the Santa's question has no answer
-- **THEN** its card has the "Unanswered" pill beside the asked time, the accent bar on its start edge and "Not answered yet" as before
+- **THEN** its card has the "Unanswered" pill, the accent bar on its start edge and "Not answered yet" as before
 
 #### Scenario: Answering removes the marks
 - **WHEN** the person saves an answer to a marked question

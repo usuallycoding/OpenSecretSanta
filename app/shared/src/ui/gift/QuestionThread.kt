@@ -41,7 +41,7 @@ private val LineWidth = 1.5.dp
 /**
  * A question with its answer: the number sits in a small circle at the start of the question, and a thin line runs from the
  * circle down and turns toward the answer, which is indented to line up with the question's text. An unanswered question
- * keeps the line, with [Strings.NOT_ANSWERED] in the answer's place, and with [needsAnswer] also a pill beside the time it was asked, and with [answerIsNew] a "New" pill beside the time of the answer. The line is decoration; the texts keep their own labels
+ * keeps the line, with [Strings.NOT_ANSWERED] in the answer's place, and with [needsAnswer] also an "Unanswered" pill, and with [answerIsNew] a "New" pill with the answer. The times of the question and of the answer are drawn only with [showTimes] (the owner's sheet), and the pills sit beside them. The line is decoration; the texts keep their own labels
  * for screen readers.
  */
 @Composable
@@ -55,6 +55,7 @@ internal fun QuestionThread(
     modifier: Modifier = Modifier,
     needsAnswer: Boolean = false,
     answerIsNew: Boolean = false,
+    showTimes: Boolean = false,
 ) {
     val lineColor = MaterialTheme.colorScheme.outlineVariant
     var answerTop by remember { mutableFloatStateOf(0f) }
@@ -81,9 +82,11 @@ internal fun QuestionThread(
             NumberBadge(number)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 ReadOnlyText(text, style = MaterialTheme.typography.titleSmall, label = "${Strings.QUESTION_LABEL} $number")
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    TimesLine(Strings.asked(asked), modifier = Modifier.weight(1f, fill = false))
-                    if (needsAnswer) StatusPill(Strings.UNANSWERED)
+                if (showTimes || needsAnswer) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        if (showTimes) TimesLine(Strings.asked(asked), modifier = Modifier.weight(1f, fill = false))
+                        if (needsAnswer) StatusPill(Strings.UNANSWERED)
+                    }
                 }
             }
         }
@@ -96,10 +99,12 @@ internal fun QuestionThread(
         ) {
             if (answer != null) {
                 ReadOnlyText(answer, style = MaterialTheme.typography.bodyMedium, label = Strings.ANSWER)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    TimesLine(answered?.let(Strings::answered), answerChanged?.let(Strings::answerChanged), modifier = Modifier.weight(1f, fill = false))
-                    // an answer the Santa has not read yet: said in words, as well as by the bar on the card
-                    if (answerIsNew) StatusPill(Strings.READ_NEW)
+                if (showTimes || answerIsNew) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        if (showTimes) TimesLine(answered?.let(Strings::answered), answerChanged?.let(Strings::answerChanged), modifier = Modifier.weight(1f, fill = false))
+                        // an answer the Santa has not read yet: said in words, as well as by the bar on the card
+                        if (answerIsNew) StatusPill(Strings.READ_NEW)
+                    }
                 }
             } else {
                 Text(Strings.NOT_ANSWERED, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

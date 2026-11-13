@@ -6,11 +6,11 @@ What a participant sees and does with letters in the app: the Send letter page a
 ## Requirements
 
 ### Requirement: The Send letter page
-The "Send letter" button SHALL open a page titled "Letters to your Santa" with the letters the person has sent, loaded with `GET /groups/{id}/santa/letters`, newest first, each in a card with its title, its text and when it was sent. With none sent it SHALL say so. Nothing on the page SHALL say or imply who the person's Santa is.
+The "Send letter" button SHALL open a page titled "Letters to your Santa" with the letters the person has sent, loaded with `GET /groups/{id}/santa/letters`, newest first, each in a card with its title and its text. With none sent it SHALL say so. Nothing on the page SHALL say or imply who the person's Santa is.
 
 #### Scenario: Letters shown
 - **WHEN** the person has sent two letters and opens the page
-- **THEN** both are shown, the newer first, each with title, text and time
+- **THEN** both are shown, the newer first, each with title and text and no time
 
 #### Scenario: Nothing sent
 - **WHEN** the person has sent no letter
@@ -60,11 +60,11 @@ While the group is Active the Send letter page SHALL have a round button with th
 - **THEN** the button has the Send icon and is named "Send letter" to assistive technology and, on a wide window, in text
 
 ### Requirement: The Inbox page
-The "Inbox" button SHALL open a page with the letters the person's receiver has sent them, loaded with `GET /groups/{id}/receiver/letters`, newest first, each in a card with its title, its text and when it was sent, titled "Letters from" and the receiver's username (or "Letters from your receiver" until it is known). With none it SHALL say so. The page SHALL be read-only: it SHALL have no way to reply, and no "+" button.
+The "Inbox" button SHALL open a page with the letters the person's receiver has sent them, loaded with `GET /groups/{id}/receiver/letters`, newest first, each in a card with its title and its text, titled "Letters from" and the receiver's username (or "Letters from your receiver" until it is known). With none it SHALL say so. The page SHALL be read-only: it SHALL have no way to reply, and no "+" button.
 
 #### Scenario: Letters shown
 - **WHEN** the person's receiver `bob` has sent two letters and the person opens the Inbox
-- **THEN** both are shown, the newer first, under the title "Letters from bob"
+- **THEN** both are shown, the newer first, under the title "Letters from bob", with no time
 
 #### Scenario: Nothing yet
 - **WHEN** the receiver has sent no letter
@@ -79,7 +79,7 @@ The "Inbox" button SHALL open a page with the letters the person's receiver has 
 - **THEN** the letters are still shown
 
 ### Requirement: Letters are cards that keep their words
-A letter SHALL be shown in a card with its title in a title font, its text under it, and the time it was sent in a small muted line. The title and the text SHALL keep their line breaks, and text that is long SHALL be cut after a few lines with the dialog that opens it in full, as other long text in the app. A screen reader SHALL read the title, the text and the time with labels.
+A letter SHALL be shown in a card with its title in a title font and its text under it; the time it was sent is shown in a small muted line only on the owner's pair sheet in the Admin view. The title and the text SHALL keep their line breaks, and text that is long SHALL be cut after a few lines with the dialog that opens it in full, as other long text in the app. A screen reader SHALL read the title and the text with labels, and the time with its label where it is shown.
 
 #### Scenario: A long letter
 - **WHEN** a letter's text is longer than the card shows
@@ -90,8 +90,12 @@ A letter SHALL be shown in a card with its title in a title font, its text under
 - **THEN** they are shown as lines
 
 #### Scenario: Screen reader
-- **WHEN** a screen reader reads a letter
-- **THEN** it reads its title, its text and when it was sent, with their labels
+- **WHEN** a screen reader reads a letter on the Send letter page or the Inbox
+- **THEN** it reads its title and its text, with their labels
+
+#### Scenario: Owner's pair sheet
+- **WHEN** the owner reads a pair's letters in the Admin view
+- **THEN** each card shows when the letter was sent, and a screen reader reads it with its label
 
 ### Requirement: The letter pages load, fail and refresh
 Each letter page SHALL show that it is loading, SHALL say without technical details when it cannot be loaded and offer "Try again", SHALL keep what it shows while a refresh fails, SHALL reload when it is shown again and with a pull to refresh, and SHALL say when the group is not available and offer the way back.

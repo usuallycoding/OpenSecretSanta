@@ -321,19 +321,22 @@ private val EDGE_SPEED = 16.dp
 
 /**
  * An item's title, note and links, one under another, as the person and their Santa both read it, after the circle with its [number] in the
- * list. A link opens a dialog first. A [pill] ("New", "Edited") sits beside the times.
+ * list. A link opens a dialog first. The times are drawn only with [showTimes] (the owner's sheets); a [pill] ("New", "Edited") sits beside
+ * them, or alone when they are hidden.
  */
 @Composable
-internal fun ItemText(number: Int, title: String, note: String?, urls: List<String>, added: String, changed: String?, modifier: Modifier = Modifier, pill: String? = null) {
+internal fun ItemText(number: Int, title: String, note: String?, urls: List<String>, added: String, changed: String?, modifier: Modifier = Modifier, pill: String? = null, showTimes: Boolean = false) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(BadgeGap)) {
         NumberBadge(number)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             ReadOnlyText(title, style = MaterialTheme.typography.titleMedium, label = "${Strings.ITEM_LABEL} $number", maxLines = 1)
             note?.let { ReadOnlyText(it, style = MaterialTheme.typography.bodyMedium, label = Strings.NOTE_LABEL) }
             urls.forEach { LinkText(it) }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                TimesLine(Strings.added(added), changed?.let(Strings::changed), modifier = Modifier.weight(1f, fill = false))
-                pill?.let { StatusPill(it) }
+            if (showTimes || pill != null) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (showTimes) TimesLine(Strings.added(added), changed?.let(Strings::changed), modifier = Modifier.weight(1f, fill = false))
+                    pill?.let { StatusPill(it) }
+                }
             }
         }
     }

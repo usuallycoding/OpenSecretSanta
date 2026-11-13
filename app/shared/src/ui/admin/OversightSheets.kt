@@ -252,7 +252,7 @@ private fun PairLetters(letters: List<LetterItem>) {
         return
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        for (letter in letters) LetterCard(letter)
+        for (letter in letters) LetterCard(letter, showTimes = true)
     }
 }
 
@@ -300,7 +300,7 @@ private fun WishlistItems(items: List<OversightItem>) {
         for ((index, item) in items.withIndex()) {
             SnowCard("wish-$index", Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    ItemText(index + 1, item.title, item.note, item.urls, item.added, item.changed)
+                    ItemText(index + 1, item.title, item.note, item.urls, item.added, item.changed, showTimes = true)
                 }
             }
         }
@@ -318,7 +318,7 @@ private fun ThreadQuestions(thread: PairThread) {
         for (question in thread.questions) {
             SnowCard("question-${question.number}", Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp)) {
-                    QuestionThread(question.number, question.text, question.asked, question.answer, question.answered, question.answerChanged)
+                    QuestionThread(question.number, question.text, question.asked, question.answer, question.answered, question.answerChanged, showTimes = true)
                 }
             }
         }

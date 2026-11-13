@@ -48,17 +48,19 @@ import com.usuallycoding.opensecretsanta.ui.groups.isGone
 import com.usuallycoding.opensecretsanta.ui.load.LazyPullPage
 import com.usuallycoding.opensecretsanta.ui.load.loadItems
 
-/** A letter in a card: its title, its text, which is cut when long and opens in full, and when it was sent. */
+/** A letter in a card: its title, its text, which is cut when long and opens in full, and, with [showTimes] (the owner's sheet), when it was sent. */
 @Composable
-internal fun LetterCard(letter: LetterItem, modifier: Modifier = Modifier) {
+internal fun LetterCard(letter: LetterItem, modifier: Modifier = Modifier, showTimes: Boolean = false) {
     SnowCard("letter-${letter.number}", modifier.fillMaxWidth()) {
         // a letter the Santa has not read yet has a "New" pill and a bar on the card's start edge
         Column(Modifier.startAccentBar(letter.isNew).padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             ReadOnlyText(letter.title, style = MaterialTheme.typography.titleMedium, label = Strings.LETTER_TITLE_LABEL, maxLines = 2, copy = false)
             ReadOnlyText(letter.text, style = MaterialTheme.typography.bodyMedium, label = Strings.LETTER_TEXT_LABEL)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                TimesLine(Strings.letterSentAt(letter.sent), modifier = Modifier.weight(1f, fill = false))
-                if (letter.isNew) StatusPill(Strings.READ_NEW)
+            if (showTimes || letter.isNew) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (showTimes) TimesLine(Strings.letterSentAt(letter.sent), modifier = Modifier.weight(1f, fill = false))
+                    if (letter.isNew) StatusPill(Strings.READ_NEW)
+                }
             }
         }
     }

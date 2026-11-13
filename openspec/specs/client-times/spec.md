@@ -6,7 +6,7 @@ How the app shows the times at which wishlist items and questions were made and 
 ## Requirements
 
 ### Requirement: Times are shown in Bucharest time
-The app SHALL show every time at which something was added, changed, asked or answered in Bucharest local time (`Europe/Bucharest`, with its summer time), as day, abbreviated month, year, a comma, and the 24-hour clock, for example `1 Dec 2026, 12:00`, with no zone suffix, whatever time zone the device is set to. A time the app cannot read SHALL be shown as it came.
+The app SHALL show every time it displays for something added, changed, asked, answered or sent in Bucharest local time (`Europe/Bucharest`, with its summer time), as day, abbreviated month, year, a comma, and the 24-hour clock, for example `1 Dec 2026, 12:00`, with no zone suffix, whatever time zone the device is set to. A time the app cannot read SHALL be shown as it came.
 
 #### Scenario: Winter time
 - **WHEN** the server sends `2026-12-01T10:00:00Z`
@@ -32,43 +32,63 @@ The app SHALL show every time at which something was added, changed, asked or an
 - **WHEN** the value is not a time the app can read
 - **THEN** it is shown as it came
 
-### Requirement: Participants see when things were made
-A participant SHALL see, in one small line under each item or question, when it was made: on their own wishlist items "Added" and, when the item was edited after it was added, "Changed"; on the receiver's wishlist on the Gifter page the same two; on every question on the Gifter and Receiver pages "Asked" and, under an answer, "Answered" and, when the answer was edited after it was first given, "Answer changed".
+### Requirement: Only the Admin view shows when things were made
+The app SHALL show, in one small line under each item, question or letter, when it was made only in the Admin view, on the owner's sheets: on a participant's wishlist items "Added" and, when edited, "Changed"; on every question of a pair's thread "Asked" and, under an answer, "Answered" and, when the answer was edited, "Answer changed"; on each letter of a pair "Sent". The Participant view SHALL show none of these lines, for anyone, including an administrator who has switched to it. The Announcements page SHALL keep its "Sent" time in both views.
 
 #### Scenario: Own item
-- **WHEN** the person added an item and never edited it
-- **THEN** it shows "Added" with the time and nothing about a change
+- **WHEN** a participant reads an item they added and never edited
+- **THEN** it shows no time
 
 #### Scenario: Own item edited
-- **WHEN** the person edited an item after adding it
-- **THEN** it shows both "Added" and "Changed" with their times
+- **WHEN** a participant reads an item they edited after adding it
+- **THEN** it shows no time for the addition or the change
 
 #### Scenario: The receiver's list
 - **WHEN** the Gifter page shows the receiver's wishlist
-- **THEN** each item shows when it was added and, if edited, changed
+- **THEN** no item shows when it was added or changed
 
 #### Scenario: A question
 - **WHEN** a question was asked and has not been answered
-- **THEN** it shows "Asked" with the time on both the Gifter and the Receiver page, and no answer time
+- **THEN** it shows no time on the Gifter and the Receiver page
 
 #### Scenario: An answer
 - **WHEN** a question was answered and the answer edited later
-- **THEN** it shows "Asked", "Answered" and "Answer changed" with their times
+- **THEN** it shows no time for the question, the answer or the change
+
+#### Scenario: Letters
+- **WHEN** the person opens the Send letter page or the Inbox
+- **THEN** no letter card shows when it was sent
 
 #### Scenario: The owner's sheets
-- **WHEN** the owner reads a participant's wishlist or a pair's thread
+- **WHEN** the owner, in the Admin view, reads a participant's wishlist, a pair's thread or a pair's letters
 - **THEN** the same lines are shown in Bucharest time, without "UTC"
+
+#### Scenario: An administrator as a participant
+- **WHEN** an administrator switches to the Participant view and reads a wishlist, a thread or a letter
+- **THEN** no time line is shown, as for any participant
+
+#### Scenario: Announcements
+- **WHEN** any person opens the Announcements page
+- **THEN** each announcement still shows when it was sent
 
 #### Scenario: Still the same behaviour
 - **WHEN** the person taps an item or reads a cut note
-- **THEN** it behaves as before; the time line does nothing
+- **THEN** it behaves as before
+
+#### Scenario: Read marks are unaffected
+- **WHEN** an item, answer or letter is new or edited for the Santa
+- **THEN** its "New" or "Edited" pill and accent bar are shown as before, with no time beside them
 
 ### Requirement: The owner sees the same times
-The owner's wishlist and thread sheets SHALL show the same times in the same way.
+The owner's wishlist, thread and letters sheets in the Admin view SHALL show the times in the same way, and SHALL show them whatever the participants see.
 
 #### Scenario: Thread sheet
 - **WHEN** the owner opens a pair sheet
 - **THEN** each question shows when it was asked and, when answered, when it was answered
+
+#### Scenario: Participants' view is not shared
+- **WHEN** the owner opens a sheet while participants see no times
+- **THEN** the owner still sees them
 
 ### Requirement: The time lines do nothing
 These lines SHALL NOT be tappable and SHALL NOT change what tapping the item does.
