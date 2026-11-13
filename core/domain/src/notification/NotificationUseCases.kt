@@ -7,7 +7,7 @@ import com.usuallycoding.opensecretsanta.domain.user.User
 /** The most a push token can be; real ones are about 160 characters, so this only refuses nonsense. */
 const val MAX_PUSH_TOKEN_LENGTH = 4096
 
-/** The person's four switches, and whether the server can send push at all. */
+/** The person's two switches, and whether the server can send push at all. */
 data class NotificationState(val available: Boolean, val settings: NotificationSettings)
 
 class GetNotificationSettings(

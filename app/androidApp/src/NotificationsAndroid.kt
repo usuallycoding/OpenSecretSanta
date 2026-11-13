@@ -11,13 +11,14 @@ import androidx.core.app.NotificationManagerCompat
 import com.usuallycoding.opensecretsanta.contract.NotificationData
 import com.usuallycoding.opensecretsanta.ui.Strings
 
-/** The four kinds of notification, as Android's notification channels: the system settings list them like the app's own switches. */
+/** The two kinds of notification, as Android's notification channels: the system settings list them like the app's own switches. */
 private enum class Channel(val id: String, val title: String) {
     Announcements("announcements", Strings.NOTIFICATIONS_ANNOUNCEMENTS),
-    Wishlist("wishlist", Strings.NOTIFICATIONS_WISHLIST),
-    Questions("questions", Strings.NOTIFICATIONS_QUESTIONS),
-    Answers("answers", Strings.NOTIFICATIONS_ANSWERS),
+    Daily(NotificationData.CATEGORY_DAILY, Strings.NOTIFICATIONS_DAILY),
 }
+
+/** The channels of kinds that no longer exist, taken out of the system settings when the app starts. */
+private val RETIRED_CHANNELS = listOf("wishlist", "questions", "answers", "letters")
 
 /** The extra that carries the group a tapped notification is about. */
 const val EXTRA_GROUP_ID = "com.usuallycoding.opensecretsanta.GROUP_ID"
@@ -28,10 +29,11 @@ const val EXTRA_CATEGORY = "com.usuallycoding.opensecretsanta.CATEGORY"
 /** The extra that says which of a kind's notifications it was, when the kind alone does not decide the page it opens. */
 const val EXTRA_TARGET = "com.usuallycoding.opensecretsanta.TARGET"
 
-/** Creates the four channels (Android 8 and later); doing it again changes nothing. */
+/** Creates the two channels and removes the retired ones (Android 8 and later); doing it again changes nothing. */
 fun createNotificationChannels(context: Context) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
     val manager = context.getSystemService(NotificationManager::class.java) ?: return
+    RETIRED_CHANNELS.forEach { manager.deleteNotificationChannel(it) }
     Channel.entries.forEach { manager.createNotificationChannel(NotificationChannel(it.id, it.title, NotificationManager.IMPORTANCE_DEFAULT)) }
 }
 
@@ -44,7 +46,7 @@ fun showNotification(context: Context, data: Map<String, String>) {
     val title = data[NotificationData.TITLE] ?: Strings.APP_NAME
     val body = data[NotificationData.BODY] ?: return
 
-    // a newer notification of a kind for a group replaces the older one
+    // a newer notification of a kind for a group replaces the older one; the daily digest has no group and replaces itself
     val id = (groupId ?: 0L).hashCode()
     val open = Intent(context, MainActivity::class.java)
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -53,7 +55,7 @@ fun showNotification(context: Context, data: Map<String, String>) {
             putExtra(EXTRA_CATEGORY, channel.id)
             data[NotificationData.TARGET]?.let { putExtra(EXTRA_TARGET, it) }
         }
-    val tap = PendingIntent.getActivity(context, id * 4 + channel.ordinal, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+    val tap = PendingIntent.getActivity(context, id * 2 + channel.ordinal, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
     val notification = NotificationCompat.Builder(context, channel.id)
         .setSmallIcon(R.drawable.ic_notification)

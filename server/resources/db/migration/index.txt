@@ -16,3 +16,4 @@ V014__announcements.sql
 V015__announcement_reads.sql
 V016__wishlist_links.sql
 V017__question_numbers.sql
+V018__daily_digest.sql

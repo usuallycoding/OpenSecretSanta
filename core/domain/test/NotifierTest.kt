@@ -8,6 +8,7 @@ import com.usuallycoding.opensecretsanta.domain.group.GroupState
 import com.usuallycoding.opensecretsanta.domain.group.GroupViewer
 import com.usuallycoding.opensecretsanta.domain.group.OwnedGroupLoader
 import com.usuallycoding.opensecretsanta.domain.notification.DevicePlatform
+import com.usuallycoding.opensecretsanta.domain.notification.DigestMarkRepository
 import com.usuallycoding.opensecretsanta.domain.notification.DeviceRepository
 import com.usuallycoding.opensecretsanta.domain.notification.NotificationCategory
 import com.usuallycoding.opensecretsanta.domain.notification.NotificationTexts
@@ -54,6 +55,16 @@ class FakeSettings : NotificationSettingsRepository {
     }
 }
 
+class FakeDigestMarks : DigestMarkRepository {
+    val marked = linkedMapOf<Username, Long>()
+
+    override fun mark(username: Username, atMillis: Long) {
+        if (username !in marked) marked[username] = atMillis
+    }
+
+    override fun takeAll(): List<Username> = marked.keys.toList().also { marked.clear() }
+}
+
 class RecordingPushSender(override var enabled: Boolean = true) : PushSender {
     val sent = mutableListOf<PushMessage>()
     var results: (PushMessage) -> PushResult = { PushResult.Sent }
@@ -72,7 +83,8 @@ class NotifierTest {
     private val settings = FakeSettings()
     private val devices = FakeDevices()
     private val sender = RecordingPushSender()
-    private val notifier = Notifier(settings, devices, sender, groups)
+    private val marks = FakeDigestMarks()
+    private val notifier = Notifier(settings, devices, sender, groups, marks, FakeClock())
 
     private val names = listOf("alice", "bob", "carol", "dave")
     private val owner = users.add("boss", admin = true).let { users.userNamed("boss") }
@@ -155,6 +167,7 @@ class NotifierTest {
         register("bob", "bob-browser", DevicePlatform.WEB)
 
         notifier.questionAsked(g.id, u("alice"))
+        notifier.sendDigest()
 
         assertEquals(listOf("bob-browser", "bob-phone"), tokens())
     }
@@ -163,7 +176,7 @@ class NotifierTest {
     fun aSwitchedOffKindSendsNothingToThatPersonOnly() {
         val g = group(GroupState.PENDING)
         names.forEach { register(it) }
-        settings.save(u("carol"), NotificationSettings(announcements = false, questions = false))
+        settings.save(u("carol"), NotificationSettings(announcements = false))
 
         notifier.groupVisible(g, g.participants, actor = u("boss"))
 
@@ -171,134 +184,134 @@ class NotifierTest {
     }
 
     @Test
-    fun otherSwitchesDoNotAffectAKind() {
+    fun theDigestIsNotAffectedByTheAnnouncementsSwitch() {
         val g = group(GroupState.ACTIVE)
         register("bob")
-        settings.save(u("bob"), NotificationSettings(announcements = false, wishlist = false, answers = false))
+        settings.save(u("bob"), NotificationSettings(announcements = false))
 
         notifier.questionAsked(g.id, u("alice"))
+        notifier.sendDigest()
 
         assertEquals(listOf("bob-phone"), tokens())
     }
 
     @Test
-    fun aWishlistChangeTellsTheSantaOfTheEditor() {
+    fun aWishlistChangeMarksTheSantaOfTheEditorAndSendsNothing() {
         val g = group(GroupState.ACTIVE)
         names.forEach { register(it) }
 
         notifier.wishlistChanged(g.id, editor = u("bob"))
 
-        assertEquals(listOf("alice-phone"), tokens())
-        assertEquals(NotificationCategory.WISHLIST, sender.sent.single().category)
+        assertEquals(listOf(u("alice")), marks.marked.keys.toList())
+        assertEquals(emptyList(), sender.sent)
     }
 
     @Test
-    fun aWishlistChangeBeforeTheDrawTellsNobody() {
+    fun aWishlistChangeBeforeTheDrawMarksNobody() {
         val g = group(GroupState.PENDING)
         names.forEach { register(it) }
 
         notifier.wishlistChanged(g.id, editor = u("bob"))
 
-        assertEquals(emptyList(), sender.sent)
+        assertEquals(emptyMap(), marks.marked)
     }
 
     @Test
-    fun aQuestionTellsTheReceiverAndAnAnswerTellsTheSanta() {
+    fun aQuestionMarksTheReceiverAndAnAnswerOrALetterMarksTheSanta() {
         val g = group(GroupState.ACTIVE)
-        names.forEach { register(it) }
+
+        notifier.questionAsked(g.id, santa = u("alice"))
+        assertEquals(listOf(u("bob")), marks.marked.keys.toList())
+        marks.marked.clear()
+
+        notifier.questionAnswered(g.id, receiver = u("bob"))
+        assertEquals(listOf(u("alice")), marks.marked.keys.toList())
+        marks.marked.clear()
+
+        notifier.letterSent(g.id, receiver = u("bob"))
+        assertEquals(listOf(u("alice")), marks.marked.keys.toList())
+    }
+
+    @Test
+    fun nobodyIsMarkedForTheirOwnActionOrBeforeTheDraw() {
+        val g = group(GroupState.ACTIVE)
 
         notifier.questionAsked(g.id, santa = u("alice"))
         notifier.questionAnswered(g.id, receiver = u("bob"))
-
-        assertEquals(listOf("bob-phone" to NotificationCategory.QUESTIONS, "alice-phone" to NotificationCategory.ANSWERS), sender.sent.map { it.token to it.category })
-    }
-
-    @Test
-    fun aSingleQuestionOrAnswerIsSingularAndSeveralArePlural() {
-        val g = group(GroupState.ACTIVE)
-        names.forEach { register(it) }
-
-        notifier.questionAsked(g.id, u("alice"))
-        notifier.questionAsked(g.id, u("alice"), count = 2)
-        notifier.questionAsked(g.id, u("alice"), count = 5)
-        notifier.questionAnswered(g.id, u("bob"))
-        notifier.questionAnswered(g.id, u("bob"), count = 3)
-
-        val group = "\"${g.details.name}\""
-        assertEquals(
-            listOf(
-                "Your Secret Santa has a question for you in $group",
-                "Your Secret Santa has questions for you in $group",
-                "Your Secret Santa has questions for you in $group",
-                "Your receiver answered a question in $group",
-                "Your receiver answered questions in $group",
-            ),
-            sender.sent.map { it.body },
-        )
-    }
-
-    @Test
-    fun theWordsDoNotSayHowManyAndTheGroupIsTheOnlyVariablePart() {
-        for (count in listOf(2, 7, 30)) {
-            assertFalse(Regex("[0-9]").containsMatchIn(NotificationTexts.questionAsked("\"G\"", count)), "asked $count")
-            assertFalse(Regex("[0-9]").containsMatchIn(NotificationTexts.questionAnswered("\"G\"", count)), "answered $count")
-        }
-        assertEquals(NotificationTexts.questionAsked("\"A\"", 4).replace("\"A\"", "\"B\""), NotificationTexts.questionAsked("\"B\"", 4))
-    }
-
-    @Test
-    fun aLetterTellsTheSantaAndSeveralArePlural() {
-        val g = group(GroupState.ACTIVE)
-        names.forEach { register(it) }
-
         notifier.letterSent(g.id, receiver = u("bob"))
-        notifier.letterSent(g.id, receiver = u("bob"), count = 3)
+        notifier.wishlistChanged(g.id, editor = u("bob"))
 
-        val group = "\"${g.details.name}\""
-        assertEquals(listOf("alice-phone", "alice-phone"), sender.sent.map { it.token })
-        assertEquals(listOf(NotificationCategory.LETTERS, NotificationCategory.LETTERS), sender.sent.map { it.category })
-        assertEquals(listOf("Your receiver sent you a letter in $group", "Your receiver sent you letters in $group"), sender.sent.map { it.body })
+        assertEquals(setOf(u("alice"), u("bob")), marks.marked.keys)
+        assertTrue(u("carol") !in marks.marked && u("dave") !in marks.marked)
+        val pending = group(GroupState.PENDING)
+        marks.marked.clear()
+        notifier.questionAsked(pending.id, u("alice"))
+        notifier.questionAnswered(pending.id, u("bob"))
+        notifier.letterSent(pending.id, u("bob"))
+        assertEquals(emptyMap(), marks.marked)
     }
 
     @Test
-    fun aSantaWhoSwitchedLettersOffIsNotTold() {
+    fun manyChangesMakeOneMarkAndOneMessagePerDevice() {
         val g = group(GroupState.ACTIVE)
-        names.forEach { register(it) }
-        settings.save(u("alice"), NotificationSettings(letters = false))
+        register("alice")
+        register("alice", "alice-browser", DevicePlatform.WEB)
 
-        notifier.letterSent(g.id, receiver = u("bob"))
-        notifier.questionAnswered(g.id, receiver = u("bob"))
-
-        assertEquals(listOf(NotificationCategory.ANSWERS), sender.sent.map { it.category })
-    }
-
-    @Test
-    fun noLetterTextCarriesNumbersNamesOrContent() {
-        for (count in listOf(1, 2, 9)) {
-            val text = NotificationTexts.letterSent("\"Party\"", count)
-            assertFalse(names.any { it in text }, text)
-            assertEquals(1, Regex("\"Party\"").findAll(text).count())
-        }
-        assertFalse(Regex("[0-9]").containsMatchIn(NotificationTexts.letterSent("\"G\"", 12)))
-    }
-
-    @Test
-    fun noTextNamesTheSantaOrCarriesPrivateContent() {
-        val g = group(GroupState.ACTIVE)
-        names.forEach { register(it) }
-
-        notifier.questionAsked(g.id, u("alice"))
+        repeat(3) { notifier.wishlistChanged(g.id, u("bob")) }
         notifier.questionAnswered(g.id, u("bob"))
-        notifier.questionAsked(g.id, u("alice"), count = 3)
-        notifier.questionAnswered(g.id, u("bob"), count = 3)
+        notifier.letterSent(g.id, u("bob"))
+        notifier.sendDigest()
+
+        assertEquals(listOf("alice-browser", "alice-phone"), tokens())
+    }
+
+    @Test
+    fun theDigestIsOneMessageWithoutAGroupAndNamesNothing() {
+        val g = group(GroupState.ACTIVE)
+        names.forEach { register(it) }
+
         notifier.wishlistChanged(g.id, u("bob"))
-        notifier.groupDrawn(g, u("boss"))
+        notifier.questionAsked(g.id, u("alice"))
+        notifier.sendDigest()
 
-        assertEquals(9, sender.sent.size)
+        assertEquals(listOf("alice-phone", "bob-phone"), tokens())
         for (message in sender.sent) {
+            assertEquals(NotificationCategory.DAILY, message.category)
+            assertEquals(null, message.groupId)
+            assertEquals(null, message.target)
+            assertEquals("Some things changed in your groups", message.body)
             for (name in names + "boss") assertFalse(name in message.body + message.title, "${message.body} names $name")
-            assertTrue("\"${g.details.name}\"" in message.body)
+            assertFalse(g.details.name in message.body)
         }
+    }
+
+    @Test
+    fun theDigestGoesOnlyToMarkedPeopleWhoWantItAndClearsEveryMark() {
+        val g = group(GroupState.ACTIVE)
+        names.forEach { register(it) }
+        settings.save(u("bob"), NotificationSettings(daily = false))
+
+        notifier.wishlistChanged(g.id, u("bob")) // marks alice
+        notifier.questionAsked(g.id, u("alice")) // marks bob, who switched it off
+        notifier.sendDigest()
+
+        assertEquals(listOf("alice-phone"), tokens())
+        assertEquals(emptyMap(), marks.marked)
+        notifier.sendDigest()
+        assertEquals(1, sender.sent.size, "nothing is sent again without a new mark")
+    }
+
+    @Test
+    fun withoutAPushServiceTheMarksAreStillCleared() {
+        val g = group(GroupState.ACTIVE)
+        register("bob")
+        sender.enabled = false
+
+        notifier.questionAsked(g.id, u("alice"))
+        notifier.sendDigest()
+
+        assertEquals(emptyList(), sender.sent)
+        assertEquals(emptyMap(), marks.marked)
     }
 
     @Test
@@ -330,6 +343,7 @@ class NotifierTest {
         sender.results = { if (it.token == "dead") PushResult.InvalidToken else PushResult.Sent }
 
         notifier.questionAsked(g.id, u("alice"))
+        notifier.sendDigest()
 
         assertEquals(listOf("alive"), devices.all.map { it.token })
     }
@@ -341,19 +355,9 @@ class NotifierTest {
         sender.results = { PushResult.Failed }
 
         notifier.questionAsked(g.id, u("alice"))
+        notifier.sendDigest()
 
         assertEquals(listOf("bob-phone"), devices.all.map { it.token })
-    }
-
-    @Test
-    fun withoutAPushServiceNothingIsLookedUpOrSent() {
-        val g = group(GroupState.ACTIVE)
-        register("bob")
-        sender.enabled = false
-
-        notifier.questionAsked(g.id, u("alice"))
-
-        assertEquals(emptyList(), sender.sent)
     }
 
     @Test
@@ -363,6 +367,7 @@ class NotifierTest {
         sender.failWith = IllegalStateException("push service exploded")
 
         notifier.questionAsked(g.id, u("alice"))
+        notifier.sendDigest()
         notifier.groupDrawn(g, u("boss"))
     }
 
@@ -375,6 +380,7 @@ class NotifierTest {
         notifier.questionAsked(g.id, u("alice")) // not drawn: no receiver yet
         notifier.questionAnswered(g.id, u("bob"))
 
+        assertEquals(emptyMap(), marks.marked)
         assertEquals(emptyList(), sender.sent)
     }
 }

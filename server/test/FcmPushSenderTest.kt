@@ -68,7 +68,7 @@ class FcmPushSenderTest {
     private fun sender(timeout: Duration = Duration.ofSeconds(5)) =
         FcmPushSender(credentials, baseUrl, timeout, nowSeconds = { clock })
 
-    private fun message(token: String = "device-token-1") = PushMessage(token, NotificationCategory.QUESTIONS, 7, "Secret Santa", "A question for you in Party")
+    private fun message(token: String = "device-token-1") = PushMessage(token, NotificationCategory.ANNOUNCEMENTS, 7, "Secret Santa", "You are in a new group: Party")
 
     private fun logged(): String = logs.list.joinToString("\n") { it.formattedMessage + (it.throwableProxy?.message ?: "") }
 
@@ -92,11 +92,21 @@ class FcmPushSenderTest {
         assertEquals("device-token-1", body["token"]!!.jsonPrimitive.content)
         assertFalse("notification" in body, "the apps build the notification from the data")
         val data = body["data"]!!.jsonObject
-        assertEquals("questions", data["category"]!!.jsonPrimitive.content)
+        assertEquals("announcements", data["category"]!!.jsonPrimitive.content)
         assertEquals("7", data["groupId"]!!.jsonPrimitive.content)
         assertEquals("Secret Santa", data["title"]!!.jsonPrimitive.content)
-        assertEquals("A question for you in Party", data["body"]!!.jsonPrimitive.content)
+        assertEquals("You are in a new group: Party", data["body"]!!.jsonPrimitive.content)
         assertEquals("HIGH", body["android"]!!.jsonObject["priority"]!!.jsonPrimitive.content)
+    }
+
+    @Test
+    fun theDailyDigestCarriesNoGroup() {
+        sender().send(listOf(PushMessage("device-token-1", NotificationCategory.DAILY, null, "Secret Santa", "Some things changed in your groups")))
+
+        val data = Json.parseToJsonElement(sends().single().body).jsonObject["message"]!!.jsonObject["data"]!!.jsonObject
+        assertEquals("daily", data["category"]!!.jsonPrimitive.content)
+        assertFalse("groupId" in data, "the digest is about no group")
+        assertFalse("target" in data)
     }
 
     @Test

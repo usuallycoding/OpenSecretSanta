@@ -1,7 +1,7 @@
 # push-notifications Specification
 
 ## Purpose
-Tells people, by push notification on their Android and web devices, when something happens to them in a group: they are added to one, its names are drawn, their receiver's wishlist changes, their Santa asks a question or their receiver answers. Each person chooses which of those four kinds they receive.
+Tells people, by push notification on their Android and web devices, when something happens to them in a group: they are added to one, its names are drawn or the owner sends an announcement, and, once a day, that something changed in their wishlist, questions, answers or letters. Each person chooses whether they receive announcements and whether they receive the daily digest.
 
 ## Requirements
 
@@ -62,85 +62,27 @@ When a group's names are drawn the server SHALL send an announcement to every pa
 - **WHEN** an owner who is also a participant draws the group
 - **THEN** they are not sent an announcement for their own action
 
-### Requirement: Wishlist changes
-When a participant of an Active group adds, edits or deletes a wishlist item, the server SHALL send a wishlist notification to the person who is their Santa. Reordering SHALL NOT notify. Changes that follow one another closely SHALL result in one notification, not one per change. A change in a group that has not been drawn SHALL notify nobody.
-
-#### Scenario: New item
-- **WHEN** `bob`'s Santa is `alice` and `bob` adds an item to his wishlist in an Active group
-- **THEN** `alice` is sent a wishlist notification naming the group
-
-#### Scenario: Several quick edits
-- **WHEN** `bob` adds three items within a minute
-- **THEN** `alice` is sent one notification, not three
-
-#### Scenario: Reorder
-- **WHEN** `bob` only changes the order of his items
-- **THEN** nobody is notified
-
-#### Scenario: Not drawn yet
-- **WHEN** a participant edits their wishlist in a Pending group
-- **THEN** nobody is notified
-
-### Requirement: Questions and answers
-When a Santa asks a question the server SHALL send a question notification to their receiver, and when a receiver answers one it SHALL send an answer notification to their Santa, each naming the group. Questions that follow one another closely SHALL make one notification, and so SHALL answers; the two kinds, different people and different groups SHALL be kept apart. A notification for several says so in the plural.
-
-#### Scenario: Question
-- **WHEN** `alice`, Santa of `bob`, asks a question
-- **THEN** `bob` is sent a question notification naming the group
-
-#### Scenario: Answer
-- **WHEN** `bob` answers `alice`'s question
-- **THEN** `alice` is sent an answer notification naming the group
-
-#### Scenario: Switched off
-- **WHEN** `bob` has turned "questions" off and `alice` asks him a question
-- **THEN** the question is stored as usual and no notification is sent
-
-#### Scenario: Several questions in a row
-- **WHEN** `alice`, Santa of `bob`, asks three questions, each less than a minute after the previous one
-- **THEN** `bob` is sent one question notification, a minute after the last, and it reads "Your Secret Santa has questions for you" with the group's name
-
-#### Scenario: Several answers in a row
-- **WHEN** `bob` answers three questions, each less than a minute after the previous one
-- **THEN** `alice` is sent one answer notification, a minute after the last, and it reads "Your receiver answered questions" with the group's name
-
-#### Scenario: A single one keeps the singular
-- **WHEN** `alice` asks one question and nothing else follows
-- **THEN** `bob` is sent one notification, a minute later, reading "Your Secret Santa has a question for you" with the group's name
-
-#### Scenario: Never held for long
-- **WHEN** `alice` keeps asking a question every thirty seconds for ten minutes
-- **THEN** `bob` is sent a notification at the latest five minutes after the first question of each batch, not one at the very end
-
-#### Scenario: Kept apart
-- **WHEN** `bob` changes his wishlist, answers a question and, as a Santa, asks his own receiver a question within the same minute
-- **THEN** each of the three makes its own notification, to the right person
-
-#### Scenario: Other groups and people
-- **WHEN** `alice` asks a question in one group and `carol` asks one in the same group, or `alice` asks in two groups
-- **THEN** every receiver of every group is sent their own notification
-
 ### Requirement: Notifications keep the Santa secret
-No notification SHALL contain the identity of a participant's Santa, the text of a question or an answer, or the contents of a wishlist item, because notifications can be read on a locked screen. The same wording SHALL be used whichever participant the notification is for.
+No notification SHALL contain the identity of a participant's Santa or receiver, the text of a question, an answer or a letter, the contents of a wishlist item, the kind of change that happened or the name of a group other than in an announcement about that group, because notifications can be read on a locked screen. The same wording SHALL be used whichever participant the notification is for.
 
 #### Scenario: A question
-- **WHEN** a question is sent
-- **THEN** the notification says only that a question (or, for several, questions) came in for the group, without the Santa's name and without the question
+- **WHEN** a question is asked and the daily digest is sent
+- **THEN** the notification says only that some things changed, without the Santa's name, without the question and without saying a question came in
 
 #### Scenario: A letter
-- **WHEN** a letter titled "Thank you" with the text "For the scarf" is sent
-- **THEN** the notification contains neither the title nor the text, only that a letter came in for the group
+- **WHEN** a letter titled "Thank you" with the text "For the scarf" is sent and the daily digest is sent
+- **THEN** the notification contains neither the title nor the text, and does not say a letter came in
 
 #### Scenario: A wishlist item
-- **WHEN** an item titled "Blue scarf" is added
+- **WHEN** an item titled "Blue scarf" is added and the daily digest is sent
 - **THEN** the notification does not contain "Blue scarf"
 
 ### Requirement: Opening a notification goes to its group
-Every notification SHALL carry the identifier of the group it is about and its category, so that the app can open that group when the notification is tapped. A notification for an announcement the owner sent SHALL also say that it is a message from the owner, so that it can be told from the other notifications of the announcements category, which are about being added to a group and the names being drawn.
+Every notification about a group SHALL carry the identifier of the group it is about and its category, so that the app can open that group when the notification is tapped. A notification for an announcement the owner sent SHALL also say that it is a message from the owner, so that it can be told from the other notifications of the announcements category, which are about being added to a group and the names being drawn. The daily digest is about no group: it SHALL carry the category `daily` and no group.
 
 #### Scenario: Tap target
-- **WHEN** a question notification for group 7 is delivered
-- **THEN** it carries group 7 and the category "questions"
+- **WHEN** a notification that a person was added to group 7 is delivered
+- **THEN** it carries group 7 and the category "announcements"
 
 #### Scenario: An announcement from the owner
 - **WHEN** the owner's announcement is sent as a push notification for group 7
@@ -149,6 +91,10 @@ Every notification SHALL carry the identifier of the group it is about and its c
 #### Scenario: Added to a group
 - **WHEN** a person is told they were added to group 7, or that its names were drawn
 - **THEN** the notification carries group 7 and the category "announcements" and does not carry the mark
+
+#### Scenario: The daily digest
+- **WHEN** the daily digest is delivered
+- **THEN** it carries the category "daily" and no group
 
 ### Requirement: Delivery never affects the action
 A notification SHALL be sent only after the action that caused it has been stored. Failing to send, including the push service being unreachable, refusing the request or timing out, SHALL NOT undo or fail that action, SHALL be logged without the service-account key, push tokens or message text, and SHALL NOT be retried by a later request. An action that fails SHALL send nothing.
@@ -183,48 +129,132 @@ Push notifications SHALL be on only when a Firebase service-account key is confi
 - **WHEN** the server logs its configuration or answers any request
 - **THEN** the key's contents do not appear
 
-### Requirement: Five notification categories
-Each person SHALL have five switches that decide what they are notified about: announcements, wishlist changes, questions, answers and letters from their receiver. Each SHALL be on until the person turns it off. The person SHALL be able to read and change them, and a change SHALL apply to every device of that person and to every notification sent after it. A request that does not mention the letters switch SHALL turn it on.
+### Requirement: Changes wait for the daily digest
+When a participant of an Active group adds, edits or deletes a wishlist item, their Santa SHALL be marked as having news. When a Santa asks a question their receiver SHALL be marked, and when a receiver answers a question or sends a letter their Santa SHALL be marked. Reordering a wishlist, a change in a group that is not Active, and a person's own actions SHALL mark nobody.
+
+#### Scenario: New item
+- **WHEN** `bob`'s Santa is `alice` and `bob` adds an item in an Active group
+- **THEN** `alice` is marked and nothing is sent yet
+
+#### Scenario: A question
+- **WHEN** `alice`, Santa of `bob`, asks a question in an Active group
+- **THEN** `bob` is marked
+
+#### Scenario: An answer
+- **WHEN** `bob` answers a question of `alice`
+- **THEN** `alice` is marked
+
+#### Scenario: A letter
+- **WHEN** `bob` sends a letter to his Santa `alice`
+- **THEN** `alice` is marked
+
+#### Scenario: Deleting an item
+- **WHEN** `bob` deletes a wishlist item in an Active group
+- **THEN** `alice` is marked
+
+#### Scenario: Reorder
+- **WHEN** `bob` only changes the order of his items
+- **THEN** nobody is marked
+
+#### Scenario: Not drawn yet
+- **WHEN** a participant edits their wishlist in a Pending group
+- **THEN** nobody is marked
+
+### Requirement: Marks are one per person and are kept
+A mark SHALL be one per person, whatever the group, the kind or the number of changes, and SHALL be kept in the database so that a server restart does not lose it. Marking SHALL NOT send anything and SHALL NOT affect the action that caused it.
+
+#### Scenario: Many changes
+- **WHEN** `bob` adds three items, answers two questions and sends a letter in two groups the same day
+- **THEN** `alice` has one mark
+
+#### Scenario: A restart
+- **WHEN** the server restarts after `alice` was marked and before 20:00
+- **THEN** `alice` is still marked
+
+#### Scenario: Marking never fails the action
+- **WHEN** a mark cannot be stored while `bob` adds an item
+- **THEN** the item is stored and the response is a success
+
+### Requirement: The daily digest
+At 20:00 every day in Bucharest local time (`Europe/Bucharest`, with its summer time) the server SHALL send each marked person one push notification to every device of theirs, if they have the Daily digest switch on, and SHALL then clear every mark, whether or not anything was sent. A person who is not marked SHALL be sent nothing. A server that is not running at 20:00 SHALL send no digest for that day; the marks stay for the next one.
+
+#### Scenario: Something happened
+- **WHEN** `alice` was marked during the day and has Daily digest on
+- **THEN** at 20:00 she is sent one notification on each of her devices, and she is no longer marked
+
+#### Scenario: Nothing happened
+- **WHEN** nothing marked `carol` since the last digest
+- **THEN** she is sent nothing
+
+#### Scenario: Several groups
+- **WHEN** `alice` is marked for changes in three groups
+- **THEN** she is sent one notification, with no group
+
+#### Scenario: Switched off
+- **WHEN** `alice` is marked and has turned Daily digest off
+- **THEN** she is sent nothing, and the mark is cleared
+
+#### Scenario: Summer time
+- **WHEN** the clocks change in Bucharest
+- **THEN** the digest is still sent at 20:00 Bucharest time, which is 17:00 UTC in summer and 18:00 UTC in winter
+
+#### Scenario: Push off
+- **WHEN** no push service is configured at 20:00
+- **THEN** nothing is sent and the marks are cleared
+
+#### Scenario: Missed digest
+- **WHEN** the server was stopped at 20:00
+- **THEN** no digest is sent for that day, and the marks that were stored are sent at the next 20:00
+
+#### Scenario: Another day
+- **WHEN** a person is marked at 20:05 and is not marked again
+- **THEN** they are sent the digest at 20:00 the next day
+
+### Requirement: The digest's words
+The daily digest SHALL read "Some things changed in your groups" under the app's name, SHALL have the category `daily` and SHALL carry no group.
+
+#### Scenario: The words
+- **WHEN** a digest is sent
+- **THEN** it reads "Some things changed in your groups", has the category "daily" and names no group
+
+### Requirement: Two notification categories
+Each person SHALL have two switches that decide what they are notified about: Announcements and Daily digest. Each SHALL be on until the person turns it off. The person SHALL be able to read and change them, and a change SHALL apply to every device of that person and to every notification sent after it.
 
 #### Scenario: Defaults
 - **WHEN** a person who has never changed them reads their switches
-- **THEN** all five are on, including letters
+- **THEN** both are on
 
-#### Scenario: Turn letters off
-- **WHEN** `alice` turns "letters" off
-- **THEN** a letter from her receiver sends her nothing, while her announcements, wishlist changes, questions and answers still do
+#### Scenario: Turn daily off
+- **WHEN** `alice` turns "Daily digest" off
+- **THEN** she is sent no digest, while announcements still reach her
 
-#### Scenario: Turn one off
-- **WHEN** `alice` turns "questions" off
-- **THEN** a question for her sends her nothing, while the other four kinds still do
+#### Scenario: Turn announcements off
+- **WHEN** `alice` turns "Announcements" off
+- **THEN** announcements send her nothing and the digest still does
 
 #### Scenario: Shared by devices
-- **WHEN** `alice` turns "letters" off from her phone
-- **THEN** her browser also receives no letter notification
-
-#### Scenario: An older client
-- **WHEN** a request gives the four older switches and no letters switch
-- **THEN** it is accepted and the letters switch is on
+- **WHEN** `alice` turns "Daily digest" off from her phone
+- **THEN** her browser also receives no digest
 
 #### Scenario: Unknown or missing values
 - **WHEN** a change names a switch that does not exist, or gives a value that is not true or false
 - **THEN** it is refused with 400 and no switch changes
 
-### Requirement: Letters from your receiver
-When a receiver sends a letter the server SHALL send a letter notification to their Santa if the Santa has the letters switch on, naming the group. Letters that follow one another closely SHALL make one notification, held like questions: sent after a minute of quiet and at the latest five minutes after the first, with the plural "letters" when several are waiting. It SHALL be kept apart from other kinds, people and groups.
+### Requirement: Older apps keep their four switches
+For apps that predate the Daily switch the server SHALL accept and report the four older switches (wishlist, questions, answers, letters): it reports each of them with the value of Daily digest, and a request that gives them and no Daily value SHALL set Daily digest on when any of the four is on and off when all four are off. Choices saved before the Daily switch existed SHALL read the same way.
 
-#### Scenario: One letter
-- **WHEN** `bob` sends one letter to his Santa `alice`
-- **THEN** a minute later `alice` is sent "Your receiver sent you a letter" with the group's name
+#### Scenario: Earlier choices, some on
+- **WHEN** a person who had turned "questions" off and kept the other three on is read after the update
+- **THEN** Daily digest is on
 
-#### Scenario: Several letters
-- **WHEN** `bob` sends three letters less than a minute apart
-- **THEN** `alice` is sent one notification reading "Your receiver sent you letters" with the group's name
+#### Scenario: Earlier choices, all off
+- **WHEN** a person who had turned wishlist, questions, answers and letters all off is read after the update
+- **THEN** Daily digest is off
 
-#### Scenario: Switched off
-- **WHEN** `alice` has turned "letters" off and `bob` sends a letter
-- **THEN** the letter is stored as usual and no notification is sent
+#### Scenario: An older client
+- **WHEN** a request gives announcements, wishlist, questions, answers and letters and no Daily value, with wishlist on
+- **THEN** it is accepted and Daily digest is on, and the answer reports the four older switches as on
 
-#### Scenario: Tap target
-- **WHEN** a letter notification for group 7 is delivered
-- **THEN** it carries group 7 and the category "letters"
+#### Scenario: An older client turns everything off
+- **WHEN** a request gives wishlist, questions, answers and letters all off and no Daily value
+- **THEN** Daily digest is off

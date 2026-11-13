@@ -5,6 +5,7 @@ import com.usuallycoding.opensecretsanta.contract.NotificationSettingsDto
 import com.usuallycoding.opensecretsanta.contract.NotificationSettingsRequest
 import com.usuallycoding.opensecretsanta.contract.RegisterDeviceRequest
 import com.usuallycoding.opensecretsanta.contract.RemoveDeviceRequest
+import com.usuallycoding.opensecretsanta.domain.error.DomainException
 import com.usuallycoding.opensecretsanta.domain.notification.DevicePlatform
 import com.usuallycoding.opensecretsanta.domain.notification.GetNotificationSettings
 import com.usuallycoding.opensecretsanta.domain.notification.NotificationSettings
@@ -23,13 +24,24 @@ import io.ktor.server.routing.put
 private fun NotificationState.toDto() = NotificationSettingsDto(
     available = available,
     announcements = settings.announcements,
-    wishlist = settings.wishlist,
-    questions = settings.questions,
-    answers = settings.answers,
-    letters = settings.letters,
+    daily = settings.daily,
+    wishlist = settings.daily,
+    questions = settings.daily,
+    answers = settings.daily,
+    letters = settings.daily,
 )
 
-/** A person's five notification switches and their devices. */
+/** The digest is on when the app says so; an app from before it gives the four older switches, and any of them on means on. */
+private fun NotificationSettingsRequest.toSettings(): NotificationSettings {
+    val older = listOf(wishlist, questions, answers, letters)
+    val wanted = daily ?: run {
+        if (wishlist == null || questions == null || answers == null) throw DomainException.ValidationFailed("daily", "The daily digest switch is missing.")
+        older.any { it != false }
+    }
+    return NotificationSettings(announcements, wanted)
+}
+
+/** A person's two notification switches and their devices. */
 fun Route.notificationRoutes(
     getSettings: GetNotificationSettings,
     updateSettings: UpdateNotificationSettings,
@@ -43,7 +55,7 @@ fun Route.notificationRoutes(
     put(ApiRoutes.NOTIFICATIONS) {
         val user = call.currentUser()
         val request = call.receive<NotificationSettingsRequest>()
-        val settings = NotificationSettings(request.announcements, request.wishlist, request.questions, request.answers, request.letters)
+        val settings = request.toSettings()
         call.respond(blocking { updateSettings(user, settings) }.toDto())
     }
     put(ApiRoutes.NOTIFICATION_DEVICES) {

@@ -13,6 +13,7 @@ import com.usuallycoding.opensecretsanta.contract.WishlistItemDto
 import com.usuallycoding.opensecretsanta.contract.WishlistItemRequest
 import com.usuallycoding.opensecretsanta.domain.notification.DevicePlatform
 import com.usuallycoding.opensecretsanta.domain.notification.NotificationCategory
+import com.usuallycoding.opensecretsanta.server.notification.NotificationDispatcher
 import com.usuallycoding.opensecretsanta.domain.notification.NotificationSettings
 import com.usuallycoding.opensecretsanta.domain.notification.PushMessage
 import com.usuallycoding.opensecretsanta.domain.notification.PushResult
@@ -162,10 +163,15 @@ class NotificationEventRoutesTest {
         assertEquals(emptyList(), sender.sent)
     }
 
-    // --- questions and answers ---
+    // --- the daily digest ---
+
+    private fun digestSent() = sender.sent.filter { it.category == NotificationCategory.DAILY }
+
+    /** The app schedules its digest from the real clock, so this moves the manual scheduler past the next real 20:00 in Bucharest. */
+    private fun ManualScheduler.toDigest() = advance(NotificationDispatcher.millisUntilNextDigest(System.currentTimeMillis()) + 60_000L)
 
     @Test
-    fun aQuestionNotifiesTheReceiverAndAnAnswerTheSanta() = testApplication {
+    fun aQuestionAndItsAnswerSendNothingAtOnceAndAreToldInTheDigest() = testApplication {
         startApp()
         setup()
         val (group, receivers) = client.activeGroup()
@@ -174,23 +180,20 @@ class NotificationEventRoutesTest {
 
         val asked = client.send("POST", ApiRoutes.groupReceiverQuestions(group), fx.token(santa), AskQuestionRequest("Favourite colour?"))
         assertEquals(HttpStatusCode.Created, asked.status, asked.bodyAsText())
-        assertEquals(emptyList(), sender.sent, "held back for the quiet period")
-        scheduler.advance(61_000)
-        assertEquals(listOf(receiver), recipients())
-        assertEquals(NotificationCategory.QUESTIONS, sender.sent.single().category)
-        assertTrue("Favourite colour" !in sender.sent.single().body)
-        assertTrue("a question" in sender.sent.single().body)
-
-        sender.sent.clear()
         val answered = client.send("PUT", ApiRoutes.groupSantaQuestionAnswer(group, 1), fx.token(receiver), AnswerRequest("Green"))
         assertEquals(HttpStatusCode.OK, answered.status, answered.bodyAsText())
-        scheduler.advance(61_000)
-        assertEquals(listOf(santa), recipients())
-        assertEquals(NotificationCategory.ANSWERS, sender.sent.single().category)
+        scheduler.advance(10 * 60 * 1000)
+        assertEquals(emptyList(), sender.sent, "nothing is sent when it happens")
+
+        scheduler.toDigest()
+
+        assertEquals(listOf(santa, receiver).sorted(), recipients())
+        assertTrue(sender.sent.all { it.category == NotificationCategory.DAILY && it.groupId == null })
+        assertTrue(sender.sent.all { "Favourite colour" !in it.body && "Green" !in it.body })
     }
 
     @Test
-    fun lettersNotifyTheSantaOnceAfterTheQuietPeriodWithoutTheirContent() = testApplication {
+    fun lettersAreToldToTheSantaInTheDigestWithoutTheirContent() = testApplication {
         startApp()
         setup()
         val (group, receivers) = client.activeGroup()
@@ -198,60 +201,44 @@ class NotificationEventRoutesTest {
         val santa = receivers.entries.single { it.value == receiver }.key
 
         repeat(3) { client.send("POST", ApiRoutes.groupSantaLetters(group), fx.token(receiver), SendLetterRequest("Zebra title $it", "Zebra text $it")) }
-        assertEquals(emptyList(), sender.sent, "held back for the quiet period")
-        scheduler.advance(61_000)
+        assertEquals(emptyList(), sender.sent)
+        scheduler.toDigest()
 
         assertEquals(listOf(santa), recipients())
         val message = sender.sent.single()
-        assertEquals(NotificationCategory.LETTERS, message.category)
-        assertTrue(message.body.startsWith("Your receiver sent you letters"), message.body)
+        assertEquals("Some things changed in your groups", message.body)
         assertTrue("Zebra" !in message.body && "Zebra" !in message.title)
     }
 
     @Test
-    fun aSantaWhoSwitchedLettersOffIsNotToldButTheLetterIsStored() = testApplication {
-        startApp()
-        setup()
-        val (group, receivers) = client.activeGroup()
-        val receiver = names[1]
-        val santa = receivers.entries.single { it.value == receiver }.key
-        SqliteNotificationSettingsRepository(fx.database).save(Username.parse(santa), NotificationSettings(letters = false))
-
-        val sent = client.send("POST", ApiRoutes.groupSantaLetters(group), fx.token(receiver), SendLetterRequest("Hello", "Text"))
-        scheduler.advance(61_000)
-
-        assertEquals(HttpStatusCode.Created, sent.status, sent.bodyAsText())
-        assertEquals(emptyList(), sender.sent)
-    }
-
-    @Test
-    fun aSwitchedOffKindIsStillStoredButNotSent() = testApplication {
+    fun aPersonWhoSwitchedTheDigestOffIsNotToldButTheActionIsStored() = testApplication {
         startApp()
         setup()
         val (group, receivers) = client.activeGroup()
         val santa = names.first()
         val receiver = receivers.getValue(santa)
-        SqliteNotificationSettingsRepository(fx.database).save(Username.parse(receiver), NotificationSettings(questions = false))
+        SqliteNotificationSettingsRepository(fx.database).save(Username.parse(receiver), NotificationSettings(daily = false))
 
         val asked = client.send("POST", ApiRoutes.groupReceiverQuestions(group), fx.token(santa), AskQuestionRequest("Size?"))
-        scheduler.advance(61_000)
+        scheduler.toDigest()
 
         assertEquals(HttpStatusCode.Created, asked.status)
         assertEquals(emptyList(), sender.sent)
     }
 
     @Test
-    fun aRefusedQuestionNotifiesNobody() = testApplication {
+    fun aRefusedQuestionMarksNobody() = testApplication {
         startApp()
         setup()
         val group = client.draft(*names.toTypedArray())
         client.toPending(group.id) // not drawn yet
+        sender.sent.clear()
 
         val asked = client.send("POST", ApiRoutes.groupReceiverQuestions(group.id), fx.token("alice"), AskQuestionRequest("Too early?"))
 
         assertTrue(asked.status.value in 400..499, asked.status.toString())
-        scheduler.advance(61_000)
-        assertEquals(emptyList(), sender.sent.filter { it.category == NotificationCategory.QUESTIONS })
+        scheduler.toDigest()
+        assertEquals(emptyList(), digestSent())
     }
 
     @Test
@@ -262,37 +249,13 @@ class NotificationEventRoutesTest {
         sender.throwing = true
 
         val asked = client.send("POST", ApiRoutes.groupReceiverQuestions(group), fx.token(names.first()), AskQuestionRequest("Anything?"))
-        scheduler.advance(61_000)
+        scheduler.toDigest()
 
         assertEquals(HttpStatusCode.Created, asked.status, asked.bodyAsText())
     }
 
     @Test
-    fun severalQuestionsAndAnswersEachMakeOnePluralNotification() = testApplication {
-        startApp()
-        setup()
-        val (group, receivers) = client.activeGroup()
-        val santa = names.first()
-        val receiver = receivers.getValue(santa)
-
-        repeat(3) { client.send("POST", ApiRoutes.groupReceiverQuestions(group), fx.token(santa), AskQuestionRequest("Question $it?")) }
-        scheduler.advance(61_000)
-
-        assertEquals(listOf(receiver), recipients())
-        assertTrue(sender.sent.single().body.startsWith("Your Secret Santa has questions for you"), sender.sent.single().body)
-
-        sender.sent.clear()
-        for (number in 1..3) client.send("PUT", ApiRoutes.groupSantaQuestionAnswer(group, number), fx.token(receiver), AnswerRequest("Answer $number"))
-        scheduler.advance(61_000)
-
-        assertEquals(listOf(santa), recipients())
-        assertTrue(sender.sent.single().body.startsWith("Your receiver answered questions"), sender.sent.single().body)
-    }
-
-    // --- wishlist ---
-
-    @Test
-    fun wishlistChangesNotifyTheSantaOnceAfterTheQuietPeriodAndReorderingNotifiesNobody() = testApplication {
+    fun wishlistChangesAreToldToTheSantaInTheDigestAndReorderingMarksNobody() = testApplication {
         startApp()
         setup()
         val (group, receivers) = client.activeGroup()
@@ -304,27 +267,26 @@ class NotificationEventRoutesTest {
         client.send("PUT", ApiRoutes.groupWishlistItem(group, first.id), fx.token(editor), WishlistItemRequest("Blue scarf"))
         client.send("PUT", ApiRoutes.groupWishlistOrder(group), fx.token(editor), ReorderWishlistRequest(listOf(second.id, first.id)))
         client.send<Unit>("DELETE", ApiRoutes.groupWishlistItem(group, second.id), fx.token(editor))
-        assertEquals(emptyList(), sender.sent, "held back while the person keeps editing")
+        assertEquals(emptyList(), sender.sent)
 
-        scheduler.advance(61_000)
+        scheduler.toDigest()
 
         assertEquals(listOf(santa), recipients())
-        assertEquals(NotificationCategory.WISHLIST, sender.sent.single().category)
         assertTrue(sender.sent.single().body.let { "Scarf" !in it && "Socks" !in it })
     }
 
     @Test
-    fun onlyReorderingSchedulesNothing() = testApplication {
+    fun onlyReorderingMarksNobody() = testApplication {
         startApp()
         setup()
         val (group, _) = client.activeGroup()
         val editor = names[1]
         val item = Json.decodeFromString<WishlistItemDto>(client.send("POST", ApiRoutes.groupWishlistItems(group), fx.token(editor), WishlistItemRequest("Scarf")).bodyAsText())
-        scheduler.advance(61_000)
+        scheduler.toDigest() // the digest for the item
         sender.sent.clear()
 
         client.send("PUT", ApiRoutes.groupWishlistOrder(group), fx.token(editor), ReorderWishlistRequest(listOf(item.id)))
-        scheduler.advance(61_000)
+        scheduler.toDigest()
 
         assertEquals(emptyList(), sender.sent)
     }

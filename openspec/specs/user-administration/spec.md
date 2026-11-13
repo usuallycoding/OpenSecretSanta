@@ -143,10 +143,10 @@ The server SHALL expose `DELETE /admin/users/{username}`, answering 204 and dele
 - **THEN** the answer is 404 and `erin` still exists
 
 ### Requirement: What deleting a user removes
-Deleting a user SHALL remove the account together with its push devices, its notification settings and its login lockout record. After it the user's tokens SHALL no longer be accepted and the username SHALL be free to use again.
+Deleting a user SHALL remove the account together with its push devices, its notification settings, what is waiting for its daily digest and its login lockout record. After it the user's tokens SHALL no longer be accepted and the username SHALL be free to use again.
 
 #### Scenario: Devices and settings
-- **WHEN** a deleted user had two registered devices and notification settings
+- **WHEN** a deleted user had two registered devices, notification settings and a mark for the daily digest
 - **THEN** none of them remain
 
 #### Scenario: Lockout record

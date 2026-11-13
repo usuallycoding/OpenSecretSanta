@@ -1,7 +1,7 @@
 # client-notifications Specification
 
 ## Purpose
-How a person controls push notifications in the Android and web apps: a Settings row and bottom sheet with a switch for the device and the four kinds of notification, the permission flow, and what happens when a notification arrives or is tapped.
+How a person controls push notifications in the Android and web apps: a Settings row and bottom sheet with a switch for the device and the two kinds of notification (announcements and the daily digest), the permission flow, and what happens when a notification arrives or is tapped.
 
 ## Requirements
 
@@ -96,63 +96,46 @@ When the push service gives the device a new token while the device switch is on
 - **WHEN** the device's token changes
 - **THEN** the server holds the new token for the signed-in person
 
-### Requirement: Showing and opening notifications
-A notification that arrives SHALL be shown by the system with the app's name and the notification's text, whether the app is open, in the background or closed.
+### Requirement: A notification about a group that is not available
+When the group a tapped notification is about is not available to the person, the screen SHALL say so and offer the way back.
+
+#### Scenario: Way back
+- **WHEN** the group was deleted and the person taps its notification
+- **THEN** the screen says the group is not available and offers the way back to the list
+
+### Requirement: Showing and opening a notification
+A notification that arrives SHALL be shown by the system with the app's name and the notification's text, whether the app is open, in the background or closed. Tapping it SHALL open the app on the screen its kind names, as the requirement for tapping describes.
 
 #### Scenario: App closed
-- **WHEN** a question notification arrives while the app is closed
+- **WHEN** a daily notification arrives while the app is closed
 - **THEN** the system shows it
-
-#### Scenario: Tap
-- **WHEN** the person taps an announcement about group 7, such as a message from the organiser
-- **THEN** the app opens on group 7's Announcements
 
 #### Scenario: Signed out
 - **WHEN** the person taps a notification while signed out
 - **THEN** the app opens on the sign-in screen, as it would for any other launch while signed out
 
-#### Scenario: A question from the Santa
-- **WHEN** the person taps a question notification about group 7
-- **THEN** the app opens group 7's "Respond to Secret Santa" page, on a wide window in the pane beside the group page
-
-#### Scenario: An answer from the receiver
-- **WHEN** the person taps an answer notification about group 7
-- **THEN** the app opens group 7's "Questions for" page, on a wide window in the pane beside the group page
-
-#### Scenario: A change to the receiver's wishlist
-- **WHEN** the person taps a wishlist notification about group 7
-- **THEN** the app opens group 7's receiver's wishlist page, on a wide window in the pane beside the group page
-
 #### Scenario: Back goes up one level
-- **WHEN** the person has opened a question notification and presses Back
+- **WHEN** the person has opened an announcement notification about group 7 and presses Back
 - **THEN** the group's page is shown, and Back again shows the group list
 
 #### Scenario: App already open elsewhere
 - **WHEN** the app is open on another group or screen and the person taps a notification about group 7
 - **THEN** the app opens the notification's screen with the group list and group 7 behind it, and nothing of the earlier screens behind them
 
-#### Scenario: Group not drawn any more
-- **WHEN** the person taps a question notification about a group that is now Archived
-- **THEN** the "Respond to Secret Santa" page opens, which shows them read-only
-
 #### Scenario: Unknown category
-- **WHEN** a notification arrives with a category the app does not know, or none
+- **WHEN** a notification arrives with a category the app does not know, or none, and it names a group
 - **THEN** tapping it opens the group's page
 
 #### Scenario: Group not available
 - **WHEN** the person taps a notification about a group they can no longer see
 - **THEN** the screen says the group is no longer available and offers the way back
 
-### Requirement: Tapping a notification opens its screen
-Tapping a notification SHALL open the screen it is about with the group list and the group's page behind it: a question from the person's Santa opens the "Respond to Secret Santa" page, an answer from the person's receiver opens the "Questions for" page, a change to the receiver's wishlist opens the receiver's wishlist page, a letter from the person's receiver opens the Inbox page, an announcement the owner sent opens the Announcements page, and any other notification, or one with no known category, opens the group's page. On a wide window the page SHALL be in the pane beside the group's page.
+### Requirement: Tapping a notification opens its screen or the group list
+Tapping an announcement the owner sent SHALL open the group's Announcements page with the group list and the group's page behind it, and on a wide window the group's page with the Announcements pane open. Tapping any other notification about a group, or one with no known category, SHALL open the group's page. Tapping the daily notification SHALL open the group list, with nothing of the screens that were open before.
 
-#### Scenario: A letter
-- **WHEN** a person taps the notification of a letter from their receiver
-- **THEN** the screens, from the bottom, are the group list, the group's page and the Inbox page, and on a wide window the group's page with the Inbox in the pane
-
-#### Scenario: Order of the screens
-- **WHEN** a person taps the notification of a question from their Santa
-- **THEN** the screens, from the bottom, are the group list, the group's page and the "Respond to Secret Santa" page, and on a wide window the group's page with it in the pane
+#### Scenario: The daily notification
+- **WHEN** a person taps the daily notification, whatever the app was showing
+- **THEN** the group list is shown and no group page is behind or over it
 
 #### Scenario: An announcement from the owner
 - **WHEN** a person taps the notification of an announcement the owner sent
@@ -162,26 +145,19 @@ Tapping a notification SHALL open the screen it is about with the group list and
 - **WHEN** a person taps the notification that they were added to a group, or that the names were drawn
 - **THEN** the group's page opens, not the Announcements page
 
-### Requirement: A notification about a group that is not available
-When the group a tapped notification is about is not available to the person, the screen SHALL say so and offer the way back.
-
-#### Scenario: Way back
-- **WHEN** the group was deleted and the person taps its notification
-- **THEN** the screen says the group is not available and offers the way back to the list
-
-### Requirement: Five toggles
-Below the device switch the sheet SHALL show one toggle each for announcements (messages from the organiser, being added to a group, names drawn), wishlist changes, questions from your Santa, answers from your receiver and letters from your receiver, each with a short description. A toggle SHALL show the server's current value, SHALL save at once when changed, and SHALL be disabled while the device switch is off.
+### Requirement: Two toggles
+Below the device switch the sheet SHALL show one toggle for announcements (messages from the organiser, being added to a group, names drawn) and one for "Daily digest", described as one notification at 20:00 each day when something changed in your groups. A toggle SHALL show the server's current value, SHALL save at once when changed, and SHALL be disabled while the device switch is off.
 
 #### Scenario: Shows the saved choices
-- **WHEN** the person has turned "questions" off earlier and opens the sheet
-- **THEN** "questions" is off and the other four are on
+- **WHEN** the person has turned "Daily digest" off earlier and opens the sheet
+- **THEN** it is off and "Announcements" is on
 
-#### Scenario: The letters toggle
+#### Scenario: The description
 - **WHEN** the person opens the sheet
-- **THEN** it has a toggle named "Letters from your receiver", on unless they turned it off
+- **THEN** "Daily digest" says it is one notification each day at 20:00 when something changed, without saying what
 
 #### Scenario: Change is saved
-- **WHEN** the person turns "wishlist changes" off
+- **WHEN** the person turns "Daily digest" off
 - **THEN** the server records it and the toggle stays off after the sheet is closed and opened again
 
 #### Scenario: Save fails
@@ -190,4 +166,15 @@ Below the device switch the sheet SHALL show one toggle each for announcements (
 
 #### Scenario: Device off
 - **WHEN** the device switch is off
-- **THEN** the five toggles are disabled
+- **THEN** the two toggles are disabled
+
+### Requirement: Android lists the two kinds
+On Android the two kinds of notification SHALL be the two notification channels listed in the system settings of the app, named "Announcements" and "Daily digest", and no channel for the kinds that no longer exist.
+
+#### Scenario: Android channels
+- **WHEN** the system's notification settings of the app are opened on Android
+- **THEN** they list "Announcements" and "Daily digest"
+
+#### Scenario: Older channels
+- **WHEN** the app starts after an update on a device that had the four earlier channels
+- **THEN** the channels for wishlist changes, questions and answers are gone from the system settings

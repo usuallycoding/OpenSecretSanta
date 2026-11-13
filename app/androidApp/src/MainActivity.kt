@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import com.usuallycoding.opensecretsanta.data.BackendConfig
 import com.usuallycoding.opensecretsanta.ui.App
+import com.usuallycoding.opensecretsanta.contract.NotificationData
 import com.usuallycoding.opensecretsanta.ui.navigation.LinkTarget
 import com.usuallycoding.opensecretsanta.ui.navigation.NotificationTarget
 import com.usuallycoding.opensecretsanta.ui.navigation.openNotification
@@ -71,6 +72,8 @@ class MainActivity : ComponentActivity() {
      */
     private fun routesOf(intent: Intent?): List<Any>? {
         val groupId = intent?.getLongExtra(EXTRA_GROUP_ID, NONE)?.takeIf { it != NONE }
+        // the daily digest is about no group: it opens the group list
+        if (intent?.getStringExtra(EXTRA_CATEGORY) == NotificationData.CATEGORY_DAILY) return NotificationTarget.routesOf(NotificationData.CATEGORY_DAILY, null)
         if (groupId != null) return NotificationTarget.routesOf(intent.getStringExtra(EXTRA_CATEGORY), groupId, intent.getStringExtra(EXTRA_TARGET))
         val link = intent?.data ?: return null
         return LinkTarget.routesOf(linkFragment(link.scheme, link.host, link.fragment))

@@ -20,34 +20,25 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-/** The five switches of the person, all on until they turn one off. */
+/** The two switches of the person, all on until they turn one off. */
 data class NotificationSwitches(
     val announcements: Boolean = true,
-    val wishlist: Boolean = true,
-    val questions: Boolean = true,
-    val answers: Boolean = true,
-    val letters: Boolean = true,
+    val daily: Boolean = true,
 ) {
     operator fun get(category: NotificationCategory): Boolean = when (category) {
         NotificationCategory.ANNOUNCEMENTS -> announcements
-        NotificationCategory.WISHLIST -> wishlist
-        NotificationCategory.QUESTIONS -> questions
-        NotificationCategory.ANSWERS -> answers
-        NotificationCategory.LETTERS -> letters
+        NotificationCategory.DAILY -> daily
     }
 
     fun with(category: NotificationCategory, on: Boolean): NotificationSwitches = when (category) {
         NotificationCategory.ANNOUNCEMENTS -> copy(announcements = on)
-        NotificationCategory.WISHLIST -> copy(wishlist = on)
-        NotificationCategory.QUESTIONS -> copy(questions = on)
-        NotificationCategory.ANSWERS -> copy(answers = on)
-        NotificationCategory.LETTERS -> copy(letters = on)
+        NotificationCategory.DAILY -> copy(daily = on)
     }
 
-    fun toRequest() = NotificationSettingsRequest(announcements, wishlist, questions, answers, letters)
+    fun toRequest() = NotificationSettingsRequest(announcements = announcements, daily = daily)
 }
 
-private fun NotificationSettingsDto.toSwitches() = NotificationSwitches(announcements, wishlist, questions, answers, letters)
+private fun NotificationSettingsDto.toSwitches() = NotificationSwitches(announcements, daily)
 
 /** Something the sheet tells the person after an attempt that did not work. */
 enum class NotificationsMessage {
@@ -75,13 +66,13 @@ data class NotificationsUiState(
     /** Turning the device on needs a server that can send, a device that can show and nothing running already. */
     val deviceSwitchEnabled: Boolean get() = serverAvailable && deviceSupported && !deviceBusy
 
-    /** The four kinds only make sense for a device that gets notifications. */
+    /** The two kinds only make sense for a device that gets notifications. */
     val togglesEnabled: Boolean get() = deviceOn && !deviceBusy
 }
 
 /**
  * The Notifications sheet: the master switch of this device, which registers it (asking the system's permission) or
- * removes it, and the four kinds, which live on the server and save as they are changed. A kind that cannot be saved goes
+ * removes it, and the two kinds, which live on the server and save as they are changed. A kind that cannot be saved goes
  * back to what the server last confirmed.
  */
 class NotificationsViewModel(
@@ -146,7 +137,7 @@ class NotificationsViewModel(
         }
     }
 
-    /** One of the four kinds. It shows at once and is saved; if the save fails it goes back and the sheet says so. */
+    /** One of the two kinds. It shows at once and is saved; if the save fails it goes back and the sheet says so. */
     fun setSwitch(category: NotificationCategory, on: Boolean): Job? {
         val state = _ui.value
         if (!state.togglesEnabled || state.switches[category] == on) return null

@@ -12,7 +12,7 @@ class ClasspathMigrationsTest {
     @Test
     fun bundledMigrationsAreOrderedAndStartWithBaseline() {
         val migrations = ClasspathMigrations.load()
-        assertEquals(listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17), migrations.map { it.version })
+        assertEquals(listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18), migrations.map { it.version })
         assertEquals("baseline", migrations.first().name)
     }
 
@@ -23,6 +23,6 @@ class ClasspathMigrationsTest {
 
         MigrationRunner(database, ClasspathMigrations.load()).migrate()
 
-        assertEquals(17, database.schemaVersion())
+        assertEquals(18, database.schemaVersion())
     }
 }

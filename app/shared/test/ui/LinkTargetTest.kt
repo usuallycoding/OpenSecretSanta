@@ -39,7 +39,7 @@ class LinkTargetTest {
 
     @Test
     fun theSameScreensAsANotificationOpens() {
-        assertEquals(com.usuallycoding.opensecretsanta.ui.navigation.NotificationTarget.routesOf("questions", 7), LinkTarget.routesOf("/groups/7/receiver/questions"))
+        assertEquals(com.usuallycoding.opensecretsanta.ui.navigation.NotificationTarget.routesOf("announcements", 7, "messages"), LinkTarget.routesOf("/groups/7/announcements"))
         assertEquals(com.usuallycoding.opensecretsanta.ui.navigation.NotificationTarget.routesOf("announcements", 7), LinkTarget.routesOf("/groups/7"))
     }
 

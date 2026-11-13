@@ -33,7 +33,7 @@ class GroupMigrationTest {
 
     @Test
     fun schemaVersionIsLatest() {
-        assertEquals(17, database.schemaVersion())
+        assertEquals(18, database.schemaVersion())
     }
 
     @Test

@@ -26,6 +26,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /** The notification switches and device registration, through the real routes. */
 class NotificationRoutesTest {
@@ -63,11 +64,14 @@ class NotificationRoutesTest {
 
     // --- the switches ---
 
+    private fun dto(announcements: Boolean = true, daily: Boolean = true) =
+        NotificationSettingsDto(available = false, announcements = announcements, daily = daily, wishlist = daily, questions = daily, answers = daily, letters = daily)
+
     @Test
     fun everythingIsOnByDefaultAndPushIsReportedUnavailableWithoutAKey() = testApplication {
         startApp()
 
-        assertEquals(NotificationSettingsDto(available = false, announcements = true, wishlist = true, questions = true, answers = true, letters = true), client.settings("alice"))
+        assertEquals(dto(), client.settings("alice"))
     }
 
     @Test
@@ -81,79 +85,105 @@ class NotificationRoutesTest {
     fun changingTheSwitchesIsSavedPerPerson() = testApplication {
         startApp()
 
-        val response = client.send("PUT", ApiRoutes.NOTIFICATIONS, fx.token("alice"), NotificationSettingsRequest(announcements = true, wishlist = false, questions = false, answers = true))
+        val response = client.send("PUT", ApiRoutes.NOTIFICATIONS, fx.token("alice"), NotificationSettingsRequest(announcements = false, daily = true))
 
         assertEquals(HttpStatusCode.OK, response.status, response.bodyAsText())
-        val expected = NotificationSettingsDto(available = false, announcements = true, wishlist = false, questions = false, answers = true)
+        val expected = dto(announcements = false, daily = true)
         assertEquals(expected, Json.decodeFromString<NotificationSettingsDto>(response.bodyAsText()))
         assertEquals(expected, client.settings("alice"))
-        assertEquals(true, client.settings("bob").wishlist, "someone else's switches are untouched")
+        assertEquals(true, client.settings("bob").announcements, "someone else's switches are untouched")
     }
 
     @Test
-    fun theLettersSwitchIsSavedAndLeavesTheOtherFourAlone() = testApplication {
+    fun theDigestSwitchIsSavedAndLeavesAnnouncementsAlone() = testApplication {
         startApp()
 
-        val response = client.send(
-            "PUT", ApiRoutes.NOTIFICATIONS, fx.token("alice"),
-            NotificationSettingsRequest(announcements = true, wishlist = true, questions = true, answers = true, letters = false),
-        )
+        val response = client.send("PUT", ApiRoutes.NOTIFICATIONS, fx.token("alice"), NotificationSettingsRequest(announcements = true, daily = false))
 
         assertEquals(HttpStatusCode.OK, response.status, response.bodyAsText())
-        val saved = client.settings("alice")
-        assertEquals(false, saved.letters)
-        assertEquals(listOf(true, true, true, true), listOf(saved.announcements, saved.wishlist, saved.questions, saved.answers))
-        assertEquals(true, client.settings("bob").letters, "someone else's letters switch is untouched")
+        assertEquals(dto(announcements = true, daily = false), client.settings("alice"))
+        assertEquals(dto(), client.settings("bob"))
     }
 
     @Test
-    fun anOlderClientThatSendsOnlyFourSwitchesIsAcceptedAndLettersIsOn() = testApplication {
+    fun theFourOlderSwitchesAreReportedWithTheValueOfTheDigest() = testApplication {
         startApp()
-        client.send("PUT", ApiRoutes.NOTIFICATIONS, fx.token("alice"), NotificationSettingsRequest(true, true, true, true, letters = false))
+        client.send("PUT", ApiRoutes.NOTIFICATIONS, fx.token("alice"), NotificationSettingsRequest(announcements = true, daily = false))
+
+        val raw = client.rawSend("GET", ApiRoutes.NOTIFICATIONS, fx.token("alice"), null).bodyAsText()
+
+        for (field in listOf("wishlist", "questions", "answers", "letters", "daily")) assertTrue(""""$field":false""" in raw, "$field in $raw")
+    }
+
+    @Test
+    fun anOlderClientWithSomeSwitchesOnLeavesTheDigestOn() = testApplication {
+        startApp()
+        client.send("PUT", ApiRoutes.NOTIFICATIONS, fx.token("alice"), NotificationSettingsRequest(announcements = true, daily = false))
 
         val response = client.rawSend("PUT", ApiRoutes.NOTIFICATIONS, fx.token("alice"), """{"announcements":true,"wishlist":false,"questions":true,"answers":true}""")
 
         assertEquals(HttpStatusCode.OK, response.status, response.bodyAsText())
-        val saved = client.settings("alice")
-        assertEquals(true, saved.letters)
-        assertEquals(false, saved.wishlist)
+        assertEquals(dto(), client.settings("alice"))
     }
 
     @Test
-    fun aLettersValueThatIsNotABooleanIsRefusedAndChangesNothing() = testApplication {
+    fun anOlderClientWithAllFourOffTurnsTheDigestOff() = testApplication {
         startApp()
-        for (value in listOf(""""yes"""", "null", "1")) {
-            val response = client.rawSend("PUT", ApiRoutes.NOTIFICATIONS, fx.token("alice"), """{"announcements":false,"wishlist":false,"questions":false,"answers":false,"letters":$value}""")
+
+        val response = client.rawSend("PUT", ApiRoutes.NOTIFICATIONS, fx.token("alice"), """{"announcements":true,"wishlist":false,"questions":false,"answers":false,"letters":false}""")
+
+        assertEquals(HttpStatusCode.OK, response.status, response.bodyAsText())
+        assertEquals(dto(daily = false), client.settings("alice"))
+    }
+
+    @Test
+    fun anOlderClientWithoutALettersSwitchCountsItAsOn() = testApplication {
+        startApp()
+
+        client.rawSend("PUT", ApiRoutes.NOTIFICATIONS, fx.token("alice"), """{"announcements":true,"wishlist":false,"questions":false,"answers":false}""")
+
+        assertEquals(dto(daily = true), client.settings("alice"))
+    }
+
+    @Test
+    fun aValueThatIsNotABooleanIsRefusedAndChangesNothing() = testApplication {
+        startApp()
+        for (value in listOf(""""yes"""", "1")) {
+            val response = client.rawSend("PUT", ApiRoutes.NOTIFICATIONS, fx.token("alice"), """{"announcements":false,"daily":$value}""")
             assertEquals(HttpStatusCode.BadRequest, response.status, value)
+            val older = client.rawSend("PUT", ApiRoutes.NOTIFICATIONS, fx.token("alice"), """{"announcements":false,"wishlist":false,"questions":false,"answers":false,"letters":$value}""")
+            assertEquals(HttpStatusCode.BadRequest, older.status, value)
         }
-        assertEquals(true, client.settings("alice").announcements)
+        assertEquals(dto(), client.settings("alice"))
     }
 
     @Test
     fun savingWorksWithoutAKeyToo() = testApplication {
         startApp(push = false)
 
-        val response = client.send("PUT", ApiRoutes.NOTIFICATIONS, fx.token("alice"), NotificationSettingsRequest(false, false, false, false))
+        val response = client.send("PUT", ApiRoutes.NOTIFICATIONS, fx.token("alice"), NotificationSettingsRequest(announcements = false, daily = false))
 
         assertEquals(HttpStatusCode.OK, response.status)
         assertEquals(false, client.settings("alice").announcements)
     }
 
     @Test
-    fun aBodyThatIsNotExactlyFourBooleansIsRefusedAndChangesNothing() = testApplication {
+    fun aBodyThatIsNotValidIsRefusedAndChangesNothing() = testApplication {
         startApp()
         val bodies = listOf(
-            """{"announcements":false,"wishlist":false,"questions":false}""", // one missing
-            """{"announcements":false,"wishlist":false,"questions":false,"answers":false,"extra":true}""", // a switch that does not exist
-            """{"announcements":"yes","wishlist":false,"questions":false,"answers":false}""", // not a boolean
-            """{"announcements":null,"wishlist":false,"questions":false,"answers":false}""",
+            """{"announcements":false}""", // no digest switch and no older ones
+            """{"announcements":false,"wishlist":false,"questions":false}""", // an older client with one missing
+            """{"announcements":false,"daily":false,"extra":true}""", // a switch that does not exist
+            """{"announcements":"yes","daily":false}""", // not a boolean
+            """{"announcements":null,"daily":false}""",
+            """{"daily":false}""", // no announcements switch
             "not json",
         )
         for (body in bodies) {
             val response = client.rawSend("PUT", ApiRoutes.NOTIFICATIONS, fx.token("alice"), body)
             assertEquals(HttpStatusCode.BadRequest, response.status, body)
         }
-        assertEquals(true, client.settings("alice").announcements)
+        assertEquals(dto(), client.settings("alice"))
     }
 
     // --- devices ---

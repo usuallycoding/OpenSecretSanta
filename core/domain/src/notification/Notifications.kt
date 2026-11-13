@@ -3,8 +3,11 @@ package com.usuallycoding.opensecretsanta.domain.notification
 import com.usuallycoding.opensecretsanta.domain.error.DomainException
 import com.usuallycoding.opensecretsanta.domain.user.Username
 
-/** The five kinds of notification a person can switch on or off. */
-enum class NotificationCategory { ANNOUNCEMENTS, WISHLIST, QUESTIONS, ANSWERS, LETTERS }
+/**
+ * The two kinds of notification a person can switch on or off: announcements, and the daily digest that says something changed in
+ * their wishlist, questions, answers or letters.
+ */
+enum class NotificationCategory { ANNOUNCEMENTS, DAILY }
 
 /** Where a registered device runs; iOS has none. */
 enum class DevicePlatform {
@@ -23,18 +26,11 @@ enum class DevicePlatform {
 /** Which categories a person wants; everything is on until they switch something off. */
 data class NotificationSettings(
     val announcements: Boolean = true,
-    val wishlist: Boolean = true,
-    val questions: Boolean = true,
-    val answers: Boolean = true,
-    /** Letters from the person's receiver. */
-    val letters: Boolean = true,
+    val daily: Boolean = true,
 ) {
     fun allows(category: NotificationCategory): Boolean = when (category) {
         NotificationCategory.ANNOUNCEMENTS -> announcements
-        NotificationCategory.WISHLIST -> wishlist
-        NotificationCategory.QUESTIONS -> questions
-        NotificationCategory.ANSWERS -> answers
-        NotificationCategory.LETTERS -> letters
+        NotificationCategory.DAILY -> daily
     }
 }
 
@@ -55,7 +51,7 @@ interface DeviceRepository {
     fun devicesOf(usernames: Collection<Username>): List<RegisteredDevice>
 }
 
-/** Storage for each person's five switches. */
+/** Storage for each person's two switches. */
 interface NotificationSettingsRepository {
     /** The saved switches, or all on for someone who never changed them. */
     fun find(username: Username): NotificationSettings
@@ -65,6 +61,18 @@ interface NotificationSettingsRepository {
     fun save(username: Username, settings: NotificationSettings)
 }
 
+/**
+ * Who has news waiting for the next daily digest. A person is marked once, whatever happened and in however many groups, and the
+ * mark is kept so that a restart does not lose it.
+ */
+interface DigestMarkRepository {
+    /** Marks [username]; marking again changes nothing. */
+    fun mark(username: Username, atMillis: Long)
+
+    /** Everyone marked, all of them cleared in the same step: a mark made meanwhile is left for the next digest. */
+    fun takeAll(): List<Username>
+}
+
 /** What a notification of a kind that has several can say more about: where a tap leads when the kind alone does not tell. */
 object PushTargets {
     /** An announcement the owner sent, as opposed to the other notifications of the announcements kind. */
@@ -72,13 +80,14 @@ object PushTargets {
 }
 
 /**
- * One data message for one device. The texts are what the person sees; [groupId] and [category] tell the app where a tap leads,
- * and [target], when there is one, tells which of a category's notifications it is.
+ * One data message for one device. The texts are what the person sees; [groupId] and [category] tell the app where a tap leads
+ * ([groupId] is null for the daily digest, which is about no group), and [target], when there is one, tells which of a category's
+ * notifications it is.
  */
 data class PushMessage(
     val token: String,
     val category: NotificationCategory,
-    val groupId: Long,
+    val groupId: Long?,
     val title: String,
     val body: String,
     val target: String? = null,

@@ -12,6 +12,7 @@ import com.usuallycoding.opensecretsanta.domain.admin.ResetPassword
 import com.usuallycoding.opensecretsanta.domain.admin.SeedDefaultAdmin
 import com.usuallycoding.opensecretsanta.domain.auth.ChangePassword
 import com.usuallycoding.opensecretsanta.domain.auth.Clock
+import com.usuallycoding.opensecretsanta.domain.notification.DigestMarkRepository
 import com.usuallycoding.opensecretsanta.domain.auth.AttemptLimiter
 import com.usuallycoding.opensecretsanta.domain.auth.Login
 import com.usuallycoding.opensecretsanta.domain.auth.LoginAttemptTracker
@@ -107,6 +108,7 @@ import com.usuallycoding.opensecretsanta.server.data.db.Migration
 import com.usuallycoding.opensecretsanta.server.data.db.MigrationRunner
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteGroupMembershipRepository
 import com.usuallycoding.opensecretsanta.server.data.notification.SqliteDeviceRepository
+import com.usuallycoding.opensecretsanta.server.data.notification.SqliteDigestMarkRepository
 import com.usuallycoding.opensecretsanta.server.data.notification.SqliteNotificationSettingsRepository
 import com.usuallycoding.opensecretsanta.server.data.push.FcmPushSender
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteDrawRuleRepository
@@ -166,6 +168,7 @@ val repositoryModule = module {
     single<DeliveryInfoRepository> { SqliteDeliveryInfoRepository(get()) }
     single<DeviceRepository> { SqliteDeviceRepository(get()) }
     single<NotificationSettingsRepository> { SqliteNotificationSettingsRepository(get()) }
+    single<DigestMarkRepository> { SqliteDigestMarkRepository(get()) }
 }
 
 /** The sender is FCM when a service-account key is configured and a stand-in (a test's sender) when one is given. */
@@ -205,7 +208,7 @@ fun emailModule(mailer: Mailer? = null) = module {
 
 /** Who is told what: the notifier decides, the dispatcher runs it off the request thread (a test passes its own executor and scheduler). */
 fun notificationModule(executor: Executor? = null, scheduler: Scheduler? = null) = module {
-    single { Notifier(get(), get(), get(), get()) }
+    single { Notifier(get(), get(), get(), get(), get(), get()) }
     single<Executor> { executor ?: daemonSingleThreadExecutor() }
     single<Scheduler> { scheduler ?: ThreadScheduler() }
     single { NotificationDispatcher(get(), get(), get(), get()) }

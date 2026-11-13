@@ -907,9 +907,9 @@ class FakeAdminOversight(private val groups: FakeAdminGroups) {
 }
 
 /**
- * The notification routes with the server's behavior: four switches that are all on until changed, a save that must
- * name all four, devices keyed by their token (a token registered again belongs to the latest caller), and an answer
- * to the settings read that says whether push is available at all. A test can queue a failure for the next save.
+ * The notification routes with the server's behavior: two switches that are all on until changed, devices keyed by
+ * their token (a token registered again belongs to the latest caller), and an answer to the settings read that says
+ * whether push is available at all. A test can queue a failure for the next save.
  */
 /** The announcement route: it keeps what it was sent and answers with a summary of each channel asked for, or with a queued failure. */
 class FakeAnnouncements {
@@ -986,7 +986,7 @@ class FakeAnnouncements {
 
 class FakeNotifications {
     var available = true
-    var settings = NotificationSettingsRequest(announcements = true, wishlist = true, questions = true, answers = true)
+    var settings = NotificationSettingsRequest(announcements = true, daily = true)
 
     /** Token to platform, for the devices the server knows. */
     val devices = linkedMapOf<String, String>()
@@ -997,7 +997,10 @@ class FakeNotifications {
         failures += status to """{"code":"$code","message":"$message"}"""
     }
 
-    private fun dto() = NotificationSettingsDto(available, settings.announcements, settings.wishlist, settings.questions, settings.answers, settings.letters)
+    private fun dto(): NotificationSettingsDto {
+        val daily = settings.daily != false
+        return NotificationSettingsDto(available, settings.announcements, daily, daily, daily, daily, daily)
+    }
 
     fun answer(method: String, path: String, body: String): Pair<HttpStatusCode, String>? = when {
         path == ApiRoutes.NOTIFICATIONS && method == "GET" -> HttpStatusCode.OK to Json.encodeToString(dto())

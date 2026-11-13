@@ -86,7 +86,7 @@ class FcmPushSender(
             put("token", message.token)
             putJsonObject("data") {
                 put(NotificationData.CATEGORY, message.category.name.lowercase())
-                put(NotificationData.GROUP_ID, message.groupId.toString())
+                message.groupId?.let { put(NotificationData.GROUP_ID, it.toString()) }
                 put(NotificationData.TITLE, message.title)
                 put(NotificationData.BODY, message.body)
                 message.target?.let { put(NotificationData.TARGET, it) }

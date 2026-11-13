@@ -24,18 +24,18 @@ class NotificationApiTest {
         val settings = (api.notificationSettings() as ApiResult.Success).value
 
         assertEquals(false, settings.available)
-        assertEquals(listOf(true, true, true, true), listOf(settings.announcements, settings.wishlist, settings.questions, settings.answers))
+        assertEquals(listOf(true, true), listOf(settings.announcements, settings.daily))
         assertEquals(listOf("GET /notifications"), server.calls)
     }
 
     @Test
-    fun savingSendsAllFourSwitchesAndGivesBackWhatTheServerSaved() = runTest {
-        val request = NotificationSettingsRequest(announcements = true, wishlist = false, questions = true, answers = false)
+    fun savingSendsBothSwitchesAndGivesBackWhatTheServerSaved() = runTest {
+        val request = NotificationSettingsRequest(announcements = true, daily = false)
 
         val saved = (api.saveNotificationSettings(request) as ApiResult.Success).value
 
         assertEquals(request, server.notifications.settings)
-        assertEquals(false, saved.wishlist)
+        assertEquals(false, saved.daily)
         assertEquals("PUT /notifications", server.calls.last())
         assertEquals(request, Json.decodeFromString(server.bodies.last()))
     }
@@ -57,7 +57,7 @@ class NotificationApiTest {
     fun aRefusedSaveIsAFailureWithTheServersReason() = runTest {
         server.notifications.failNextSaveWith(HttpStatusCode.InternalServerError)
 
-        val result = api.saveNotificationSettings(NotificationSettingsRequest(false, false, false, false))
+        val result = api.saveNotificationSettings(NotificationSettingsRequest(announcements = false, daily = false))
 
         assertIs<ApiResult.Failure>(result)
         assertIs<ApiError.Rejected>(result.error)

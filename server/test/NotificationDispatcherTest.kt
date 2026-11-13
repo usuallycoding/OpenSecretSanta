@@ -16,6 +16,7 @@ import com.usuallycoding.opensecretsanta.server.data.db.Database
 import com.usuallycoding.opensecretsanta.server.data.db.MigrationRunner
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteGroupRepository
 import com.usuallycoding.opensecretsanta.server.data.notification.SqliteDeviceRepository
+import com.usuallycoding.opensecretsanta.server.data.notification.SqliteDigestMarkRepository
 import com.usuallycoding.opensecretsanta.server.data.notification.SqliteNotificationSettingsRepository
 import com.usuallycoding.opensecretsanta.server.data.user.SqliteUserRepository
 import com.usuallycoding.opensecretsanta.server.notification.Cancellation
@@ -76,8 +77,11 @@ class NotificationDispatcherTest {
     private val carol = Username.parse("carol")
     private val boss = Username.parse("boss")
 
-    private fun dispatcher(executor: Executor = direct) =
-        NotificationDispatcher(Notifier(SqliteNotificationSettingsRepository(database), devices, sender, groups), executor, scheduler, clock)
+    private val marks = SqliteDigestMarkRepository(database)
+
+    private fun notifier() = Notifier(SqliteNotificationSettingsRepository(database), devices, sender, groups, marks, clock)
+
+    private fun dispatcher(executor: Executor = direct) = NotificationDispatcher(notifier(), executor, scheduler, clock)
 
     private fun group(pending: Boolean = false): Long {
         SqliteUserRepository(database).insertAll(listOf(alice, bob, carol, boss).map { NewUser(it, "h", null, false, it == boss) })
@@ -88,298 +92,103 @@ class NotificationDispatcherTest {
         return g.id
     }
 
-    private fun bodies() = sender.sent.map { it.token to it.category }
+    private fun sent() = sender.sent.map { it.token to it.category }
+
+    private val hour = 60 * 60 * 1000L
 
     @Test
-    fun threeQuickChangesMakeOneNotificationAfterTheQuietPeriod() {
+    fun changesMarkThePersonTheyAreForAndSendNothing() {
         val id = group()
         val dispatcher = dispatcher()
 
         dispatcher.wishlistChanged(id, bob)
-        scheduler.advance(10_000)
-        dispatcher.wishlistChanged(id, bob)
-        scheduler.advance(10_000)
-        dispatcher.wishlistChanged(id, bob)
-        scheduler.advance(59_000)
-        assertEquals(emptyList(), sender.sent, "still inside the quiet period")
+        dispatcher.questionAsked(id, alice)
+        dispatcher.questionAnswered(id, carol)
+        dispatcher.letterSent(id, bob)
+        scheduler.advance(10 * 60 * 1000)
 
-        scheduler.advance(2_000)
-
-        assertEquals(listOf("alice-phone" to NotificationCategory.WISHLIST), bodies())
+        assertEquals(emptyList(), sender.sent)
+        // alice's receiver is bob, bob's is carol, carol's is alice: the wishlist and the letter mark alice, the question bob, the answer bob
+        assertEquals(listOf(alice, bob), marks.takeAll().sortedBy { it.value })
     }
 
     @Test
-    fun aLaterChangeAfterTheNotificationStartsANewRound() {
-        val id = group()
-        val dispatcher = dispatcher()
-
-        dispatcher.wishlistChanged(id, bob)
-        scheduler.advance(61_000)
-        dispatcher.wishlistChanged(id, bob)
-        scheduler.advance(61_000)
-
-        assertEquals(2, sender.sent.size)
-    }
-
-    @Test
-    fun aListThatIsNeverQuietIsStillAnnouncedWithinFiveMinutes() {
-        val id = group()
-        val dispatcher = dispatcher()
-
-        repeat(12) {
-            dispatcher.wishlistChanged(id, bob)
-            scheduler.advance(30_000) // never a full quiet minute
-        }
-
-        assertTrue(sender.sent.isNotEmpty(), "sent despite the changes going on")
-        assertEquals("alice-phone", sender.sent.first().token)
-    }
-
-    @Test
-    fun differentPeopleAreHeldSeparately() {
-        val id = group()
-        val dispatcher = dispatcher()
-
-        dispatcher.wishlistChanged(id, bob)
-        dispatcher.wishlistChanged(id, carol)
-        scheduler.advance(61_000)
-
-        assertEquals(listOf("alice-phone", "bob-phone"), sender.sent.map { it.token }.sorted())
-    }
-
-    @Test
-    fun aChangeBeforeTheDrawNotifiesNobody() {
+    fun aChangeBeforeTheDrawMarksNobody() {
         val id = group(pending = true)
+        val dispatcher = dispatcher()
 
+        dispatcher.wishlistChanged(id, bob)
+        dispatcher.questionAsked(id, alice)
+        dispatcher.letterSent(id, bob)
+
+        assertEquals(emptyList(), marks.takeAll())
+    }
+
+    @Test
+    fun theDigestGoesOutAtTwentyHundredInBucharestAndOnlyToMarkedPeople() {
+        val id = group()
+        val dispatcher = dispatcher()
+        dispatcher.startDigest()
+        dispatcher.wishlistChanged(id, bob) // marks alice
+
+        // the manual clock starts at the epoch, 02:00 in Bucharest in winter, so 20:00 is 18 hours away
+        scheduler.advance(18 * hour - 1)
+        assertEquals(emptyList(), sender.sent, "not before 20:00")
+        scheduler.advance(1)
+
+        assertEquals(listOf("alice-phone" to NotificationCategory.DAILY), sent())
+        assertEquals(null, sender.sent.single().groupId)
+        assertEquals(emptyList(), marks.takeAll(), "the mark is cleared")
+    }
+
+    @Test
+    fun theNextDigestIsScheduledAfterEachOneAndNothingIsSentWithoutNews() {
+        val id = group()
+        val dispatcher = dispatcher()
+        dispatcher.startDigest()
+        dispatcher.wishlistChanged(id, bob)
+        scheduler.advance(18 * hour)
+        assertEquals(1, sender.sent.size)
+
+        scheduler.advance(24 * hour)
+        assertEquals(1, sender.sent.size, "no news, no digest")
+
+        dispatcher.questionAsked(id, alice) // marks bob
+        scheduler.advance(24 * hour)
+        assertEquals(listOf("alice-phone" to NotificationCategory.DAILY, "bob-phone" to NotificationCategory.DAILY), sent())
+        assertEquals(1, scheduler.pending, "the one after it is waiting")
+    }
+
+    @Test
+    fun marksSurviveARestartAndAreSentAtTheNextDigest() {
+        val id = group()
         dispatcher().wishlistChanged(id, bob)
-        scheduler.advance(61_000)
 
-        assertEquals(emptyList(), sender.sent)
-    }
+        val restarted = dispatcher()
+        restarted.startDigest()
+        scheduler.advance(18 * hour)
 
-    private fun texts() = sender.sent.map { it.token to it.body }
-
-    private fun party() = "\"Party\""
-
-    @Test
-    fun aRunOfQuestionsMakesOnePluralNotificationAfterTheQuietPeriod() {
-        val id = group()
-        val dispatcher = dispatcher()
-
-        dispatcher.questionAsked(id, alice)
-        scheduler.advance(20_000)
-        dispatcher.questionAsked(id, alice)
-        scheduler.advance(20_000)
-        dispatcher.questionAsked(id, alice)
-        scheduler.advance(59_000)
-        assertEquals(emptyList(), sender.sent, "still inside the quiet period")
-
-        scheduler.advance(2_000)
-
-        assertEquals(listOf("bob-phone" to "Your Secret Santa has questions for you in ${party()}"), texts())
-        assertEquals(NotificationCategory.QUESTIONS, sender.sent.single().category)
+        assertEquals(listOf("alice-phone" to NotificationCategory.DAILY), sent())
     }
 
     @Test
-    fun aRunOfAnswersMakesOnePluralNotificationToTheSanta() {
-        val id = group()
-        val dispatcher = dispatcher()
+    fun theTimeToTheNextDigestFollowsBucharestTime() {
+        fun hoursFrom(utc: String) = NotificationDispatcher.millisUntilNextDigest(java.time.Instant.parse(utc).toEpochMilli()) / hour.toDouble()
 
-        dispatcher.questionAnswered(id, bob)
-        dispatcher.questionAnswered(id, bob)
-        scheduler.advance(61_000)
-
-        assertEquals(listOf("alice-phone" to "Your receiver answered questions in ${party()}"), texts())
-        assertEquals(NotificationCategory.ANSWERS, sender.sent.single().category)
+        assertEquals(8.0, hoursFrom("2026-12-01T10:00:00Z"), "winter, before 20:00")
+        assertEquals(24.0, hoursFrom("2026-12-01T18:00:00Z"), "exactly 20:00 means tomorrow's")
+        assertEquals(7.0, hoursFrom("2026-07-01T10:00:00Z"), "summer, 20:00 is 17:00 UTC")
+        assertEquals(22.0, hoursFrom("2026-03-28T19:00:00Z"), "the night the clocks go forward")
+        assertEquals(24.0, hoursFrom("2026-10-24T18:00:00Z"), "the night the clocks go back")
     }
 
     @Test
-    fun aSingleQuestionOrAnswerKeepsTheSingularAndIsSentAfterTheQuietPeriod() {
-        val id = group()
-        val dispatcher = dispatcher()
-
-        dispatcher.questionAsked(id, alice)
-        dispatcher.questionAnswered(id, bob)
-        assertEquals(emptyList(), sender.sent, "held, not sent at once")
-        scheduler.advance(61_000)
-
-        assertEquals(
-            listOf(
-                "bob-phone" to "Your Secret Santa has a question for you in ${party()}",
-                "alice-phone" to "Your receiver answered a question in ${party()}",
-            ),
-            texts().sortedBy { it.first }.sortedBy { if (it.first == "bob-phone") 0 else 1 },
-        )
-    }
-
-    @Test
-    fun aLaterQuestionAfterTheNotificationStartsANewSingularRound() {
-        val id = group()
-        val dispatcher = dispatcher()
-
-        dispatcher.questionAsked(id, alice)
-        scheduler.advance(61_000)
-        dispatcher.questionAsked(id, alice)
-        scheduler.advance(61_000)
-
-        assertEquals(2, sender.sent.size)
-        assertTrue(sender.sent.all { "a question" in it.body })
-    }
-
-    @Test
-    fun aRunOfQuestionsThatIsNeverQuietIsStillSentWithinFiveMinutesOfItsFirst() {
-        val id = group()
-        val dispatcher = dispatcher()
-
-        repeat(12) {
-            dispatcher.questionAsked(id, alice)
-            scheduler.advance(30_000) // never a full quiet minute
-        }
-
-        assertTrue(sender.sent.isNotEmpty(), "sent despite the questions going on")
-        assertEquals("bob-phone", sender.sent.first().token)
-        assertTrue("questions" in sender.sent.first().body)
-        // the first batch left at the five minute mark, so ten asked in the first five minutes made one plural notification
-        assertEquals(1, sender.sent.size)
-    }
-
-    @Test
-    fun questionsAnswersAndWishlistChangesOfOnePersonAreHeldApart() {
-        val id = group()
-        val dispatcher = dispatcher()
-
-        dispatcher.wishlistChanged(id, bob)
-        dispatcher.questionAnswered(id, bob)
-        dispatcher.questionAsked(id, bob)
-        scheduler.advance(61_000)
-
-        assertEquals(
-            setOf(
-                "alice-phone" to NotificationCategory.WISHLIST,
-                "alice-phone" to NotificationCategory.ANSWERS,
-                "carol-phone" to NotificationCategory.QUESTIONS,
-            ),
-            bodies().toSet(),
-        )
-        assertEquals(3, sender.sent.size)
-    }
-
-    @Test
-    fun differentPeopleAndGroupsAreHeldApartForQuestions() {
-        val id = group()
-        val dispatcher = dispatcher()
-
-        dispatcher.questionAsked(id, alice)
-        dispatcher.questionAsked(id, carol)
-        dispatcher.questionAsked(9998, alice)
-        scheduler.advance(61_000)
-
-        assertEquals(listOf("alice-phone", "bob-phone"), sender.sent.map { it.token }.sorted())
-        assertTrue(sender.sent.all { "a question" in it.body }, "one question each, so singular")
-    }
-
-    @Test
-    fun aRunOfLettersMakesOnePluralNotificationToTheSantaAfterTheQuietPeriod() {
-        val id = group()
-        val dispatcher = dispatcher()
-
-        dispatcher.letterSent(id, bob)
-        scheduler.advance(20_000)
-        dispatcher.letterSent(id, bob)
-        scheduler.advance(20_000)
-        dispatcher.letterSent(id, bob)
-        scheduler.advance(59_000)
-        assertEquals(emptyList(), sender.sent, "still inside the quiet period")
-
-        scheduler.advance(2_000)
-
-        assertEquals(listOf("alice-phone" to "Your receiver sent you letters in ${party()}"), texts())
-        assertEquals(NotificationCategory.LETTERS, sender.sent.single().category)
-    }
-
-    @Test
-    fun aSingleLetterKeepsTheSingularAndIsHeldFirst() {
-        val id = group()
-        val dispatcher = dispatcher()
-
-        dispatcher.letterSent(id, bob)
-        assertEquals(emptyList(), sender.sent, "held, not sent at once")
-        scheduler.advance(61_000)
-
-        assertEquals(listOf("alice-phone" to "Your receiver sent you a letter in ${party()}"), texts())
-    }
-
-    @Test
-    fun lettersAreHeldApartFromQuestionsAnswersAndWishlistChangesOfTheSamePerson() {
-        val id = group()
-        val dispatcher = dispatcher()
-
-        dispatcher.letterSent(id, bob)
-        dispatcher.questionAnswered(id, bob)
-        dispatcher.wishlistChanged(id, bob)
-        dispatcher.questionAsked(id, bob)
-        scheduler.advance(61_000)
-
-        assertEquals(
-            setOf(
-                "alice-phone" to NotificationCategory.LETTERS,
-                "alice-phone" to NotificationCategory.ANSWERS,
-                "alice-phone" to NotificationCategory.WISHLIST,
-                "carol-phone" to NotificationCategory.QUESTIONS,
-            ),
-            bodies().toSet(),
-        )
-    }
-
-    @Test
-    fun aRunOfLettersThatIsNeverQuietIsStillSentWithinFiveMinutesOfItsFirst() {
-        val id = group()
-        val dispatcher = dispatcher()
-
-        repeat(12) {
-            dispatcher.letterSent(id, bob)
-            scheduler.advance(30_000)
-        }
-
-        assertEquals(1, sender.sent.size)
-        assertTrue("letters" in sender.sent.single().body)
-    }
-
-    @Test
-    fun aLetterBeforeTheDrawNotifiesNobodyAndASwitchedOffSantaIsNotTold() {
-        val pending = group(pending = true)
-        dispatcher().letterSent(pending, bob)
-        scheduler.advance(61_000)
-        assertEquals(emptyList(), sender.sent)
-    }
-
-    @Test
-    fun theRecipientIsWorkedOutWhenTheNotificationIsDue() {
-        val id = group()
-        val dispatcher = dispatcher()
-
-        dispatcher.questionAsked(id, alice)
-        scheduler.advance(61_000)
-
-        assertEquals(listOf("bob-phone"), sender.sent.map { it.token })
-    }
-
-    @Test
-    fun aQuestionBeforeTheDrawNotifiesNobody() {
-        val id = group(pending = true)
-
-        dispatcher().questionAsked(id, alice)
-        scheduler.advance(61_000)
-
-        assertEquals(emptyList(), sender.sent)
-    }
-
-    @Test
-    fun aSchedulerThatRefusesSendsNothingAndFailsNothing() {
+    fun aSchedulerThatRefusesFailsNothing() {
         val id = group()
         val refusing = Scheduler { _, _ -> throw java.util.concurrent.RejectedExecutionException("shut down") }
-        val dispatcher = NotificationDispatcher(Notifier(SqliteNotificationSettingsRepository(database), devices, sender, groups), direct, refusing, clock)
+        val dispatcher = NotificationDispatcher(notifier(), direct, refusing, clock)
 
+        dispatcher.startDigest()
         dispatcher.questionAsked(id, alice)
         dispatcher.questionAnswered(id, bob)
         dispatcher.wishlistChanged(id, bob)
@@ -394,11 +203,11 @@ class NotificationDispatcherTest {
         val dispatcher = dispatcher(executor = { queued += it })
 
         dispatcher.questionAsked(id, alice)
-        scheduler.advance(61_000)
 
-        assertEquals(emptyList(), sender.sent, "nothing done on the calling thread")
+        assertEquals(emptyList(), marks.takeAll(), "nothing done on the calling thread")
+        dispatcher.questionAsked(id, alice)
         queued.forEach { it.run() }
-        assertEquals(1, sender.sent.size)
+        assertEquals(listOf(bob), marks.takeAll())
     }
 
     @Test
@@ -407,7 +216,6 @@ class NotificationDispatcherTest {
 
         dispatcher(executor = { throw java.util.concurrent.RejectedExecutionException("shut down") }).questionAsked(id, alice)
         dispatcher(executor = { it.run() }).questionAsked(9999, alice)
-        scheduler.advance(61_000)
         dispatcher(executor = { throw IllegalStateException("boom") }).groupDrawn(groups.find(id)!!, boss)
     }
 }

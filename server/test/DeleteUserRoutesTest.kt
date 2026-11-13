@@ -99,6 +99,7 @@ class DeleteUserRoutesTest {
         world()
         fx.sql("INSERT INTO push_devices (token, username, platform, created_at) VALUES ('t1', 'erin', 'android', 1)")
         fx.sql("INSERT INTO notification_prefs (username, wishlist) VALUES ('erin', 0)")
+        fx.sql("INSERT INTO digest_marks (username, marked_at) VALUES ('erin', 1)")
         fx.sql("INSERT INTO login_attempts (username, failures) VALUES ('erin', 2)")
         val group = fx.addGroup("admin-a", "alice", state = "pending", name = "Other")
         // what is left of a wishlist when someone was removed from a Pending group
@@ -112,6 +113,7 @@ class DeleteUserRoutesTest {
         assertFalse(exists("erin"))
         assertEquals(0, count("SELECT COUNT(*) FROM push_devices WHERE username = 'erin'"))
         assertEquals(0, count("SELECT COUNT(*) FROM notification_prefs WHERE username = 'erin'"))
+        assertEquals(0, count("SELECT COUNT(*) FROM digest_marks WHERE username = 'erin'"))
         assertEquals(0, count("SELECT COUNT(*) FROM login_attempts WHERE username = 'erin'"))
         assertEquals(0, count("SELECT COUNT(*) FROM wishlist_items WHERE username = 'erin'"))
         assertEquals(0, count("SELECT COUNT(*) FROM announcement_reads WHERE username = 'erin'"))

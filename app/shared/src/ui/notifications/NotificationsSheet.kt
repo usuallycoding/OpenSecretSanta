@@ -59,17 +59,8 @@ fun NotificationsSheet(viewModel: NotificationsViewModel, onDismiss: () -> Unit)
                 SwitchRow(Strings.NOTIFICATIONS_ANNOUNCEMENTS, Strings.NOTIFICATIONS_ANNOUNCEMENTS_NOTE, ui.switches.announcements, ui.togglesEnabled) {
                     viewModel.setSwitch(NotificationCategory.ANNOUNCEMENTS, it)
                 }
-                SwitchRow(Strings.NOTIFICATIONS_WISHLIST, Strings.NOTIFICATIONS_WISHLIST_NOTE, ui.switches.wishlist, ui.togglesEnabled) {
-                    viewModel.setSwitch(NotificationCategory.WISHLIST, it)
-                }
-                SwitchRow(Strings.NOTIFICATIONS_QUESTIONS, Strings.NOTIFICATIONS_QUESTIONS_NOTE, ui.switches.questions, ui.togglesEnabled) {
-                    viewModel.setSwitch(NotificationCategory.QUESTIONS, it)
-                }
-                SwitchRow(Strings.NOTIFICATIONS_ANSWERS, Strings.NOTIFICATIONS_ANSWERS_NOTE, ui.switches.answers, ui.togglesEnabled) {
-                    viewModel.setSwitch(NotificationCategory.ANSWERS, it)
-                }
-                SwitchRow(Strings.NOTIFICATIONS_LETTERS, Strings.NOTIFICATIONS_LETTERS_NOTE, ui.switches.letters, ui.togglesEnabled) {
-                    viewModel.setSwitch(NotificationCategory.LETTERS, it)
+                SwitchRow(Strings.NOTIFICATIONS_DAILY, Strings.NOTIFICATIONS_DAILY_NOTE, ui.switches.daily, ui.togglesEnabled) {
+                    viewModel.setSwitch(NotificationCategory.DAILY, it)
                 }
                 ui.message?.let {
                     Text(it.text(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)

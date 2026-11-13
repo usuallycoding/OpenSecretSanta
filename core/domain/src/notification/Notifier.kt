@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.domain.notification
 
+import com.usuallycoding.opensecretsanta.domain.auth.Clock
 import com.usuallycoding.opensecretsanta.domain.group.Group
 import com.usuallycoding.opensecretsanta.domain.group.GroupRepository
 import com.usuallycoding.opensecretsanta.domain.group.GroupState
@@ -11,18 +12,9 @@ object NotificationTexts {
 
     fun groupVisible(group: String) = "You are in a new group: $group"
     fun groupDrawn(group: String) = "The names for $group have been drawn"
-    fun wishlistChanged(group: String) = "Your receiver changed their wishlist in $group"
 
-    /** [count] questions came in while the notification was held: one is "a question", several are "questions", never how many. */
-    fun questionAsked(group: String, count: Int = 1) =
-        if (count > 1) "Your Secret Santa has questions for you in $group" else "Your Secret Santa has a question for you in $group"
-
-    fun questionAnswered(group: String, count: Int = 1) =
-        if (count > 1) "Your receiver answered questions in $group" else "Your receiver answered a question in $group"
-
-    /** [count] letters came in while the notification was held: one is "a letter", several are "letters", never how many, never what they say. */
-    fun letterSent(group: String, count: Int = 1) =
-        if (count > 1) "Your receiver sent you letters in $group" else "Your receiver sent you a letter in $group"
+    /** The daily digest: it names nothing, neither a group, a kind of change nor a person. */
+    const val DAILY = "Some things changed in your groups"
 }
 
 /**
@@ -30,13 +22,17 @@ object NotificationTexts {
  * after the action that caused it was stored and never throws: a failure only means that nobody is told. Devices the
  * push service says are gone are forgotten.
  *
- * Nothing it sends carries a question, an answer, a letter, a wishlist item or the name of a Santa; only the group's name.
+ * Announcements are sent at once. A change to a wishlist, a question, an answer or a letter sends nothing: it marks the person it
+ * is for, and [sendDigest] tells every marked person once a day. Nothing it sends carries a question, an answer, a letter, a
+ * wishlist item or the name of a Santa, and the digest not even a group's name.
  */
 class Notifier(
     private val settings: NotificationSettingsRepository,
     private val devices: DeviceRepository,
     private val sender: PushSender,
     private val groups: GroupRepository,
+    private val marks: DigestMarkRepository,
+    private val clock: Clock,
 ) {
     /** [recipients] can now see [group]; [actor], who made it so, is not told. */
     fun groupVisible(group: Group, recipients: Collection<Username>, actor: Username) =
@@ -49,36 +45,48 @@ class Notifier(
             deliver(NotificationCategory.ANNOUNCEMENTS, group.participants.filter { it != actor }, group.id, NotificationTexts.groupDrawn(name(group)))
         }
 
-    /** [editor] changed their wishlist: their Santa is told, once the group has been drawn. */
+    /** [editor] changed their wishlist: their Santa has news, once the group has been drawn. */
     fun wishlistChanged(groupId: Long, editor: Username) =
         attempt {
-            val group = groups.find(groupId)?.takeIf { it.state == GroupState.ACTIVE } ?: return@attempt
+            groups.find(groupId)?.takeIf { it.state == GroupState.ACTIVE } ?: return@attempt
             val santa = groups.santaOf(groupId, editor) ?: return@attempt
-            deliver(NotificationCategory.WISHLIST, listOf(santa), groupId, NotificationTexts.wishlistChanged(name(group)))
+            marks.mark(santa, clock.nowMillis())
         }
 
-    /** [santa] asked [count] questions (several, when they were held and sent together): their receiver is told. */
-    fun questionAsked(groupId: Long, santa: Username, count: Int = 1) =
+    /** [santa] asked a question: their receiver has news. */
+    fun questionAsked(groupId: Long, santa: Username) =
         attempt {
-            val group = groups.find(groupId) ?: return@attempt
+            groups.find(groupId)?.takeIf { it.state == GroupState.ACTIVE } ?: return@attempt
             val receiver = groups.receiverOf(groupId, santa) ?: return@attempt
-            deliver(NotificationCategory.QUESTIONS, listOf(receiver), groupId, NotificationTexts.questionAsked(name(group), count))
+            marks.mark(receiver, clock.nowMillis())
         }
 
-    /** [receiver] answered [count] questions (several, when they were held and sent together): their Santa is told. */
-    fun questionAnswered(groupId: Long, receiver: Username, count: Int = 1) =
+    /** [receiver] answered a question: their Santa has news. */
+    fun questionAnswered(groupId: Long, receiver: Username) =
         attempt {
-            val group = groups.find(groupId) ?: return@attempt
+            groups.find(groupId)?.takeIf { it.state == GroupState.ACTIVE } ?: return@attempt
             val santa = groups.santaOf(groupId, receiver) ?: return@attempt
-            deliver(NotificationCategory.ANSWERS, listOf(santa), groupId, NotificationTexts.questionAnswered(name(group), count))
+            marks.mark(santa, clock.nowMillis())
         }
 
-    /** [receiver] sent [count] letters (several, when they were held and sent together): their Santa is told. */
-    fun letterSent(groupId: Long, receiver: Username, count: Int = 1) =
+    /** [receiver] sent a letter: their Santa has news. */
+    fun letterSent(groupId: Long, receiver: Username) =
         attempt {
-            val group = groups.find(groupId) ?: return@attempt
+            groups.find(groupId)?.takeIf { it.state == GroupState.ACTIVE } ?: return@attempt
             val santa = groups.santaOf(groupId, receiver) ?: return@attempt
-            deliver(NotificationCategory.LETTERS, listOf(santa), groupId, NotificationTexts.letterSent(name(group), count))
+            marks.mark(santa, clock.nowMillis())
+        }
+
+    /**
+     * The daily digest: every marked person who has the daily switch on is sent one message on each device, and every mark is cleared
+     * whether or not anything was sent, so that a switch turned on later does not release old news.
+     */
+    fun sendDigest() =
+        attempt {
+            val marked = marks.takeAll()
+            if (!sender.enabled || marked.isEmpty()) return@attempt
+            val wanting = settings.findAll(marked).filterValues { it.allows(NotificationCategory.DAILY) }.keys
+            dispatch(devices.devicesOf(wanting).map { PushMessage(it.token, NotificationCategory.DAILY, null, NotificationTexts.TITLE, NotificationTexts.DAILY) })
         }
 
     /** Whether a push service is set up at all. */

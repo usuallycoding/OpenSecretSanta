@@ -1,6 +1,7 @@
 package com.usuallycoding.opensecretsanta.server.data.notification
 
 import com.usuallycoding.opensecretsanta.domain.notification.DevicePlatform
+import com.usuallycoding.opensecretsanta.domain.notification.DigestMarkRepository
 import com.usuallycoding.opensecretsanta.domain.notification.DeviceRepository
 import com.usuallycoding.opensecretsanta.domain.notification.NotificationSettings
 import com.usuallycoding.opensecretsanta.domain.notification.NotificationSettingsRepository
@@ -84,7 +85,7 @@ class SqliteNotificationSettingsRepository(private val database: Database) : Not
         val saved = database.connection().use { c ->
             usernames.distinct().chunked(CHUNK).flatMap { names ->
                 c.prepareStatement(
-                    "SELECT username, announcements, wishlist, questions, answers, letters FROM notification_prefs " +
+                    "SELECT username, announcements, daily FROM notification_prefs " +
                         "WHERE username IN (${names.joinToString { "?" }})",
                 ).use { s ->
                     names.forEachIndexed { i, name -> s.setString(i + 1, name.value) }
@@ -93,10 +94,7 @@ class SqliteNotificationSettingsRepository(private val database: Database) : Not
                             if (rows.next()) {
                                 Username.parse(rows.getString(1)) to NotificationSettings(
                                     announcements = rows.getInt(2) == 1,
-                                    wishlist = rows.getInt(3) == 1,
-                                    questions = rows.getInt(4) == 1,
-                                    answers = rows.getInt(5) == 1,
-                                    letters = rows.getInt(6) == 1,
+                                    daily = rows.getInt(3) == 1,
                                 )
                             } else {
                                 null
@@ -112,16 +110,19 @@ class SqliteNotificationSettingsRepository(private val database: Database) : Not
     override fun save(username: Username, settings: NotificationSettings) {
         database.connection().use { c ->
             c.prepareStatement(
-                "INSERT INTO notification_prefs (username, announcements, wishlist, questions, answers, letters) VALUES (?, ?, ?, ?, ?, ?) " +
+                // the four older columns follow the digest switch, so that a server from before it reads the same choice
+                "INSERT INTO notification_prefs (username, announcements, wishlist, questions, answers, letters, daily) VALUES (?, ?, ?, ?, ?, ?, ?) " +
                     "ON CONFLICT (username) DO UPDATE SET announcements = excluded.announcements, wishlist = excluded.wishlist, " +
-                    "questions = excluded.questions, answers = excluded.answers, letters = excluded.letters",
+                    "questions = excluded.questions, answers = excluded.answers, letters = excluded.letters, daily = excluded.daily",
             ).use { s ->
                 s.setString(1, username.value)
                 s.setInt(2, settings.announcements.toInt())
-                s.setInt(3, settings.wishlist.toInt())
-                s.setInt(4, settings.questions.toInt())
-                s.setInt(5, settings.answers.toInt())
-                s.setInt(6, settings.letters.toInt())
+                val daily = settings.daily.toInt()
+                s.setInt(3, daily)
+                s.setInt(4, daily)
+                s.setInt(5, daily)
+                s.setInt(6, daily)
+                s.setInt(7, daily)
                 s.executeUpdate()
             }
         }
@@ -132,4 +133,27 @@ class SqliteNotificationSettingsRepository(private val database: Database) : Not
     private companion object {
         const val CHUNK = 500
     }
+}
+
+class SqliteDigestMarkRepository(private val database: Database) : DigestMarkRepository {
+
+    override fun mark(username: Username, atMillis: Long) {
+        database.connection().use { c ->
+            // a person already marked keeps the earlier time
+            c.prepareStatement("INSERT INTO digest_marks (username, marked_at) VALUES (?, ?) ON CONFLICT (username) DO NOTHING").use { s ->
+                s.setString(1, username.value)
+                s.setLong(2, atMillis)
+                s.executeUpdate()
+            }
+        }
+    }
+
+    override fun takeAll(): List<Username> =
+        database.transaction { c ->
+            val marked = c.prepareStatement("SELECT username FROM digest_marks ORDER BY marked_at, username").use { s ->
+                s.executeQuery().use { rows -> generateSequence { if (rows.next()) Username.parse(rows.getString(1)) else null }.toList() }
+            }
+            c.prepareStatement("DELETE FROM digest_marks").use { it.executeUpdate() }
+            marked
+        }
 }

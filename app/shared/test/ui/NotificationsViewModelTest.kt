@@ -27,7 +27,7 @@ class NotificationsViewModelTest {
         return NotificationsViewModel(server.api, registration, immediateScope()).also { it.refresh().join() }
     }
 
-    private fun savedSwitches() = with(server.notifications.settings) { NotificationSwitches(announcements, wishlist, questions, answers, letters) }
+    private fun savedSwitches() = with(server.notifications.settings) { NotificationSwitches(announcements, daily != false) }
 
     // --- loading ---
 
@@ -43,11 +43,11 @@ class NotificationsViewModelTest {
 
     @Test
     fun theSavedChoicesAreShown() = runTest {
-        server.notifications.settings = NotificationSettingsRequest(announcements = true, wishlist = true, questions = false, answers = true)
+        server.notifications.settings = NotificationSettingsRequest(announcements = true, daily = false)
 
         val ui = viewModel().ui.value
 
-        assertEquals(NotificationSwitches(questions = false), ui.switches)
+        assertEquals(NotificationSwitches(daily = false), ui.switches)
     }
 
     @Test
@@ -207,66 +207,48 @@ class NotificationsViewModelTest {
         assertNull(model.setDevice(true))
     }
 
-    // --- the five toggles ---
+    // --- the two toggles ---
 
     @Test
     fun aToggleIsSavedAtOnceAndStillThereWhenTheSheetIsOpenedAgain() = runTest {
         push.turnOn()
         val model = viewModel()
 
-        model.setSwitch(NotificationCategory.WISHLIST, false)!!.join()
+        model.setSwitch(NotificationCategory.DAILY, false)!!.join()
 
-        assertEquals(NotificationSwitches(wishlist = false), model.ui.value.switches)
-        assertEquals(NotificationSwitches(wishlist = false), savedSwitches())
-        assertEquals(NotificationSwitches(wishlist = false), viewModel().ui.value.switches)
+        assertEquals(NotificationSwitches(daily = false), model.ui.value.switches)
+        assertEquals(NotificationSwitches(daily = false), savedSwitches())
+        assertEquals(NotificationSwitches(daily = false), viewModel().ui.value.switches)
     }
 
     @Test
-    fun theFiveTogglesAreIndependent() = runTest {
+    fun theTwoTogglesAreIndependent() = runTest {
         push.turnOn()
         val model = viewModel()
 
         NotificationCategory.entries.forEach { model.setSwitch(it, false)!!.join() }
-        assertEquals(NotificationSwitches(false, false, false, false, false), savedSwitches())
+        assertEquals(NotificationSwitches(false, false), savedSwitches())
 
-        model.setSwitch(NotificationCategory.ANSWERS, true)!!.join()
-        assertEquals(NotificationSwitches(false, false, false, true, false), savedSwitches())
+        model.setSwitch(NotificationCategory.DAILY, true)!!.join()
+        assertEquals(NotificationSwitches(announcements = false, daily = true), savedSwitches())
 
-        model.setSwitch(NotificationCategory.LETTERS, true)!!.join()
-        assertEquals(NotificationSwitches(false, false, false, true, true), savedSwitches())
+        model.setSwitch(NotificationCategory.ANNOUNCEMENTS, true)!!.join()
+        assertEquals(NotificationSwitches(), savedSwitches())
     }
 
     @Test
-    fun theLettersToggleIsOnByDefaultAndSavedAtOnce() = runTest {
+    fun theDailyDigestToggleIsOnByDefault() = runTest {
         push.turnOn()
-        val model = viewModel()
-        assertTrue(model.ui.value.switches.letters)
 
-        model.setSwitch(NotificationCategory.LETTERS, false)!!.join()
-
-        assertEquals(NotificationSwitches(letters = false), model.ui.value.switches)
-        assertEquals(NotificationSwitches(letters = false), savedSwitches())
-        assertEquals(NotificationSwitches(letters = false), viewModel().ui.value.switches)
+        assertTrue(viewModel().ui.value.switches.daily)
     }
 
     @Test
-    fun theLettersToggleIsDisabledWhileTheDeviceSwitchIsOff() = runTest {
+    fun theTogglesAreDisabledWhileTheDeviceSwitchIsOff() = runTest {
         val model = viewModel()
 
         assertFalse(model.ui.value.togglesEnabled)
-        assertNull(model.setSwitch(NotificationCategory.LETTERS, false))
-    }
-
-    @Test
-    fun aLettersToggleThatCannotBeSavedGoesBackAndSaysSo() = runTest {
-        push.turnOn()
-        val model = viewModel()
-        server.notifications.failNextSaveWith(HttpStatusCode.InternalServerError)
-
-        model.setSwitch(NotificationCategory.LETTERS, false)!!.join()
-
-        assertTrue(model.ui.value.switches.letters)
-        assertEquals(NotificationsMessage.SaveFailed, model.ui.value.message)
+        assertNull(model.setSwitch(NotificationCategory.DAILY, false))
     }
 
     @Test
@@ -275,7 +257,7 @@ class NotificationsViewModelTest {
         val model = viewModel()
         server.notifications.failNextSaveWith(HttpStatusCode.InternalServerError)
 
-        model.setSwitch(NotificationCategory.QUESTIONS, false)!!.join()
+        model.setSwitch(NotificationCategory.DAILY, false)!!.join()
 
         assertEquals(NotificationSwitches(), model.ui.value.switches)
         assertEquals(NotificationsMessage.SaveFailed, model.ui.value.message)
@@ -298,19 +280,19 @@ class NotificationsViewModelTest {
     fun aFailedSaveGoesBackToWhatTheServerLastConfirmedNotToWhatWasBeforeTheTap() = runTest {
         push.turnOn()
         val model = viewModel()
-        model.setSwitch(NotificationCategory.WISHLIST, false)!!.join()
+        model.setSwitch(NotificationCategory.DAILY, false)!!.join()
         server.notifications.failNextSaveWith(HttpStatusCode.InternalServerError)
 
-        model.setSwitch(NotificationCategory.ANSWERS, false)!!.join()
+        model.setSwitch(NotificationCategory.ANNOUNCEMENTS, false)!!.join()
 
-        assertEquals(NotificationSwitches(wishlist = false), model.ui.value.switches)
+        assertEquals(NotificationSwitches(daily = false), model.ui.value.switches)
     }
 
     @Test
     fun togglesAreInertWhileTheDeviceIsOff() = runTest {
         val model = viewModel()
 
-        assertNull(model.setSwitch(NotificationCategory.WISHLIST, false))
+        assertNull(model.setSwitch(NotificationCategory.DAILY, false))
 
         assertEquals(NotificationSwitches(), model.ui.value.switches)
         assertEquals(emptyList(), server.calls.filter { it.startsWith("PUT /notifications ") || it == "PUT /notifications" })
@@ -322,7 +304,7 @@ class NotificationsViewModelTest {
         val model = viewModel()
         server.calls.clear()
 
-        assertNull(model.setSwitch(NotificationCategory.WISHLIST, true))
+        assertNull(model.setSwitch(NotificationCategory.DAILY, true))
 
         assertEquals(emptyList(), server.calls)
     }

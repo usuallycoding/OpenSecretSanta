@@ -34,7 +34,7 @@ class ApplicationTest {
         val response = client.get(ApiRoutes.HEALTH)
 
         assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals(HealthResponse("ok", schemaVersion = 17, apiVersion = ApiVersion.CURRENT, androidDownload = false), Json.decodeFromString(response.bodyAsText()))
+        assertEquals(HealthResponse("ok", schemaVersion = 18, apiVersion = ApiVersion.CURRENT, androidDownload = false), Json.decodeFromString(response.bodyAsText()))
     }
 
     @Test
@@ -72,7 +72,7 @@ class ApplicationTest {
         val response = client.get(ApiRoutes.HEALTH)
 
         assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals(HealthResponse("ok", schemaVersion = 17, apiVersion = ApiVersion.CURRENT, androidDownload = false), Json.decodeFromString(response.bodyAsText()))
+        assertEquals(HealthResponse("ok", schemaVersion = 18, apiVersion = ApiVersion.CURRENT, androidDownload = false), Json.decodeFromString(response.bodyAsText()))
     }
 
     @Test

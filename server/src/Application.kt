@@ -160,6 +160,8 @@ fun Application.module(
         throw ConfigurationException(e.field, e.message.orEmpty())
     }
 
+    get<NotificationDispatcher>().startDigest()
+
     routing {
         healthRoutes(get<HealthService>())
         downloadRoutes(get<ApkDownloads>())

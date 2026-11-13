@@ -45,7 +45,7 @@ class SendAnnouncementTest {
     private val settings = FakeSettings()
     private val devices = FakeDevices()
     private val sender = RecordingPushSender()
-    private val notifier = Notifier(settings, devices, sender, groups)
+    private val notifier = Notifier(settings, devices, sender, groups, FakeDigestMarks(), FakeClock())
     private val mailer = AnnouncementMailer()
     private val infos = FakeDeliveryInfos()
     private val announcements = InMemoryAnnouncements(groups)

@@ -9,6 +9,7 @@ import com.usuallycoding.opensecretsanta.server.data.db.ClasspathMigrations
 import com.usuallycoding.opensecretsanta.server.data.db.Database
 import com.usuallycoding.opensecretsanta.server.data.db.MigrationRunner
 import com.usuallycoding.opensecretsanta.server.data.notification.SqliteDeviceRepository
+import com.usuallycoding.opensecretsanta.server.data.notification.SqliteDigestMarkRepository
 import com.usuallycoding.opensecretsanta.server.data.notification.SqliteNotificationSettingsRepository
 import com.usuallycoding.opensecretsanta.server.data.user.SqliteUserRepository
 import kotlin.test.Test
@@ -94,33 +95,47 @@ class SqliteNotificationRepositoriesTest {
     }
 
     @Test
-    fun oneSwitchCanBeTurnedOffWithoutTouchingTheOthers() {
-        settings.save(alice, NotificationSettings(questions = false))
+    fun oneSwitchCanBeTurnedOffWithoutTouchingTheOther() {
+        settings.save(alice, NotificationSettings(daily = false))
 
         val saved = settings.find(alice)
-        assertFalse(saved.allows(NotificationCategory.QUESTIONS))
+        assertFalse(saved.allows(NotificationCategory.DAILY))
         assertTrue(saved.allows(NotificationCategory.ANNOUNCEMENTS))
-        assertTrue(saved.allows(NotificationCategory.WISHLIST))
-        assertTrue(saved.allows(NotificationCategory.ANSWERS))
         assertEquals(NotificationSettings(), settings.find(bob))
     }
 
     @Test
-    fun theLettersSwitchIsSavedAndRead() {
-        settings.save(alice, NotificationSettings(letters = false))
+    fun savingAgainReplacesTheChoices() {
+        settings.save(alice, NotificationSettings(announcements = false, daily = false))
+        settings.save(alice, NotificationSettings(announcements = true, daily = false))
 
-        val saved = settings.find(alice)
-        assertFalse(saved.allows(NotificationCategory.LETTERS))
-        assertTrue(saved.allows(NotificationCategory.QUESTIONS))
-        assertTrue(settings.find(bob).allows(NotificationCategory.LETTERS))
+        assertEquals(NotificationSettings(daily = false), settings.find(alice))
     }
 
     @Test
-    fun savingAgainReplacesTheChoices() {
-        settings.save(alice, NotificationSettings(questions = false, answers = false))
-        settings.save(alice, NotificationSettings(answers = true, wishlist = false))
+    fun theFourOlderColumnsFollowTheDigestSwitch() {
+        settings.save(alice, NotificationSettings(daily = false))
 
-        assertEquals(NotificationSettings(wishlist = false), settings.find(alice))
+        val older = database.connection().use { c ->
+            c.createStatement().use { s ->
+                s.executeQuery("SELECT wishlist, questions, answers, letters FROM notification_prefs WHERE username = 'alice'").use {
+                    it.next()
+                    (1..4).map(it::getInt)
+                }
+            }
+        }
+        assertEquals(listOf(0, 0, 0, 0), older)
+    }
+
+    @Test
+    fun aMarkIsKeptOncePerPersonAndTakingThemAllClearsThem() {
+        val marks = SqliteDigestMarkRepository(database)
+        marks.mark(bob, 5)
+        marks.mark(alice, 7)
+        marks.mark(bob, 9)
+
+        assertEquals(listOf(bob, alice), marks.takeAll())
+        assertEquals(emptyList(), marks.takeAll())
     }
 
     @Test
