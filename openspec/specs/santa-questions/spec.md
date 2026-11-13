@@ -7,7 +7,7 @@ Defines the conversation between a Secret Santa and the person they give a gift 
 ## Requirements
 
 ### Requirement: Ask a question
-The server SHALL expose `POST /groups/{id}/receiver/questions` letting a participant of an Active group ask their receiver a question of 1 to 1000 characters. Each Santa SHALL be able to ask any number of questions up to 200 per group, and each question SHALL get a number counting up from 1 within that Santa's own thread.
+The server SHALL expose `POST /groups/{id}/receiver/questions` letting a participant of an Active group ask their receiver a question of 1 to 1000 characters. Each Santa SHALL be able to have up to 200 questions per group, and each question SHALL get a number higher than every number that Santa's thread has ever used.
 
 #### Scenario: First and second question
 - **WHEN** a Santa asks two questions in an Active group
@@ -22,8 +22,12 @@ The server SHALL expose `POST /groups/{id}/receiver/questions` letting a partici
 - **THEN** the response is 400 naming `text` and nothing is stored
 
 #### Scenario: Question limit
-- **WHEN** a Santa who has asked 200 questions in a group asks another
+- **WHEN** a Santa who has 200 questions in a group asks another
 - **THEN** the response is 409 with code `invalid_state` and no question is added
+
+#### Scenario: Numbers are not reused
+- **WHEN** a Santa deletes their highest-numbered question and then asks a new one
+- **THEN** the new question gets the next number after the deleted one, never the deleted number
 
 ### Requirement: Questions only while Active
 Questions and answers SHALL be written only while the group is Active. In an Archived group the thread SHALL stay readable but SHALL NOT change.
@@ -81,13 +85,6 @@ The server SHALL expose `PUT /groups/{id}/santa/questions/{number}/answer` letti
 - **WHEN** the answer is blank or longer than 2000 characters
 - **THEN** the response is 400 naming `text` and the previous answer is unchanged
 
-### Requirement: Questions are not editable
-Once asked, a question SHALL NOT be changed or deleted by anyone.
-
-#### Scenario: No way to change a question
-- **WHEN** a Santa wants to correct or remove a question they asked
-- **THEN** no endpoint allows it and the question stays exactly as asked
-
 ### Requirement: Threads are private to the pair
 A thread SHALL be readable and writable only by its Santa (for questions) and its receiver (for answers), with one exception: the owner of the group SHALL be able to read every thread through `GET /admin/groups/{id}/questions` as described by the admin-oversight capability. No other participant and no other admin SHALL have any way to read the content, and no admin, including the owner, SHALL have any way to write it.
 
@@ -106,3 +103,45 @@ A thread SHALL be readable and writable only by its Santa (for questions) and it
 #### Scenario: Other admins
 - **WHEN** an admin who does not own the group requests its questions through any admin endpoint
 - **THEN** the response is 404 and contains no question or answer text
+
+### Requirement: Santa deletes an unanswered question
+The server SHALL expose `DELETE /groups/{id}/receiver/questions/{number}` letting a participant of an Active group delete one of their own questions that has no answer, answering 204. The question SHALL disappear from the Santa's thread and from the receiver's. The path and the answer SHALL name no user.
+
+#### Scenario: Delete an unanswered question
+- **WHEN** a Santa deletes question 2, which has no answer
+- **THEN** the response is 204 and neither the Santa's nor the receiver's list contains it
+
+#### Scenario: Other questions keep their numbers
+- **WHEN** a Santa with questions 1, 2 and 3 deletes question 2
+- **THEN** the thread holds questions 1 and 3 and their numbers are unchanged
+
+#### Scenario: Answered question
+- **WHEN** a Santa deletes a question that has an answer
+- **THEN** the response is 409 with code `invalid_state` and the question and its answer are unchanged
+
+#### Scenario: Unknown question
+- **WHEN** a Santa deletes a number that is not in their thread, including one deleted before
+- **THEN** the response is 404
+
+#### Scenario: Only their own questions
+- **WHEN** a participant deletes a number
+- **THEN** only a question in the thread they asked as a Santa can be deleted, never one they received
+
+#### Scenario: Group not Active
+- **WHEN** a Santa deletes a question in a Pending or an Archived group
+- **THEN** the response is 409 with code `invalid_state` and nothing changes
+
+#### Scenario: Frees a place
+- **WHEN** a Santa who has 200 questions deletes an unanswered one
+- **THEN** they can ask one more
+
+### Requirement: Deleting and answering do not interleave
+A question SHALL be either deleted or answered, never both: when a delete and an answer to the same question arrive together, the one the server handles second SHALL be refused.
+
+#### Scenario: Answer arrives after the delete
+- **WHEN** the receiver answers a question the Santa has just deleted
+- **THEN** the response is 404 and no answer is stored
+
+#### Scenario: Delete arrives after the answer
+- **WHEN** the Santa deletes a question the receiver has just answered
+- **THEN** the response is 409 with code `invalid_state` and the question keeps its answer
