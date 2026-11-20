@@ -11,5 +11,5 @@ package com.usuallycoding.opensecretsanta.contract
  * the server) before the server that reports the new number goes live.
  */
 object ApiVersion {
-    const val CURRENT = 4
+    const val CURRENT = 5
 }
