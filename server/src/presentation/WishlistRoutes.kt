@@ -11,6 +11,8 @@ import com.usuallycoding.opensecretsanta.domain.wishlist.AddWishlistItem
 import com.usuallycoding.opensecretsanta.domain.wishlist.DeleteWishlistItem
 import com.usuallycoding.opensecretsanta.domain.wishlist.GetMyWishlist
 import com.usuallycoding.opensecretsanta.domain.wishlist.GetReceiverWishlist
+import com.usuallycoding.opensecretsanta.domain.wishlist.LinkPreview
+import com.usuallycoding.opensecretsanta.domain.wishlist.LinkPreviewResolver
 import com.usuallycoding.opensecretsanta.domain.wishlist.ReorderWishlist
 import com.usuallycoding.opensecretsanta.domain.wishlist.SharedWishlistItem
 import com.usuallycoding.opensecretsanta.domain.wishlist.UpdateWishlistItem
@@ -28,9 +30,11 @@ import java.time.Instant
 
 private fun iso(millis: Long): String = Instant.ofEpochMilli(millis).toString()
 
-private fun WishlistItem.toDto() = WishlistItemDto(id, title, note, urls.firstOrNull(), iso(createdAtMillis), iso(updatedAtMillis), urls)
+private fun WishlistItem.toDto(previews: Map<String, LinkPreview>) =
+    WishlistItemDto(id, title, note, urls.firstOrNull(), iso(createdAtMillis), iso(updatedAtMillis), urls, previews.toDtoMap(urls))
 
-private fun SharedWishlistItem.toDto() = SharedWishlistItemDto(title, note, urls.firstOrNull(), iso(createdAtMillis), iso(updatedAtMillis), urls)
+private fun SharedWishlistItem.toDto(previews: Map<String, LinkPreview>) =
+    SharedWishlistItemDto(title, note, urls.firstOrNull(), iso(createdAtMillis), iso(updatedAtMillis), urls, previews.toDtoMap(urls))
 
 /** A non-numeric item id can never match an item, so it is reported like any other missing item. */
 private fun ApplicationCall.itemId(): Long =
@@ -44,10 +48,13 @@ fun Route.wishlistRoutes(
     deleteItem: DeleteWishlistItem,
     reorder: ReorderWishlist,
     notifications: NotificationDispatcher,
+    previews: LinkPreviewResolver,
 ) {
     get(ApiRoutes.GROUP_WISHLIST) {
         val user = call.currentUser()
-        call.respond(blocking { getWishlist(user, call.groupId()) }.map { it.toDto() })
+        val items = blocking { getWishlist(user, call.groupId()) }
+        val previewMap = blocking { previews.lookupAndEnqueue(items.flatMap { it.urls }) }
+        call.respond(items.map { it.toDto(previewMap) })
     }
     post(ApiRoutes.GROUP_WISHLIST_ITEMS) {
         val user = call.currentUser()
@@ -55,7 +62,8 @@ fun Route.wishlistRoutes(
         val request = call.receive<WishlistItemRequest>()
         val item = blocking { addItem(user, groupId, request.title, request.note, request.urls, request.url) }
         notifications.wishlistChanged(groupId, user.username)
-        call.respond(HttpStatusCode.Created, item.toDto())
+        val previewMap = blocking { previews.lookupAndEnqueue(item.urls) }
+        call.respond(HttpStatusCode.Created, item.toDto(previewMap))
     }
     put(ApiRoutes.GROUP_WISHLIST_ITEM) {
         val user = call.currentUser()
@@ -64,7 +72,8 @@ fun Route.wishlistRoutes(
         val request = call.receive<WishlistItemRequest>()
         val item = blocking { updateItem(user, groupId, itemId, request.title, request.note, request.urls, request.url) }
         notifications.wishlistChanged(groupId, user.username)
-        call.respond(item.toDto())
+        val previewMap = blocking { previews.lookupAndEnqueue(item.urls) }
+        call.respond(item.toDto(previewMap))
     }
     delete(ApiRoutes.GROUP_WISHLIST_ITEM) {
         val user = call.currentUser()
@@ -78,14 +87,18 @@ fun Route.wishlistRoutes(
         val user = call.currentUser()
         val groupId = call.groupId()
         val request = call.receive<ReorderWishlistRequest>()
-        call.respond(blocking { reorder(user, groupId, request.itemIds) }.map { it.toDto() })
+        val items = blocking { reorder(user, groupId, request.itemIds) }
+        val previewMap = blocking { previews.lookupAndEnqueue(items.flatMap { it.urls }) }
+        call.respond(items.map { it.toDto(previewMap) })
     }
 }
 
 /** What a Santa may read: their receiver's list for this group, without ids and without any record of the read. */
-fun Route.receiverWishlistRoutes(getReceiverWishlist: GetReceiverWishlist) {
+fun Route.receiverWishlistRoutes(getReceiverWishlist: GetReceiverWishlist, previews: LinkPreviewResolver) {
     get(ApiRoutes.GROUP_RECEIVER_WISHLIST) {
         val user = call.currentUser()
-        call.respond(blocking { getReceiverWishlist(user, call.groupId()) }.map { it.toDto() })
+        val items = blocking { getReceiverWishlist(user, call.groupId()) }
+        val previewMap = blocking { previews.lookupAndEnqueue(items.flatMap { it.urls }) }
+        call.respond(items.map { it.toDto(previewMap) })
     }
 }

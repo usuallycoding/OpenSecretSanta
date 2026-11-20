@@ -21,9 +21,11 @@ class ReceiverWishlistViewModel(
     val groupId: Long,
     private val api: ApiClient,
     scope: CoroutineScope,
+    pendingPreviewDelays: List<Long> = PendingPreviewRefresher.DEFAULT_DELAYS_MILLIS,
 ) : ViewModel(scope) {
     private val tracker = ReadTracker(api, groupId, scope, KIND_WISHLIST)
     private val loader = Loader(scope) { load() }
+    private val previewRefresher = PendingPreviewRefresher(scope, ::refreshPendingPreviews, pendingPreviewDelays)
 
     val state: StateFlow<LoadState<List<SharedWishItem>>> = loader.state
 
@@ -39,6 +41,19 @@ class ReceiverWishlistViewModel(
         }
         tracker.ensureBaseline()
         tracker.shown(newestOf(items.flatMap { listOf(it.createdAt, it.updatedAt) }))
-        return ApiResult.Success(items.map { it.toItem(tracker.baseline) })
+        val mapped = items.map { it.toItem(tracker.baseline) }
+        previewRefresher.sync(hasPendingPreviews(mapped.map { it.linkPreviews }))
+        return ApiResult.Success(mapped)
+    }
+
+    private suspend fun refreshPendingPreviews(): Boolean {
+        val current = loader.state.value.value ?: return false
+        val items = when (val result = api.receiverWishlist(groupId)) {
+            is ApiResult.Success -> result.value
+            is ApiResult.Failure -> return hasPendingPreviews(current.map { it.linkPreviews })
+        }
+        val mapped = items.map { it.toItem(tracker.baseline) }
+        loader.replace(mapped)
+        return hasPendingPreviews(mapped.map { it.linkPreviews })
     }
 }

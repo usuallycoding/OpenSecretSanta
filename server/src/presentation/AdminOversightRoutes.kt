@@ -14,6 +14,8 @@ import com.usuallycoding.opensecretsanta.domain.gift.LetterBox
 import com.usuallycoding.opensecretsanta.domain.gift.ListLetterBoxes
 import com.usuallycoding.opensecretsanta.domain.gift.ListQuestionThreads
 import com.usuallycoding.opensecretsanta.domain.wishlist.GetParticipantWishlist
+import com.usuallycoding.opensecretsanta.domain.wishlist.LinkPreview
+import com.usuallycoding.opensecretsanta.domain.wishlist.LinkPreviewResolver
 import com.usuallycoding.opensecretsanta.domain.wishlist.SharedWishlistItem
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -22,7 +24,8 @@ import java.time.Instant
 
 private fun iso(millis: Long?): String? = millis?.let { Instant.ofEpochMilli(it).toString() }
 
-private fun SharedWishlistItem.toDto() = SharedWishlistItemDto(title, note, urls.firstOrNull(), iso(createdAtMillis)!!, iso(updatedAtMillis)!!, urls)
+private fun SharedWishlistItem.toDto(previews: Map<String, LinkPreview>) =
+    SharedWishlistItemDto(title, note, urls.firstOrNull(), iso(createdAtMillis)!!, iso(updatedAtMillis)!!, urls, previews.toDtoMap(urls))
 
 private fun DeliveryInfo.toDto() = DeliveryInfoDto(fullName, email, phone, address, deliveryInfo)
 
@@ -41,11 +44,14 @@ fun Route.adminOversightRoutes(
     getParticipantDeliveryInfo: GetParticipantDeliveryInfo,
     listQuestionThreads: ListQuestionThreads,
     listLetterBoxes: ListLetterBoxes,
+    previews: LinkPreviewResolver,
 ) {
     get(ApiRoutes.ADMIN_GROUP_PARTICIPANT_WISHLIST) {
         val actor = call.currentUser()
         val username = call.parameters["username"].orEmpty()
-        call.respond(blocking { getParticipantWishlist(actor, call.groupId(), username) }.map { it.toDto() })
+        val items = blocking { getParticipantWishlist(actor, call.groupId(), username) }
+        val previewMap = blocking { previews.lookupAndEnqueue(items.flatMap { it.urls }) }
+        call.respond(items.map { it.toDto(previewMap) })
     }
     get(ApiRoutes.ADMIN_GROUP_PARTICIPANT_DELIVERY_INFO) {
         val actor = call.currentUser()

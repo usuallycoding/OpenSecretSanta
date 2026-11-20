@@ -4,6 +4,7 @@ import com.usuallycoding.opensecretsanta.data.BackendConfig
 import com.usuallycoding.opensecretsanta.getPlatform
 import com.usuallycoding.opensecretsanta.data.api.ApiClient
 import com.usuallycoding.opensecretsanta.data.api.AuthContext
+import com.usuallycoding.opensecretsanta.data.api.LinkPreviewImageCache
 import com.usuallycoding.opensecretsanta.data.api.createHttpClient
 import com.usuallycoding.opensecretsanta.data.push.PushDevice
 import com.usuallycoding.opensecretsanta.data.push.PushRegistration
@@ -66,6 +67,7 @@ fun appModules(baseUrl: String, pushDevice: PushDevice = UnsupportedPushDevice):
         single { PushRegistration(device = get(), api = lazy { get<ApiClient>() }, settings = get()) }
         single { SessionManager(api = lazy { get<ApiClient>() }, store = get(), beforeSignOut = get<PushRegistration>()) } bind AuthContext::class
         single { ApiClient(http = get(), baseUrl = get<BackendConfig>().baseUrl, auth = get()) }
+        single { LinkPreviewImageCache(api = get()) }
         single { AppCompatibility(get()) }
         single { AndroidDownloadOffer(get(), getPlatform().offersAndroidDownload, viewModelScope()) }
 

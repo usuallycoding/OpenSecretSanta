@@ -60,12 +60,14 @@ object ApiRoutes {
     const val GROUP_WISHLIST_ITEM = "/groups/{id}/wishlist/items/{itemId}"
     const val GROUP_WISHLIST_ORDER = "/groups/{id}/wishlist/order"
     const val GROUP_RECEIVER_WISHLIST = "/groups/{id}/receiver/wishlist"
+    const val LINK_PREVIEW_IMAGE = "/link-previews/{id}/image"
 
     fun groupWishlist(id: Long) = "$GROUPS/$id/wishlist"
     fun groupWishlistItems(id: Long) = "$GROUPS/$id/wishlist/items"
     fun groupWishlistItem(id: Long, itemId: Long) = "$GROUPS/$id/wishlist/items/$itemId"
     fun groupWishlistOrder(id: Long) = "$GROUPS/$id/wishlist/order"
     fun groupReceiverWishlist(id: Long) = "$GROUPS/$id/receiver/wishlist"
+    fun linkPreviewImage(id: Long) = "/link-previews/$id/image"
 
     fun groupDeliveryInfo(id: Long) = "$GROUPS/$id/delivery-info"
     fun groupReceiver(id: Long) = "$GROUPS/$id/receiver"

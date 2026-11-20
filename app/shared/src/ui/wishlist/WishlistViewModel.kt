@@ -30,8 +30,10 @@ class WishlistViewModel(
     val groupId: Long,
     private val api: ApiClient,
     private val scope: CoroutineScope,
+    pendingPreviewDelays: List<Long> = PendingPreviewRefresher.DEFAULT_DELAYS_MILLIS,
 ) : ViewModel(scope) {
     private val loader = Loader(scope) { load() }
+    private val previewRefresher = PendingPreviewRefresher(scope, ::refreshPendingPreviews, pendingPreviewDelays)
     private val _ui = MutableStateFlow(WishlistUiState())
 
     val data: StateFlow<LoadState<WishlistData>> = loader.state
@@ -56,7 +58,20 @@ class WishlistViewModel(
             is ApiResult.Success -> result.value
             is ApiResult.Failure -> return result
         }
-        return ApiResult.Success(WishlistData(list.map { it.toItem() }, groupPhase(group.state)))
+        val items = list.map { it.toItem() }
+        previewRefresher.sync(hasPendingPreviews(items.map { it.linkPreviews }))
+        return ApiResult.Success(WishlistData(items, groupPhase(group.state)))
+    }
+
+    private suspend fun refreshPendingPreviews(): Boolean {
+        val currentData = current ?: return false
+        val list = when (val result = api.wishlist(groupId)) {
+            is ApiResult.Success -> result.value
+            is ApiResult.Failure -> return hasPendingPreviews(currentData.items.map { it.linkPreviews })
+        }
+        val items = list.map { it.toItem() }
+        loader.replace(currentData.copy(items = items))
+        return hasPendingPreviews(items.map { it.linkPreviews })
     }
 
     // --- the bottom sheet -------------------------------------------------------------------
@@ -130,6 +145,7 @@ class WishlistViewModel(
                     current?.let { data ->
                         val items = if (editor.itemId == null) data.items + saved else data.items.map { if (it.id == saved.id) saved else it }
                         loader.replace(data.copy(items = items))
+                        previewRefresher.sync(hasPendingPreviews(items.map { it.linkPreviews }))
                     }
                     _ui.update { it.copy(editor = null) }
                 }

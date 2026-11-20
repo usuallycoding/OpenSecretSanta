@@ -131,7 +131,7 @@ class AdminOversightRoutesTest {
         assertEquals(listOf("First wish", "Second wish"), items.map { it.title })
         assertEquals("Note of bob", items.first().note)
         for (element in Json.parseToJsonElement(response.bodyAsText()).jsonArray) {
-            assertEquals(setOf("title", "note", "url", "createdAt", "updatedAt", "urls"), element.jsonObject.keys)
+            assertEquals(setOf("title", "note", "url", "createdAt", "updatedAt", "urls", "linkPreviews"), element.jsonObject.keys)
         }
     }
 

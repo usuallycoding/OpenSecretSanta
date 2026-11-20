@@ -4,6 +4,7 @@ import com.usuallycoding.opensecretsanta.contract.AdminQuestionThreadDto
 import com.usuallycoding.opensecretsanta.contract.AssignmentDto
 import com.usuallycoding.opensecretsanta.contract.DeliveryInfoDto
 import com.usuallycoding.opensecretsanta.contract.QuestionDto
+import com.usuallycoding.opensecretsanta.contract.LinkPreviewDto
 import com.usuallycoding.opensecretsanta.contract.SharedWishlistItemDto
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.groups.changedTime
@@ -53,7 +54,14 @@ internal fun AssignmentDto.toPair(me: String, participants: List<AdminParticipan
 }
 
 /** One item of a participant's list as the owner reads it; [changed] is set only when it was edited after it was added. */
-data class OversightItem(val title: String, val note: String?, val urls: List<String>, val added: String, val changed: String?)
+data class OversightItem(
+    val title: String,
+    val note: String?,
+    val urls: List<String>,
+    val added: String,
+    val changed: String?,
+    val linkPreviews: Map<String, LinkPreviewDto> = emptyMap(),
+)
 
 internal fun SharedWishlistItemDto.toOversightItem() = OversightItem(
     title = title,
@@ -61,6 +69,7 @@ internal fun SharedWishlistItemDto.toOversightItem() = OversightItem(
     urls = linksOf(urls, url),
     added = formatInstant(createdAt),
     changed = changedTime(createdAt, updatedAt),
+    linkPreviews = linkPreviews,
 )
 
 /** A question with its answer; [answerChanged] is set only when the answer was changed after it was first given. */

@@ -55,6 +55,7 @@ fun ReceiverWishlistSection(viewModel: ReceiverWishlistViewModel, shown: Boolean
                                     Change.Edited -> Strings.READ_EDITED
                                     null -> null
                                 },
+                                linkPreviews = item.linkPreviews,
                             )
                         }
                     }

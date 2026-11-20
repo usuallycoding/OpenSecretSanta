@@ -1,5 +1,6 @@
 package com.usuallycoding.opensecretsanta.ui.wishlist
 
+import com.usuallycoding.opensecretsanta.contract.LinkPreviewDto
 import com.usuallycoding.opensecretsanta.contract.SharedWishlistItemDto
 import com.usuallycoding.opensecretsanta.contract.WishlistItemDto
 import com.usuallycoding.opensecretsanta.domain.wishlist.WishlistLimits
@@ -11,7 +12,15 @@ import com.usuallycoding.opensecretsanta.ui.readmarks.SeenBaseline
 import com.usuallycoding.opensecretsanta.ui.readmarks.itemChange
 
 /** One of the person's own items, with the id needed to change it; [changed] is set only when it was edited after it was added. */
-data class WishItem(val id: Long, val title: String, val note: String?, val urls: List<String>, val added: String, val changed: String?)
+data class WishItem(
+    val id: Long,
+    val title: String,
+    val note: String?,
+    val urls: List<String>,
+    val added: String,
+    val changed: String?,
+    val linkPreviews: Map<String, LinkPreviewDto> = emptyMap(),
+)
 
 /** An item of the receiver's list: a Santa can read it but never address an item, so there is no id. */
 data class SharedWishItem(
@@ -22,6 +31,7 @@ data class SharedWishItem(
     val changed: String?,
     /** New or edited since the Santa last looked, when the Santa has marks to compare with; null otherwise. */
     val change: Change? = null,
+    val linkPreviews: Map<String, LinkPreviewDto> = emptyMap(),
 )
 
 /** The person's list for one group together with where the group is, which decides whether it can be changed. */
@@ -67,7 +77,10 @@ data class WishlistUiState(
 /** The links of an item in order: [urls], or for a server that predates several links the one [url]. */
 internal fun linksOf(urls: List<String>, url: String?): List<String> = urls.ifEmpty { listOfNotNull(url?.takeIf { it.isNotBlank() }) }
 
-internal fun WishlistItemDto.toItem() = WishItem(id, title, note, linksOf(urls, url), formatInstant(createdAt), changedTime(createdAt, updatedAt))
+internal fun WishlistItemDto.toItem() = WishItem(id, title, note, linksOf(urls, url), formatInstant(createdAt), changedTime(createdAt, updatedAt), linkPreviews)
 
 internal fun SharedWishlistItemDto.toItem(baseline: SeenBaseline? = null) =
-    SharedWishItem(title, note, linksOf(urls, url), formatInstant(createdAt), changedTime(createdAt, updatedAt), itemChange(createdAt, updatedAt, baseline))
+    SharedWishItem(title, note, linksOf(urls, url), formatInstant(createdAt), changedTime(createdAt, updatedAt), itemChange(createdAt, updatedAt, baseline), linkPreviews)
+
+internal fun hasPendingPreviews(previews: Iterable<Map<String, LinkPreviewDto>>): Boolean =
+    previews.any { map -> map.values.any { it.status == LinkPreviewDto.STATUS_PENDING } }

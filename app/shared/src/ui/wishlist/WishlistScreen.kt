@@ -63,10 +63,10 @@ import com.usuallycoding.opensecretsanta.ui.load.LocalPageScroll
 import kotlinx.coroutines.launch
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import com.usuallycoding.opensecretsanta.contract.LinkPreviewDto
 import com.usuallycoding.opensecretsanta.domain.wishlist.WishlistLimits
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.load.LoadSection
-import com.usuallycoding.opensecretsanta.ui.form.LinkText
 import com.usuallycoding.opensecretsanta.ui.form.ReadOnlyText
 import com.usuallycoding.opensecretsanta.ui.form.TimesLine
 import androidx.compose.foundation.layout.BoxScope
@@ -325,13 +325,24 @@ private val EDGE_SPEED = 16.dp
  * them, or alone when they are hidden.
  */
 @Composable
-internal fun ItemText(number: Int, title: String, note: String?, urls: List<String>, added: String, changed: String?, modifier: Modifier = Modifier, pill: String? = null, showTimes: Boolean = false) {
+internal fun ItemText(
+    number: Int,
+    title: String,
+    note: String?,
+    urls: List<String>,
+    added: String,
+    changed: String?,
+    modifier: Modifier = Modifier,
+    pill: String? = null,
+    showTimes: Boolean = false,
+    linkPreviews: Map<String, LinkPreviewDto> = emptyMap(),
+) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(BadgeGap)) {
         NumberBadge(number)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             ReadOnlyText(title, style = MaterialTheme.typography.titleMedium, label = "${Strings.ITEM_LABEL} $number", maxLines = 1)
             note?.let { ReadOnlyText(it, style = MaterialTheme.typography.bodyMedium, label = Strings.NOTE_LABEL) }
-            urls.forEach { LinkText(it) }
+            urls.forEach { WishlistLinkRow(it, linkPreviews[it]) }
             if (showTimes || pill != null) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (showTimes) TimesLine(Strings.added(added), changed?.let(Strings::changed), modifier = Modifier.weight(1f, fill = false))
@@ -343,4 +354,5 @@ internal fun ItemText(number: Int, title: String, note: String?, urls: List<Stri
 }
 
 @Composable
-private fun ItemText(number: Int, item: WishItem, modifier: Modifier = Modifier) = ItemText(number, item.title, item.note, item.urls, item.added, item.changed, modifier)
+private fun ItemText(number: Int, item: WishItem, modifier: Modifier = Modifier) =
+    ItemText(number, item.title, item.note, item.urls, item.added, item.changed, modifier, linkPreviews = item.linkPreviews)

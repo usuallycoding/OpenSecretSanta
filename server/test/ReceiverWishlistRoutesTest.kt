@@ -89,7 +89,7 @@ class ReceiverWishlistRoutesTest {
         assertEquals("https://shop.example/socks", items.first().url)
         assertEquals(listOf("https://shop.example/socks"), items.first().urls)
         for (element in Json.parseToJsonElement(response.bodyAsText()).jsonArray) {
-            assertEquals(setOf("title", "note", "url", "createdAt", "updatedAt", "urls"), element.jsonObject.keys)
+            assertEquals(setOf("title", "note", "url", "createdAt", "updatedAt", "urls", "linkPreviews"), element.jsonObject.keys)
         }
     }
 

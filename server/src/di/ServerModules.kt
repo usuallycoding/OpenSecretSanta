@@ -69,6 +69,8 @@ import com.usuallycoding.opensecretsanta.domain.wishlist.DeleteWishlistItem
 import com.usuallycoding.opensecretsanta.domain.wishlist.GetMyWishlist
 import com.usuallycoding.opensecretsanta.domain.wishlist.GetParticipantWishlist
 import com.usuallycoding.opensecretsanta.domain.wishlist.GetReceiverWishlist
+import com.usuallycoding.opensecretsanta.domain.wishlist.LinkPreviewResolver
+import com.usuallycoding.opensecretsanta.domain.wishlist.LinkPreviewStore
 import com.usuallycoding.opensecretsanta.domain.wishlist.ReorderWishlist
 import com.usuallycoding.opensecretsanta.domain.wishlist.UpdateWishlistItem
 import com.usuallycoding.opensecretsanta.domain.wishlist.WishlistRepository
@@ -116,9 +118,12 @@ import com.usuallycoding.opensecretsanta.server.data.group.SqliteGroupRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteAnnouncementReadRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteAnnouncementRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteLetterRepository
+import com.usuallycoding.opensecretsanta.server.data.group.SqliteLinkPreviewRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteQuestionRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteReadMarkRepository
 import com.usuallycoding.opensecretsanta.server.data.group.SqliteWishlistRepository
+import com.usuallycoding.opensecretsanta.server.data.preview.LinkPreviewService
+import com.usuallycoding.opensecretsanta.server.data.preview.SafeHttpFetcher
 import com.usuallycoding.opensecretsanta.server.data.user.SqliteUserRepository
 import com.usuallycoding.opensecretsanta.server.presentation.HealthService
 import com.usuallycoding.opensecretsanta.server.security.AesGcmSecretBox
@@ -165,6 +170,7 @@ val repositoryModule = module {
     single<AnnouncementReadRepository> { SqliteAnnouncementReadRepository(get()) }
     single<ReadMarkRepository> { SqliteReadMarkRepository(get()) }
     single<WishlistRepository> { SqliteWishlistRepository(get()) }
+    single<LinkPreviewStore> { SqliteLinkPreviewRepository(get()) }
     single<DeliveryInfoRepository> { SqliteDeliveryInfoRepository(get()) }
     single<DeviceRepository> { SqliteDeviceRepository(get()) }
     single<NotificationSettingsRepository> { SqliteNotificationSettingsRepository(get()) }
@@ -286,6 +292,15 @@ val presentationModule = module {
     single { HealthService(get(), get()) }
 }
 
+fun linkPreviewModule(
+    fetcher: SafeHttpFetcher? = null,
+    executor: Executor? = null,
+) = module {
+    single { fetcher ?: SafeHttpFetcher() }
+    single { LinkPreviewService(get(), get(), get(), executor ?: LinkPreviewService.defaultPreviewExecutor()) }
+    single<LinkPreviewResolver> { get<LinkPreviewService>() }
+}
+
 fun serverModules(
     config: ServerConfig,
     migrations: List<Migration> = ClasspathMigrations.load(),
@@ -295,6 +310,8 @@ fun serverModules(
     pushSender: PushSender? = null,
     notificationExecutor: Executor? = null,
     notificationScheduler: Scheduler? = null,
+    linkPreviewFetcher: SafeHttpFetcher? = null,
+    linkPreviewExecutor: Executor? = null,
 ) = listOf(
     configModule(config),
     clockModule(clock),
@@ -305,6 +322,7 @@ fun serverModules(
     emailModule(mailer),
     pushModule(pushSender),
     notificationModule(notificationExecutor, notificationScheduler),
+    linkPreviewModule(linkPreviewFetcher, linkPreviewExecutor),
     useCaseModule,
     presentationModule,
 )

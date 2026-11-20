@@ -54,6 +54,7 @@ import io.ktor.client.request.header
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsBytes
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -140,6 +141,37 @@ class ApiClient(
 
     suspend fun receiverWishlist(groupId: Long): ApiResult<List<SharedWishlistItemDto>> =
         call(HttpMethod.Get, ApiRoutes.groupReceiverWishlist(groupId))
+
+    /** Fetches the server-cached thumbnail bytes for a link preview at its relative [path]. */
+    suspend fun linkPreviewImage(path: String): ApiResult<ByteArray> {
+        val response = try {
+            http.request(baseUrl.trimEnd('/') + path) {
+                method = HttpMethod.Get
+                auth.token?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Throwable) {
+            return ApiResult.Failure(ApiError.Network)
+        }
+        val result = if (response.status.isSuccess()) {
+            try {
+                ApiResult.Success(response.bodyAsBytes())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                ApiResult.Failure(ApiError.Unexpected)
+            }
+        } else {
+            ApiResult.Failure(response.toError())
+        }
+        if (result is ApiResult.Failure &&
+            (result.error == ApiError.Unauthorized || result.error == ApiError.PasswordChangeRequired)
+        ) {
+            auth.rejected(result.error)
+        }
+        return result
+    }
 
     /** The person's receiver as the Santa sees them: just what is needed to post a gift. */
     suspend fun receiver(groupId: Long): ApiResult<ReceiverDto> = call(HttpMethod.Get, ApiRoutes.groupReceiver(groupId))

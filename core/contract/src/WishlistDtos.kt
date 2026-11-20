@@ -3,8 +3,25 @@ package com.usuallycoding.opensecretsanta.contract
 import kotlinx.serialization.Serializable
 
 /**
+ * Cached preview metadata for a wishlist link. [status] is `"pending"` while being fetched or `"ready"` when metadata is
+ * available. [imagePath] is a relative server path to the cached thumbnail when present.
+ */
+@Serializable
+data class LinkPreviewDto(
+    val status: String,
+    val title: String? = null,
+    val siteName: String? = null,
+    val imagePath: String? = null,
+) {
+    companion object {
+        const val STATUS_PENDING = "pending"
+        const val STATUS_READY = "ready"
+    }
+}
+
+/**
  * One of the caller's own wishlist items; times are ISO-8601 UTC instants. [urls] are its links in order; [url] is the first
- * of them, kept (deprecated) for apps that know one link.
+ * of them, kept (deprecated) for apps that know one link. [linkPreviews] holds available preview metadata keyed by exact URL.
  */
 @Serializable
 data class WishlistItemDto(
@@ -15,6 +32,7 @@ data class WishlistItemDto(
     val createdAt: String,
     val updatedAt: String,
     val urls: List<String> = emptyList(),
+    val linkPreviews: Map<String, LinkPreviewDto> = emptyMap(),
 )
 
 /**
@@ -47,4 +65,5 @@ data class SharedWishlistItemDto(
     val createdAt: String,
     val updatedAt: String,
     val urls: List<String> = emptyList(),
+    val linkPreviews: Map<String, LinkPreviewDto> = emptyMap(),
 )

@@ -73,8 +73,11 @@ import com.usuallycoding.opensecretsanta.domain.wishlist.DeleteWishlistItem
 import com.usuallycoding.opensecretsanta.domain.wishlist.GetMyWishlist
 import com.usuallycoding.opensecretsanta.domain.wishlist.GetParticipantWishlist
 import com.usuallycoding.opensecretsanta.domain.wishlist.GetReceiverWishlist
+import com.usuallycoding.opensecretsanta.domain.wishlist.LinkPreviewResolver
 import com.usuallycoding.opensecretsanta.domain.wishlist.ReorderWishlist
 import com.usuallycoding.opensecretsanta.domain.wishlist.UpdateWishlistItem
+import com.usuallycoding.opensecretsanta.server.data.preview.LinkPreviewService
+import com.usuallycoding.opensecretsanta.server.data.preview.SafeHttpFetcher
 import com.usuallycoding.opensecretsanta.server.presentation.ACCESS_AUTH
 import com.usuallycoding.opensecretsanta.server.presentation.HealthService
 import com.usuallycoding.opensecretsanta.server.presentation.PasswordChangeGate
@@ -89,6 +92,7 @@ import com.usuallycoding.opensecretsanta.server.presentation.drawRuleRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.groupLifecycleRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.memberGroupRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.letterRoutes
+import com.usuallycoding.opensecretsanta.server.presentation.linkPreviewRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.questionRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.readMarkRoutes
 import com.usuallycoding.opensecretsanta.server.presentation.receiverWishlistRoutes
@@ -141,9 +145,11 @@ fun Application.module(
     pushSender: PushSender? = null,
     notificationExecutor: Executor? = null,
     notificationScheduler: Scheduler? = null,
+    linkPreviewFetcher: SafeHttpFetcher? = null,
+    linkPreviewExecutor: Executor? = null,
 ) {
     install(Koin) {
-        modules(serverModules(config, migrations, clock, shuffler, mailer, pushSender, notificationExecutor, notificationScheduler))
+        modules(serverModules(config, migrations, clock, shuffler, mailer, pushSender, notificationExecutor, notificationScheduler, linkPreviewFetcher, linkPreviewExecutor))
     }
     install(ContentNegotiation) { json() }
     if (config.corsAllowedOrigins.isNotEmpty()) install(CORS) { allowConfiguredOrigins(config.corsAllowedOrigins) }
@@ -161,6 +167,7 @@ fun Application.module(
     }
 
     get<NotificationDispatcher>().startDigest()
+    get<LinkPreviewService>().startBackfill()
 
     routing {
         healthRoutes(get<HealthService>())
@@ -189,10 +196,11 @@ fun Application.module(
             questionRoutes(get<AskQuestion>(), get<ListMyQuestions>(), get<ListQuestionsFromMySanta>(), get<AnswerQuestion>(), get<DeleteQuestion>(), get<NotificationDispatcher>())
             letterRoutes(get<SendLetter>(), get<ListMySentLetters>(), get<ListLettersFromMyReceiver>(), get<NotificationDispatcher>())
             readMarkRoutes(get<GetMyReadMarks>(), get<MarkRead>())
-            wishlistRoutes(get<GetMyWishlist>(), get<AddWishlistItem>(), get<UpdateWishlistItem>(), get<DeleteWishlistItem>(), get<ReorderWishlist>(), get<NotificationDispatcher>())
-            receiverWishlistRoutes(get<GetReceiverWishlist>())
+            wishlistRoutes(get<GetMyWishlist>(), get<AddWishlistItem>(), get<UpdateWishlistItem>(), get<DeleteWishlistItem>(), get<ReorderWishlist>(), get<NotificationDispatcher>(), get<LinkPreviewResolver>())
+            receiverWishlistRoutes(get<GetReceiverWishlist>(), get<LinkPreviewResolver>())
+            linkPreviewRoutes(get<LinkPreviewResolver>())
             notificationRoutes(get<GetNotificationSettings>(), get<UpdateNotificationSettings>(), get<RegisterDevice>(), get<UnregisterDevice>())
-            adminOversightRoutes(get<GetParticipantWishlist>(), get<GetParticipantDeliveryInfo>(), get<ListQuestionThreads>(), get<ListLetterBoxes>())
+            adminOversightRoutes(get<GetParticipantWishlist>(), get<GetParticipantDeliveryInfo>(), get<ListQuestionThreads>(), get<ListLetterBoxes>(), get<LinkPreviewResolver>())
         }
     }
 }
