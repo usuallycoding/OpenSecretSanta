@@ -38,6 +38,8 @@ class WebAuthFormsTest {
         )
 
         assertNotNull(host.querySelector("form"))
+        assertNotNull(document.getElementById("oss-auth-styles"))
+        assertEquals(1, document.querySelectorAll("#oss-auth-styles").length)
         assertEquals("username", handle.usernameInput.getAttribute("autocomplete"))
         assertEquals("current-password", handle.passwordField.input.getAttribute("autocomplete"))
         assertEquals("password", handle.passwordField.input.type)

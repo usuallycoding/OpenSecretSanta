@@ -31,6 +31,229 @@ import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
 import kotlin.math.roundToInt
 
+private const val AUTH_STYLES_ID = "oss-auth-styles"
+
+private const val AUTH_STYLES_CSS = """
+.oss-auth-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    overflow-y: auto;
+    box-sizing: border-box;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--oss-on-surface, #231917);
+}
+.oss-auth-sheet-backdrop {
+    background: rgba(0, 0, 0, 0.45);
+}
+.oss-auth-form {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    box-sizing: border-box;
+}
+.oss-auth-sheet-card {
+    background: var(--oss-surface, #FFF8F6);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
+}
+.oss-auth-logo {
+    width: 100%;
+    max-width: 280px;
+    height: auto;
+    align-self: center;
+    margin-bottom: 8px;
+}
+.oss-auth-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1.3;
+    text-align: center;
+}
+.oss-auth-sheet-card .oss-auth-title {
+    font-size: 22px;
+    text-align: left;
+}
+.oss-auth-intro {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--oss-on-surface-variant, #534340);
+}
+.oss-auth-notice {
+    margin: 0;
+    font-size: 14px;
+    color: var(--oss-primary, #8F4C38);
+    text-align: center;
+}
+.oss-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: left;
+}
+.oss-field-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--oss-on-surface-variant, #534340);
+}
+.oss-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.oss-field-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 16px;
+    border-radius: 4px;
+    border: 1px solid var(--oss-outline, #85736F);
+    background: var(--oss-surface-container, #FFF8F6);
+    color: var(--oss-on-surface, #231917);
+    font-size: 16px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+.oss-field-input:focus {
+    border-color: var(--oss-primary, #8F4C38);
+    box-shadow: 0 0 0 1px var(--oss-primary, #8F4C38);
+}
+.oss-field-input.oss-input-error {
+    border-color: var(--oss-error, #BA1A1A);
+}
+.oss-field-input.oss-input-password {
+    padding-right: 48px;
+}
+.oss-eye-btn {
+    position: absolute;
+    right: 6px;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    color: var(--oss-on-surface-variant, #534340);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    padding: 0;
+}
+.oss-eye-btn:hover {
+    background: rgba(128, 128, 128, 0.14);
+}
+.oss-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+    padding: 4px 0;
+}
+.oss-checkbox-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--oss-primary, #8F4C38);
+    cursor: pointer;
+}
+.oss-error {
+    margin: 0;
+    font-size: 13px;
+    color: var(--oss-error, #BA1A1A);
+    text-align: left;
+}
+.oss-btn-primary {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 24px;
+    border: none;
+    border-radius: 999px;
+    background: var(--oss-primary, #8F4C38);
+    color: var(--oss-on-primary, #FFFFFF);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+}
+.oss-btn-primary:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+.oss-btn-outlined {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 24px;
+    border: 1px solid var(--oss-outline, #85736F);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--oss-primary, #8F4C38);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+}
+.oss-btn-text {
+    min-height: 40px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--oss-primary, #8F4C38);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    align-self: center;
+}
+.oss-sheet-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 4px;
+}
+.oss-sheet-actions .oss-btn-primary {
+    width: auto;
+}
+.oss-version {
+    margin: 0;
+    font-size: 12px;
+    color: var(--oss-on-surface-variant, #534340);
+    text-align: center;
+}
+.oss-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+    pointer-events: none;
+}
+"""
+
+private fun ensureAuthStyles() {
+    if (document.getElementById(AUTH_STYLES_ID) != null) return
+    val head = document.head ?: return
+    val style = document.createElement("style")
+    style.id = AUTH_STYLES_ID
+    style.textContent = AUTH_STYLES_CSS
+    head.appendChild(style)
+}
+
 private const val EYE_SVG =
     """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>"""
 private const val EYE_OFF_SVG =
@@ -197,6 +420,7 @@ internal fun mountWebLoginForm(
     onSubmit: () -> Unit,
     container: HTMLElement = document.body ?: error("Missing document.body"),
 ): WebLoginFormHandle {
+    ensureAuthStyles()
     val overlay = document.createElement("div") as HTMLDivElement
     overlay.className = "oss-auth-overlay"
 
@@ -378,6 +602,7 @@ internal fun mountWebChangePasswordForm(
     onSecondary: () -> Unit,
     container: HTMLElement = document.body ?: error("Missing document.body"),
 ): WebChangePasswordFormHandle {
+    ensureAuthStyles()
     val overlay = document.createElement("div") as HTMLDivElement
     overlay.className = if (isSheet) "oss-auth-overlay oss-auth-sheet-backdrop" else "oss-auth-overlay"
 
