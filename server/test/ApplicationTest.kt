@@ -8,6 +8,7 @@ import com.usuallycoding.opensecretsanta.server.data.db.Migration
 import com.usuallycoding.opensecretsanta.server.data.db.MigrationException
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
@@ -34,6 +35,7 @@ class ApplicationTest {
         val response = client.get(ApiRoutes.HEALTH)
 
         assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals("no-store", response.headers[HttpHeaders.CacheControl])
         assertEquals(HealthResponse("ok", schemaVersion = 19, apiVersion = ApiVersion.CURRENT, androidDownload = false), Json.decodeFromString(response.bodyAsText()))
     }
 
@@ -72,6 +74,7 @@ class ApplicationTest {
         val response = client.get(ApiRoutes.HEALTH)
 
         assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals("no-store", response.headers[HttpHeaders.CacheControl])
         assertEquals(HealthResponse("ok", schemaVersion = 19, apiVersion = ApiVersion.CURRENT, androidDownload = false), Json.decodeFromString(response.bodyAsText()))
     }
 

@@ -160,3 +160,10 @@ The API SHALL have one version number, a whole number starting at 1 that the ser
 #### Scenario: Same build, same number
 - **WHEN** the server and an app are built from the same revision
 - **THEN** the number the server reports is the number the app was built with
+
+### Requirement: Health responses are not cached
+`GET /health` SHALL include `Cache-Control: no-store` so browsers and intermediate proxies never serve a stale `apiVersion` or health status.
+
+#### Scenario: Healthy response carries no-store
+- **WHEN** a client requests `GET /health` on a started server
+- **THEN** the response carries `Cache-Control: no-store`
