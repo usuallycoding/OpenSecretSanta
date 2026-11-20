@@ -118,7 +118,7 @@ private fun SessionScreens(
             when (current) {
                 SessionState.Loading -> CircularProgressIndicator()
                 is SessionState.SignedOut -> LoginScreen(koinViewModel(), sessionEnded = current.reason == SignedOutReason.SessionEnded)
-                is SessionState.PasswordChangeRequired -> ChangePasswordScreen(koinViewModel(), onSignOut = session::signOut)
+                is SessionState.PasswordChangeRequired -> ChangePasswordScreen(koinViewModel(), onSignOut = session::signOut, username = current.account.username)
                 is SessionState.SignedIn -> Unit
             }
         }

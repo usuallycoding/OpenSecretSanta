@@ -15,13 +15,18 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalAutofillManager
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.usuallycoding.opensecretsanta.APP_VERSION
@@ -37,6 +42,7 @@ import com.usuallycoding.opensecretsanta.resources.app_logo_light
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.download.androidDownloadAction
 import org.jetbrains.compose.resources.painterResource
+import com.usuallycoding.opensecretsanta.ui.form.PlatformLoginForm
 import com.usuallycoding.opensecretsanta.ui.form.touchesOfAField
 import com.usuallycoding.opensecretsanta.ui.form.PasswordField
 
@@ -51,7 +57,14 @@ fun logoIsDark(background: Color): Boolean = background.luminance() < 0.5f
 
 @Composable
 fun LoginScreen(viewModel: LoginViewModel, sessionEnded: Boolean) {
+    PlatformLoginForm(viewModel = viewModel, sessionEnded = sessionEnded)
+}
+
+@Composable
+internal fun ComposeLoginForm(viewModel: LoginViewModel, sessionEnded: Boolean) {
     val state by viewModel.state.collectAsState()
+    val autofillManager = LocalAutofillManager.current
+    LaunchedEffect(state.done) { if (state.done) autofillManager?.commit() }
     Column(
         modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -73,10 +86,18 @@ fun LoginScreen(viewModel: LoginViewModel, sessionEnded: Boolean) {
             label = { Text(Strings.USERNAME) },
             singleLine = true,
             colors = appFieldColors(),
-            modifier = Modifier.fillMaxWidth().touchesOfAField(),
+            modifier = Modifier.fillMaxWidth().touchesOfAField().semantics { contentType = ContentType.Username },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
         )
-        PasswordField(Strings.PASSWORD, state.password, viewModel::onPasswordChange, null, ImeAction.Done, onDone = { viewModel.submit() })
+        PasswordField(
+            Strings.PASSWORD,
+            state.password,
+            viewModel::onPasswordChange,
+            null,
+            ImeAction.Done,
+            onDone = { viewModel.submit() },
+            autofillType = ContentType.Password,
+        )
         if (getPlatform().canChooseToStaySignedIn) {
             Row(
                 Modifier.fillMaxWidth().toggleable(state.staySignedIn, role = Role.Checkbox, onValueChange = viewModel::onStaySignedInChange),
@@ -97,7 +118,7 @@ fun LoginScreen(viewModel: LoginViewModel, sessionEnded: Boolean) {
     }
 }
 
-private fun LoginProblem.text(): String = when (this) {
+internal fun LoginProblem.text(): String = when (this) {
     LoginProblem.WrongCredentials -> Strings.WRONG_CREDENTIALS
     is LoginProblem.Paused -> Strings.signInPaused(minutes)
     LoginProblem.Unreachable -> Strings.SERVER_UNREACHABLE

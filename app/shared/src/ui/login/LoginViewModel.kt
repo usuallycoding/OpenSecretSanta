@@ -26,6 +26,7 @@ data class LoginUiState(
     val inProgress: Boolean = false,
     /** Whether the web keeps the person signed in after the tab is closed; ticked until the person unticks it. */
     val staySignedIn: Boolean = true,
+    val done: Boolean = false,
     val problem: LoginProblem? = null,
 ) {
     val canSubmit: Boolean get() = username.isNotBlank() && password.isNotBlank() && !inProgress
@@ -54,7 +55,7 @@ class LoginViewModel(
             _state.update { state ->
                 when (result) {
                     // The session has moved on and the screen is about to be replaced; nothing to show.
-                    is ApiResult.Success -> state.copy(inProgress = false)
+                    is ApiResult.Success -> state.copy(inProgress = false, done = true)
                     is ApiResult.Failure -> when (val error = result.error) {
                         ApiError.Unauthorized -> state.copy(inProgress = false, password = "", problem = LoginProblem.WrongCredentials)
                         is ApiError.RateLimited -> state.copy(inProgress = false, password = "", problem = LoginProblem.Paused(error.retryAfterSeconds?.let(::minutesFor)))

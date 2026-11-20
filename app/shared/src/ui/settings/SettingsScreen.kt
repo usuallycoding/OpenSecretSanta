@@ -28,6 +28,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.usuallycoding.opensecretsanta.APP_VERSION
 import com.usuallycoding.opensecretsanta.data.push.PushRegistration
+import com.usuallycoding.opensecretsanta.data.session.SessionManager
+import com.usuallycoding.opensecretsanta.data.session.SessionState
 import com.usuallycoding.opensecretsanta.data.settings.AppearanceSettings
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.download.androidDownloadAction
@@ -82,7 +84,9 @@ fun SettingsScreen(onSignOut: () -> Unit) {
         NotificationsSheet(koinViewModel<NotificationsViewModel>(key = "notifications-sheet"), onDismiss = { choosingNotifications = false })
     }
     if (changingPassword) {
-        ChangePasswordSheet(koinViewModel<ChangePasswordViewModel>(key = "change-password-sheet"), onDismiss = { changingPassword = false })
+        val sessionState by koinInject<SessionManager>().state.collectAsState()
+        val username = (sessionState as? SessionState.SignedIn)?.account?.username.orEmpty()
+        ChangePasswordSheet(koinViewModel<ChangePasswordViewModel>(key = "change-password-sheet"), onDismiss = { changingPassword = false }, username = username)
     }
 }
 

@@ -9,12 +9,16 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.platform.LocalAutofillManager
 import androidx.compose.ui.text.input.ImeAction
 import com.usuallycoding.opensecretsanta.ui.Strings
 import com.usuallycoding.opensecretsanta.ui.form.PasswordField
+import com.usuallycoding.opensecretsanta.ui.form.PlatformChangePasswordSheet
 import com.usuallycoding.opensecretsanta.ui.form.SheetFrame
 
 /**
@@ -22,8 +26,15 @@ import com.usuallycoding.opensecretsanta.ui.form.SheetFrame
  * empties the view model so that nothing that was typed stays in memory.
  */
 @Composable
-fun ChangePasswordSheet(viewModel: ChangePasswordViewModel, onDismiss: () -> Unit) {
+fun ChangePasswordSheet(viewModel: ChangePasswordViewModel, onDismiss: () -> Unit, username: String = "") {
+    PlatformChangePasswordSheet(username = username, viewModel = viewModel, onDismiss = onDismiss)
+}
+
+@Composable
+internal fun ComposeChangePasswordSheet(viewModel: ChangePasswordViewModel, onDismiss: () -> Unit) {
     val state by viewModel.state.collectAsState()
+    val autofillManager = LocalAutofillManager.current
+    LaunchedEffect(state.done) { if (state.done) autofillManager?.commit() }
     DisposableEffect(viewModel) { onDispose { viewModel.reset() } }
 
     SheetFrame(onDismiss) {
@@ -35,9 +46,9 @@ fun ChangePasswordSheet(viewModel: ChangePasswordViewModel, onDismiss: () -> Uni
             }
         } else {
             Text(Strings.CHANGE_PASSWORD_SHEET_INTRO, style = MaterialTheme.typography.bodyMedium)
-            PasswordField(Strings.CURRENT_PASSWORD, state.current, viewModel::onCurrentChange, state.errors.current, ImeAction.Next)
-            PasswordField(Strings.NEW_PASSWORD, state.new, viewModel::onNewChange, state.errors.new, ImeAction.Next)
-            PasswordField(Strings.REPEAT_PASSWORD, state.repeat, viewModel::onRepeatChange, state.errors.repeat, ImeAction.Done, onDone = { viewModel.submit() })
+            PasswordField(Strings.CURRENT_PASSWORD, state.current, viewModel::onCurrentChange, state.errors.current, ImeAction.Next, autofillType = ContentType.Password)
+            PasswordField(Strings.NEW_PASSWORD, state.new, viewModel::onNewChange, state.errors.new, ImeAction.Next, autofillType = ContentType.NewPassword)
+            PasswordField(Strings.REPEAT_PASSWORD, state.repeat, viewModel::onRepeatChange, state.errors.repeat, ImeAction.Done, onDone = { viewModel.submit() }, autofillType = ContentType.NewPassword)
             state.errors.general?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 TextButton(onClick = onDismiss) { Text(Strings.CANCEL) }

@@ -13,6 +13,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -33,6 +36,7 @@ internal fun PasswordField(
     onChange: (String) -> Unit,
     error: String?,
     ime: ImeAction,
+    autofillType: ContentType = ContentType.Password,
     onDone: () -> Unit = {},
 ) {
     var shown by rememberSaveable { mutableStateOf(false) }
@@ -55,7 +59,7 @@ internal fun PasswordField(
             }
         },
         colors = appFieldColors(),
-        modifier = Modifier.fillMaxWidth().touchesOfAField(),
+        modifier = Modifier.fillMaxWidth().touchesOfAField().semantics { contentType = autofillType },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ime),
         keyboardActions = KeyboardActions(onDone = { onDone() }),
     )
