@@ -10,7 +10,8 @@ WORKDIR /src
 COPY . .
 # The cache mount keeps the Kotlin toolchain and the downloaded dependencies between builds.
 RUN --mount=type=cache,target=/root/.cache/JetBrains \
-    ./kotlin build -m webApp -p wasmJs -v release
+    ./kotlin build -m webApp -p wasmJs -v release && \
+    sh app/webApp/docker/patch-skiko-safari.sh build/tasks/_webApp_buildWasmJsAppWasmJsRelease/skiko.mjs
 
 FROM nginx:1.29-alpine
 COPY app/webApp/docker/nginx.conf /etc/nginx/conf.d/default.conf
